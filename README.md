@@ -12,6 +12,7 @@ iPuente es un portal donde las empresas publican sus oficinas y salas, y los cli
 - [Historias de usuario](#historias-de-usuario)
 - [Alcance del MVP](#alcance-del-mvp)
 - [Cómo se guarda un mapa](#cómo-se-guarda-un-mapa)
+- [Diseño de datos](#diseño-de-datos)
 
   
 ## Problema que resuelve
@@ -38,6 +39,9 @@ iPuente une las dos partes en un mismo sitio. La empresa convierte su plano en u
 2. Pulsa una planta y ve su plano con las salas libres, ocupadas y no reservables.
 3. Pulsa una sala y ve su ficha: precio, capacidad, equipamiento, fotos y huecos libres.
 4. Reserva por fecha y franja horaria, y paga online.
+
+
+
 ## Por qué Firebase
  
 - **Autenticación resuelta y segura.** Firebase Auth gestiona el registro con email y con Google, la recuperación de contraseña y los tokens de sesión. Las contraseñas nunca pasan por nuestro código ni por nuestra base de datos, así que reducimos el riesgo de una brecha de seguridad.
@@ -54,6 +58,8 @@ iPuente une las dos partes en un mismo sitio. La empresa convierte su plano en u
 - **Empresas y profesionales** que necesitan una sala por horas para charlas, formaciones, reuniones, presentaciones o eventos.
 - **Empresas propietarias o gestoras de oficinas y coworkings** que quieren alquilar sus salas y mostrarlas de forma visual sin montar una web propia.
 - **Equipo de iPuente**, que aprueba empresas y supervisa la plataforma.
+
+
 ## Roles
  
 | Rol | Quién es | Qué puede hacer |
@@ -116,6 +122,8 @@ Nadie puede registrarse como admin, y las cuentas de empresa quedan pendientes h
 6. Dashboard con gráficas de ocupación e ingresos para empresas y admin.
 7. Emails de confirmación y recordatorio.
 8. Valoraciones de las salas tras usarlas.
+
+
 ### Fuera de alcance (no se hará en este proyecto)
  
 - **Modelo 3D a partir de una foto del edificio.** Los servicios de IA que lo hacen devuelven un único bloque decorativo, sin plantas separadas, y no permitiría hacer clic por plantas.
@@ -124,3 +132,339 @@ Nadie puede registrarse como admin, y las cuentas de empresa quedan pendientes h
 - Alquiler mensual de oficinas con contrato.
 - App móvil nativa.
 - Integración con el control de accesos de los edificios.
+
+
+
+
+# Diseño de datos
+
+Esta sección documenta el diseño de la base de datos de iPuente: las colecciones de Firestore, sus campos, las relaciones entre documentos y los criterios de almacenamiento.
+
+El objetivo es mantener una estructura que permita gestionar usuarios, empresas, edificios, plantas, salas, reservas y pagos, además de facilitar las consultas necesarias para los distintos paneles de la aplicación.
+
+## 1. Estructura de colecciones
+
+La estructura principal propuesta es:
+
+| Colección | Descripción |
+| --- | --- |
+| `users` | Usuarios registrados en la plataforma. |
+| `companies` | Empresas que publican y gestionan espacios. |
+| `buildings` | Edificios dados de alta por las empresas. |
+| `floors` | Plantas pertenecientes a cada edificio y sus mapas. |
+| `offices` | Salas y espacios disponibles para alquilar. |
+| `bookings` | Reservas realizadas por los clientes. |
+| `payments` | Operaciones de pago asociadas a las reservas. |
+| `favorites` | Salas guardadas como favoritas por los usuarios. |
+
+Subcolecciones previstas:
+
+- `companies/{companyId}/members`: usuarios que pertenecen a una empresa y sus permisos.
+- `offices/{officeId}/blocks`: periodos bloqueados manualmente por la empresa.
+- `offices/{officeId}/images`: imágenes asociadas a una sala.
+
+## 2. Definición de colecciones
+
+### `users`
+
+Almacena los datos de los usuarios registrados. El identificador del documento coincide con el UID proporcionado por Firebase Authentication.
+
+| Campo | Descripción |
+| --- | --- |
+| `name` | Nombre del usuario. |
+| `surname` | Apellidos. |
+| `email` | Correo electrónico. |
+| `phone` | Teléfono de contacto. |
+| `role` | Rol del usuario: `CLIENT`, `COMPANY` o `ADMIN`. |
+| `createdAt` | Fecha de creación. |
+| `updatedAt` | Última actualización. |
+
+### `companies`
+
+Almacena la información de las empresas que publican espacios.
+
+| Campo | Descripción |
+| --- | --- |
+| `name` | Nombre comercial. |
+| `legalName` | Razón social. |
+| `taxId` | Identificador fiscal. |
+| `description` | Descripción de la empresa. |
+| `logoUrl` | URL del logotipo. |
+| `email` | Correo de contacto. |
+| `phone` | Teléfono de contacto. |
+| `address` | Dirección de la empresa. |
+| `verified` | Indica si la empresa ha sido aprobada por un administrador. |
+| `createdAt` | Fecha de creación. |
+| `updatedAt` | Última actualización. |
+
+**Subcolección `members`**
+
+Relaciona usuarios con empresas y define sus permisos.
+
+| Campo | Descripción |
+| --- | --- |
+| `userId` | Identificador del usuario. |
+| `role` | Permiso dentro de la empresa: `OWNER`, `MANAGER` o `EMPLOYEE`. |
+| `joinedAt` | Fecha de incorporación. |
+
+### `buildings`
+
+Almacena los edificios publicados por las empresas.
+
+| Campo | Descripción |
+| --- | --- |
+| `companyId` | Empresa propietaria o gestora. |
+| `name` | Nombre del edificio. |
+| `description` | Descripción del edificio. |
+| `address` | Dirección. |
+| `city` | Ciudad. |
+| `postalCode` | Código postal. |
+| `country` | País. |
+| `latitude` | Latitud. |
+| `longitude` | Longitud. |
+| `floorCount` | Número de plantas. |
+| `status` | Estado del edificio. |
+| `createdAt` | Fecha de creación. |
+| `updatedAt` | Última actualización. |
+
+### `floors`
+
+Contiene la información de las plantas y los datos necesarios para representar sus mapas.
+
+| Campo | Descripción |
+| --- | --- |
+| `buildingId` | Identificador del edificio al que pertenece. |
+| `name` | Nombre o denominación de la planta. |
+| `level` | Número o nivel de planta. |
+| `mapImageUrl` | URL de la imagen original del plano. |
+| `mapData` | Datos geométricos de las salas y sus posiciones. |
+| `status` | Estado de la planta. |
+| `createdAt` | Fecha de creación. |
+| `updatedAt` | Última actualización. |
+
+**Campo `mapData`:**
+
+Se almacena como un objeto estructurado con la información necesaria para representar las salas sobre la imagen del plano.
+
+Cada sala debe incluir, como mínimo:
+
+- Identificador de la sala.
+- Posición horizontal y vertical.
+- Anchura y altura.
+- Información necesaria para relacionarla con su documento en `offices`.
+
+El formato definitivo se concretará durante el desarrollo del editor de mapas.
+
+### `offices`
+
+Almacena la información de cada sala o espacio que puede alquilarse.
+
+| Campo | Descripción |
+| --- | --- |
+| `companyId` | Empresa propietaria o gestora. |
+| `buildingId` | Edificio al que pertenece. |
+| `floorId` | Planta en la que se encuentra. |
+| `name` | Nombre de la sala. |
+| `code` | Código identificativo de la sala. |
+| `description` | Descripción del espacio. |
+| `surface` | Superficie en metros cuadrados. |
+| `capacity` | Capacidad máxima de personas. |
+| `price` | Precio por hora. |
+| `pricePeriod` | Periodo de facturación, inicialmente `HOUR`. |
+| `amenities` | Equipamiento y servicios disponibles. |
+| `status` | Estado de publicación de la sala. |
+| `openingHours` | Horario habitual en el que se puede alquilar. |
+| `createdAt` | Fecha de creación. |
+| `updatedAt` | Última actualización. |
+
+**Subcolección `blocks`**
+
+Almacena los periodos en los que la empresa bloquea manualmente una sala. Por ejemplo, cuando necesita utilizarla para sus propias actividades o realizar tareas de mantenimiento.
+
+| Campo | Descripción |
+| --- | --- |
+| `startDate` | Fecha y hora de inicio del bloqueo. |
+| `endDate` | Fecha y hora de finalización. |
+| `reason` | Motivo del bloqueo. |
+| `createdAt` | Fecha de creación. |
+
+Los bloqueos no representan reservas de clientes. Su única función es impedir que esos intervalos se puedan alquilar.
+
+**Subcolección `images`**
+
+Almacena las referencias a las imágenes de cada sala.
+
+| Campo | Descripción |
+| --- | --- |
+| `url` | URL de la imagen en Firebase Storage. |
+| `storagePath` | Ruta del archivo en Storage. |
+| `order` | Orden de visualización. |
+| `isCover` | Indica si es la imagen principal. |
+| `createdAt` | Fecha de creación. |
+
+### `bookings`
+
+Almacena las reservas realizadas por los clientes.
+
+| Campo | Descripción |
+| --- | --- |
+| `userId` | Cliente que realiza la reserva. |
+| `companyId` | Empresa propietaria de la sala. |
+| `officeId` | Sala reservada. |
+| `startDate` | Fecha y hora de inicio. |
+| `endDate` | Fecha y hora de finalización. |
+| `price` | Precio aplicado por hora. |
+| `pricePeriod` | Periodo de facturación: `HOUR`. |
+| `totalAmount` | Importe total de la reserva. |
+| `status` | Estado de la reserva. |
+| `paymentId` | Identificador del pago asociado. |
+| `createdAt` | Fecha de creación. |
+| `updatedAt` | Última actualización. |
+
+Estados posibles:
+
+- `PENDING_PAYMENT`: pendiente de completar el pago.
+- `CONFIRMED`: pago verificado y reserva confirmada.
+- `CANCELLED`: reserva cancelada.
+- `EXPIRED`: reserva provisional caducada.
+- `COMPLETED`: alquiler finalizado.
+
+### `payments`
+
+Registra las operaciones de pago realizadas mediante Stripe.
+
+| Campo | Descripción |
+| --- | --- |
+| `bookingId` | Reserva asociada al pago. |
+| `userId` | Cliente que realiza el pago. |
+| `amount` | Importe cobrado. |
+| `currency` | Moneda, inicialmente `EUR`. |
+| `provider` | Proveedor del pago: `STRIPE`. |
+| `providerPaymentId` | Identificador de la operación en Stripe. |
+| `status` | Estado del pago. |
+| `createdAt` | Fecha de creación. |
+| `updatedAt` | Última actualización. |
+
+Estados posibles:
+
+- `PENDING`: pago iniciado.
+- `SUCCEEDED`: pago completado correctamente.
+- `FAILED`: pago fallido.
+- `REFUNDED`: importe reembolsado.
+
+### `favorites`
+
+Almacena las salas que un usuario ha guardado como favoritas.
+
+La estructura concreta de esta colección se definirá durante el desarrollo. Cada favorito deberá poder relacionarse con un usuario y una sala.
+
+## 3. Relaciones entre colecciones
+
+Aunque Firestore es una base de datos NoSQL y no utiliza claves foráneas como una base de datos relacional, podemos representar las relaciones mediante identificadores de documentos.
+
+| Relación | Tipo | Implementación |
+| --- | --- | --- |
+| Empresa - Miembros | N | Subcolección `members`. |
+| Empresa - Edificios | 1 | `companyId` en `buildings`. |
+| Edificio - Plantas | 1 | `buildingId` en `floors`. |
+| Planta - Salas | 1 | `floorId` en `offices`. |
+| Sala - Bloqueos | 1 | Subcolección `blocks`. |
+| Sala - Imágenes | 1 | Subcolección `images`. |
+| Usuario - Reservas | 1 | `userId` en `bookings`. |
+| Sala - Reservas | 1 | `officeId` en `bookings`. |
+| Empresa - Reservas | 1 | `companyId` en `bookings`. |
+| Reserva - Pagos | 1 potencial | `bookingId` en `payments`. |
+
+## 4. Almacenamiento de archivos
+
+Las imágenes y los archivos binarios se almacenan en Firebase Storage. Firestore conserva sus URL y rutas de almacenamiento.
+
+Estructura orientativa:
+
+```text
+companies/
+  {companyId}/
+    logo.png
+
+buildings/
+  {buildingId}/
+    floors/
+      {floorId}/
+        floor-plan.png
+
+offices/
+  {officeId}/
+    images/
+      image_01.jpg
+      image_02.jpg
+```
+
+## 5. Seguridad y reglas de acceso
+
+Las reglas de Firestore deben garantizar que cada usuario solo pueda acceder a los datos que le corresponden.
+
+| Recurso | Permisos |
+| --- | --- |
+| `users` | Cada usuario puede consultar y modificar su perfil, sin poder cambiar su propio rol. |
+| `companies` | Los miembros autorizados pueden gestionar su empresa. |
+| `buildings` | Los edificios publicados son de lectura pública; su gestión corresponde a la empresa propietaria. |
+| `floors` | Las plantas publicadas son de lectura pública; su edición corresponde a la empresa propietaria. |
+| `offices` | Las salas publicadas son de lectura pública; su gestión corresponde a la empresa propietaria. |
+| `blocks` | Solo los miembros autorizados de la empresa pueden crear, consultar, modificar o eliminar bloqueos. |
+| `bookings` | Cada cliente consulta sus reservas; las empresas consultan las reservas de sus espacios. |
+| `payments` | Acceso restringido; las operaciones se gestionan desde el servidor. |
+
+Las operaciones críticas, como confirmar reservas, verificar pagos, gestionar reembolsos y modificar roles, se ejecutan exclusivamente desde funciones del servidor mediante Firebase Admin SDK.
+
+## 6. Cálculo de disponibilidad y prevención de solapamientos
+
+No se almacenan todos los horarios libres como documentos. La disponibilidad de una sala se calcula cuando un usuario consulta una fecha y una franja horaria.
+
+Para determinar si una sala puede reservarse, el servidor consulta:
+
+1. El horario habitual de apertura almacenado en `offices`.
+2. Las reservas existentes en `bookings`, teniendo en cuenta las reservas confirmadas y las provisionales que todavía no han caducado.
+3. Los bloqueos manuales almacenados en la subcolección `blocks`.
+
+A partir de esos datos, el servidor determina qué intervalos están libres y puede ofrecerlos al cliente.
+
+**Prevención de solapamientos:**
+
+Firestore no impide automáticamente que dos documentos representen reservas con horarios incompatibles. Por ello, antes de confirmar una reserva, el servidor debe:
+
+1. Comprobar que la sala está publicada.
+2. Consultar las reservas y bloqueos que coincidan con el intervalo solicitado.
+3. Comprobar que no existe ningún solapamiento.
+4. Crear la reserva provisional y gestionar el bloqueo temporal del horario durante el pago.
+5. Confirmar la reserva cuando Stripe notifique que el pago se ha completado correctamente.
+6. Liberar el horario si el pago falla o la reserva provisional caduca.
+
+Estas operaciones deben diseñarse para evitar condiciones de carrera cuando varios clientes intentan reservar simultáneamente.
+
+## 7. Índices y consultas previstas
+
+Será necesario definir índices compuestos en Firestore para las consultas más habituales, entre ellas:
+
+- Edificios publicados por ciudad.
+- Salas publicadas por edificio y planta.
+- Salas filtradas por capacidad y precio.
+- Reservas de un usuario ordenadas por fecha.
+- Reservas de una empresa filtradas por estado y fecha.
+- Reservas de una sala para comprobar solapamientos.
+- Bloqueos de una sala para comprobar los intervalos no reservables.
+
+Los índices definitivos se añadirán conforme se implementen las consultas de la aplicación.
+
+## 8. Decisiones pendientes
+
+Algunos aspectos del modelo deberán concretarse durante el desarrollo:
+
+- Formato definitivo de `mapData` y sistema de coordenadas del editor.
+- Estructura exacta de `openingHours`.
+- Gestión de los bloqueos temporales durante el pago.
+- Política de cancelaciones y reembolsos.
+- Duración máxima de una reserva provisional.
+- Tratamiento de los cambios de precio de las salas.
+- Necesidad de conservar un historial de operaciones y cambios de estado.
+
+Este diseño constituye una propuesta inicial y podrá evolucionar según las necesidades reales de implementación.
