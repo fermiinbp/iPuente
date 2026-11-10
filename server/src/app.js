@@ -1,0 +1,1 @@
+// Configura Express sin arrancarlo: CORS, límite de peticiones, webhook de Stripe (body sin parsear), JSON, /api/health, documentación Swagger en /api/docs, rutas y manejo de errores. Lo usan server.js, la Netlify Function y los tests.

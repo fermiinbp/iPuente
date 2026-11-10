@@ -1,0 +1,1 @@
+// Acceso a la colección rooms de Firestore. Campos: id (= id de la sala en el mapa), companyId, buildingId, floorId, codigo, nombre, tipo, capacidad, m2, precioHora, equipamiento[], fotos[], reservable, activa.

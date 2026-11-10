@@ -1,0 +1,1 @@
+# Reglas de seguridad de Firestore: el navegador nunca escribe; lee lo publicado, cada empresa lo suyo y cada cliente sus reservas.
