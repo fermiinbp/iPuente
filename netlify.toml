@@ -1,0 +1,1 @@
+# Configuración de Netlify: construye client/, publica client/dist, despliega la API como función y redirige /api/* a ella y el resto a index.html (React Router).
