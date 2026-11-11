@@ -1,1 +1,31 @@
 # Lo que nunca se sube a Git: dependencias, builds, .env, claves de Firebase, logs y ajustes personales de editores y de Claude Code.
+
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+coverage/
+.netlify/
+
+# Variables de entorno (solo se versiona .env.example)
+.env
+.env.*
+!.env.example
+
+# Claves de Firebase
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editores y sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Ajustes personales de Claude Code
+.claude/settings.local.json

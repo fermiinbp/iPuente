@@ -1,1 +1,7 @@
 # Carpetas que Prettier no toca.
+node_modules
+dist
+coverage
+.netlify
+package-lock.json
+_to_delete
