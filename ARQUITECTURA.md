@@ -524,3 +524,9 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 - **API:** se documentará con Swagger desde los comentarios `@openapi` de las rutas y se verá en `/api/docs`.
 - [README](./README.md): idea, roles, historias de usuario, alcance del MVP y convenciones de trabajo.
 - [Instrucciones para Claude Code](./CLAUDE.md) y agentes en `.claude/agents/`.
+
+## Wireframes
+
+Diseño completo en [Figma](https://www.figma.com/design/jS9ZKB4ddrw9MfYfZn6xKR).
+
+![Flujo de pantallas](./docs/images/wireframes/00-flujo.png)
