@@ -13,6 +13,7 @@ iPuente es un portal donde las empresas publican sus oficinas y salas, y los cli
 - [Alcance del MVP](#alcance-del-mvp)
 - [Diseño de datos](#diseño-de-datos)
 - [Convenciones de trabajo](#convenciones-de-trabajo)
+- [Prototipo navegable del flujo principal](#Prototipo-navegable-del-flujo-principal)
 
   
 ## Problema que resuelve
@@ -528,3 +529,8 @@ DAT001: diseño de datos, colecciones y relaciones
 - **Prettier** (`.prettierrc`): comillas simples, punto y coma, 100 caracteres por línea, 2 espacios y coma final en listas y objetos. `.prettierignore` deja fuera `node_modules`, `dist`, `package-lock.json` y `_to_delete`.
 - **`.editorconfig`**: UTF-8, 2 espacios y saltos de línea LF en cualquier editor.
 - En VS Code, recomendamos instalar las extensiones *ESLint* y *Prettier* y activar *Format on Save*.
+
+# Prototipo navegable del flujo principal
+
+### Enlace
+https://www.figma.com/proto/f9p2T0dQ9D4Zf3NGX7JfPa/iPuente-%C2%B7-Wireframes--Copia-?node-id=4-117&p=f&t=jab2ZhUeT4QE1r82-1&scaling=min-zoom&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=4%3A117&show-proto-sidebar=1
