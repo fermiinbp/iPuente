@@ -11,8 +11,8 @@ iPuente es un portal donde las empresas publican sus oficinas y salas, y los cli
 - [Roles](#roles)
 - [Historias de usuario](#historias-de-usuario)
 - [Alcance del MVP](#alcance-del-mvp)
-- [Cómo se guarda un mapa](#cómo-se-guarda-un-mapa)
 - [Diseño de datos](#diseño-de-datos)
+- [Convenciones de trabajo](#convenciones-de-trabajo)
 
   
 ## Problema que resuelve
@@ -46,10 +46,11 @@ iPuente une las dos partes en un mismo sitio. La empresa convierte su plano en u
  
 - **Autenticación resuelta y segura.** Firebase Auth gestiona el registro con email y con Google, la recuperación de contraseña y los tokens de sesión. Las contraseñas nunca pasan por nuestro código ni por nuestra base de datos, así que reducimos el riesgo de una brecha de seguridad.
 - **NoSQL encaja con el modelo.** Tenemos pocas entidades (usuarios, empresas, edificios, plantas, salas, reservas y pagos), relacionadas de forma simple por id. Además, el mapa de cada planta es un documento JSON con la lista de salas y sus posiciones: se guarda y se lee de una vez, que es justo como lo usan el editor, el plano y el modelo 3D.
-- **Tiempo real.** Firestore avisa de los cambios al momento, así que el plano se actualiza en cuanto alguien reserva una sala, sin recargar la página.
+- **Disponibilidad siempre al día.** El servidor calcula los huecos libres de cada sala en el momento de consultarla, a partir de su horario, sus reservas y sus bloqueos, así que el plano muestra siempre la ocupación real sin guardar los horarios libres por separado.
+- **Archivos en el mismo sitio.** Firebase Storage guarda los planos y las fotos de las salas, y Firestore solo conserva su URL y su ruta.
 - **Seguridad por rol en la propia base de datos.** Con las reglas de Firestore, los edificios y planos publicados son de lectura pública, cada empresa solo puede ver lo suyo, y reservas, pagos y roles solo se escriben desde nuestras funciones del servidor.
 - **Sin servidor que mantener.** El plan gratuito cubre el proyecto, y Firebase se integra con Netlify Functions mediante `firebase-admin` para la lógica protegida: reservas, pagos con Stripe y análisis de planos con IA, cuyas claves nunca llegan al navegador.
-**Frente a Supabase (PostgreSQL):** Supabase sería mejor opción con un modelo muy relacional o con informes complejos en SQL. Para un proyecto de pocas semanas y un modelo sencillo, Firebase nos da autenticación, base de datos y tiempo real con menos configuración.
+**Frente a Supabase (PostgreSQL):** Supabase sería mejor opción con un modelo muy relacional o con informes complejos en SQL. Para un proyecto de pocas semanas y un modelo sencillo, Firebase nos da autenticación, base de datos y almacenamiento de archivos con menos configuración.
  
 **Limitaciones que asumimos:** Firestore no impide por sí solo que dos reservas se solapen, así que lo comprobamos con una transacción en una función del servidor. Las estadísticas de los paneles también se calculan en funciones, porque Firestore no tiene consultas de agregación tan potentes como SQL.
  
@@ -468,3 +469,62 @@ Algunos aspectos del modelo deberán concretarse durante el desarrollo:
 - Necesidad de conservar un historial de operaciones y cambios de estado.
 
 Este diseño constituye una propuesta inicial y podrá evolucionar según las necesidades reales de implementación.
+
+# Convenciones de trabajo
+
+Cómo nombramos ramas y commits, cómo abrimos Pull Requests y cómo mantenemos el mismo estilo de código entre los cuatro.
+
+## Ramas
+
+- `main` está protegida y siempre debe poder desplegarse: nadie hace push directo, todo entra por Pull Request.
+- Una rama por issue, creada desde la propia issue en GitHub (*Development → Create a branch*), saliendo de `main` actualizada.
+- El nombre es el código de la issue seguido de su título en minúsculas y con guiones. Es el que propone GitHub al crearla desde la issue:
+
+```text
+CÓDIGO-titulo-de-la-issue
+```
+
+| Ejemplo de rama | Issue |
+| --- | --- |
+| `DEF002-definir-usuarios-objetivo-e-historias` | Definición del proyecto |
+| `DIS002-wireframes-de-baja-fidelidad-de` | Diseño |
+| `SET003-eslint-prettier-y-convencion-de` | Configuración del proyecto |
+| `DAT001-disenar-el-modelo-de-datos` | Datos |
+
+## Commits
+
+- Formato: **`CÓDIGO: descripción`**, con el código de la issue de la rama y una descripción corta en español de lo que cambia.
+- Un commit, un propósito. Mover o renombrar archivos va en un commit aparte, nunca mezclado con cambios de lógica.
+- Antes de cada commit, `npm run lint` sin errores.
+
+```text
+SET003: configura ESLint y Prettier
+SET003: añade la convención de ramas y commits al README
+DAT001: diseño de datos, colecciones y relaciones
+```
+
+## Pull Requests
+
+- Título: el de la issue, por ejemplo `SET003 · ESLint, Prettier y convención de ramas y commits en el README`.
+- En la descripción, `Closes #N` con el número de la issue, para que se cierre sola al fusionar.
+- La revisa y la aprueba otra persona del equipo antes de fusionarla con `main`.
+- Lo que sobra no se borra por cuenta propia: se mueve a `_to_delete/` y se avisa al equipo.
+
+## ESLint y Prettier
+
+**ESLint** busca errores en el código y **Prettier** le da formato. No se pisan: `eslint-config-prettier` apaga en ESLint las reglas de formato.
+
+| Comando (desde la raíz) | Qué hace |
+| --- | --- |
+| `npm install` | Instala las dependencias de `client/` y `server/` (npm workspaces) |
+| `npm run lint` | Pasa ESLint por `client/` y `server/` |
+| `npm run lint:fix` | Igual, y arregla lo que se pueda arreglar solo |
+| `npm run format` | Formatea todo el proyecto con Prettier |
+| `npm run format:check` | Comprueba el formato sin tocar nada |
+
+- **ESLint** tiene una configuración por parte:
+  - `client/eslint.config.js`: reglas recomendadas de JavaScript, reglas de los hooks de React (`react-hooks`) y de Vite (`react-refresh`), con las globales del navegador.
+  - `server/eslint.config.js`: reglas recomendadas de JavaScript con las globales de Node. Avisa de los `console.log` olvidados (`console.warn` y `console.error` sí se permiten).
+- **Prettier** (`.prettierrc`): comillas simples, punto y coma, 100 caracteres por línea, 2 espacios y coma final en listas y objetos. `.prettierignore` deja fuera `node_modules`, `dist`, `package-lock.json` y `_to_delete`.
+- **`.editorconfig`**: UTF-8, 2 espacios y saltos de línea LF en cualquier editor.
+- En VS Code, recomendamos instalar las extensiones *ESLint* y *Prettier* y activar *Format on Save*.
