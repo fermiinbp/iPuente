@@ -1,1 +1,1 @@
-// Acceso a la colección buildings de Firestore. Campos: id, companyId, nombre, direccion, ciudad, lat, lng, fotoUrl, numPlantas, publicado, createdAt.
+// Acceso a la colección buildings. Campos: companyId, name, description, address, city, postalCode, country, latitude, longitude, floorCount, status, createdAt, updatedAt.

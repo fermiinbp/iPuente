@@ -1,1 +1,1 @@
-// Acceso a la colección floors de Firestore. Campos: id, companyId, buildingId, nombre, numero, planoFondoUrl, ancho, alto, origen (ia | manual), publicada, salas[{ id, codigo, nombre, tipo, x, y, w, h }], updatedAt.
+// Acceso a la colección floors. Campos: buildingId, name, level, mapImageUrl, mapData (cada sala con su id, posición, anchura, altura y enlace a offices; formato por concretar con el editor), status, createdAt, updatedAt.

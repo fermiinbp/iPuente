@@ -1,1 +1,1 @@
-// Validación del panel de admin: estado de empresa y cambio de rol.
+// Validación del panel de admin: aprobar o suspender empresas (verified) y cambio de rol.

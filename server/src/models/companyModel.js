@@ -1,1 +1,1 @@
-// Acceso a la colección companies de Firestore. Campos: id, nombre, cif, email, telefono, ownerUid, estado (pendiente | aprobada | suspendida), createdAt.
+// Acceso a la colección companies y a su subcolección members (userId, role OWNER | MANAGER | EMPLOYEE, joinedAt). Campos: name, legalName, taxId, description, logoUrl, email, phone, address, verified, createdAt, updatedAt.

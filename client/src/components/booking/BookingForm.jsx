@@ -1,1 +1,1 @@
-// Formulario de reserva: fecha, franja horaria y asistentes.
+// Formulario de reserva: fecha y franja horaria (startDate y endDate).

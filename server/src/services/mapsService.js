@@ -1,1 +1,1 @@
-// Guarda el mapa de una planta, sincroniza la colección rooms (crea, conserva o desactiva salas) y publica.
+// Guarda el mapData de una planta, sincroniza la colección offices (crea, conserva o desactiva salas) y publica.

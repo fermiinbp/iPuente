@@ -1,1 +1,1 @@
-// Acceso a la colección bookings de Firestore. Campos: id, roomId, floorId, buildingId, companyId, userId, fecha, inicio, fin, estado (pendiente_pago | confirmada | cancelada | bloqueada), asistentes, total, expiresAt, createdAt.
+// Acceso a la colección bookings. Campos: userId, companyId, officeId, startDate, endDate, price, pricePeriod, totalAmount, status (PENDING_PAYMENT | CONFIRMED | CANCELLED | EXPIRED | COMPLETED), paymentId, createdAt, updatedAt.

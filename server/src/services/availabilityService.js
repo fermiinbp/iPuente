@@ -1,1 +1,1 @@
-// Reglas de disponibilidad: detecta solapes (nuevaInicio < existenteFin && nuevaFin > existenteInicio) en una transacción, libera reservas caducadas y actualiza occupancy.
+// Reglas de disponibilidad: calcula los huecos libres de una sala con su openingHours, sus reservas activas (CONFIRMED y PENDING_PAYMENT sin caducar) y sus blocks; detecta solapes (nuevoInicio < existenteFin && nuevoFin > existenteInicio) en una transacción y marca como EXPIRED las reservas provisionales caducadas.
