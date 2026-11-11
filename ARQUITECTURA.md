@@ -532,3 +532,9 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 - [Decisiones](./docs/decisiones.md): qué hemos decidido y por qué.
 - [Changelog](./CHANGELOG.md)
 - [Instrucciones para Claude Code](./CLAUDE.md) y agentes en `.claude/agents/`.
+
+  ## Wireframes
+
+  Diseño completo en [Figma](https://www.figma.com/design/jS9ZKB4ddrw9MfYfZn6xKR).
+
+  ![Flujo de pantallas](./docs/images/wireframes/00-flujo.png)
