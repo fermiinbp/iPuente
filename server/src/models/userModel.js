@@ -1,1 +1,1 @@
-// Acceso a la colección users de Firestore. Campos: uid, nombre, email, telefono, role (client | company | admin), companyId, favoritas[], createdAt.
+// Acceso a la colección users (id = UID de Firebase Auth). Campos: name, surname, email, phone, role (CLIENT | COMPANY | ADMIN), createdAt, updatedAt.

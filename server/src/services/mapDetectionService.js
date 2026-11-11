@@ -1,1 +1,1 @@
-// Envía la imagen del plano a la IA con visión, le pide solo JSON { ancho, alto, salas[] } y lo valida antes de devolverlo como borrador.
+// Envía la imagen del plano a la IA con visión, le pide solo JSON con las salas detectadas (nombre, código, posición y tamaño) y lo valida antes de devolverlo como borrador de mapData.

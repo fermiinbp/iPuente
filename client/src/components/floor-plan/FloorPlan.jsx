@@ -1,1 +1,1 @@
-// Plano SVG de una planta para clientes, generado desde el JSON de salas y coloreado por estado.
+// Plano SVG de una planta para clientes, generado desde el mapData de la planta y coloreado por el estado de cada sala.

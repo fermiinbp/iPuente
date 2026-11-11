@@ -1,1 +1,1 @@
-// Acceso a la colección payments de Firestore. Campos: id, bookingId, userId, companyId, stripeSessionId, importe, estado (pagado | reembolsado | fallido), createdAt.
+// Acceso a la colección payments. Campos: bookingId, userId, amount, currency (EUR), provider (STRIPE), providerPaymentId, status (PENDING | SUCCEEDED | FAILED | REFUNDED), createdAt, updatedAt.

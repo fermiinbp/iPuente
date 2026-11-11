@@ -1,0 +1,23 @@
+{
+  "name": "ipuente",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portal para publicar oficinas como mapas interactivos y alquilar salas por horas.",
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "lint": "npm run lint --workspaces",
+    "lint:fix": "npm run lint:fix --workspaces",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10"
+  }
+}

@@ -1,1 +1,1 @@
-// Sube planos y fotos directamente a Cloudinary y devuelve su URL.
+// Sube planos y fotos directamente a Firebase Storage y devuelve su URL y su ruta.

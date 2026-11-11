@@ -4,11 +4,11 @@ iPuente es un **monorepo con dos partes**: el front (`client/`) y la API (`serve
  
 ```text
 Navegador (client/)  ──token──►  API Express (server/)  ──firebase-admin──►  Firestore
-   │  lee en tiempo real                │                      
-   └──── occupancy ◄────────────────────┤──► Stripe · IA con visión
+   │                                    │
+   └── planos y fotos ──► Storage       └──► Stripe · IA con visión
 ```
  
-- **El navegador solo lee** datos públicos de Firestore (la ocupación en tiempo real). Toda escritura pasa por la API, que comprueba el token, el rol y que el recurso pertenece a la empresa.
+- **Los datos pasan por la API**, que comprueba el token, el rol y que el recurso pertenece a la empresa. La disponibilidad de cada sala la calcula el servidor al consultarla, a partir de su horario, sus reservas y sus bloqueos. Las imágenes se suben directamente a Firebase Storage.
 - **Cada petición a la API sigue el mismo camino:**
 ```text
 routes → auth / requireRole → validator → validate → controller → service → model → Firestore
@@ -25,7 +25,7 @@ routes → auth / requireRole → validator → validate → controller → serv
  
 - **`app.js` y `server.js` van separados** porque la misma app se usa de tres formas: `server.js` la arranca en local, `netlify/functions/api.js` la ejecuta en producción y los tests la levantan en un puerto libre.
 - **Errores:** siempre `{ "error": { "code", "message", "details" } }`. Los códigos (`VALIDATION_ERROR`, `NO_TOKEN`, `FORBIDDEN`, `SLOT_TAKEN`…) están en Swagger.
-Los diagramas, el modelo de datos, los flujos de mapa y de reserva y la seguridad están en [`docs/ARQUITECTURA.md`](./docs/ARQUITECTURA.md).
+El modelo de datos (colecciones de Firestore, campos y relaciones) está en el [Diseño de datos del README](./README.md#diseño-de-datos).
  
 ## Estructura del proyecto
  
@@ -104,8 +104,7 @@ ipuente/
 │   │   ├── hooks/
 │   │   │   ├── useAuth.js
 │   │   │   ├── useFetch.js
-│   │   │   ├── useMapEditor.js
-│   │   │   └── useOccupancy.js
+│   │   │   └── useMapEditor.js
 │   │   ├── pages/
 │   │   │   ├── admin/
 │   │   │   │   ├── AdminBookings.jsx
@@ -200,10 +199,10 @@ ipuente/
 │   │   │   ├── bookingModel.js
 │   │   │   ├── buildingModel.js
 │   │   │   ├── companyModel.js
+│   │   │   ├── favoriteModel.js
 │   │   │   ├── floorModel.js
-│   │   │   ├── occupancyModel.js
+│   │   │   ├── officeModel.js
 │   │   │   ├── paymentModel.js
-│   │   │   ├── roomModel.js
 │   │   │   └── userModel.js
 │   │   ├── utils/
 │   │   │   ├── asyncHandler.js
@@ -231,15 +230,14 @@ ipuente/
 │   └── functions/
 │       └── api.js
 ├── docs/
-│   ├── images/
-│   ├── ARQUITECTURA.md
-│   └── decisiones.md
+│   └── images/
 ├── .editorconfig
 ├── .gitignore
 ├── .prettierignore
 ├── .prettierrc
-├── CHANGELOG.md
+├── ARQUITECTURA.md
 ├── CLAUDE.md
+├── README.md
 ├── firebase.json
 ├── firestore.indexes.json
 ├── firestore.rules
@@ -261,10 +259,9 @@ Es la estructura de partida: los archivos están creados pero vacíos, cada uno 
 | `.editorconfig` | Mismo formato básico en cualquier editor: UTF-8, 2 espacios, saltos de línea LF. |
 | `.prettierrc` | Reglas de Prettier (comillas simples, punto y coma, 100 caracteres) para que los 4 escribamos igual. |
 | `.prettierignore` | Carpetas que Prettier no toca. |
-| `firebase.json` | Indica a Firebase CLI dónde están las reglas y los índices de Firestore (`firebase deploy --only firestore`). |
+| `firebase.json` | Indica a Firebase CLI dónde están las reglas de Firestore y de Storage y los índices de Firestore (`firebase deploy --only firestore,storage`). |
 | `firestore.rules` | Reglas de seguridad de Firestore: el navegador nunca escribe; lee lo publicado, cada empresa lo suyo y cada cliente sus reservas. |
 | `firestore.indexes.json` | Índices compuestos de Firestore que necesitan las consultas de reservas y plantas. |
-| `CHANGELOG.md` | Historial de cambios por versión (formato Keep a Changelog). |
 | `netlify/functions/api.js` | Única Netlify Function: envuelve la app de Express (`server/src/app.js`) con `serverless-http` para que la API funcione en Netlify sin servidor propio. |
 | `CLAUDE.md` | Instrucciones que Claude Code lee al empezar: qué es el proyecto, qué agente usar y las reglas clave. |
  
@@ -280,7 +277,7 @@ Es la estructura de partida: los archivos están creados pero vacíos, cada uno 
 | `client/public/demo-plans/` | Planos de ejemplo para probar el editor y la detección con IA en la demo. |
 | `client/vite.config.js` | Configuración de Vite: plugin de React y alias `@/` que apunta a `client/src`. |
 | `client/eslint.config.js` | Reglas de ESLint para React y hooks. |
-| `client/.env.example` | Plantilla de variables del front (Firebase web, Cloudinary y URL de la API). Se copia a `.env`. Ninguna es secreta. |
+| `client/.env.example` | Plantilla de variables del front (Firebase web, incluido el bucket de Storage, y URL de la API). Se copia a `.env`. Ninguna es secreta. |
  
 ### Front: `client/src/` (React)
  
@@ -290,15 +287,14 @@ Todo el código de React. `config/` conecta con Firebase; `router/` define las U
 | --- | --- |
 | `client/src/main.jsx` | Punto de entrada de React: monta `<App />` dentro del router y del `AuthProvider`. |
 | `client/src/App.jsx` | Componente raíz: de momento solo pinta el router; aquí irían providers o avisos globales. |
-| `client/src/config/firebase.js` | Conexión del navegador con Firebase: inicializa la app y exporta `auth` (login) y `db` (lectura en tiempo real de la ocupación). |
-| `client/src/config/constants.js` | Constantes compartidas del front: URL de la API, roles, estados de sala y de reserva, horario reservable. |
+| `client/src/config/firebase.js` | Conexión del navegador con Firebase: inicializa la app y exporta `auth` (login) y `storage` (subida de planos y fotos). |
+| `client/src/config/constants.js` | Constantes compartidas del front: URL de la API, roles (`CLIENT`, `COMPANY`, `ADMIN`), estados de sala, de reserva y de pago, y horario reservable. |
 | `client/src/router/AppRouter.jsx` | Mapa de rutas de la web: públicas, de cliente, de empresa y de admin, cada grupo protegido por su guarda. |
 | `client/src/router/PrivateRoute.jsx` | Guarda de ruta: si no hay sesión, redirige a `/login`. Solo oculta pantallas; la seguridad real está en la API. |
-| `client/src/router/RoleRoute.jsx` | Guarda de ruta por rol (`company` o `admin`): si el usuario no lo tiene, vuelve a la home. |
+| `client/src/router/RoleRoute.jsx` | Guarda de ruta por rol (`COMPANY` o `ADMIN`): si el usuario no lo tiene, vuelve a la home. |
 | `client/src/context/authContext.js` | Crea el contexto de autenticación (separado del provider para que Vite haga fast refresh). |
-| `client/src/context/AuthProvider.jsx` | Escucha la sesión de Firebase y expone a toda la app el usuario, su rol (`client`, `company`, `admin`) y su `companyId`. |
+| `client/src/context/AuthProvider.jsx` | Escucha la sesión de Firebase y expone a toda la app el usuario, su rol (`CLIENT`, `COMPANY`, `ADMIN`) y su `companyId`. |
 | `client/src/hooks/useAuth.js` | Hook para leer el usuario y su rol desde cualquier componente. |
-| `client/src/hooks/useOccupancy.js` | Escucha en tiempo real (`onSnapshot`) la colección `occupancy` de una planta y fecha para repintar el plano. |
 | `client/src/hooks/useMapEditor.js` | Estado y acciones del editor de mapas: salas, selección, dibujar, mover, redimensionar, borrar, deshacer y cargar el borrador de la IA. |
 | `client/src/hooks/useFetch.js` | Hook genérico para llamar a un service y gestionar `data`, `loading` y `error` en las pantallas. |
 | `client/src/services/apiClient.js` | Cliente HTTP único: añade el token de Firebase a cada petición y convierte los errores de la API (`{ error: { code, message } }`) en excepciones. |
@@ -309,19 +305,19 @@ Todo el código de React. `config/` conecta con Firebase; `router/` define las U
 | `client/src/services/paymentsService.js` | Pide a la API la URL de Stripe Checkout de una reserva. |
 | `client/src/services/companyService.js` | Panel de empresa: alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos. |
 | `client/src/services/adminService.js` | Panel de admin: empresas, usuarios, reservas, pagos y reembolsos. |
-| `client/src/services/uploadService.js` | Sube planos y fotos directamente a Cloudinary y devuelve su URL. |
+| `client/src/services/uploadService.js` | Sube planos y fotos directamente a Firebase Storage y devuelve su URL y su ruta. |
 | `client/src/components/ui/Button.jsx` | Botón reutilizable con variantes primario, secundario y fantasma. |
 | `client/src/components/ui/Input.jsx` | Campo de formulario con etiqueta, ayuda y mensaje de error. |
 | `client/src/components/ui/Modal.jsx` | Ventana modal accesible (cierre con Escape y foco atrapado). |
 | `client/src/components/ui/Spinner.jsx` | Indicador de carga. |
-| `client/src/components/ui/StatusBadge.jsx` | Etiqueta de estado: libre, ocupada, pendiente, aprobada, suspendida… |
+| `client/src/components/ui/StatusBadge.jsx` | Etiqueta de estado: de una sala (libre, ocupada, no reservable), de una reserva (`PENDING_PAYMENT`, `CONFIRMED`…) o de una empresa (verificada o pendiente). |
 | `client/src/components/layout/Header.jsx` | Cabecera: logo, navegación, acceso y menú según el rol. |
 | `client/src/components/layout/Footer.jsx` | Pie de página. |
 | `client/src/components/layout/DashboardLayout.jsx` | Plantilla con menú lateral para los paneles de empresa y admin. |
 | `client/src/components/building/BuildingHero.jsx` | Imagen del edificio con una banda clicable por planta (hover ilumina la planta y muestra las salas libres). |
 | `client/src/components/building/Building3D.jsx` | Extra: edificio 3D generado a partir de las plantas guardadas (Three.js). |
 | `client/src/components/building/NearbyMap.jsx` | Sección «Qué hay cerca»: mapa ilustrado con puntos de interés (estación de tren, metro, parking…) y tiempos. |
-| `client/src/components/floor-plan/FloorPlan.jsx` | Plano SVG de una planta para clientes, generado desde el JSON de salas y coloreado por estado. |
+| `client/src/components/floor-plan/FloorPlan.jsx` | Plano SVG de una planta para clientes, generado desde el `mapData` de la planta y coloreado por el estado de cada sala. |
 | `client/src/components/floor-plan/RoomShape.jsx` | Una sala del plano: rectángulo con código y nombre, clicable y accesible con teclado. |
 | `client/src/components/floor-plan/Legend.jsx` | Leyenda de estados del plano (con texto, no solo color). |
 | `client/src/components/map-editor/MapEditor.jsx` | Lienzo del editor: plano de fondo y salas editables encima. |
@@ -333,7 +329,7 @@ Todo el código de React. `config/` conecta con Firebase; `router/` define las U
 | `client/src/components/room/RoomCard.jsx` | Tarjeta resumen de una sala (foto, nombre, capacidad, precio). |
 | `client/src/components/room/RoomSidePanel.jsx` | Panel lateral que se abre al pulsar una sala del plano. |
 | `client/src/components/room/AvailabilityCalendar.jsx` | Huecos libres de una sala por día. |
-| `client/src/components/booking/BookingForm.jsx` | Formulario de reserva: fecha, franja horaria y asistentes. |
+| `client/src/components/booking/BookingForm.jsx` | Formulario de reserva: fecha y franja horaria (`startDate` y `endDate`). |
 | `client/src/components/booking/BookingSummary.jsx` | Resumen de la reserva con el precio que devuelve la API. |
 | `client/src/components/layout/Layout.jsx` | Plantilla común de las páginas públicas: cabecera, contenido (`<Outlet />`) y pie. |
 | `client/src/pages/Landing.jsx` | Home: hero con el edificio por plantas, buscador, salas destacadas, cómo funciona y llamada a empresas. |
@@ -406,11 +402,11 @@ Reglas de `express-validator`: un archivo por recurso y un export por endpoint (
 | Archivo | Para qué sirve |
 | --- | --- |
 | `server/src/validators/commonValidator.js` | Reglas reutilizables: id en la URL, fecha `AAAA-MM-DD` en la query y franja horaria. |
-| `server/src/validators/bookingValidator.js` | Validación de reservas: crear (sala, fecha, franja, asistentes), cancelar y checkout de pago. |
+| `server/src/validators/bookingValidator.js` | Validación de reservas: crear (`officeId`, `startDate`, `endDate`), cancelar y checkout de pago. |
 | `server/src/validators/userValidator.js` | Validación del perfil de usuario. |
 | `server/src/validators/companyValidator.js` | Validación del panel de empresa: alta, edificios, plantas, datos de sala y bloqueos. |
 | `server/src/validators/mapValidator.js` | Validación de mapas: URL del plano para la IA, JSON del mapa (dimensiones y salas dentro del plano) y publicación. |
-| `server/src/validators/adminValidator.js` | Validación del panel de admin: estado de empresa y cambio de rol. |
+| `server/src/validators/adminValidator.js` | Validación del panel de admin: aprobar o suspender empresas (`verified`) y cambio de rol. |
  
 ### Back: `server/src/middlewares/`
  
@@ -442,29 +438,29 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/services/availabilityService.js` | Reglas de disponibilidad: detecta solapes (`nuevaInicio < existenteFin && nuevaFin > existenteInicio`) en una transacción, libera reservas caducadas y actualiza `occupancy`. |
-| `server/src/services/bookingsService.js` | Crear, listar y cancelar reservas; calcula el precio en el servidor a partir de `precioHora`. |
+| `server/src/services/availabilityService.js` | Reglas de disponibilidad: calcula los huecos libres de una sala con su `openingHours`, sus reservas activas (`CONFIRMED` y `PENDING_PAYMENT` sin caducar) y sus `blocks`; detecta solapes (`nuevoInicio < existenteFin && nuevoFin > existenteInicio`) en una transacción y marca como `EXPIRED` las reservas provisionales caducadas. |
+| `server/src/services/bookingsService.js` | Crear, listar y cancelar reservas; calcula en el servidor `price`, `pricePeriod` y `totalAmount` a partir del `price` de la sala. |
 | `server/src/services/paymentsService.js` | Crea sesiones de Stripe Checkout, procesa el webhook (firma verificada) y hace reembolsos. |
-| `server/src/services/mapDetectionService.js` | Envía la imagen del plano a la IA con visión, le pide solo JSON `{ ancho, alto, salas[] }` y lo valida antes de devolverlo como borrador. |
-| `server/src/services/mapsService.js` | Guarda el mapa de una planta, sincroniza la colección `rooms` (crea, conserva o desactiva salas) y publica. |
+| `server/src/services/mapDetectionService.js` | Envía la imagen del plano a la IA con visión, le pide solo JSON con las salas detectadas (nombre, código, posición y tamaño) y lo valida antes de devolverlo como borrador de `mapData`. |
+| `server/src/services/mapsService.js` | Guarda el `mapData` de una planta, sincroniza la colección `offices` (crea, conserva o desactiva salas) y publica. |
 | `server/src/services/companyService.js` | Alta de empresas, edificios y plantas; comprueba que cada recurso pertenece a la empresa del usuario. |
-| `server/src/services/usersService.js` | Perfil de usuario y asignación de rol mediante custom claims (`role`, `companyId`). |
+| `server/src/services/usersService.js` | Perfil de usuario y asignación de rol (`CLIENT`, `COMPANY`, `ADMIN`) mediante custom claims (`role`, `companyId`). |
 | `server/src/services/adminService.js` | Aprobación y suspensión de empresas y listados globales. |
  
 ### Back: `server/src/models/`
  
-Un archivo por colección de Firestore. Es la única capa que importa la base de datos (`db()` de `config/config.js`).
+Un archivo por colección de Firestore. Es la única capa que importa la base de datos (`db()` de `config/config.js`). Los campos de cada colección están en el [Diseño de datos del README](./README.md#diseño-de-datos).
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/models/userModel.js` | Acceso a la colección `users` de Firestore. Campos: uid, nombre, email, telefono, role (client \| company \| admin), companyId, favoritas[], createdAt. |
-| `server/src/models/companyModel.js` | Acceso a la colección `companies` de Firestore. Campos: id, nombre, cif, email, telefono, ownerUid, estado (pendiente \| aprobada \| suspendida), createdAt. |
-| `server/src/models/buildingModel.js` | Acceso a la colección `buildings` de Firestore. Campos: id, companyId, nombre, direccion, ciudad, lat, lng, fotoUrl, numPlantas, publicado, createdAt. |
-| `server/src/models/floorModel.js` | Acceso a la colección `floors` de Firestore. Campos: id, companyId, buildingId, nombre, numero, planoFondoUrl, ancho, alto, origen (ia \| manual), publicada, salas[{ id, codigo, nombre, tipo, x, y, w, h }], updatedAt. |
-| `server/src/models/roomModel.js` | Acceso a la colección `rooms` de Firestore. Campos: id (= id de la sala en el mapa), companyId, buildingId, floorId, codigo, nombre, tipo, capacidad, m2, precioHora, equipamiento[], fotos[], reservable, activa. |
-| `server/src/models/bookingModel.js` | Acceso a la colección `bookings` de Firestore. Campos: id, roomId, floorId, buildingId, companyId, userId, fecha, inicio, fin, estado (pendiente_pago \| confirmada \| cancelada \| bloqueada), asistentes, total, expiresAt, createdAt. |
-| `server/src/models/paymentModel.js` | Acceso a la colección `payments` de Firestore. Campos: id, bookingId, userId, companyId, stripeSessionId, importe, estado (pagado \| reembolsado \| fallido), createdAt. |
-| `server/src/models/occupancyModel.js` | Acceso a la colección `occupancy` de Firestore. Campos: id (roomId_fecha), roomId, floorId, fecha, horasOcupadas[]; sin datos personales, lectura pública. |
+| `server/src/models/userModel.js` | Acceso a la colección `users` (id = UID de Firebase Auth). Campos: name, surname, email, phone, role (`CLIENT` \| `COMPANY` \| `ADMIN`), createdAt, updatedAt. |
+| `server/src/models/companyModel.js` | Acceso a la colección `companies` y a su subcolección `members` (userId, role `OWNER` \| `MANAGER` \| `EMPLOYEE`, joinedAt). Campos: name, legalName, taxId, description, logoUrl, email, phone, address, verified, createdAt, updatedAt. |
+| `server/src/models/buildingModel.js` | Acceso a la colección `buildings`. Campos: companyId, name, description, address, city, postalCode, country, latitude, longitude, floorCount, status, createdAt, updatedAt. |
+| `server/src/models/floorModel.js` | Acceso a la colección `floors`. Campos: buildingId, name, level, mapImageUrl, mapData (cada sala con su id, posición, anchura, altura y enlace a `offices`; formato por concretar con el editor), status, createdAt, updatedAt. |
+| `server/src/models/officeModel.js` | Acceso a la colección `offices` (las salas) y a sus subcolecciones `blocks` (startDate, endDate, reason) e `images` (url, storagePath, order, isCover). Campos: companyId, buildingId, floorId, name, code, description, surface, capacity, price, pricePeriod (`HOUR`), amenities, status, openingHours, createdAt, updatedAt. |
+| `server/src/models/bookingModel.js` | Acceso a la colección `bookings`. Campos: userId, companyId, officeId, startDate, endDate, price, pricePeriod, totalAmount, status (`PENDING_PAYMENT` \| `CONFIRMED` \| `CANCELLED` \| `EXPIRED` \| `COMPLETED`), paymentId, createdAt, updatedAt. |
+| `server/src/models/paymentModel.js` | Acceso a la colección `payments`. Campos: bookingId, userId, amount, currency (`EUR`), provider (`STRIPE`), providerPaymentId, status (`PENDING` \| `SUCCEEDED` \| `FAILED` \| `REFUNDED`), createdAt, updatedAt. |
+| `server/src/models/favoriteModel.js` | Acceso a la colección `favorites`: salas guardadas por cada usuario. Estructura por definir; relaciona un usuario con una sala. |
  
 ### Back: `server/src/utils/`, `app.js` y `server.js`
  
@@ -490,8 +486,6 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `docs/decisiones.md` | Registro de decisiones de arquitectura: fecha, qué se decidió y por qué. |
-| `docs/ARQUITECTURA.md` | Arquitectura en detalle: diagramas, capas, modelo de datos, flujos de mapa y de reserva, seguridad, variables de entorno, convenciones y Git. |
 | `docs/images/` | Capturas, diagramas exportados y material para la presentación. |
  
 ### Claude Code: `.claude/` y `CLAUDE.md`
@@ -518,23 +512,21 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | Carpetas | minúsculas, `kebab-case` | `map-editor/` |
 | Variables de entorno | `MAYUSCULAS_CON_GUIONES` | `STRIPE_SECRET_KEY` |
 | CSS | Todo en `client/styles/style.css`; clases para estilos e `id` para JavaScript; `@media` y `@keyframes` al final | — |
-| Ramas | `feature/…`, `fix/…`, `docs/…`, `chore/…` | `feature/hu-08-deteccion-ia` |
-| Commits | Conventional Commits | `feat: editor de mapas con arrastre` |
+| Ramas | `CÓDIGO-titulo-de-la-issue`, creada desde la issue | `SET003-eslint-prettier-y-convencion-de` |
+| Commits | `CÓDIGO: descripción` | `SET003: configura ESLint y Prettier` |
  
 - `main` está protegida: todo entra por Pull Request revisada por otra persona del equipo.
 - Cada endpoint nuevo lleva su validator, su comentario `@openapi` y, como mínimo, un test de permisos.
-- Las decisiones de arquitectura se apuntan en [`docs/decisiones.md`](./docs/decisiones.md).
+- El detalle de ramas, commits, Pull Requests, ESLint y Prettier está en el [README](./README.md#convenciones-de-trabajo).
 - Lo que sobra se mueve a `_to_delete/` y se avisa; no se borra por cuenta propia.
 ## Documentación
  
 - **API:** se documentará con Swagger desde los comentarios `@openapi` de las rutas y se verá en `/api/docs`.
-- [Arquitectura](./docs/ARQUITECTURA.md): diagramas, modelo de datos, flujos, seguridad y riesgos.
-- [Decisiones](./docs/decisiones.md): qué hemos decidido y por qué.
-- [Changelog](./CHANGELOG.md)
+- [README](./README.md): idea, roles, historias de usuario, alcance del MVP y convenciones de trabajo.
 - [Instrucciones para Claude Code](./CLAUDE.md) y agentes en `.claude/agents/`.
 
-  ## Wireframes
+## Wireframes
 
-  Diseño completo en [Figma](https://www.figma.com/design/jS9ZKB4ddrw9MfYfZn6xKR).
+Diseño completo en [Figma](https://www.figma.com/design/jS9ZKB4ddrw9MfYfZn6xKR).
 
-  ![Flujo de pantallas](./docs/images/wireframes/00-flujo.png)
+![Flujo de pantallas](./docs/images/wireframes/00-flujo.png)

@@ -1,0 +1,1 @@
+// Acceso a la colección offices (las salas) y a sus subcolecciones blocks (startDate, endDate, reason) e images (url, storagePath, order, isCover). Campos: companyId, buildingId, floorId, name, code, description, surface, capacity, price, pricePeriod (HOUR), amenities, status, openingHours, createdAt, updatedAt.

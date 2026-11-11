@@ -1,1 +1,1 @@
-// Validación de reservas: crear (sala, fecha, franja, asistentes), cancelar y checkout de pago.
+// Validación de reservas: crear (officeId, startDate, endDate), cancelar y checkout de pago.
