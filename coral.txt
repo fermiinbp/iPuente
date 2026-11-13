@@ -1,0 +1,2 @@
+Archivo de prueba del flujo de agentes (PRU001).
+Creado por Claude Code para la issue SET005.
