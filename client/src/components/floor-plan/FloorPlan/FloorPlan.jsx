@@ -10,6 +10,7 @@ import {
   RepeatWrapping,
   SRGBColorSpace,
 } from 'three';
+import { useThree } from '@react-three/fiber';
 import { useCssColors } from '@/hooks/useCssColors.js';
 import { useReducedMotion } from '@/hooks/useReducedMotion.js';
 import RoomShape from '../RoomShape/RoomShape.jsx';
@@ -17,6 +18,8 @@ import RoomShape from '../RoomShape/RoomShape.jsx';
 // 100 píxeles del prototipo equivalen a 1 unidad de la escena.
 const ESCALA = 100;
 const MARGEN = 0.14;
+// Aspecto (ancho/alto) a partir del cual la escena cabe entera sin reducirla.
+const ASPECTO_REFERENCIA = 1.3;
 const ETIQUETAS = { free: 'Libre', occupied: 'Ocupada', off: 'No se alquila' };
 const NOMBRES_COLOR = [
   'libre',
@@ -54,6 +57,12 @@ function crearTrama(fondo, raya) {
 export default function FloorPlan({ plan, selectedId, onSelect }) {
   const colores = useCssColors(NOMBRES_COLOR);
   const reducedMotion = useReducedMotion();
+
+  // Encuadre: si el canvas es vertical o casi cuadrado, se reduce la escena (equivale a alejar la cámara).
+  // `size` solo cambia al redimensionar, así que no hay renders por fotograma.
+  const tamanoCanvas = useThree((estado) => estado.size);
+  const aspecto = tamanoCanvas.width / Math.max(1, tamanoCanvas.height);
+  const escalaEncuadre = Math.min(1, Math.max(0.55, aspecto / ASPECTO_REFERENCIA));
 
   const ancho = plan.width / ESCALA;
   const fondo = plan.height / ESCALA;
@@ -105,7 +114,7 @@ export default function FloorPlan({ plan, selectedId, onSelect }) {
   const pasilloZ = (plan.corridor.y + plan.corridor.height / 2) / ESCALA - fondo / 2;
 
   return (
-    <>
+    <group scale={escalaEncuadre}>
       <ambientLight intensity={1.1} />
       <directionalLight position={[4, 8, 3]} intensity={0.7} />
 
@@ -125,7 +134,7 @@ export default function FloorPlan({ plan, selectedId, onSelect }) {
         <RoomShape
           key={sala.id}
           room={sala}
-          label={`${sala.id} · ${ETIQUETAS[sala.status]}`}
+          statusLabel={ETIQUETAS[sala.status]}
           position={posicion}
           size={tamano}
           selected={sala.id === selectedId}
@@ -136,6 +145,6 @@ export default function FloorPlan({ plan, selectedId, onSelect }) {
           onSelect={onSelect}
         />
       ))}
-    </>
+    </group>
   );
 }

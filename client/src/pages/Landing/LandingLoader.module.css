@@ -1,9 +1,9 @@
-/* Pantalla de carga: dos capas iguales recortadas con clip-path y una franja central cuyo alto es --gap. */
+/* Pantalla de carga: dos mitades del monograma (recorte estático) que se separan con transform. */
 .loader {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  pointer-events: none;
+  cursor: pointer;
 }
 
 .sr {
@@ -19,10 +19,10 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(50% - var(--gap) / 2);
-  height: var(--gap);
+  top: calc(50% - 1.5px);
+  height: 3px;
   background: var(--bronce);
-  opacity: var(--band-opacity);
+  transition: opacity var(--dur-media) var(--ease-out);
 }
 
 .layer {
@@ -32,14 +32,17 @@
   align-items: center;
   justify-content: center;
   background: var(--papel);
+  transition: transform var(--dur-abre, 900ms) var(--ease-in-out);
+  will-change: transform;
 }
 
+/* Recorte estático: nunca se anima. */
 .top {
-  clip-path: inset(0 0 calc(50% + var(--gap) / 2) 0);
+  clip-path: inset(0 0 calc(50% + 1.5px) 0);
 }
 
 .bottom {
-  clip-path: inset(calc(50% + var(--gap) / 2) 0 0 0);
+  clip-path: inset(calc(50% + 1.5px) 0 0 0);
 }
 
 .mono {
@@ -60,13 +63,13 @@
   position: absolute;
   left: 50%;
   bottom: 56px;
-  transform: translateX(-50%);
+  translate: -50% 0;
   width: min(320px, 70%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
-  opacity: var(--counter-opacity);
+  transition: opacity var(--dur-fast) var(--ease-out);
 }
 
 .symbol {
@@ -76,7 +79,7 @@
 
 .pct {
   font-family: var(--font-display);
-  font-size: 30px;
+  font-size: var(--text-titulo-paso);
   color: var(--bronce-oscuro);
   font-variant-numeric: tabular-nums;
 }
@@ -89,6 +92,27 @@
 
 .line {
   height: 1px;
-  width: var(--pct);
+  width: 100%;
   background: var(--bronce-oscuro);
+  transform: scaleX(var(--prog, 0));
+  transform-origin: left center;
+}
+
+.loader[data-fase='abre'] .top {
+  transform: translateY(-100%);
+}
+
+.loader[data-fase='abre'] .bottom {
+  transform: translateY(100%);
+}
+
+.loader[data-fase='abre'] .band,
+.loader[data-fase='abre'] .counter {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader {
+    display: none;
+  }
 }

@@ -1,15 +1,8 @@
-.section {
-  background: var(--bosque-profundo);
-}
-
 .inner {
   display: flex;
   flex-wrap: wrap;
-  gap: 48px 64px;
+  gap: var(--space-7) var(--space-8);
   align-items: center;
-  max-width: var(--ancho-max);
-  margin: 0 auto;
-  padding: clamp(64px, 8vw, 104px) var(--gutter);
 }
 
 .text {
@@ -20,15 +13,10 @@
   gap: 22px;
 }
 
-.title {
-  font-size: var(--text-seccion);
-  line-height: 0.98;
-}
-
 .lead {
   max-width: 30em;
   margin: 0;
-  font-size: 18px;
+  font-size: var(--text-lead);
   line-height: 1.6;
   color: var(--crema-suave);
 }
@@ -44,23 +32,23 @@
 
 .step {
   display: flex;
-  gap: 16px;
+  gap: var(--space-4);
   align-items: baseline;
-  padding: 12px 0;
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--linea);
 }
 
 .stepNumber {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 22px;
+  font-size: var(--text-lista-movil);
   color: var(--bronce);
 }
 
 .editor {
   flex: 1.2 1 min(440px, 100%);
   min-width: 0;
-  padding: 16px;
+  padding: var(--space-4);
   border: 1px solid var(--linea);
   border-radius: var(--radio-tarjeta);
   background: var(--bosque-elevado);
@@ -70,9 +58,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 4px 4px 14px;
-  font-size: 14px;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-1) 14px;
+  font-size: var(--text-pequeno);
   color: var(--crema-suave);
 }
 
@@ -88,7 +76,7 @@
   position: relative;
   aspect-ratio: 16 / 10;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: var(--radio-plano);
   background: var(--crema);
 }
 
@@ -133,11 +121,11 @@
 }
 
 .roomTag {
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border-radius: var(--radio-chip);
   background: var(--bronce-oscuro);
   color: var(--papel);
-  font-size: 13px;
+  font-size: var(--text-etiqueta);
   font-weight: 600;
 }
 

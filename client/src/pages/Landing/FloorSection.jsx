@@ -1,7 +1,10 @@
 // Sección «Planta 2»: lista de salas, detalle de la seleccionada y plano 3D donde la sala elegida se eleva.
 import { lazy, Suspense, useState } from 'react';
 import { hasWebGL } from '@/utils/webgl.js';
+import ErrorBoundary from '@/components/three/ErrorBoundary/ErrorBoundary.jsx';
 import Legend from '@/components/floor-plan/Legend/Legend.jsx';
+import Section from '@/components/ui/Section/Section.jsx';
+import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
 import { FLOOR_CAMERA, FLOOR_PLAN, STATUS_LABELS } from './floorPlanData.js';
 import styles from './FloorSection.module.css';
 
@@ -28,65 +31,70 @@ export default function FloorSection() {
   const selected = rooms.find((room) => room.id === selectedId) ?? null;
   const freeCount = rooms.filter((room) => room.status === 'free').length;
 
+  const sinPlano = (
+    <p className={styles.note} role="note">
+      Tu navegador no puede mostrar el plano en 3D. Usa la lista de salas y su leyenda para
+      consultar el estado de cada una.
+    </p>
+  );
+
   const toggle = (id) => setSelectedId((actual) => (actual === id ? null : id));
 
   return (
-    <section className={styles.section} aria-labelledby="planta-titulo" id="planta">
-      <div className={styles.inner}>
-        <div className={styles.info}>
-          <h2 className={styles.title} id="planta-titulo">
-            {FLOOR_PLAN.name}
-          </h2>
-          <p className={styles.summary}>
-            {freeCount} de {rooms.length} salas libres hoy. Elige una sala para verla en el plano.
-          </p>
+    <Section id="planta" titleId="planta-titulo" spacious innerClassName={styles.inner}>
+      <div className={styles.info}>
+        <SectionTitle id="planta-titulo">{FLOOR_PLAN.name}</SectionTitle>
+        <p className={styles.summary}>
+          {freeCount} de {rooms.length} salas libres hoy. Elige una sala para verla en el plano.
+        </p>
 
-          <div role="group" aria-label="Salas de la planta" className={styles.list}>
-            {rooms.map((room) => {
-              const active = room.id === selectedId;
-              return (
-                <button
-                  key={room.id}
-                  type="button"
-                  className={`${styles.room} ${active ? styles.roomActive : ''}`}
-                  aria-pressed={active}
-                  onClick={() => toggle(room.id)}
-                >
-                  <span className={styles.bar} aria-hidden="true" />
-                  <span className={styles.roomName}>{room.name}</span>
-                  <span className={styles.roomStatus}>
-                    <span
-                      className={`${styles.swatch} ${STATUS_CLASS[room.status]}`}
-                      aria-hidden="true"
-                    />
-                    {STATUS_LABELS[room.status]}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className={styles.detail} aria-live="polite">
-            {selected ? (
-              <>
-                <p className={styles.detailTitle}>
-                  {selected.name} · {STATUS_LABELS[selected.status]}
-                </p>
-                <p className={styles.detailText}>{detailText(selected)}</p>
-                <button type="button" className={styles.clear} onClick={() => setSelectedId(null)}>
-                  Quitar selección
-                </button>
-              </>
-            ) : (
-              <p className={styles.detailText}>Ninguna sala seleccionada.</p>
-            )}
-          </div>
-
-          <Legend className={styles.legend} />
+        <div role="group" aria-label="Salas de la planta" className={styles.list}>
+          {rooms.map((room) => {
+            const active = room.id === selectedId;
+            return (
+              <button
+                key={room.id}
+                type="button"
+                className={`${styles.room} ${active ? styles.roomActive : ''}`}
+                aria-pressed={active}
+                onClick={() => toggle(room.id)}
+              >
+                <span className={styles.bar} aria-hidden="true" />
+                <span className={styles.roomName}>{room.name}</span>
+                <span className={styles.roomStatus}>
+                  <span
+                    className={`${styles.swatch} ${STATUS_CLASS[room.status]}`}
+                    aria-hidden="true"
+                  />
+                  {STATUS_LABELS[room.status]}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        <div className={styles.stage}>
-          {webgl ? (
+        <div className={styles.detail} aria-live="polite">
+          {selected ? (
+            <>
+              <p className={styles.detailTitle}>
+                {selected.name} · {STATUS_LABELS[selected.status]}
+              </p>
+              <p className={styles.detailText}>{detailText(selected)}</p>
+              <button type="button" className={styles.clear} onClick={() => setSelectedId(null)}>
+                Quitar selección
+              </button>
+            </>
+          ) : (
+            <p className={styles.detailText}>Ninguna sala seleccionada.</p>
+          )}
+        </div>
+
+        <Legend className={styles.legend} />
+      </div>
+
+      <div className={styles.stage}>
+        {webgl ? (
+          <ErrorBoundary fallback={sinPlano}>
             <Suspense fallback={<p className={styles.note}>Cargando el plano…</p>}>
               <LazyCanvas
                 lazy
@@ -97,14 +105,11 @@ export default function FloorSection() {
                 <FloorPlan plan={FLOOR_PLAN} selectedId={selectedId} onSelect={setSelectedId} />
               </LazyCanvas>
             </Suspense>
-          ) : (
-            <p className={styles.note}>
-              Tu navegador no puede mostrar el plano en 3D. Usa la lista de salas y su leyenda para
-              consultar el estado de cada una.
-            </p>
-          )}
-        </div>
+          </ErrorBoundary>
+        ) : (
+          sinPlano
+        )}
       </div>
-    </section>
+    </Section>
   );
 }

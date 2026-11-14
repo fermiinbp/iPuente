@@ -25,7 +25,6 @@ import styles from './Building3D.module.css';
 
 // Colores: solo tokens de :root.
 const TOKENS = [
-  'linea-plano',
   'crema',
   'crema-suave',
   'bosque-profundo',
@@ -44,6 +43,8 @@ const LIFT = 1.05; // cuánto suben las plantas de encima de la activa
 const ROOM_Y = 0.28;
 const ROOM_H = 0.46;
 const INITIAL_ROTATION = -0.35;
+const KEY_STEP = 0.15; // radianes por pulsación de flecha
+const WIDE_ASPECT = 1.3; // por debajo de este ancho/alto se aleja la cámara
 const SLAB = [4.3, 0.1, 2.9];
 const ROOF = [4.4, 0.08, 3.0];
 const ROOF_Y = 0.05 + ROOM_H + ROOF[1] / 2; // sobre las salas de la última planta
@@ -200,7 +201,7 @@ function Floor({ level, rooms, active, off, top, lift, shared, reduced }) {
   );
 }
 
-function Building({ floors, activeFloorId, reduced }) {
+function Building({ floors, activeFloorId, reduced, turnRef }) {
   const colors = useCssColors(TOKENS);
   const root = useRef(null);
   const velocity = useRef(0);
@@ -209,6 +210,8 @@ function Building({ floors, activeFloorId, reduced }) {
   const camera = useThree((state) => state.camera);
   const gl = useThree((state) => state.gl);
   const invalidate = useThree((state) => state.invalidate);
+  const width = useThree((state) => state.size.width);
+  const height = useThree((state) => state.size.height);
 
   // Geometrías, materiales y textura: una sola vez; las salas se repiten como instancias.
   const shared = useMemo(() => {
@@ -229,11 +232,11 @@ function Building({ floors, activeFloorId, reduced }) {
       roofGeo: new BoxGeometry(...ROOF),
       doorGeo: new BoxGeometry(...DOOR),
       trama,
-      slabMat: mate(colors['linea-plano'], 0.9),
+      slabMat: mate(colors.libre, 0.9),
       slabActiveMat: mate(colors.lima, 0.7),
       roomMat: mate(blanco, 0.8),
       hatchMat: new MeshStandardMaterial({ map: trama, roughness: 0.9, toneMapped: false }),
-      roofMat: mate(colors['linea-plano'], 0.9),
+      roofMat: mate(colors.libre, 0.9),
       doorMat: mate(colors['bosque-profundo'], 0.9),
       lineBase: new LineBasicMaterial({ color: colors['bosque-profundo'], toneMapped: false }),
       colors,
@@ -259,11 +262,29 @@ function Building({ floors, activeFloorId, reduced }) {
     };
   }, [shared]);
 
+  // Encuadre: en pantallas anchas se mantiene la cámara del mockup; en lienzos estrechos o verticales
+  // se aleja en proporción para que el edificio no se recorte.
   useLayoutEffect(() => {
+    const aspect = height > 0 ? width / height : 2;
+    const distancia = aspect >= WIDE_ASPECT ? 1 : Math.min(2, WIDE_ASPECT / Math.max(aspect, 0.4));
+    camera.position.set(...CAMERA.position).multiplyScalar(distancia);
     camera.lookAt(0, TARGET_Y, 0);
     camera.updateProjectionMatrix();
     invalidate();
-  }, [camera, invalidate]);
+  }, [camera, invalidate, width, height]);
+
+  // Giro con el teclado (flechas del contenedor): un paso fijo, sin inercia.
+  useEffect(() => {
+    turnRef.current = (step) => {
+      if (!root.current) return;
+      velocity.current = 0;
+      root.current.rotation.y += step;
+      invalidate();
+    };
+    return () => {
+      turnRef.current = null;
+    };
+  }, [turnRef, invalidate]);
 
   useLayoutEffect(() => {
     if (root.current) root.current.rotation.y = INITIAL_ROTATION;
@@ -350,9 +371,28 @@ function Building({ floors, activeFloorId, reduced }) {
 
 export default function Building3D({ floors, activeFloorId, label, fallback = null }) {
   const reduced = useReducedMotion();
+  const turnRef = useRef(null);
+  const onKeyDown = (event) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    turnRef.current?.(event.key === 'ArrowLeft' ? -KEY_STEP : KEY_STEP);
+  };
   return (
-    <LazyCanvas label={label} fallback={fallback} camera={CAMERA} className={styles.escena}>
-      <Building floors={floors} activeFloorId={activeFloorId} reduced={reduced} />
-    </LazyCanvas>
+    <div
+      className={styles.grupo}
+      tabIndex={0}
+      role="group"
+      aria-label="Edificio en 3D. Gira con las flechas izquierda y derecha"
+      onKeyDown={onKeyDown}
+    >
+      <LazyCanvas label={label} fallback={fallback} camera={CAMERA} className={styles.escena}>
+        <Building
+          floors={floors}
+          activeFloorId={activeFloorId}
+          reduced={reduced}
+          turnRef={turnRef}
+        />
+      </LazyCanvas>
+    </div>
   );
 }

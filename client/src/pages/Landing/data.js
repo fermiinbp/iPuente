@@ -6,14 +6,6 @@ export const BUILDING = {
   city: 'Sevilla',
 };
 
-// Plantas de arriba abajo. La planta baja es recepción y no se alquila.
-export const FLOORS = [
-  { id: 'planta-3', name: 'Planta 3', number: 3, free: 2, total: 6 },
-  { id: 'planta-2', name: 'Planta 2', number: 2, free: 5, total: 12 },
-  { id: 'planta-1', name: 'Planta 1', number: 1, free: 3, total: 8 },
-  { id: 'planta-baja', name: 'Planta baja', number: 0, free: 0, total: 0, off: true },
-];
-
 export const DEFAULT_FLOOR_ID = 'planta-2';
 
 export const ROOM_FILTERS = [

@@ -1,16 +1,8 @@
-.section {
-  background: var(--bosque);
-  border-top: 1px solid var(--linea);
-}
-
 .inner {
   display: flex;
   flex-wrap: wrap;
   gap: 40px 56px;
   align-items: center;
-  max-width: var(--ancho-max);
-  margin: 0 auto;
-  padding: clamp(64px, 8vw, 112px) var(--gutter);
 }
 
 .info {
@@ -18,15 +10,9 @@
   min-width: 0;
 }
 
-.title {
-  font-size: var(--text-seccion);
-  line-height: 1;
-  letter-spacing: var(--tracking-titular);
-}
-
 .summary {
   max-width: 28em;
-  margin: 12px 0 0;
+  margin: var(--space-3) 0 0;
   font-size: var(--text-cuerpo);
   color: var(--crema-suave);
 }
@@ -42,7 +28,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 4px 16px;
+  gap: var(--space-1) var(--space-4);
   width: 100%;
   min-height: 44px;
   padding: 10px 0 10px 22px;
@@ -52,6 +38,13 @@
   color: var(--crema);
   text-align: left;
   cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.room:active {
+  transform: scale(0.97);
 }
 
 .roomActive {
@@ -66,6 +59,7 @@
   width: 2px;
   background: var(--lima);
   opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
 }
 
 .roomActive .bar {
@@ -86,7 +80,7 @@
 .roomStatus {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-size: var(--text-interfaz);
   font-weight: 500;
   color: var(--crema);
@@ -130,7 +124,7 @@
 
 .detailText {
   max-width: 34em;
-  margin: 4px 0 0;
+  margin: var(--space-1) 0 0;
   font-size: var(--text-interfaz);
   line-height: 1.55;
   color: var(--crema-suave);
@@ -147,10 +141,17 @@
   text-decoration: underline;
   text-underline-offset: 4px;
   cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.clear:active {
+  transform: scale(0.97);
 }
 
 .legend {
-  margin-top: 8px;
+  margin-top: var(--space-2);
 }
 
 .stage {
@@ -170,14 +171,39 @@
   color: var(--crema-suave);
 }
 
-.room:focus-visible,
-.clear:focus-visible {
-  outline: 2px solid var(--lima);
-  outline-offset: 2px;
+@media (hover: hover) and (pointer: fine) {
+  .room:hover {
+    color: var(--lima);
+  }
+
+  .room:hover .bar {
+    opacity: 1;
+  }
+
+  .clear:hover {
+    color: var(--lima);
+  }
 }
 
-@media (min-width: 900px) {
-  .summary {
-    font-size: var(--text-cuerpo);
+/* Bajo 900 px el plano va primero para ver cómo sube la sala elegida. */
+@media (max-width: 899px) {
+  .stage {
+    order: -1;
+    flex-basis: 100%;
+    height: clamp(260px, 70vw, 300px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room,
+  .bar,
+  .roomName,
+  .clear {
+    transition: none;
+  }
+
+  .room:active,
+  .clear:active {
+    transform: none;
   }
 }

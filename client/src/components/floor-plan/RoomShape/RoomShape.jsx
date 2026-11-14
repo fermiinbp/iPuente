@@ -13,7 +13,7 @@ const UMBRAL = 0.002;
 
 export default function RoomShape({
   room,
-  label,
+  statusLabel,
   position,
   size,
   selected,
@@ -95,7 +95,8 @@ export default function RoomShape({
             className={`${styles.chip} ${styles[room.status]} ${selected ? styles.selected : ''}`}
             aria-hidden="true"
           >
-            {label}
+            {room.id}
+            <span className={styles.long}> · {statusLabel}</span>
           </span>
         </Html>
       </group>

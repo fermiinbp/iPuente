@@ -53,3 +53,10 @@
   color: var(--bosque);
   font-style: italic;
 }
+
+/* Bajo 600 px la etiqueta muestra solo el tiempo corto; el nombre completo está en la lista. */
+@media (max-width: 599px) {
+  .long {
+    display: none;
+  }
+}

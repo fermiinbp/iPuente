@@ -36,3 +36,10 @@
   outline: 2px solid var(--lima);
   outline-offset: 1px;
 }
+
+/* Bajo 600 px la etiqueta muestra solo el código de la sala; el estado completo está en la lista. */
+@media (max-width: 599px) {
+  .long {
+    display: none;
+  }
+}

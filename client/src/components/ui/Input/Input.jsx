@@ -1,11 +1,48 @@
-// Campo de formulario con etiqueta visible encima (el <label> envuelve al <input>).
+// Campo de formulario con <label> visible asociado, ayuda (hint) y mensaje de error accesibles.
+// `variant="inline"` (por defecto) es el campo sin borde del buscador; `variant="boxed"` es el campo con borde de formulario.
+import { useId } from 'react';
 import styles from './Input.module.css';
 
-export default function Input({ label, ...rest }) {
+export default function Input({
+  label,
+  hint,
+  error,
+  id,
+  variant = 'inline',
+  className = '',
+  ...rest
+}) {
+  const autoId = useId();
+  const inputId = id || autoId;
+  const hintId = hint ? `${inputId}-hint` : undefined;
+  const errorId = error ? `${inputId}-error` : undefined;
+  const describedBy = [rest['aria-describedby'], hintId, errorId].filter(Boolean).join(' ');
+  const classes = [styles.field, variant === 'boxed' ? styles.boxed : '', className]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <label className={styles.field}>
-      <span className={styles.label}>{label}</span>
-      <input className={styles.input} {...rest} />
-    </label>
+    <div className={classes}>
+      <label className={styles.label} htmlFor={inputId}>
+        {label}
+      </label>
+      <input
+        {...rest}
+        id={inputId}
+        className={`${styles.input} ${error ? styles.invalid : ''}`}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={describedBy || undefined}
+      />
+      {hint && (
+        <p className={styles.hint} id={hintId}>
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p className={styles.error} id={errorId} role="alert">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }

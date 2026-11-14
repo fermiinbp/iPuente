@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { hasWebGL } from '@/utils/webgl.js';
+import ErrorBoundary from '../ErrorBoundary/ErrorBoundary.jsx';
 import styles from './LazyCanvas.module.css';
 
 export default function LazyCanvas({
@@ -41,14 +42,17 @@ export default function LazyCanvas({
   return (
     <div ref={raiz} className={`${styles.raiz} ${className}`} role="img" aria-label={label}>
       {visible ? (
-        <Canvas
-          dpr={[1, 2]}
-          frameloop={frameloop}
-          camera={camera}
-          gl={{ antialias: true, powerPreference: 'high-performance' }}
-        >
-          {children}
-        </Canvas>
+        // Si la escena falla al renderizar, se muestra la alternativa en lugar de tumbar la página.
+        <ErrorBoundary fallback={fallback}>
+          <Canvas
+            dpr={[1, 2]}
+            frameloop={frameloop}
+            camera={camera}
+            gl={{ antialias: true, powerPreference: 'high-performance' }}
+          >
+            {children}
+          </Canvas>
+        </ErrorBoundary>
       ) : null}
     </div>
   );

@@ -1,11 +1,11 @@
 // Edificio del hero: con WebGL se ve en 3D (arrastra para girar) y los botones de planta pasan a ser
-// una fila compacta; sin WebGL o con movimiento reducido se dibuja con CSS, una banda pulsable por planta.
+// una fila compacta (también con movimiento reducido, entonces estático); sin WebGL se dibuja con CSS, una banda pulsable por planta.
 // Los botones HTML mandan: el 3D solo refleja la planta activa. El panel de debajo dice cuántas salas
 // libres tiene y enlaza a su plano.
 import { lazy, Suspense, useState } from 'react';
 import { Link } from 'react-router';
 import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
-import { useReducedMotion } from '@/hooks/useReducedMotion.js';
+import ErrorBoundary from '@/components/three/ErrorBoundary/ErrorBoundary.jsx';
 import { hasWebGL } from '@/utils/webgl.js';
 import styles from './BuildingHero.module.css';
 
@@ -20,30 +20,34 @@ export default function BuildingHero({
   onSelectFloor,
 }) {
   const active = floors.find((floor) => floor.id === activeFloorId);
-  const reducedMotion = useReducedMotion();
   const [webgl] = useState(() => hasWebGL());
-  const use3d = webgl && !reducedMotion;
+  const use3d = webgl;
+  // Última planta confirmada por clic o teclado: es lo único que anuncia el lector de pantalla.
+  const [announced, setAnnounced] = useState('');
+  const announcedFloor = floors.find((floor) => floor.id === announced);
+
+  const ghost = (
+    <div className={styles.ghost} aria-hidden="true">
+      {floors.map((floor) => (
+        <span key={floor.id} className={styles.ghostSlab} />
+      ))}
+    </div>
+  );
 
   return (
     <div className={styles.hero}>
       {use3d && (
         <div className={styles.stage}>
-          <Suspense
-            fallback={
-              <div className={styles.ghost} aria-hidden="true">
-                {floors.map((floor) => (
-                  <span key={floor.id} className={styles.ghostSlab} />
-                ))}
-              </div>
-            }
-          >
-            <Building3D
-              floors={floors}
-              activeFloorId={activeFloorId}
-              label={`Maqueta 3D del ${buildingName}`}
-            />
-          </Suspense>
-          <p className={styles.hint}>Arrastra para girar</p>
+          <ErrorBoundary fallback={ghost}>
+            <Suspense fallback={ghost}>
+              <Building3D
+                floors={floors}
+                activeFloorId={activeFloorId}
+                label={`Maqueta 3D del ${buildingName}`}
+              />
+            </Suspense>
+          </ErrorBoundary>
+          <p className={styles.hint}>Arrastra o usa las flechas para girar</p>
         </div>
       )}
       <div
@@ -67,8 +71,13 @@ export default function BuildingHero({
               type="button"
               className={rowClass}
               aria-pressed={isActive}
-              onClick={() => onSelectFloor(floor.id)}
-              onMouseEnter={() => onSelectFloor(floor.id)}
+              onClick={() => {
+                onSelectFloor(floor.id);
+                setAnnounced(floor.id);
+              }}
+              onPointerEnter={(event) => {
+                if (event.pointerType === 'mouse') onSelectFloor(floor.id);
+              }}
             >
               <span className={styles.slab} aria-hidden="true">
                 <span className={styles.windows} />
@@ -80,7 +89,14 @@ export default function BuildingHero({
         <div className={styles.base} aria-hidden="true" />
       </div>
 
-      <div className={styles.info} aria-live="polite">
+      <p className={styles.srOnly} aria-live="polite">
+        {announcedFloor
+          ? announcedFloor.off
+            ? `${announcedFloor.name} seleccionada. Recepción, no se alquila.`
+            : `${announcedFloor.name} seleccionada. ${announcedFloor.free} salas libres hoy.`
+          : ''}
+      </p>
+      <div className={styles.info}>
         {active && (
           <>
             <p className={styles.infoTitle}>{active.name}</p>

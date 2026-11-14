@@ -1,15 +1,16 @@
-// Pantalla de carga de la Landing: el monograma «iP» se parte en dos y se abre como una puerta.
-// Se muestra una vez por sesión y nunca con prefers-reduced-motion: reduce.
-import { useEffect, useState } from 'react';
+// Pantalla de carga de la Landing: el monograma «iP» se parte en dos mitades que se separan como una puerta.
+// Aísla la página (inert + sin scroll) mientras dura, se puede saltar y solo se muestra una vez por sesión.
+// Nunca se muestra con prefers-reduced-motion: reduce.
+import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import simbolo from '@/assets/images/ipuente-simbolo.svg';
 import styles from './LandingLoader.module.css';
 
-const LOAD_MS = 1900;
-const HOLD_MS = 350;
-const OPEN_MS = 1400;
-const SAFETY_MS = 7000;
+const LOAD_MS = 1100;
+const HOLD_MS = 250;
+const OPEN_MS = 900;
+const SAFETY_MS = 4000;
 const SESSION_KEY = 'ipuente-loader-visto';
-const START_GAP = 3;
 
 function shouldShowLoader() {
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false;
@@ -29,17 +30,34 @@ function markSeen() {
 }
 
 export default function LandingLoader() {
-  // Fases: load (0 a 100 %), open (se abre el monograma) y done (se desmonta).
+  // Fases: carga (contador 0 a 100 %), abre (las mitades se separan) y done (se desmonta).
   const [active] = useState(shouldShowLoader);
+  const [fase, setFase] = useState('carga');
   const [done, setDone] = useState(false);
-  const [progress, setProgress] = useState({ pct: 0, gap: START_GAP, opening: 0 });
+  const [pct, setPct] = useState(0);
 
+  const skip = useCallback(() => setFase('abre'), []);
+
+  // Aislamiento: página inerte y sin scroll mientras el cargador está activo.
+  useEffect(() => {
+    if (!active || done) return undefined;
+    const root = document.getElementById('root');
+    const html = document.documentElement;
+    const prevOverflow = html.style.overflow;
+    root?.setAttribute('inert', '');
+    html.style.overflow = 'hidden';
+    return () => {
+      root?.removeAttribute('inert');
+      html.style.overflow = prevOverflow;
+    };
+  }, [active, done]);
+
+  // Fase de carga: solo el contador y la línea se actualizan desde JavaScript.
   useEffect(() => {
     if (!active) return undefined;
     markSeen();
 
     const start = performance.now();
-    const height = window.innerHeight || 900;
     let frame = 0;
 
     const safetyTimer = setTimeout(() => {
@@ -49,18 +67,10 @@ export default function LandingLoader() {
 
     const step = (now) => {
       const t = now - start;
-      if (t < LOAD_MS + HOLD_MS) {
-        const pct = Math.min(100, Math.floor((t / LOAD_MS) * 100));
-        setProgress((prev) => (prev.pct === pct ? prev : { ...prev, pct }));
-      } else {
-        const opening = Math.min(1, (t - LOAD_MS - HOLD_MS) / OPEN_MS);
-        if (opening >= 1) {
-          clearTimeout(safetyTimer);
-          setDone(true);
-          return;
-        }
-        const eased = 1 - Math.pow(1 - opening, 3);
-        setProgress({ pct: 100, gap: START_GAP + eased * height * 1.2, opening });
+      setPct(Math.min(100, Math.floor((t / LOAD_MS) * 100)));
+      if (t >= LOAD_MS + HOLD_MS) {
+        setFase('abre');
+        return;
       }
       frame = requestAnimationFrame(step);
     };
@@ -72,23 +82,38 @@ export default function LandingLoader() {
     };
   }, [active]);
 
+  // Saltar con Escape.
+  useEffect(() => {
+    if (!active || done) return undefined;
+    const onKey = (event) => {
+      if (event.key === 'Escape') skip();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [active, done, skip]);
+
+  // Al abrir, se desmonta cuando termina la transición.
+  useEffect(() => {
+    if (fase !== 'abre') return undefined;
+    const timer = setTimeout(() => setDone(true), OPEN_MS);
+    return () => clearTimeout(timer);
+  }, [fase]);
+
   if (!active || done) return null;
 
-  const { pct, gap, opening } = progress;
-  const announced = Math.floor(pct / 25) * 25;
-  const cssVars = {
-    '--gap': `${gap}px`,
-    '--band-opacity': Math.max(0, 1 - gap / 220),
-    '--counter-opacity': Math.max(0, 1 - opening * 5),
-    '--pct': `${pct}%`,
-  };
+  const progress = fase === 'abre' ? 1 : Math.min(pct, 100) / 100;
+  const shown = fase === 'abre' ? 100 : pct;
 
-  return (
-    <div className={styles.loader} style={cssVars}>
+  return createPortal(
+    <div
+      className={styles.loader}
+      data-fase={fase}
+      style={{ '--prog': progress, '--dur-abre': `${OPEN_MS}ms` }}
+      onClick={skip}
+    >
       <p className={styles.sr} role="status">
-        Cargando iPuente, {announced} por ciento
+        {fase === 'abre' ? 'Listo' : 'Cargando iPuente'}
       </p>
-      <div className={styles.band} aria-hidden="true" />
       <div className={`${styles.layer} ${styles.top}`} aria-hidden="true">
         <span className={styles.mono}>
           <em>i</em>P
@@ -100,12 +125,14 @@ export default function LandingLoader() {
         </span>
         <div className={styles.counter}>
           <img className={styles.symbol} src={simbolo} alt="" width="64" height="64" />
-          <span className={styles.pct}>{pct}%</span>
+          <span className={styles.pct}>{shown}%</span>
           <div className={styles.track}>
             <div className={styles.line} />
           </div>
         </div>
       </div>
-    </div>
+      <div className={styles.band} aria-hidden="true" />
+    </div>,
+    document.body,
   );
 }

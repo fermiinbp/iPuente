@@ -13,14 +13,14 @@
 .roof {
   width: min(320px, 62%);
   height: 14px;
-  margin-left: 16px;
-  background: var(--linea-plano);
+  margin-left: var(--space-4);
+  background: var(--libre);
 }
 
 .floor {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   width: 100%;
   min-height: 44px;
   padding: 0;
@@ -30,6 +30,14 @@
   font-family: var(--font-display);
   text-align: left;
   cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.floor:active {
+  transform: scale(0.97);
 }
 
 .slab {
@@ -39,7 +47,7 @@
   height: 84px;
   background: var(--libre);
   border-bottom: 2px solid var(--bosque-profundo);
-  transition: background 0.2s;
+  transition: background var(--dur-fast) var(--ease-out);
 }
 
 .windows {
@@ -55,14 +63,13 @@
 
 .name {
   min-width: 0;
-  font-size: 22px;
+  font-size: var(--text-lista-movil);
   line-height: 1.1;
   letter-spacing: var(--tracking-titular);
 }
 
 .ground .slab {
   height: 96px;
-  background: var(--linea-plano);
 }
 
 .ground .windows {
@@ -89,9 +96,9 @@
   opacity: 1;
 }
 
-/* La planta baja no se alquila: aunque esté activa, su losa sigue en verde medio y no pasa a --libre. */
-.ground.active .slab {
-  background: var(--linea-plano);
+/* El contorno lima de la losa activa queda pegado a la banda: el anillo de foco se aleja para que se distinga. */
+.active:focus-visible {
+  outline-offset: 8px;
 }
 
 .active .name {
@@ -139,7 +146,7 @@
 .stage {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -171,7 +178,7 @@
 .compact {
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .compact .roof,
@@ -183,21 +190,48 @@
 .compact .floor {
   width: auto;
   min-width: 132px;
-  padding: 8px 16px;
+  padding: var(--space-2) var(--space-4);
   border: 1px solid var(--linea);
 }
 
 .compact .name {
-  font-size: 18px;
+  font-size: var(--text-lead);
 }
 
 .compact .active {
   border-color: var(--lima);
 }
 
+.compact .active:focus-visible {
+  outline-offset: 3px;
+}
+
+/* Texto solo para lectores de pantalla (anuncia la última planta elegida). */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .floor:hover {
+    color: var(--lima);
+  }
+
+  .compact .floor:hover {
+    border-color: var(--lima);
+  }
+}
+
 @media (min-width: 600px) {
   .floor {
-    gap: 24px;
+    gap: var(--space-5);
   }
 
   .slab {
@@ -210,7 +244,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .slab {
+  .slab,
+  .floor {
     transition: none;
+  }
+
+  .floor:active {
+    transform: none;
   }
 }

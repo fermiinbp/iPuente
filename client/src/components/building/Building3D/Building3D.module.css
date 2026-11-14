@@ -9,3 +9,9 @@
 .escena:active {
   cursor: grabbing;
 }
+
+/* El foco lo recibe el contenedor (role="group"); se usa el contorno global de 3 px. */
+.grupo:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 3px;
+}

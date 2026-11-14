@@ -1,13 +1,13 @@
 .group {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .chip {
   min-height: 44px;
   padding: 0 18px;
-  border: 1px solid var(--linea);
+  border: 1px solid var(--borde-control);
   border-radius: var(--radio-pildora);
   background: transparent;
   color: var(--crema);
@@ -15,10 +15,31 @@
   font-size: var(--text-menu);
   font-weight: 500;
   cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.chip:active {
+  transform: scale(0.97);
 }
 
 .active {
   border-color: var(--lima);
   background: var(--lima);
   color: var(--bosque-profundo);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chip:not(.active):hover {
+    border-color: var(--crema);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip {
+    transition: none;
+  }
 }

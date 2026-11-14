@@ -55,15 +55,39 @@
   --radio-chip: 4px;
   --ancho-max: 1280px;
   --gutter: clamp(20px, 4vw, 56px);
-}
+  --radio-plano: 8px; /* plano de empresas y piezas pequeñas */
 
-/* Alias provisionales (los usan DashboardLayout y Footer). No borrar. */
-:root {
-  --color-primary: var(--lima);
-  --color-text-muted: var(--crema-suave);
-  --color-border: var(--linea);
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
+  /* Foco y controles. --foco se redefine dentro de superficies claras (crema, papel, libre): el lima no se ve sobre ellas. */
+  --foco: var(--lima);
+  --foco-sobre-claro: var(--bosque); /* 11,4:1 sobre crema */
+  /* Bordes de chips y campos: 6,3:1 sobre bosque elevado (--linea no llega a 3:1). */
+  --borde-control: var(--crema-suave);
+
+  /* Movimiento: salida suave y corta. Pulsación 100-160 ms; el resto por debajo de 300 ms. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --dur-fast: 150ms;
+  --dur-media: 250ms;
+
+  /* Escala tipográfica de apoyo (mínimo 12 px) */
+  --text-lead: 18px;
+  --text-pequeno: 14px;
+  --text-etiqueta: 13px;
+  --text-titulo-paso: 30px;
+  --text-lista: 26px;
+  --text-lista-movil: 22px;
+
+  /* Escala de espaciado (4, 8, 12, 16, 24, 32, 48, 64, 96) y ritmo vertical de sección */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --espacio-seccion: clamp(64px, 8vw, 104px);
 }
 
 /* Reset mínimo */
@@ -110,7 +134,7 @@ a {
 }
 
 :focus-visible {
-  outline: 3px solid var(--lima);
+  outline: 3px solid var(--foco);
   outline-offset: 3px;
 }
 

@@ -4,7 +4,10 @@ import { useNavigate } from 'react-router';
 import BuildingHero from '@/components/building/BuildingHero/BuildingHero.jsx';
 import RoomCard from '@/components/room/RoomCard/RoomCard.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
+import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
+import Section from '@/components/ui/Section/Section.jsx';
+import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
 import CompaniesCta from './CompaniesCta.jsx';
 import { BUILDING, DEFAULT_FLOOR_ID, FEATURED_ROOMS, ROOM_FILTERS } from './data.js';
 import FloorSection from './FloorSection.jsx';
@@ -62,7 +65,7 @@ export default function Landing() {
               </div>
               <Button type="submit">Buscar</Button>
             </form>
-            <p className={styles.hint}>Al buscar, ves el edificio con salas para esa fecha.</p>
+            <p className={styles.hint}>Pronto filtraremos por ciudad, fecha y personas.</p>
           </div>
 
           <div className={styles.heroBuilding}>
@@ -80,29 +83,25 @@ export default function Landing() {
       <FloorSection />
       <NearbySection />
 
-      <section className={styles.rooms} aria-labelledby="salas-titulo">
-        <div className={styles.roomsInner}>
-          <div className={styles.roomsHead}>
-            <h2 className={styles.sectionTitle} id="salas-titulo">
-              Salas destacadas
-            </h2>
-            <RoomFilters filters={ROOM_FILTERS} active={filter} onChange={setFilter} />
-          </div>
-          {rooms.length > 0 ? (
-            <ul className={styles.grid}>
-              {rooms.map((room) => (
-                <li key={room.id}>
-                  <RoomCard room={room} />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className={styles.empty}>
-              No hay salas de este tipo todavía. Prueba con otro filtro.
-            </p>
-          )}
+      <Section id="salas" titleId="salas-titulo" tone="elevated">
+        <div className={styles.roomsHead}>
+          <SectionTitle id="salas-titulo">Salas destacadas</SectionTitle>
+          <RoomFilters filters={ROOM_FILTERS} active={filter} onChange={setFilter} />
         </div>
-      </section>
+        {rooms.length > 0 ? (
+          <ul className={styles.grid}>
+            {rooms.map((room) => (
+              <li key={room.id}>
+                <RoomCard room={room} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className={styles.empty} role="status">
+            <EmptyState title="No hay salas de este tipo todavía." text="Prueba con otro filtro." />
+          </div>
+        )}
+      </Section>
 
       <HowItWorks />
       <CompaniesCta />

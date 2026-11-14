@@ -24,6 +24,8 @@ const GROUND = [12, 8.6];
 const STREETS_X = [-3.7, -1.7, 1.7, 3.7];
 const STREETS_Z = [-3, -1.3, 1.3, 3];
 const STREET_HALF = 0.12;
+// Aspecto (ancho/alto) a partir del cual el mapa cabe entero sin reducirlo.
+const ASPECTO_REFERENCIA = 1.3;
 const NOMBRES = [
   'bosque-elevado',
   'linea-plano',
@@ -69,6 +71,11 @@ function Redraw({ activeId }) {
 
 export default function NearbyMap({ building, places, activeId }) {
   const c = useCssColors(NOMBRES);
+  // Encuadre: con canvas vertical o casi cuadrado se reduce la escena para que no se recorte.
+  // `size` solo cambia al redimensionar, no por fotograma.
+  const tamanoCanvas = useThree((estado) => estado.size);
+  const aspecto = tamanoCanvas.width / Math.max(1, tamanoCanvas.height);
+  const escalaEncuadre = Math.min(1, Math.max(0.5, aspecto / ASPECTO_REFERENCIA));
   const [bw, bh, bd] = building.size;
 
   const geo = useMemo(() => {
@@ -85,18 +92,23 @@ export default function NearbyMap({ building, places, activeId }) {
     };
   }, [bw, bh, bd, places]);
 
+  // Colores de las caras laterales: una sola vez por cambio de paleta (Color no ocupa GPU, no necesita dispose).
+  const lateralClaro = useMemo(() => c.libre.clone().lerp(c['bosque-profundo'], 0.25), [c]);
+  const lateralOscuro = useMemo(() => c.libre.clone().lerp(c['bosque-profundo'], 0.4), [c]);
+
   const mat = useMemo(
     () => ({
       ground: new MeshBasicMaterial({ color: c['bosque-elevado'] }),
       street: new LineBasicMaterial({ color: c['linea-plano'] }),
       // Orden de las caras de BoxGeometry: +x, -x, +y, -y, +z, -z.
+      // Tejado en --libre y laterales más oscuros (mezcla con --bosque-profundo) para dar volumen sin luces.
       box: [
+        new MeshBasicMaterial({ color: lateralOscuro }),
+        new MeshBasicMaterial({ color: lateralOscuro }),
         new MeshBasicMaterial({ color: c.libre }),
-        new MeshBasicMaterial({ color: c.libre }),
-        new MeshBasicMaterial({ color: c.libre }),
-        new MeshBasicMaterial({ color: c.libre }),
-        new MeshBasicMaterial({ color: c.libre }),
-        new MeshBasicMaterial({ color: c.libre }),
+        new MeshBasicMaterial({ color: lateralOscuro }),
+        new MeshBasicMaterial({ color: lateralClaro }),
+        new MeshBasicMaterial({ color: lateralClaro }),
       ],
       edge: new LineBasicMaterial({ color: c['bosque-profundo'] }),
       here: new MeshBasicMaterial({ color: c['crema'] }),
@@ -105,7 +117,7 @@ export default function NearbyMap({ building, places, activeId }) {
       link: new LineBasicMaterial({ color: c['bronce'] }),
       linkActive: new LineBasicMaterial({ color: c['lima'] }),
     }),
-    [c],
+    [c, lateralClaro, lateralOscuro],
   );
 
   // Libera de la GPU lo creado cuando la escena se desmonta o se recrea.
@@ -129,7 +141,7 @@ export default function NearbyMap({ building, places, activeId }) {
   );
 
   return (
-    <group rotation={[TILT, TURN, 0]}>
+    <group scale={escalaEncuadre} rotation={[TILT, TURN, 0]}>
       <Redraw activeId={activeId} />
       <mesh geometry={geo.ground} material={mat.ground} />
       <lineSegments geometry={geo.streets} material={mat.street} />
@@ -163,7 +175,8 @@ export default function NearbyMap({ building, places, activeId }) {
               />
               <Html position={[0, 1.05, 0]} center zIndexRange={[10, 0]} className={styles.html}>
                 <div aria-hidden="true" className={activo ? styles.chipActive : styles.chip}>
-                  {p.name} · {p.shortTime}
+                  <span className={styles.long}>{p.name} · </span>
+                  {p.shortTime}
                 </div>
               </Html>
             </group>

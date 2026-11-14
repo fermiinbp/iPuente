@@ -1,12 +1,19 @@
-/* Estilos de Header (CSS Module: clases en camelCase, importadas como styles.nombreClase). Provisionales hasta el diseño final. */
+/* Estilos de Header (CSS Module). Mobile first: la navegación y el CTA aparecen desde 900 px. */
 .header {
+  border-bottom: 1px solid var(--linea);
+  background: var(--bosque);
+  color: var(--crema);
+}
+
+.inner {
+  position: relative;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
-  padding: var(--space-md);
-  border-bottom: 1px solid var(--color-border);
+  gap: var(--space-5);
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+  min-height: 80px;
 }
 
 .logo {
@@ -22,20 +29,157 @@
   width: auto;
 }
 
+.nav {
+  display: none;
+  flex: 1;
+  justify-content: center;
+}
+
 .navList {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-md);
+  justify-content: center;
+  gap: var(--space-1) 28px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.navLink {
-  color: var(--color-text-muted);
+.navLink,
+.panelLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--crema);
+  font-size: var(--text-menu);
+  font-weight: 500;
   text-decoration: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.navLink:active,
+.panelLink:active,
+.menuButton:active {
+  transform: scale(0.97);
 }
 
 .active {
-  color: var(--color-primary);
+  color: var(--lima);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+.login,
+.cta {
+  display: none;
+}
+
+.menuButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-pildora);
+  background: var(--bosque-elevado);
+  color: var(--crema);
+  font-family: inherit;
+  font-size: var(--text-menu);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.panel {
+  position: absolute;
+  z-index: 20;
+  top: 72px;
+  right: var(--gutter);
+  display: flex;
+  flex-direction: column;
+  min-width: 240px;
+  padding: var(--space-2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque-elevado);
+  transform-origin: top right;
+  animation: abrirPanel var(--dur-fast) var(--ease-out);
+}
+
+.panelItem {
+  display: flex;
+}
+
+.panelLink {
+  display: flex;
+  width: 100%;
+  padding: 0 var(--space-3);
+}
+
+.panelCta {
   font-weight: 600;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .navLink:hover,
+  .panelLink:hover {
+    color: var(--crema-suave);
+  }
+
+  .active:hover {
+    color: var(--lima);
+  }
+
+  .menuButton:hover {
+    border-color: var(--crema-suave);
+  }
+}
+
+@media (min-width: 900px) {
+  .nav {
+    display: flex;
+  }
+
+  .login,
+  .cta {
+    display: inline-flex;
+  }
+
+  .menuButton,
+  .panel {
+    display: none;
+  }
+}
+
+@keyframes abrirPanel {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+
+  .navLink,
+  .panelLink,
+  .menuButton {
+    transition: none;
+  }
 }

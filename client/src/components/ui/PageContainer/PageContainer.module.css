@@ -1,0 +1,7 @@
+/* Estilos de PageContainer (CSS Module). */
+.container {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+  padding-block: var(--space-8);
+}
