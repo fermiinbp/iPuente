@@ -1,0 +1,102 @@
+{
+  "id": "floor-2",
+  "buildingId": "demo-building",
+  "nombre": "Planta 2",
+  "nivel": 2,
+  "demo": true,
+  "ancho": 1000,
+  "alto": 600,
+  "origen": "manual",
+  "salas": [
+    {
+      "id": "p2-s21",
+      "codigo": "P2-S21",
+      "nombre": "Sala Auditorio",
+      "tipo": "sala",
+      "x": 0,
+      "y": 0,
+      "w": 500,
+      "h": 260
+    },
+    {
+      "id": "p2-s22",
+      "codigo": "P2-S22",
+      "nombre": "Sala Itálica",
+      "tipo": "sala",
+      "x": 500,
+      "y": 0,
+      "w": 250,
+      "h": 260
+    },
+    {
+      "id": "p2-s23",
+      "codigo": "P2-S23",
+      "nombre": "Sala Murillo",
+      "tipo": "sala",
+      "x": 750,
+      "y": 0,
+      "w": 250,
+      "h": 260
+    },
+    {
+      "id": "p2-pas",
+      "codigo": "P2-PAS",
+      "nombre": "Pasillo",
+      "tipo": "pasillo",
+      "x": 0,
+      "y": 260,
+      "w": 1000,
+      "h": 80
+    },
+    {
+      "id": "p2-coc",
+      "codigo": "P2-COC",
+      "nombre": "Cocina",
+      "tipo": "cocina",
+      "x": 0,
+      "y": 340,
+      "w": 260,
+      "h": 260
+    },
+    {
+      "id": "p2-ase",
+      "codigo": "P2-ASE",
+      "nombre": "Aseos",
+      "tipo": "comun",
+      "x": 260,
+      "y": 340,
+      "w": 120,
+      "h": 260
+    },
+    {
+      "id": "p2-b21",
+      "codigo": "P2-B21",
+      "nombre": "Box 1",
+      "tipo": "box",
+      "x": 380,
+      "y": 340,
+      "w": 120,
+      "h": 260
+    },
+    {
+      "id": "p2-b22",
+      "codigo": "P2-B22",
+      "nombre": "Box 2",
+      "tipo": "box",
+      "x": 500,
+      "y": 340,
+      "w": 120,
+      "h": 260
+    },
+    {
+      "id": "p2-s24",
+      "codigo": "P2-S24",
+      "nombre": "Sala Velázquez",
+      "tipo": "sala",
+      "x": 620,
+      "y": 340,
+      "w": 380,
+      "h": 260
+    }
+  ]
+}

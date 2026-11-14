@@ -1,0 +1,102 @@
+{
+  "id": "floor-3",
+  "buildingId": "demo-building",
+  "nombre": "Planta 3",
+  "nivel": 3,
+  "demo": true,
+  "ancho": 1000,
+  "alto": 600,
+  "origen": "manual",
+  "salas": [
+    {
+      "id": "p3-s31",
+      "codigo": "P3-S31",
+      "nombre": "Sala Aljarafe",
+      "tipo": "sala",
+      "x": 0,
+      "y": 0,
+      "w": 340,
+      "h": 260
+    },
+    {
+      "id": "p3-s32",
+      "codigo": "P3-S32",
+      "nombre": "Sala Cartuja",
+      "tipo": "sala",
+      "x": 340,
+      "y": 0,
+      "w": 330,
+      "h": 260
+    },
+    {
+      "id": "p3-ter",
+      "codigo": "P3-TER",
+      "nombre": "Terraza",
+      "tipo": "comun",
+      "x": 670,
+      "y": 0,
+      "w": 330,
+      "h": 260
+    },
+    {
+      "id": "p3-pas",
+      "codigo": "P3-PAS",
+      "nombre": "Pasillo",
+      "tipo": "pasillo",
+      "x": 0,
+      "y": 260,
+      "w": 1000,
+      "h": 80
+    },
+    {
+      "id": "p3-s33",
+      "codigo": "P3-S33",
+      "nombre": "Sala Bécquer",
+      "tipo": "sala",
+      "x": 0,
+      "y": 340,
+      "w": 300,
+      "h": 260
+    },
+    {
+      "id": "p3-b31",
+      "codigo": "P3-B31",
+      "nombre": "Box 1",
+      "tipo": "box",
+      "x": 300,
+      "y": 340,
+      "w": 120,
+      "h": 260
+    },
+    {
+      "id": "p3-b32",
+      "codigo": "P3-B32",
+      "nombre": "Box 2",
+      "tipo": "box",
+      "x": 420,
+      "y": 340,
+      "w": 120,
+      "h": 260
+    },
+    {
+      "id": "p3-coc",
+      "codigo": "P3-COC",
+      "nombre": "Office",
+      "tipo": "cocina",
+      "x": 540,
+      "y": 340,
+      "w": 240,
+      "h": 260
+    },
+    {
+      "id": "p3-ase",
+      "codigo": "P3-ASE",
+      "nombre": "Aseos",
+      "tipo": "comun",
+      "x": 780,
+      "y": 340,
+      "w": 220,
+      "h": 260
+    }
+  ]
+}
