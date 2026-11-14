@@ -48,7 +48,7 @@ Archivos (en `docs/images/`):
 | `ipuente-simbolo-pequeno.svg`   | Corte simplificado para 16 a 24 px.                                                                                                                                     |
 | `iconos/`                       | Favicon (`.ico`, `.svg`, 16/32/48 px), `apple-touch-icon.png`, iconos de 192 y 512 px, `site.webmanifest`, `head-snippet.html` y variantes en negro, blanco y un color. |
 
-Los iconos web aún no están copiados a `client/public/`. Cuando se maquete `client/index.html`, se enlazan con `head-snippet.html`.
+Los iconos web están copiados en `client/public/` y enlazados desde `client/index.html`.
 
 Límite conocido: el símbolo es de trazo fino. A 16 px las torres y el cable se funden y los tirantes desaparecen, por eso existe el corte pequeño.
 

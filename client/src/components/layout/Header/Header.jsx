@@ -1,5 +1,6 @@
 // Cabecera: logo y navegación. Enlaces provisionales hasta tener el diseño final; el menú por rol llegará con el AuthProvider.
 import { Link, NavLink } from 'react-router';
+import logo from '@/assets/images/ipuente-logo-sobre-oscuro.svg';
 import styles from './Header.module.css';
 
 const NAV_LINKS = [
@@ -14,7 +15,7 @@ export default function Header() {
   return (
     <header className={styles.header}>
       <Link to="/" className={styles.logo}>
-        iPuente
+        <img src={logo} alt="iPuente, inicio" width="149" height="32" />
       </Link>
       <nav aria-label="Navegación principal">
         <ul className={styles.navList}>
