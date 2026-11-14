@@ -1,4 +1,4 @@
-// Escena 3D de «Alrededor del edificio»: mapa inclinado con el edificio en bronce y los puntos cercanos.
+// Escena 3D de «Alrededor del edificio»: mapa inclinado con el edificio en verde libre y los puntos cercanos.
 // Cámara fija: es el grupo el que se inclina y se gira, como el mockup (rotateX y rotateZ). Se importa con React.lazy.
 import { useEffect, useMemo } from 'react';
 import {
@@ -28,9 +28,8 @@ const NOMBRES = [
   'bosque-elevado',
   'linea-plano',
   'bronce',
-  'bronce-claro',
-  'bronce-borde',
-  'bronce-oscuro',
+  'libre',
+  'bosque-profundo',
   'crema',
   'lima',
 ];
@@ -92,14 +91,14 @@ export default function NearbyMap({ building, places, activeId }) {
       street: new LineBasicMaterial({ color: c['linea-plano'] }),
       // Orden de las caras de BoxGeometry: +x, -x, +y, -y, +z, -z.
       box: [
-        new MeshBasicMaterial({ color: c['bronce-borde'] }),
-        new MeshBasicMaterial({ color: c['bronce-borde'] }),
-        new MeshBasicMaterial({ color: c['bronce-claro'] }),
-        new MeshBasicMaterial({ color: c['bronce-borde'] }),
-        new MeshBasicMaterial({ color: c['bronce'] }),
-        new MeshBasicMaterial({ color: c['bronce'] }),
+        new MeshBasicMaterial({ color: c.libre }),
+        new MeshBasicMaterial({ color: c.libre }),
+        new MeshBasicMaterial({ color: c.libre }),
+        new MeshBasicMaterial({ color: c.libre }),
+        new MeshBasicMaterial({ color: c.libre }),
+        new MeshBasicMaterial({ color: c.libre }),
       ],
-      edge: new LineBasicMaterial({ color: c['bronce-oscuro'] }),
+      edge: new LineBasicMaterial({ color: c['bosque-profundo'] }),
       here: new MeshBasicMaterial({ color: c['crema'] }),
       pin: new MeshBasicMaterial({ color: c['bronce'] }),
       pinActive: new MeshBasicMaterial({ color: c['lima'] }),

@@ -14,7 +14,7 @@
   width: min(320px, 62%);
   height: 14px;
   margin-left: 16px;
-  background: var(--bronce-borde);
+  background: var(--linea-plano);
 }
 
 .floor {
@@ -37,8 +37,8 @@
   flex: 0 0 52%;
   display: block;
   height: 84px;
-  background: var(--bronce);
-  border-bottom: 2px solid var(--bronce-borde);
+  background: var(--libre);
+  border-bottom: 2px solid var(--bosque-profundo);
   transition: background 0.2s;
 }
 
@@ -47,7 +47,7 @@
   inset: 18px 18px 18px;
   background-image: repeating-linear-gradient(
     90deg,
-    var(--bronce-ventana) 0 34px,
+    var(--linea-plano) 0 34px,
     transparent 34px 50px
   );
   opacity: 0.85;
@@ -62,6 +62,7 @@
 
 .ground .slab {
   height: 96px;
+  background: var(--linea-plano);
 }
 
 .ground .windows {
@@ -69,7 +70,7 @@
   background-image: linear-gradient(
     90deg,
     transparent 0 40%,
-    var(--bronce-borde) 40% 60%,
+    var(--bosque-profundo) 40% 60%,
     transparent 60% 100%
   );
 }
@@ -79,13 +80,18 @@
 }
 
 .active .slab {
-  background: var(--bronce-claro);
+  background: var(--libre);
   outline: 3px solid var(--lima);
-  outline-offset: -3px;
+  outline-offset: 0;
 }
 
 .active .windows {
   opacity: 1;
+}
+
+/* La planta baja no se alquila: aunque esté activa, su losa sigue en verde medio y no pasa a --libre. */
+.ground.active .slab {
+  background: var(--linea-plano);
 }
 
 .active .name {
@@ -150,9 +156,9 @@
   width: min(320px, 70%);
   height: 28px;
   margin: 0 auto;
-  background: var(--bronce);
-  border-bottom: 2px solid var(--bronce-borde);
-  opacity: 0.5;
+  background: var(--libre);
+  border-bottom: 2px solid var(--bosque-profundo);
+  opacity: 1;
 }
 
 .hint {

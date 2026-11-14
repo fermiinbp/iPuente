@@ -30,9 +30,10 @@ Salen del propio prototipo, no de las referencias.
 2. **El color vivo se reserva.** El lima `#cfe36a` solo marca lo activo, lo seleccionado y el foco de teclado. Nunca decora.
 3. **Cursiva significa activo.** El elemento seleccionado de una lista pasa a Newsreader cursiva y lima.
 4. **El estado de una sala nunca depende solo del color.** Siempre lleva texto («Libre», «Ocupada», «No se alquila») y «No se alquila» lleva además trama diagonal.
-5. **El bronce es el color de lo construido.** Edificio, pines, números de paso y la sala cuadrada del logo.
+5. **El bronce es el color de los marcadores.** Pines del mapa, números de paso y la sala cuadrada del logo.
 6. **El plano se lee sobre papel crema.** Salas en discontinua bronce sobre `#f3ecdc`, para que destaquen sobre el bosque.
 7. **Accesible de serie.** Objetivos táctiles de 44 px, `:focus-visible` visible y sin transiciones con `prefers-reduced-motion`.
+8. **El edificio es verde Bosque.** El color base de todo el edificio es `--libre` `#c3e3b0` (9,5:1 sobre `--bosque`), con las losas en `--linea-plano`, las aristas en `--bosque-profundo` (11,5:1 sobre `--libre`) y la losa de la planta activa en `--lima`. La planta activa se va rellenando con los colores de estado de sus salas. El lima nunca va sobre `--libre` (1,01:1): se ve contra el fondo oscuro, no contra las caras claras.
 
 ### 1.3 Logo
 
@@ -66,9 +67,9 @@ Límite conocido: el símbolo es de trazo fino. A 16 px las torres y el cable se
 | `--crema-suave`                       | `#c4c9b4`             | Texto secundario y placeholders.                               |
 | `--linea`                             | `#506a49`             | Filetes y bordes decorativos. Nunca texto.                     |
 | `--lima`                              | `#cfe36a`             | Solo activo, seleccionado y foco.                              |
-| `--bronce`                            | `#b8894a`             | Edificio, pines y números de paso, sobre fondo oscuro.         |
+| `--bronce`                            | `#b8894a`             | Pines y números de paso, sobre fondo oscuro.                   |
 | `--bronce-oscuro`                     | `#8a5a24`             | Bronce sobre fondo crema y sala cuadrada del logo sobre claro. |
-| `--libre` / `--libre-texto`           | `#c3e3b0` / `#14230f` | Estado «Libre».                                                |
+| `--libre` / `--libre-texto`           | `#c3e3b0` / `#14230f` | Estado «Libre» y color base del edificio.                      |
 | `--ocupada` / `--ocupada-texto`       | `#c64e34` / `#ffffff` | Estado «Ocupada».                                              |
 | `--no-alquila` / `--no-alquila-texto` | `#9aa793` / `#050a03` | Estado «No se alquila», siempre con trama.                     |
 
@@ -76,14 +77,14 @@ Límite conocido: el símbolo es de trazo fino. A 16 px las torres y el cable se
 
 Aparecen en el prototipo y no estaban en la lista base. Se incluyen para que el CSS reproduzca el plano y el edificio sin valores sueltos. Si no se quieren, se borran del `:root` sin afectar al resto.
 
-| Token                | Hex       | Uso en el prototipo                                 |
-| -------------------- | --------- | --------------------------------------------------- |
-| `--linea-plano`      | `#5d7656` | Filetes del plano y de la maqueta (31 usos).        |
-| `--papel`            | `#fdfaf0` | Fondo del logo sobre claro.                         |
-| `--trama-no-alquila` | `#76846d` | Color de la trama diagonal de «No se alquila».      |
-| `--bronce-claro`     | `#dcb67a` | Planta del edificio activa (Landing).               |
-| `--bronce-borde`     | `#8a6330` | Cubierta y borde inferior de cada planta (Landing). |
-| `--bronce-ventana`   | `#6f4f26` | Ventanas del edificio (Landing).                    |
+| Token                | Hex       | Uso en el prototipo                                         |
+| -------------------- | --------- | ----------------------------------------------------------- |
+| `--linea-plano`      | `#5d7656` | Filetes del plano y losas del edificio.                     |
+| `--papel`            | `#fdfaf0` | Fondo del logo sobre claro.                                 |
+| `--trama-no-alquila` | `#76846d` | Color de la trama diagonal de «No se alquila».              |
+| `--bronce-claro`     | `#dcb67a` | Sin uso: era la planta activa del edificio en bronce.       |
+| `--bronce-borde`     | `#8a6330` | Sin uso: era la cubierta y el borde del edificio en bronce. |
+| `--bronce-ventana`   | `#6f4f26` | Sin uso: eran las ventanas del edificio en bronce.          |
 
 ### 2.3 Contraste (WCAG 2.x)
 
