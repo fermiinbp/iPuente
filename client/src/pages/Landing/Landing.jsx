@@ -1,6 +1,7 @@
 // Home: hero con el edificio por plantas, buscador, salas destacadas, cómo funciona y llamada a empresas.
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { usePageTitle } from '@/hooks/usePageTitle.js';
 import BuildingHero from '@/components/building/BuildingHero/BuildingHero.jsx';
 import RoomCard from '@/components/room/RoomCard/RoomCard.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
@@ -19,6 +20,7 @@ import NearbySection from './NearbySection.jsx';
 import RoomFilters from './RoomFilters.jsx';
 
 export default function Landing() {
+  usePageTitle('Salas por horas');
   const navigate = useNavigate();
   const [floorId, setFloorId] = useState(DEFAULT_FLOOR_ID);
   const [filter, setFilter] = useState(ROOM_FILTERS[0]);
