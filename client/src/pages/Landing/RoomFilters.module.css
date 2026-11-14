@@ -1,0 +1,24 @@
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-pildora);
+  background: transparent;
+  color: var(--crema);
+  font-family: var(--font-body);
+  font-size: var(--text-menu);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.active {
+  border-color: var(--lima);
+  background: var(--lima);
+  color: var(--bosque-profundo);
+}

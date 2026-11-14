@@ -1,1 +1,44 @@
-/* Estilos de RoomCard (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--crema);
+  text-decoration: none;
+}
+
+.photo {
+  display: block;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radio-tarjeta);
+  background: var(--foto-hueco);
+  border: 1px solid var(--linea);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 3.5vw, 36px);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-titular);
+}
+
+.place {
+  font-size: var(--text-menu);
+  color: var(--crema-suave);
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--linea);
+  font-size: var(--text-menu);
+  font-weight: 600;
+}

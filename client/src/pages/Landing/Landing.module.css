@@ -1,1 +1,141 @@
-/* Estilos de Landing (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de Landing (CSS Module). Mobile first: una columna; las columnas llegan con @media al final. */
+
+/* Layout aplica un padding provisional a <main>; se anula para que las secciones lleguen al borde. */
+.page {
+  margin: calc(var(--space-md) * -1);
+}
+
+.hero {
+  background: var(--bosque);
+}
+
+.heroInner {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: clamp(48px, 7vw, 96px) var(--gutter) clamp(56px, 7vw, 104px);
+}
+
+.heroText,
+.heroBuilding {
+  min-width: 0;
+}
+
+.heroTitle {
+  font-size: var(--text-hero);
+  line-height: var(--leading-hero);
+}
+
+.lead {
+  max-width: 30em;
+  margin: 24px 0 0;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--crema-suave);
+}
+
+.search {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 36px;
+  padding: 8px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-buscador);
+  background: var(--bosque-elevado);
+}
+
+.field {
+  min-width: 0;
+}
+
+.field + .field {
+  border-top: 1px solid var(--linea);
+}
+
+.hint {
+  margin: 12px 4px 0;
+  font-size: 14px;
+  color: var(--crema-suave);
+}
+
+.rooms {
+  background: var(--bosque-elevado);
+  border-top: 1px solid var(--linea);
+}
+
+.roomsInner {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: clamp(64px, 8vw, 104px) var(--gutter);
+}
+
+.roomsHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px 40px;
+}
+
+.sectionTitle {
+  font-size: var(--text-seccion);
+  line-height: 1;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: 32px 24px;
+  margin: 40px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.empty {
+  margin: 24px 0 0;
+  color: var(--crema-suave);
+}
+
+@media (min-width: 600px) {
+  .search {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .field {
+    flex: 1 1 140px;
+  }
+
+  .fieldCity {
+    flex-grow: 2;
+    flex-basis: 160px;
+  }
+
+  .field + .field {
+    border-top: 0;
+    border-left: 1px solid var(--linea);
+  }
+
+  .search > button,
+  .search > a {
+    flex: 1 1 130px;
+    min-height: 56px;
+  }
+}
+
+@media (min-width: 960px) {
+  .heroInner {
+    flex-direction: row;
+    align-items: center;
+    gap: 56px 64px;
+  }
+
+  .heroText,
+  .heroBuilding {
+    flex: 1 1 0;
+  }
+}

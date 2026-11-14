@@ -1,1 +1,27 @@
-/* Estilos de StatusBadge (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--radio-chip);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.free {
+  background: var(--libre);
+  color: var(--libre-texto);
+}
+
+.occupied {
+  background: var(--ocupada);
+  color: var(--ocupada-texto);
+}
+
+.off {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--trama-no-alquila) 0 2px,
+    var(--no-alquila) 2px 7px
+  );
+  color: var(--no-alquila-texto);
+}
