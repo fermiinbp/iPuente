@@ -146,6 +146,7 @@ https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&fam
 | Titular de sección          | Newsreader 400, `clamp(40px, 5vw, 76px)` y `clamp(42px, 5.6vw, 88px)`                                          |
 | Declaración de sección      | Newsreader 400, `clamp(34px, 4.7vw, 72px)`, interlineado 1,08                                                  |
 | Nombre de sala              | Newsreader 400, `clamp(30px, 3.5vw, 50px)`                                                                     |
+| Titular activo              | Newsreader cursiva, 28 px, en lima. Marca el elemento seleccionado de una lista                                |
 | Cuerpo                      | Hanken Grotesk 400, 17 px / 26 px                                                                              |
 | Interfaz (botones, enlaces) | Hanken Grotesk 500 a 600, 14 a 16 px                                                                           |
 | Menú y enlaces              | Hanken Grotesk 500, 15 px, minúsculas con inicial («Para empresas»), sin flechas «→», objetivo táctil de 44 px |
@@ -213,6 +214,7 @@ Listas para pegar en el bloque `:root` de `client/styles/style.css`. Ese archivo
   /* Formas y distribución (de referencia-01-landing.html) */
   --radio-pildora: 999px;
   --radio-tarjeta: 16px;
+  --radio-buscador: 18px;
   --radio-chip: 4px;
   --ancho-max: 1280px;
   --gutter: clamp(20px, 4vw, 56px);
