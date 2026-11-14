@@ -6,10 +6,13 @@ import RoomCard from '@/components/room/RoomCard/RoomCard.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
 import CompaniesCta from './CompaniesCta.jsx';
-import { BUILDING, DEFAULT_FLOOR_ID, FEATURED_ROOMS, FLOORS, ROOM_FILTERS } from './data.js';
+import { BUILDING, DEFAULT_FLOOR_ID, FEATURED_ROOMS, ROOM_FILTERS } from './data.js';
+import FloorSection from './FloorSection.jsx';
+import { FLOORS_HERO } from './heroBuildingData.js';
 import HowItWorks from './HowItWorks.jsx';
 import styles from './Landing.module.css';
 import LandingLoader from './LandingLoader.jsx';
+import NearbySection from './NearbySection.jsx';
 import RoomFilters from './RoomFilters.jsx';
 
 export default function Landing() {
@@ -66,13 +69,16 @@ export default function Landing() {
             <BuildingHero
               buildingId={BUILDING.id}
               buildingName={BUILDING.name}
-              floors={FLOORS}
+              floors={FLOORS_HERO}
               activeFloorId={floorId}
               onSelectFloor={setFloorId}
             />
           </div>
         </div>
       </section>
+
+      <FloorSection />
+      <NearbySection />
 
       <section className={styles.rooms} aria-labelledby="salas-titulo">
         <div className={styles.roomsInner}>

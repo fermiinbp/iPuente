@@ -1,1 +1,6 @@
-/* Estilos de FloorPlan (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* FloorPlan es una escena de Three.js y no pinta DOM propio: sus estilos viven en RoomShape (etiquetas) y en el contenedor de la sección. */
+.escena {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}

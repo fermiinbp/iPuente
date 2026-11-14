@@ -1,0 +1,133 @@
+.section {
+  background: var(--bosque-elevado);
+  border-top: 1px solid var(--linea);
+}
+
+.inner {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: 40px 56px;
+  align-items: center;
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: clamp(64px, 8vw, 112px) var(--gutter);
+}
+
+.mapBox {
+  flex: 1.35 1 320px;
+  min-width: 0;
+  height: clamp(360px, 58vw, 560px);
+}
+
+.map {
+  height: 100%;
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  margin: 0;
+  padding: 24px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  color: var(--crema-suave);
+  font-size: var(--text-interfaz);
+  text-align: center;
+}
+
+.info {
+  flex: 1 1 380px;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--text-seccion);
+  line-height: 1;
+}
+
+.lead {
+  max-width: 28em;
+  margin: 12px 0 0;
+  font-size: var(--text-cuerpo);
+  color: var(--crema-suave);
+}
+
+.list {
+  margin-top: 28px;
+  border-top: 1px solid var(--linea);
+}
+
+.item,
+.itemActive {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--linea);
+  background: transparent;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.1;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item {
+  color: var(--crema);
+}
+
+.itemActive {
+  color: var(--lima);
+  font-style: italic;
+}
+
+.item:focus-visible,
+.itemActive:focus-visible {
+  outline: 2px solid var(--lima);
+  outline-offset: 2px;
+}
+
+.time {
+  flex: none;
+  font-family: var(--font-body);
+  font-size: var(--text-interfaz);
+  font-style: normal;
+  color: var(--crema-suave);
+}
+
+.itemActive .time {
+  color: var(--lima);
+}
+
+.detail {
+  min-height: 84px;
+  margin-top: 22px;
+}
+
+.detailTitle {
+  margin: 0;
+  font-size: var(--text-cuerpo);
+  font-weight: 600;
+  color: var(--crema);
+}
+
+.detailText {
+  max-width: 34em;
+  margin: 4px 0 0;
+  font-size: var(--text-interfaz);
+  line-height: 1.55;
+  color: var(--crema-suave);
+}
+
+@media (max-width: 600px) {
+  .item,
+  .itemActive {
+    font-size: 22px;
+  }
+}
