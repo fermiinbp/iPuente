@@ -1,0 +1,102 @@
+{
+  "id": "floor-0",
+  "buildingId": "demo-building",
+  "nombre": "Planta baja",
+  "nivel": 0,
+  "demo": true,
+  "ancho": 1000,
+  "alto": 600,
+  "origen": "manual",
+  "salas": [
+    {
+      "id": "p0-rec",
+      "codigo": "P0-REC",
+      "nombre": "Recepción",
+      "tipo": "comun",
+      "x": 0,
+      "y": 0,
+      "w": 300,
+      "h": 260
+    },
+    {
+      "id": "p0-s01",
+      "codigo": "P0-S01",
+      "nombre": "Sala Guadalquivir",
+      "tipo": "sala",
+      "x": 300,
+      "y": 0,
+      "w": 350,
+      "h": 260
+    },
+    {
+      "id": "p0-s02",
+      "codigo": "P0-S02",
+      "nombre": "Sala Triana",
+      "tipo": "sala",
+      "x": 650,
+      "y": 0,
+      "w": 350,
+      "h": 260
+    },
+    {
+      "id": "p0-pas",
+      "codigo": "P0-PAS",
+      "nombre": "Pasillo",
+      "tipo": "pasillo",
+      "x": 0,
+      "y": 260,
+      "w": 1000,
+      "h": 80
+    },
+    {
+      "id": "p0-coc",
+      "codigo": "P0-COC",
+      "nombre": "Cafetería",
+      "tipo": "cocina",
+      "x": 0,
+      "y": 340,
+      "w": 300,
+      "h": 260
+    },
+    {
+      "id": "p0-b01",
+      "codigo": "P0-B01",
+      "nombre": "Box 1",
+      "tipo": "box",
+      "x": 300,
+      "y": 340,
+      "w": 120,
+      "h": 260
+    },
+    {
+      "id": "p0-b02",
+      "codigo": "P0-B02",
+      "nombre": "Box 2",
+      "tipo": "box",
+      "x": 420,
+      "y": 340,
+      "w": 120,
+      "h": 260
+    },
+    {
+      "id": "p0-ase",
+      "codigo": "P0-ASE",
+      "nombre": "Aseos",
+      "tipo": "comun",
+      "x": 540,
+      "y": 340,
+      "w": 110,
+      "h": 260
+    },
+    {
+      "id": "p0-s03",
+      "codigo": "P0-S03",
+      "nombre": "Sala Giralda",
+      "tipo": "sala",
+      "x": 650,
+      "y": 340,
+      "w": 350,
+      "h": 260
+    }
+  ]
+}
