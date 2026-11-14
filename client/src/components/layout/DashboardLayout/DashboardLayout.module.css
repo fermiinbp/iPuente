@@ -1,0 +1,52 @@
+/* Estilos de DashboardLayout (CSS Module: clases en camelCase, importadas como styles.nombreClase). Provisionales hasta el diseño final. */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.sidebar {
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+}
+
+.title {
+  font-weight: 700;
+}
+
+.menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  padding: 0;
+  list-style: none;
+}
+
+.menuLink {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.content {
+  flex: 1;
+}
+
+@media (min-width: 48rem) {
+  .dashboard {
+    flex-direction: row;
+  }
+
+  .sidebar {
+    flex: 0 0 12rem;
+  }
+
+  .menu {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+}

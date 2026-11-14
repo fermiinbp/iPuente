@@ -1,1 +1,15 @@
-/* Hoja de estilos única de la web, ordenada por secciones: variables, reset, base, layout, componentes, páginas y, al final, media queries y keyframes. */
+/* Estilos globales de la web: variables en :root, reset y estilos base. Los estilos de cada componente van en su .module.css (CSS Modules). */
+
+/* Variables provisionales hasta tener el diseño final. */
+:root {
+  --color-primary: #1f4e8c;
+  --color-text-muted: #5b6475;
+  --color-border: #dde2ea;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+}

@@ -1,0 +1,11 @@
+/* Estilos de Layout (CSS Module: clases en camelCase, importadas como styles.nombreClase). Provisionales hasta el diseño final. */
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main {
+  flex: 1;
+  padding: var(--space-md);
+}
