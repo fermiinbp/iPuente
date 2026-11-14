@@ -1,15 +1,127 @@
-/* Estilos globales de la web: variables en :root, reset y estilos base. Los estilos de cada componente van en su .module.css (CSS Modules). */
+/* Estilos globales de la web (diseño Bosque): variables en :root, reset y estilos base. Los estilos de cada componente van en su .module.css (CSS Modules). @media y @keyframes siempre al final. */
 
-/* Variables provisionales hasta tener el diseño final. */
 :root {
-  --color-primary: #1f4e8c;
-  --color-text-muted: #5b6475;
-  --color-border: #dde2ea;
+  /* Fondos */
+  --bosque: #24331f;
+  --bosque-elevado: #2f4329;
+  --bosque-profundo: #18240f;
+  --foto-hueco: #3d5535;
+
+  /* Texto y líneas */
+  --crema: #f3ecdc;
+  --crema-suave: #c4c9b4;
+  --linea: #506a49; /* decorativo, nunca texto */
+
+  /* Acentos */
+  --lima: #cfe36a; /* solo activo, seleccionado y foco */
+  --bronce: #b8894a;
+  --bronce-oscuro: #8a5a24; /* bronce sobre fondo crema */
+
+  /* Estados de sala (siempre con texto; "no se alquila" con trama) */
+  --libre: #c3e3b0;
+  --libre-texto: #14230f;
+  --ocupada: #c64e34;
+  --ocupada-texto: #ffffff;
+  --no-alquila: #9aa793;
+  --no-alquila-texto: #050a03;
+
+  /* Secundarios (plano y edificio) */
+  --linea-plano: #5d7656;
+  --papel: #fdfaf0;
+  --trama-no-alquila: #76846d;
+  --bronce-claro: #dcb67a;
+  --bronce-borde: #8a6330;
+  --bronce-ventana: #6f4f26;
+
+  /* Tipografía */
+  --font-display: 'Newsreader', Georgia, serif;
+  --font-body: 'Hanken Grotesk', system-ui, sans-serif;
+  --text-hero: clamp(54px, 7.4vw, 116px);
+  --text-seccion: clamp(40px, 5vw, 76px);
+  --text-declaracion: clamp(34px, 4.7vw, 72px);
+  --text-sala: clamp(30px, 3.5vw, 50px);
+  --text-cuerpo: 17px;
+  --text-interfaz: 16px;
+  --text-menu: 15px; /* minúsculas con inicial, sin text-transform */
+  --leading-hero: 0.94;
+  --leading-declaracion: 1.08;
+  --leading-cuerpo: 1.53; /* 26 / 17 */
+  --tracking-titular: -0.015em;
+
+  /* Formas y distribución (de referencia-01-landing.html) */
+  --radio-pildora: 999px;
+  --radio-tarjeta: 16px;
+  --radio-buscador: 18px;
+  --radio-chip: 4px;
+  --ancho-max: 1280px;
+  --gutter: clamp(20px, 4vw, 56px);
+}
+
+/* Alias provisionales (los usan DashboardLayout y Footer). No borrar. */
+:root {
+  --color-primary: var(--lima);
+  --color-text-muted: var(--crema-suave);
+  --color-border: var(--linea);
   --space-sm: 0.5rem;
   --space-md: 1rem;
 }
 
+/* Reset mínimo */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Base */
+body {
+  background: var(--bosque);
+  color: var(--crema);
+  font-family: var(--font-body);
+  font-size: var(--text-cuerpo);
+  line-height: var(--leading-cuerpo);
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: var(--tracking-titular);
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--lima);
+  outline-offset: 3px;
+}
+
+/* Al final: media queries y keyframes */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }
