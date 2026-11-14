@@ -14,6 +14,7 @@ iPuente es un portal donde las empresas publican sus oficinas y salas, y los cli
 - [Diseño de datos](#diseño-de-datos)
 - [Convenciones de trabajo](#convenciones-de-trabajo)
 - [Prototipo navegable del flujo principal](#Prototipo-navegable-del-flujo-principal)
+- [Guía de estilo](#guía-de-estilo)
 
   
 ## Problema que resuelve
@@ -534,3 +535,12 @@ DAT001: diseño de datos, colecciones y relaciones
 
 ### Enlace
 https://www.figma.com/proto/f9p2T0dQ9D4Zf3NGX7JfPa/iPuente-%C2%B7-Wireframes--Copia-?node-id=4-117&p=f&t=jab2ZhUeT4QE1r82-1&scaling=min-zoom&content-scaling=fixed&page-id=0%3A1&starting-point-node-id=4%3A117&show-proto-sidebar=1
+
+# Guía de estilo
+
+Dirección visual **Bosque**: fondo verde bosque, texto crema, lima solo para lo activo y bronce para lo construido. Tipografía Newsreader (titulares) y Hanken Grotesk (cuerpo e interfaz).
+
+### Enlace
+https://www.figma.com/design/Q7e0bEAnLUI7IKLrxwLaYp
+
+El archivo de Figma recoge el logo, la paleta (22 variables de color y 6 de forma), los estados de sala, 9 estilos de texto, los contrastes y las reglas de uso. La versión en texto, con las variables CSS listas para `client/styles/style.css`, está en [`docs/diseno/fundamentos.md`](./docs/diseno/fundamentos.md). El logo y los iconos web están en `docs/images/`.
