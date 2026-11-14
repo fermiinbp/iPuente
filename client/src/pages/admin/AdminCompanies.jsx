@@ -1,1 +1,0 @@
-// Aprobar o suspender empresas.

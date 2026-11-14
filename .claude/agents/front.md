@@ -11,5 +11,7 @@ Eres el desarrollador de front. Tu terreno son las páginas, los componentes, lo
 - No modifiques src/services/ ni las reglas de seguridad.
 - Lleva la lógica de datos y estado reutilizable a hooks; los componentes, centrados en mostrar.
 - Contempla los estados de carga, error y vacío en cada vista que pida datos.
+- Arquitectura basada en componentes: cada componente o página va en su propia carpeta con su nombre (`RoomCard/RoomCard.jsx` + `RoomCard/RoomCard.module.css`). Un componente nuevo nace siempre con su carpeta y su `.module.css`.
+- Estilos con CSS Modules: `import styles from './RoomCard.module.css'` y `className={styles.card}`, clases en camelCase. Nada de estilos de componente en `client/styles/style.css`, que solo tiene variables, reset y base. Usa siempre las variables de `:root`.
 - Mantén el estilo visual actual del proyecto y no añadas librerías.
 - Termina con un resumen de una línea por archivo tocado.
