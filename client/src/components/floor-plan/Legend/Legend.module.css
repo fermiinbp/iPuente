@@ -1,1 +1,40 @@
-/* Estilos de Legend (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-interfaz);
+  color: var(--crema);
+}
+
+.swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  border: 1px solid var(--linea-plano);
+}
+
+.free {
+  background: var(--libre);
+}
+
+.occupied {
+  background: var(--ocupada);
+}
+
+.off {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--trama-no-alquila) 0 1.5px,
+    var(--no-alquila) 1.5px 5px
+  );
+}

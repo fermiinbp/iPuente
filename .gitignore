@@ -15,7 +15,8 @@ coverage/
 *.local
 
 # Claude: lo personal de cada uno (hooks del visor)
-.claude/settings.local.json
+.claude/
+
 
 # BaaS
 .firebase/

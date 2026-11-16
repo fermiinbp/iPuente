@@ -1,1 +1,255 @@
-/* Estilos de BuildingHero (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.building {
+  display: flex;
+  flex-direction: column;
+}
+
+.roof {
+  width: min(320px, 62%);
+  height: 14px;
+  margin-left: var(--space-4);
+  background: var(--libre);
+}
+
+.floor {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--crema);
+  font-family: var(--font-display);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.floor:active {
+  transform: scale(0.97);
+}
+
+.slab {
+  position: relative;
+  flex: 0 0 52%;
+  display: block;
+  height: 84px;
+  background: var(--libre);
+  border-bottom: 2px solid var(--bosque-profundo);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.windows {
+  position: absolute;
+  inset: 18px 18px 18px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--linea-plano) 0 34px,
+    transparent 34px 50px
+  );
+  opacity: 0.85;
+}
+
+.name {
+  min-width: 0;
+  font-size: var(--text-lista-movil);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-titular);
+}
+
+.ground .slab {
+  height: 96px;
+}
+
+.ground .windows {
+  bottom: 0;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0 40%,
+    var(--bosque-profundo) 40% 60%,
+    transparent 60% 100%
+  );
+}
+
+.active {
+  color: var(--lima);
+}
+
+.active .slab {
+  background: var(--libre);
+  outline: 3px solid var(--lima);
+  outline-offset: 0;
+}
+
+.active .windows {
+  opacity: 1;
+}
+
+/* El contorno lima de la losa activa queda pegado a la banda: el anillo de foco se aleja para que se distinga. */
+.active:focus-visible {
+  outline-offset: 8px;
+}
+
+.active .name {
+  font-style: italic;
+}
+
+.base {
+  width: 100%;
+  height: 1px;
+  background: var(--crema-suave);
+  opacity: 0.5;
+}
+
+.info {
+  min-height: 96px;
+  padding-top: 18px;
+  border-top: 1px solid var(--linea);
+}
+
+.infoTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: var(--tracking-titular);
+}
+
+.infoText {
+  margin: 6px 0 0;
+  font-size: var(--text-interfaz);
+  color: var(--crema-suave);
+}
+
+.infoLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 2px;
+  font-size: var(--text-interfaz);
+  font-weight: 600;
+  text-underline-offset: 5px;
+}
+
+/* Con 3D: el edificio lo pinta la escena y los botones pasan a ser una fila de plantas. */
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.ghost {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  height: clamp(280px, 60vw, 440px);
+}
+
+.ghostSlab {
+  display: block;
+  width: min(320px, 70%);
+  height: 28px;
+  margin: 0 auto;
+  background: var(--libre);
+  border-bottom: 2px solid var(--bosque-profundo);
+  opacity: 1;
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--text-interfaz);
+  color: var(--crema-suave);
+  text-align: center;
+}
+
+.compact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.compact .roof,
+.compact .base,
+.compact .slab {
+  display: none;
+}
+
+.compact .floor {
+  width: auto;
+  min-width: 132px;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--linea);
+}
+
+.compact .name {
+  font-size: var(--text-lead);
+}
+
+.compact .active {
+  border-color: var(--lima);
+}
+
+.compact .active:focus-visible {
+  outline-offset: 3px;
+}
+
+/* Texto solo para lectores de pantalla (anuncia la última planta elegida). */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .floor:hover {
+    color: var(--lima);
+  }
+
+  .compact .floor:hover {
+    border-color: var(--lima);
+  }
+}
+
+@media (min-width: 600px) {
+  .floor {
+    gap: var(--space-5);
+  }
+
+  .slab {
+    flex-basis: min(352px, 68%);
+  }
+
+  .name {
+    font-size: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slab,
+  .floor {
+    transition: none;
+  }
+
+  .floor:active {
+    transform: none;
+  }
+}

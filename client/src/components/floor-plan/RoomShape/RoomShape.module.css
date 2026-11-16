@@ -1,1 +1,45 @@
-/* Estilos de RoomShape (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Etiqueta flotante de una sala dentro del plano 3D (HTML sobre el canvas). Decorativa: la información real está en la lista. */
+.chip {
+  display: inline-block;
+  padding: 3px 9px;
+  border: 1px solid var(--linea-plano);
+  border-radius: var(--radio-chip);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+.free {
+  background: var(--libre);
+  color: var(--libre-texto);
+}
+
+.occupied {
+  background: var(--ocupada);
+  color: var(--ocupada-texto);
+}
+
+.off {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--trama-no-alquila) 0 2px,
+    var(--no-alquila) 2px 7px
+  );
+  color: var(--no-alquila-texto);
+}
+
+.selected {
+  outline: 2px solid var(--lima);
+  outline-offset: 1px;
+}
+
+/* Bajo 600 px la etiqueta muestra solo el código de la sala; el estado completo está en la lista. */
+@media (max-width: 599px) {
+  .long {
+    display: none;
+  }
+}
