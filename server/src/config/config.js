@@ -16,6 +16,12 @@ if (missing.length > 0) {
   console.warn(`Faltan variables de entorno: ${missing.join(', ')}. Revisa server/.env.`);
 }
 
+// En producción no arrancamos sin credenciales de Firebase: mejor fallar al desplegar que en la primera petición.
+const missingFirebase = missing.filter((name) => name.startsWith('FIREBASE_'));
+if (process.env.NODE_ENV === 'production' && missingFirebase.length > 0) {
+  throw new Error(`Faltan variables de Firebase en producción: ${missingFirebase.join(', ')}.`);
+}
+
 // Netlify (y muchos .env) guardan la clave con "\n" literales: los convertimos en saltos reales.
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 

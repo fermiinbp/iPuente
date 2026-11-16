@@ -7,16 +7,19 @@ import { db } from '../src/config/config.js';
 async function main() {
   const ref = db().collection('_ping').doc();
 
-  await ref.set({ ok: true, createdAt: FieldValue.serverTimestamp() });
-  console.log(`Escrito _ping/${ref.id}`);
+  try {
+    await ref.set({ ok: true, createdAt: FieldValue.serverTimestamp() });
+    console.log(`Escrito _ping/${ref.id}`);
 
-  const snap = await ref.get();
-  if (!snap.exists || snap.data().ok !== true) {
-    throw new Error('El documento escrito no se ha podido leer.');
+    const snap = await ref.get();
+    if (!snap.exists || snap.data().ok !== true) {
+      throw new Error('El documento escrito no se ha podido leer.');
+    }
+    console.log('Leído correctamente.');
+  } finally {
+    // Se borra siempre, aunque falle la lectura, para no dejar basura en Firestore.
+    await ref.delete();
   }
-  console.log('Leído correctamente.');
-
-  await ref.delete();
   console.log('Borrado. Conexión con Firestore OK.');
 }
 
