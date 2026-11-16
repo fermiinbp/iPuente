@@ -55,3 +55,26 @@
 - InstancedMesh para montantes, mesas y rejillas.
 - <150 draw calls y dpr máximo de 2.
 - Sin modelos externos: todo procedural.
+
+### Ajustes finales
+
+#### Techo de la planta 5
+- La planta 5 tiene que quedar cerrada por arriba:
+  - Forjado de techo con el mismo canto (~0,3 m).
+  - Peto perimetral en la parte que queda al aire por el retranqueo de la planta 6.
+- Si esa parte es terraza, lleva suelo de terraza, peto y una barandilla fina.
+- Ninguna planta deja ver su interior desde arriba si no está abierta.
+
+#### Selección de planta: despiece (sustituye al fundido)
+- Al seleccionar la planta N:
+  - Las plantas N+1 en adelante, con la cubierta incluida, suben juntas como un bloque unos 1,5–2 alturas de planta.
+  - Siguen 100 % opacas, sin fundido ni desaparición.
+  - Las plantas por debajo de N se quedan en su sitio, opacas.
+  - La planta N muestra el interior: se oculta solo su fachada y su techo, con salas planas, etiquetas, lima y ficha como ahora.
+- Animación: ~450 ms con easing (easeInOutCubic o damp de maath/drei), tanto al abrir como al cerrar.
+- Al cambiar de N a M, el bloque superior se recoloca sin cerrar antes.
+- Cámara: encuadra la planta N y deja visible parte del bloque levantado para dar contexto.
+- Sombras: el bloque levantado sigue proyectando sombra sobre la planta N, suave para que no oscurezca las salas.
+- Interacción:
+  - Con una planta abierta, el bloque levantado no captura clics de sala.
+  - Clic en el bloque levantado o en una planta inferior: abre esa planta.
