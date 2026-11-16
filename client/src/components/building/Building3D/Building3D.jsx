@@ -1,42 +1,45 @@
-// Edificio 3D procedural del hero, fiel al mockup: 5 plantas iguales con forjados finos y seis bloques de sala por
-// planta, más una fachada de vidrio sutil (montantes finos) y una cubierta con peto, dos máquinas y una caseta.
-// Los botones HTML mandan: `activeFloorId` resalta una planta (forjado lima y colores de estado a través del vidrio)
-// y `selectedFloorId` la abre como en el mockup: las de encima suben y se desvanecen, las de debajo se desvanecen y
-// queda solo esa planta con sus salas planas en su color de estado, una etiqueta («2.01 · Libre») por sala y la
-// ficha de la sala elegida (contorno lima). Cámara 3/4 con OrbitControls; render bajo demanda.
+// Edificio 3D procedural del hero: muro cortina de vidrio con montantes, forjados, núcleo de comunicaciones,
+// cubierta con máquinas y una plaza con árboles. Los botones HTML mandan: `activeFloorId` resalta una planta
+// (forjado lima y estados de sala visibles a través del vidrio) y `selectedFloorId` la abre: las de encima suben
+// y se desvanecen. Cámara 3/4 con OrbitControls; render bajo demanda (invalidate solo mientras algo se mueve).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router';
 import { useFrame, useThree } from '@react-three/fiber';
-import { ContactShadows, Environment, Html, Lightformer, OrbitControls } from '@react-three/drei';
+import { ContactShadows, Environment, Lightformer, OrbitControls } from '@react-three/drei';
 import {
   BoxGeometry,
   CanvasTexture,
-  MeshBasicMaterial,
+  CylinderGeometry,
+  IcosahedronGeometry,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
+  Object3D,
   RepeatWrapping,
   SRGBColorSpace,
   Vector3,
 } from 'three';
 import LazyCanvas from '@/components/three/LazyCanvas/LazyCanvas.jsx';
-import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
 import { useCssColors } from '@/hooks/useCssColors.js';
 import { useReducedMotion } from '@/hooks/useReducedMotion.js';
 import {
-  FULL_PLAN,
+  BASE_Y,
+  CORE,
   LIFT,
-  STATUS_LABEL,
-  buildBlocks,
-  buildOpenRooms,
+  ROOF_T,
+  TREES,
+  buildInterior,
   buildingHeight,
+  canopyGeometry,
+  coreGeometry,
   facadeMatrices,
-  fitView,
+  fitDistance,
+  hvacMatrices,
   layoutFloors,
   plateGeometry,
-  roofBoxMatrices,
+  plazaGeometry,
   roofGeometry,
-  roomCode,
-  roomOutlineGeometry,
+  skylightMatrix,
+  FULL_PLAN,
+  SETBACK_PLAN,
 } from './building3dModel.js';
 import styles from './Building3D.module.css';
 
@@ -44,27 +47,27 @@ import styles from './Building3D.module.css';
 const TOKENS = [
   'crema',
   'crema-suave',
-  'bosque',
   'bosque-elevado',
   'bosque-profundo',
+  'foto-hueco',
+  'linea',
   'linea-plano',
   'lima',
   'libre',
   'ocupada',
   'no-alquila',
   'trama-no-alquila',
+  'bronce',
 ];
 
-const CAMERA = { fov: 30, near: 1, far: 500, position: [60, 40, 90] };
-const AZIMUTH = (66 * Math.PI) / 180; // el lado largo queda a la izquierda, como en el mockup (~24° del lado corto)
-const ELEVATION = (35 * Math.PI) / 180; // picada del mockup
-const FILL_H = 0.7; // el edificio ocupa el 70 % del alto del canvas…
-const FILL_W = 0.8; // …y como mucho el 80 % del ancho (no se sale de la columna del hero)
+const CAMERA = { fov: 30, near: 1, far: 400, position: [60, 40, 90] };
+const AZIMUTH = 0.62; // 3/4: unos 35° desde el frente
+const ELEVATION = 0.34; // ligeramente picada (~19°)
 const KEY_STEP = 0.15; // radianes por pulsación de flecha
 const NO_RAYCAST = () => null;
 const UP = new Vector3(0, 1, 0);
-const GLASS_OPACITY = 0.12; // muy poca: deja ver los bloques y no tapa el color de estado
-const STATUS_BADGE = { free: 'free', busy: 'occupied', off: 'off' };
+const GLASS_OPACITY = 0.35;
+const GLASS_OPACITY_OPEN = 0.14; // la planta abierta se ve casi sin vidrio
 
 // Trama diagonal a 45° de «No se alquila» (misma idea que FloorPlan), con colores leídos de los tokens.
 function crearTrama(fondo, raya) {
@@ -89,51 +92,69 @@ function crearTrama(fondo, raya) {
   return textura;
 }
 
-// Geometrías y materiales base: se crean una vez y cada planta los comparte (los materiales de la cáscara se
-// clonan por planta para poder desvanecerlas una a una).
+// Geometrías y materiales base: se crean una vez y cada planta los comparte (los materiales se clonan por planta
+// para poder desvanecerlas una a una).
 function crearRecursos(colors) {
   const palette = {
     free: colors.libre,
     busy: colors.ocupada,
     off: colors['no-alquila'],
-    block: colors.libre.clone().multiplyScalar(0.97),
+    floorNeutral: colors['crema-suave'].clone().multiplyScalar(0.55),
+    wallNeutral: colors['crema-suave'].clone().multiplyScalar(0.85),
+    bronce: colors.bronce,
+    door: colors['bosque-profundo'],
+    plaza: colors['bosque-elevado'],
+    sidewalk: colors.linea,
   };
-  const slab = colors.libre.clone().multiplyScalar(0.88);
   const trama = crearTrama(colors['no-alquila'], colors['trama-no-alquila']);
   const std = (color, roughness, metalness = 0, extra = {}) =>
     new MeshStandardMaterial({ color, roughness, metalness, ...extra });
-  // Salas planas de la planta abierta, como en el mockup: color plano y sin tone mapping, para que el estado sea el del token.
-  const tile = (color) => new MeshBasicMaterial({ color, toneMapped: false });
+  const glass = () =>
+    new MeshPhysicalMaterial({
+      color: colors.libre,
+      transparent: true,
+      opacity: GLASS_OPACITY,
+      roughness: 0.05,
+      metalness: 0.1,
+      envMapIntensity: 1.4,
+      depthWrite: false,
+    });
+  const cores = new Map();
   return {
     palette,
-    slabColor: slab,
     trama,
     unit: new BoxGeometry(1, 1, 1),
-    plate: plateGeometry(FULL_PLAN),
-    roof: roofGeometry(FULL_PLAN),
+    plates: { full: plateGeometry(FULL_PLAN), setback: plateGeometry(SETBACK_PLAN) },
+    roofs: { full: roofGeometry(FULL_PLAN), setback: roofGeometry(SETBACK_PLAN) },
+    core: (height) => {
+      if (!cores.has(height)) cores.set(height, coreGeometry(height));
+      return cores.get(height);
+    },
+    cores,
+    canopy: canopyGeometry(palette),
+    plaza: plazaGeometry(palette),
+    trunk: new CylinderGeometry(0.14, 0.2, 1.4, 6),
+    crown: new IcosahedronGeometry(1.5, 0),
     mats: {
-      plate: std(slab, 0.8),
-      glass: new MeshPhysicalMaterial({
-        color: colors.libre,
-        transparent: true,
-        opacity: GLASS_OPACITY,
-        roughness: 0.05,
-        metalness: 0,
-        envMapIntensity: 1,
-        depthWrite: false,
-      }),
-      mullion: std(colors['linea-plano'], 0.6, 0.1),
-      blocks: std(0xffffff, 0.85, 0, {
+      plate: std(colors.linea, 0.55, 0.15),
+      glass: glass(),
+      mullion: std(colors['bosque-profundo'], 0.45, 0.35),
+      core: std(colors['foto-hueco'], 0.7),
+      rooms: std(0xffffff, 0.85, 0, {
         vertexColors: true,
         toneMapped: false,
         envMapIntensity: 0.35,
       }),
-      hatch: new MeshBasicMaterial({ map: trama, toneMapped: false }),
-      tiles: { free: tile(colors.libre), busy: tile(colors.ocupada), off: tile(colors['no-alquila']) },
-      outline: new MeshBasicMaterial({ color: colors.lima, toneMapped: false }),
-      roof: std(slab.clone().multiplyScalar(0.95), 0.7),
+      hatch: std(0xffffff, 0.9, 0, { map: trama, toneMapped: false, envMapIntensity: 0.35 }),
+      roof: std(colors.linea, 0.6, 0.1),
       hvac: std(colors['no-alquila'], 0.6, 0.3),
-      hut: std(colors['crema-suave'].clone().multiplyScalar(0.8), 0.75),
+      sky: glass(),
+      canopy: std(0xffffff, 0.5, 0.2, { vertexColors: true }),
+      plaza: std(0xffffff, 0.95, 0, { vertexColors: true }),
+      trunk: std(colors.bronce.clone().multiplyScalar(0.6), 0.9),
+      crown: std(colors['linea-plano'].clone().lerp(colors.libre, 0.35), 0.85, 0, {
+        flatShading: true,
+      }),
     },
   };
 }
@@ -141,11 +162,14 @@ function crearRecursos(colors) {
 function disposeResources(r) {
   r.trama.dispose();
   r.unit.dispose();
-  r.plate.dispose();
-  r.roof.dispose();
-  const { tiles, ...rest } = r.mats;
-  Object.values(rest).forEach((m) => m.dispose());
-  Object.values(tiles).forEach((m) => m.dispose());
+  Object.values(r.plates).forEach((g) => g.dispose());
+  Object.values(r.roofs).forEach((g) => g.dispose());
+  r.cores.forEach((g) => g.dispose());
+  r.canopy.dispose();
+  r.plaza.dispose();
+  r.trunk.dispose();
+  r.crown.dispose();
+  Object.values(r.mats).forEach((m) => m.dispose());
 }
 
 // Desvanece un grupo de materiales hacia `target` (0 a 1). El flag `transparent` solo cambia al empezar y al
@@ -199,12 +223,11 @@ function Roof({ entry, hidden, resources, reduced }) {
   const { plan, h } = entry;
   const group = useRef(null);
   const hvacRef = useRef(null);
-  const hutRef = useRef(null);
   const mats = useMemo(
     () => ({
       roof: resources.mats.roof.clone(),
       hvac: resources.mats.hvac.clone(),
-      hut: resources.mats.hut.clone(),
+      sky: resources.mats.sky.clone(),
     }),
     [resources],
   );
@@ -213,96 +236,44 @@ function Roof({ entry, hidden, resources, reduced }) {
     () => [
       [mats.roof, 1],
       [mats.hvac, 1],
-      [mats.hut, 1],
+      [mats.sky, GLASS_OPACITY, true],
     ],
     [mats],
   );
   useFade(group, fades, hidden ? 0 : 1, reduced);
-  const boxes = useMemo(() => roofBoxMatrices(plan), [plan]);
+  const hvac = useMemo(() => hvacMatrices(plan), [plan]);
+  const sky = useMemo(() => skylightMatrix(plan), [plan]);
+  const skyRef = useRef(null);
 
   useLayoutEffect(() => {
-    boxes.hvac.forEach((m, i) => hvacRef.current.setMatrixAt(i, m));
+    hvac.forEach((m, i) => hvacRef.current.setMatrixAt(i, m));
     hvacRef.current.instanceMatrix.needsUpdate = true;
     hvacRef.current.computeBoundingSphere();
-    hutRef.current.setMatrixAt(0, boxes.hut);
-    hutRef.current.instanceMatrix.needsUpdate = true;
-    hutRef.current.computeBoundingSphere();
-  }, [boxes]);
+    skyRef.current.setMatrixAt(0, sky);
+    skyRef.current.instanceMatrix.needsUpdate = true;
+    skyRef.current.computeBoundingSphere();
+  }, [hvac, sky]);
 
   return (
     <group ref={group} position={[0, h, 0]}>
-      <mesh geometry={resources.roof} material={mats.roof} castShadow receiveShadow />
+      <mesh
+        geometry={plan === FULL_PLAN ? resources.roofs.full : resources.roofs.setback}
+        material={mats.roof}
+        castShadow
+        receiveShadow
+      />
       <instancedMesh
         ref={hvacRef}
-        args={[resources.unit, mats.hvac, boxes.hvac.length]}
+        args={[resources.unit, mats.hvac, hvac.length]}
         castShadow
         raycast={NO_RAYCAST}
       />
       <instancedMesh
-        ref={hutRef}
-        args={[resources.unit, mats.hut, 1]}
-        castShadow
+        ref={skyRef}
+        args={[resources.unit, mats.sky, 1]}
+        renderOrder={2}
         raycast={NO_RAYCAST}
       />
-    </group>
-  );
-}
-
-// Planta abierta (como el mockup): salas planas en su color de estado, una etiqueta por sala y la elegida en lima.
-function OpenRooms({ floor, plan, resources, roomIndex, onRoom, portal }) {
-  const open = useMemo(() => buildOpenRooms(plan, floor), [plan, floor]);
-  useEffect(() => () => open.hatch?.dispose(), [open]);
-  const chosen = open.rooms.find((room) => room.index === roomIndex);
-  const outline = useMemo(() => (chosen ? roomOutlineGeometry(chosen) : null), [chosen]);
-  useEffect(() => () => outline?.dispose(), [outline]);
-
-  return (
-    <group>
-      {open.rooms.map((room) => (
-        <mesh
-          key={room.index}
-          geometry={resources.unit}
-          material={resources.mats.tiles[room.status] ?? resources.mats.tiles.off}
-          position={[room.x, room.y, room.z]}
-          scale={[room.w, open.tileT, room.d]}
-          receiveShadow
-          onPointerOver={(event) => {
-            event.stopPropagation();
-            event.nativeEvent.target.style.cursor = 'pointer';
-          }}
-          onPointerOut={(event) => {
-            event.nativeEvent.target.style.cursor = '';
-          }}
-          onClick={(event) => {
-            event.stopPropagation();
-            if (event.delta > 6) return; // era un arrastre para girar
-            onRoom(room.index === roomIndex ? null : room.index);
-          }}
-        />
-      ))}
-      {open.hatch && (
-        <mesh geometry={open.hatch} material={resources.mats.hatch} raycast={NO_RAYCAST} />
-      )}
-      {outline && <mesh geometry={outline} material={resources.mats.outline} raycast={NO_RAYCAST} />}
-      {open.rooms.map((room) => (
-        <Html
-          key={room.index}
-          position={[room.x, room.top, room.z]}
-          portal={portal}
-          zIndexRange={[30, 0]}
-          className={styles.etiquetaRaiz}
-        >
-          <button
-            type="button"
-            className={`${styles.etiqueta} ${styles[`etiqueta_${room.status}`] ?? ''}`}
-            aria-pressed={room.index === roomIndex}
-            onClick={() => onRoom(room.index === roomIndex ? null : room.index)}
-          >
-            {roomCode(floor, room.index)} · {STATUS_LABEL[room.status] ?? STATUS_LABEL.off}
-          </button>
-          <span className={styles.tallo} aria-hidden="true" />
-        </Html>
-      ))}
     </group>
   );
 }
@@ -317,9 +288,6 @@ function Floor({
   reduced,
   onHover,
   onSelect,
-  roomIndex,
-  onRoom,
-  portal,
 }) {
   const { floor, y0, h, plan, isTop } = entry;
   const invalidate = useThree((state) => state.invalidate);
@@ -328,7 +296,6 @@ function Floor({
   const mullionsRef = useRef(null);
   const lift = useRef(0);
   const above = selectedLevel !== null && floor.number > selectedLevel;
-  const below = selectedLevel !== null && floor.number < selectedLevel;
   const targetLift = above ? LIFT : 0;
 
   const mats = useMemo(
@@ -336,29 +303,42 @@ function Floor({
       plate: resources.mats.plate.clone(),
       glass: resources.mats.glass.clone(),
       mullion: resources.mats.mullion.clone(),
-      blocks: resources.mats.blocks.clone(),
+      core: resources.mats.core.clone(),
+      rooms: resources.mats.rooms.clone(),
+      hatch: resources.mats.hatch.clone(),
     }),
     [resources],
   );
   useEffect(() => () => Object.values(mats).forEach((m) => m.dispose()), [mats]);
 
+  const glassBase = selected ? GLASS_OPACITY_OPEN : GLASS_OPACITY;
   const fades = useMemo(
     () => [
       [mats.plate, 1],
       [mats.mullion, 1],
-      [mats.blocks, 1],
-      [mats.glass, GLASS_OPACITY, true],
+      [mats.core, 1],
+      [mats.rooms, 1],
+      [mats.hatch, 1],
+      [mats.glass, glassBase, true],
     ],
-    [mats],
+    [mats, glassBase],
   );
-  useFade(group, fades, above || below ? 0 : 1, reduced);
+  useFade(group, fades, above ? 0 : 1, reduced);
 
-  const blocks = useMemo(
-    () => buildBlocks(plan, floor, resources.palette),
+  const interior = useMemo(
+    () => buildInterior(plan, floor, resources.palette),
     [plan, floor, resources],
   );
-  useEffect(() => () => blocks.geometry?.dispose(), [blocks]);
+  useEffect(
+    () => () => {
+      interior.geometry?.dispose();
+      interior.hatch?.dispose();
+    },
+    [interior],
+  );
   const facade = useMemo(() => facadeMatrices(plan, h), [plan, h]);
+  const coreHeight = isTop ? h + ROOF_T + CORE.cap : h;
+  const plateGeo = plan === FULL_PLAN ? resources.plates.full : resources.plates.setback;
 
   // Matrices de las instancias de la fachada.
   useLayoutEffect(() => {
@@ -372,19 +352,16 @@ function Floor({
     invalidate();
   }, [facade, invalidate]);
 
-  // Forjado: lima si la planta está resaltada, verde bosque oscuro si está abierta. Los bloques pasan al color de
-  // estado a través del vidrio solo en la planta resaltada.
+  // Planta resaltada: forjado lima y colores de estado en suelo y tabiques; el resto, interior neutro.
   useLayoutEffect(() => {
-    mats.plate.color.copy(
-      selected ? colors['bosque-elevado'] : active ? colors.lima : resources.slabColor,
-    );
-    const attr = blocks.geometry?.getAttribute('color');
+    mats.plate.color.copy(active ? colors.lima : colors.linea);
+    const attr = interior.geometry?.getAttribute('color');
     if (attr) {
-      attr.array.set(active ? blocks.state : blocks.neutral);
+      attr.array.set(active ? interior.state : interior.neutral);
       attr.needsUpdate = true;
     }
     invalidate();
-  }, [active, selected, mats, colors, resources, blocks, invalidate]);
+  }, [active, mats, colors, interior, invalidate]);
 
   // Posición: las plantas de encima de la abierta suben (con movimiento reducido, saltan).
   useLayoutEffect(() => {
@@ -409,7 +386,7 @@ function Floor({
     g.position.y = y0 + lift.current;
   });
 
-  const interactive = !above && !below;
+  const interactive = !above;
   const handlers = interactive
     ? {
         onPointerOver: (event) => {
@@ -430,30 +407,26 @@ function Floor({
 
   return (
     <group ref={group} {...handlers}>
-      <mesh geometry={resources.plate} material={mats.plate} castShadow receiveShadow />
-      <group visible={!selected}>
-        <instancedMesh
-          ref={panesRef}
-          args={[resources.unit, mats.glass, facade.panes.length]}
-          renderOrder={2}
-        />
-        <instancedMesh
-          ref={mullionsRef}
-          args={[resources.unit, mats.mullion, facade.mullions.length]}
+      <mesh geometry={plateGeo} material={mats.plate} castShadow receiveShadow />
+      <instancedMesh
+        ref={panesRef}
+        args={[resources.unit, mats.glass, facade.panes.length]}
+        renderOrder={2}
+      />
+      <instancedMesh
+        ref={mullionsRef}
+        args={[resources.unit, mats.mullion, facade.mullions.length]}
+        raycast={NO_RAYCAST}
+      />
+      {interior.geometry && <mesh geometry={interior.geometry} material={mats.rooms} />}
+      {interior.hatch && <mesh geometry={interior.hatch} material={mats.hatch} visible={active} />}
+      <mesh geometry={resources.core(coreHeight)} material={mats.core} castShadow receiveShadow />
+      {floor.off && (
+        <mesh
+          geometry={resources.canopy}
+          material={resources.mats.canopy}
+          castShadow
           raycast={NO_RAYCAST}
-        />
-        {blocks.geometry && (
-          <mesh geometry={blocks.geometry} material={mats.blocks} castShadow receiveShadow />
-        )}
-      </group>
-      {selected && (
-        <OpenRooms
-          floor={floor}
-          plan={plan}
-          resources={resources}
-          roomIndex={roomIndex}
-          onRoom={onRoom}
-          portal={portal}
         />
       )}
       {isTop && (
@@ -468,15 +441,51 @@ function Floor({
   );
 }
 
+function Trees({ resources }) {
+  const trunks = useRef(null);
+  const crowns = useRef(null);
+  useLayoutEffect(() => {
+    const dummy = new Object3D();
+    TREES.forEach(([x, z, s], i) => {
+      dummy.rotation.set(0, i * 1.7, 0);
+      dummy.position.set(x, BASE_Y - 0.08 + 0.7 * s, z);
+      dummy.scale.set(s, s, s);
+      dummy.updateMatrix();
+      trunks.current.setMatrixAt(i, dummy.matrix);
+      dummy.position.set(x, BASE_Y - 0.08 + 1.4 * s + 1.1 * s, z);
+      dummy.scale.set(s, s * 1.2, s);
+      dummy.updateMatrix();
+      crowns.current.setMatrixAt(i, dummy.matrix);
+    });
+    for (const mesh of [trunks.current, crowns.current]) {
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.computeBoundingSphere();
+    }
+  }, []);
+  return (
+    <>
+      <instancedMesh
+        ref={trunks}
+        args={[resources.trunk, resources.mats.trunk, TREES.length]}
+        castShadow
+        raycast={NO_RAYCAST}
+      />
+      <instancedMesh
+        ref={crowns}
+        args={[resources.crown, resources.mats.crown, TREES.length]}
+        castShadow
+        raycast={NO_RAYCAST}
+      />
+    </>
+  );
+}
+
 function Scene({
   floors,
   activeFloorId,
   selectedFloorId,
   onHoverFloor,
   onSelectFloor,
-  roomIndex,
-  onRoom,
-  portal,
   reduced,
   turnRef,
   zoom,
@@ -497,67 +506,25 @@ function Scene({
   const controls = useRef(null);
   const framed = useRef(false);
 
-  // Dos encuadres: el edificio entero (70 % del alto) y, con una planta abierta, solo esa planta.
-  const closedView = useMemo(
+  const target = useMemo(() => new Vector3(1.2, total * 0.47, 0.8), [total]);
+  const distance = useMemo(
     () =>
-      fitView({
+      fitDistance({
         aspect: height > 0 ? width / height : 1.4,
         fovDeg: CAMERA.fov,
         azimuth: AZIMUTH,
         elevation: ELEVATION,
-        plan: FULL_PLAN,
+        target,
         height: total,
-        fracH: FILL_H,
-        fracW: FILL_W,
       }),
-    [width, height, total],
+    [width, height, target, total],
   );
-  const selectedY = selectedEntry ? selectedEntry.y0 : null;
-  const openView = useMemo(
-    () =>
-      selectedY === null
-        ? null
-        : fitView({
-            aspect: height > 0 ? width / height : 1.4,
-            fovDeg: CAMERA.fov,
-            azimuth: AZIMUTH,
-            elevation: ELEVATION,
-            plan: FULL_PLAN,
-            height: total,
-            fracH: FILL_H,
-            fracW: FILL_W,
-            floorY: selectedY,
-          }),
-    [width, height, total, selectedY],
-  );
-  const { target, distance } = closedView;
-  const goal = useRef(closedView);
-  useLayoutEffect(() => {
-    goal.current = openView ?? closedView;
-    invalidate();
-  }, [openView, closedView, invalidate]);
-
-  // Al abrir o cerrar una planta la cámara se acerca o se aleja suavemente conservando el ángulo al que se giró.
-  const dirTmp = useMemo(() => new Vector3(), []);
-  useFrame((_, delta) => {
-    const c = controls.current;
-    if (!c) return;
-    const g = goal.current;
-    const current = camera.position.distanceTo(c.target);
-    if (c.target.distanceTo(g.target) < 0.02 && Math.abs(current - g.distance) < 0.02) return;
-    const k = reduced ? 1 : Math.min(1, delta * 6);
-    dirTmp.subVectors(camera.position, c.target).normalize();
-    c.target.lerp(g.target, k);
-    camera.position.copy(c.target).addScaledVector(dirTmp, current + (g.distance - current) * k);
-    c.update();
-    invalidate();
-  });
 
   // Encuadre: la primera vez, el 3/4 inicial; al cambiar el tamaño se conserva el ángulo al que el usuario giró.
   useLayoutEffect(() => {
     const dir = new Vector3();
     if (framed.current) {
-      dir.subVectors(camera.position, controls.current?.target ?? target).normalize();
+      dir.subVectors(camera.position, target).normalize();
     } else {
       dir.set(
         Math.cos(ELEVATION) * Math.sin(AZIMUTH),
@@ -595,47 +562,47 @@ function Scene({
           form="rect"
           intensity={2.4}
           color={colors.crema}
-          position={[0, 14, -4]}
+          position={[0, 12, -4]}
           rotation-x={Math.PI / 2}
-          scale={[30, 30, 1]}
+          scale={[24, 24, 1]}
         />
         <Lightformer
           form="rect"
           intensity={3}
           color={colors.crema}
-          position={[-16, 6, 8]}
+          position={[-14, 5, 8]}
           rotation-y={Math.PI / 2}
-          scale={[22, 12, 1]}
+          scale={[18, 8, 1]}
         />
         <Lightformer
           form="rect"
           intensity={1.6}
           color={colors['crema-suave']}
-          position={[16, 4, -8]}
+          position={[14, 3, -8]}
           rotation-y={-Math.PI / 2}
-          scale={[22, 10, 1]}
+          scale={[18, 6, 1]}
         />
         <Lightformer
           form="rect"
           intensity={1.2}
           color={colors['crema-suave']}
-          position={[0, 4, 18]}
+          position={[0, 3, 16]}
           rotation-y={Math.PI}
-          scale={[28, 8, 1]}
+          scale={[24, 5, 1]}
         />
       </Environment>
       <directionalLight
         castShadow
         color={colors.crema}
         intensity={2.6}
-        position={[-18, 40, 26]}
+        position={[-16, 30, 20]}
         shadow-mapSize={[1024, 1024]}
         shadow-camera-left={-30}
         shadow-camera-right={30}
         shadow-camera-top={30}
         shadow-camera-bottom={-30}
         shadow-camera-near={5}
-        shadow-camera-far={110}
+        shadow-camera-far={90}
         shadow-bias={-0.0005}
         shadow-normalBias={0.05}
         shadow-radius={4}
@@ -650,28 +617,18 @@ function Scene({
         rotateSpeed={0.7}
         minPolarAngle={0.55}
         maxPolarAngle={Math.PI / 2 - 0.1}
-        minDistance={Math.min(distance, openView?.distance ?? distance) * 0.55}
+        minDistance={distance * 0.55}
         maxDistance={distance * 1.25}
       />
 
-      {/* Sombra suave de la luz sobre el suelo (invisible salvo la sombra) y sombra de contacto en la base. */}
-      <mesh
-        rotation-x={-Math.PI / 2}
-        position={[0, 0.005, 0]}
-        visible={selectedLevel === null}
-        receiveShadow
-        raycast={NO_RAYCAST}
-      >
-        <planeGeometry args={[80, 80]} />
-        <shadowMaterial opacity={0.12} color={colors['bosque-profundo']} />
-      </mesh>
+      <mesh geometry={resources.plaza} material={resources.mats.plaza} receiveShadow />
+      <Trees resources={resources} />
       <ContactShadows
-        visible={selectedLevel === null}
-        position={[0, 0.02, 0]}
-        scale={44}
-        far={total + 4}
-        blur={2.6}
-        opacity={0.5}
+        position={[0, BASE_Y + 0.01, 0]}
+        scale={46}
+        far={14}
+        blur={2.4}
+        opacity={0.55}
         resolution={512}
         color={colors['bosque-profundo']}
       />
@@ -688,35 +645,9 @@ function Scene({
           reduced={reduced}
           onHover={onHoverFloor}
           onSelect={onSelectFloor}
-          roomIndex={roomIndex}
-          onRoom={onRoom}
-          portal={portal}
         />
       ))}
     </>
-  );
-}
-
-// Ficha de la sala elegida (arriba a la izquierda, como en el mockup). El enlace solo sale si el padre pasa `roomHref`.
-function RoomCard({ floor, index, roomHref, onClose }) {
-  const status = floor.rooms?.[index] ?? 'off';
-  const code = roomCode(floor, index);
-  const href = status === 'free' ? roomHref?.(floor, code) : null;
-  return (
-    <aside className={styles.ficha} aria-label={`Sala ${code}`}>
-      <button type="button" className={styles.fichaCerrar} onClick={onClose}>
-        <span className={styles.srOnly}>Cerrar la ficha de la sala {code}</span>
-        <span aria-hidden="true">×</span>
-      </button>
-      <p className={styles.fichaPlanta}>{floor.name}</p>
-      <p className={styles.fichaTitulo}>Sala {code}</p>
-      <StatusBadge status={STATUS_BADGE[status] ?? 'off'} />
-      {href && (
-        <Link className={styles.fichaEnlace} to={href}>
-          Ver huecos libres
-        </Link>
-      )}
-    </aside>
   );
 }
 
@@ -726,21 +657,13 @@ export default function Building3D({
   selectedFloorId,
   onHoverFloor,
   onSelectFloor,
-  roomHref,
   label,
   fallback = null,
 }) {
   const reduced = useReducedMotion();
   const turnRef = useRef(null);
-  const raiz = useRef(null);
   // La rueda solo hace zoom con el contenedor enfocado: si no, el edificio atraparía el scroll de la página.
   const [zoom, setZoom] = useState(false);
-  // Sala elegida en la planta abierta; solo vale para la planta con la que se eligió.
-  const [room, setRoom] = useState({ floorId: '', index: null });
-  const roomIndex = room.floorId === selectedFloorId ? room.index : null;
-  const selectedFloor = floors.find((floor) => floor.id === selectedFloorId);
-  const onRoom = (index) => setRoom({ floorId: selectedFloorId, index });
-
   const onKeyDown = (event) => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     event.preventDefault();
@@ -748,7 +671,6 @@ export default function Building3D({
   };
   return (
     <div
-      ref={raiz}
       className={styles.grupo}
       tabIndex={0}
       role="group"
@@ -761,7 +683,7 @@ export default function Building3D({
         label={label}
         fallback={fallback}
         camera={CAMERA}
-        shadows="percentage"
+        shadows
         className={styles.escena}
       >
         <Scene
@@ -770,22 +692,11 @@ export default function Building3D({
           selectedFloorId={selectedFloorId}
           onHoverFloor={onHoverFloor}
           onSelectFloor={onSelectFloor}
-          roomIndex={roomIndex}
-          onRoom={onRoom}
-          portal={raiz}
           reduced={reduced}
           turnRef={turnRef}
           zoom={zoom}
         />
       </LazyCanvas>
-      {selectedFloor && roomIndex !== null && (
-        <RoomCard
-          floor={selectedFloor}
-          index={roomIndex}
-          roomHref={roomHref}
-          onClose={() => onRoom(null)}
-        />
-      )}
     </div>
   );
 }
