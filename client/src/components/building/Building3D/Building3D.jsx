@@ -785,10 +785,10 @@ function Scene({
         shadow-camera-far={90}
         shadow-bias={-0.0005}
         shadow-normalBias={0.05}
-        shadow-radius={4}
+        shadow-radius={2}
       />
       {/* Relleno frío, sin sombra, desde el lado contrario al sol: el tono más fresco de la paleta. */}
-      <directionalLight color={colors['crema-suave']} intensity={0.95} position={[30, 10, 6]} />
+      <directionalLight color={colors['crema-suave']} intensity={0.35} position={[30, 10, 6]} />
       <OrbitControls
         ref={controls}
         enablePan={false}
