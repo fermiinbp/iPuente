@@ -4,13 +4,20 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test": "node --test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.14.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.3.0"
   }
 }

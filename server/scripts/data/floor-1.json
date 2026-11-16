@@ -1,0 +1,112 @@
+{
+  "id": "floor-1",
+  "buildingId": "demo-building",
+  "nombre": "Planta 1",
+  "nivel": 1,
+  "demo": true,
+  "ancho": 1000,
+  "alto": 600,
+  "origen": "manual",
+  "salas": [
+    {
+      "id": "p1-s11",
+      "codigo": "P1-S11",
+      "nombre": "Sala Alameda",
+      "tipo": "sala",
+      "x": 0,
+      "y": 0,
+      "w": 400,
+      "h": 260
+    },
+    {
+      "id": "p1-s12",
+      "codigo": "P1-S12",
+      "nombre": "Sala Macarena",
+      "tipo": "sala",
+      "x": 400,
+      "y": 0,
+      "w": 300,
+      "h": 260
+    },
+    {
+      "id": "p1-s13",
+      "codigo": "P1-S13",
+      "nombre": "Sala Santa Cruz",
+      "tipo": "sala",
+      "x": 700,
+      "y": 0,
+      "w": 300,
+      "h": 260
+    },
+    {
+      "id": "p1-pas",
+      "codigo": "P1-PAS",
+      "nombre": "Pasillo",
+      "tipo": "pasillo",
+      "x": 0,
+      "y": 260,
+      "w": 1000,
+      "h": 80
+    },
+    {
+      "id": "p1-b11",
+      "codigo": "P1-B11",
+      "nombre": "Box 1",
+      "tipo": "box",
+      "x": 0,
+      "y": 340,
+      "w": 120,
+      "h": 260
+    },
+    {
+      "id": "p1-b12",
+      "codigo": "P1-B12",
+      "nombre": "Box 2",
+      "tipo": "box",
+      "x": 120,
+      "y": 340,
+      "w": 120,
+      "h": 260
+    },
+    {
+      "id": "p1-b13",
+      "codigo": "P1-B13",
+      "nombre": "Box 3",
+      "tipo": "box",
+      "x": 240,
+      "y": 340,
+      "w": 120,
+      "h": 260
+    },
+    {
+      "id": "p1-coc",
+      "codigo": "P1-COC",
+      "nombre": "Office",
+      "tipo": "cocina",
+      "x": 360,
+      "y": 340,
+      "w": 240,
+      "h": 260
+    },
+    {
+      "id": "p1-ase",
+      "codigo": "P1-ASE",
+      "nombre": "Aseos",
+      "tipo": "comun",
+      "x": 600,
+      "y": 340,
+      "w": 120,
+      "h": 260
+    },
+    {
+      "id": "p1-s14",
+      "codigo": "P1-S14",
+      "nombre": "Sala Nervión",
+      "tipo": "sala",
+      "x": 720,
+      "y": 340,
+      "w": 280,
+      "h": 260
+    }
+  ]
+}
