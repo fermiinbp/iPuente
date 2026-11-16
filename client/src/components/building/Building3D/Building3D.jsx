@@ -817,7 +817,7 @@ export default function Building3D({
         label={label}
         fallback={fallback}
         camera={CAMERA}
-        shadows="soft"
+        shadows="percentage"
         className={styles.escena}
       >
         <Scene
