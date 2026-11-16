@@ -1,0 +1,25 @@
+.toneBase {
+  background: var(--bosque);
+}
+
+.toneElevated {
+  background: var(--bosque-elevado);
+}
+
+.toneDeep {
+  background: var(--bosque-profundo);
+}
+
+.bordered {
+  border-top: 1px solid var(--linea);
+}
+
+.inner {
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: clamp(64px, 8vw, 104px) var(--gutter);
+}
+
+.spacious {
+  padding-block: clamp(64px, 8vw, 112px);
+}

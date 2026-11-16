@@ -15,7 +15,8 @@ coverage/
 *.local
 
 # Claude: lo personal de cada uno (hooks del visor)
-.claude/settings.local.json
+.claude/
+
 
 # BaaS (y claves de cuentas de servicio de Firebase: nunca se suben)
 *serviceAccount*.json

@@ -1,1 +1,69 @@
-/* Estilos de RoomCard (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  color: var(--crema);
+  text-decoration: none;
+}
+
+.card {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.card:active {
+  transform: scale(0.97);
+}
+
+.photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radio-tarjeta);
+  background: var(--foto-hueco);
+  border: 1px solid var(--linea);
+}
+
+.symbol {
+  display: block;
+  width: 48px;
+  height: 48px;
+  background: var(--linea-plano);
+  -webkit-mask: var(--simbolo) center / contain no-repeat;
+  mask: var(--simbolo) center / contain no-repeat;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: clamp(30px, 3.5vw, 36px);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-titular);
+}
+
+.place {
+  font-size: var(--text-menu);
+  color: var(--crema-suave);
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+  padding-top: 10px;
+  border-top: 1px solid var(--linea);
+  font-size: var(--text-menu);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}

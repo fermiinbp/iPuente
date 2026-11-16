@@ -561,7 +561,7 @@ https://www.figma.com/proto/f9p2T0dQ9D4Zf3NGX7JfPa/iPuente-%C2%B7-Wireframes--Co
 
 # Guía de estilo
 
-Dirección visual **Bosque**: fondo verde bosque, texto crema, lima solo para lo activo y bronce para lo construido. Tipografía Newsreader (titulares) y Hanken Grotesk (cuerpo e interfaz).
+Dirección visual **Bosque**: fondo verde bosque, texto crema, lima solo para lo activo, el edificio en verde claro (`--libre`) y bronce para los pines y los números de paso. Tipografía Newsreader (titulares) y Hanken Grotesk (cuerpo e interfaz).
 
 ### Enlace
 https://www.figma.com/design/Q7e0bEAnLUI7IKLrxwLaYp

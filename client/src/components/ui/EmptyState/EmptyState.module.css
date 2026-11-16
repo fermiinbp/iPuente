@@ -1,0 +1,30 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+  color: var(--crema);
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--crema-suave);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-titulo-paso);
+}
+
+.text {
+  max-width: 44ch;
+  margin: 0;
+  font-size: var(--text-cuerpo);
+  color: var(--crema-suave);
+}
+
+.action {
+  margin-top: var(--space-2);
+}

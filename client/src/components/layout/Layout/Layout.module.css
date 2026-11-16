@@ -1,4 +1,4 @@
-/* Estilos de Layout (CSS Module: clases en camelCase, importadas como styles.nombreClase). Provisionales hasta el diseño final. */
+/* Estilos de Layout (CSS Module). Cada página pone su propio padding. */
 .layout {
   display: flex;
   flex-direction: column;
@@ -7,5 +7,5 @@
 
 .main {
   flex: 1;
-  padding: var(--space-md);
+  width: 100%;
 }

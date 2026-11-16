@@ -1,5 +1,14 @@
 // Aprobar o suspender empresas.
+import PageContainer from '@/components/ui/PageContainer/PageContainer.jsx';
+import { usePageTitle } from '@/hooks/usePageTitle.js';
 
 export default function AdminCompanies() {
-  return <h1>AdminCompanies</h1>;
+  usePageTitle('Empresas');
+
+  return (
+    <PageContainer>
+      <h1>Empresas</h1>
+      <p>Esta pantalla estará disponible pronto.</p>
+    </PageContainer>
+  );
 }

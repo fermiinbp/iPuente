@@ -1,0 +1,118 @@
+/* Pantalla de carga: dos mitades del monograma (recorte estático) que se separan con transform. */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  cursor: pointer;
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% - 1.5px);
+  height: 3px;
+  background: var(--bronce);
+  transition: opacity var(--dur-media) var(--ease-out);
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--papel);
+  transition: transform var(--dur-abre, 900ms) var(--ease-in-out);
+  will-change: transform;
+}
+
+/* Recorte estático: nunca se anima. */
+.top {
+  clip-path: inset(0 0 calc(50% + 1.5px) 0);
+}
+
+.bottom {
+  clip-path: inset(calc(50% + 1.5px) 0 0 0);
+}
+
+.mono {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(120px, 32vw, 460px);
+  line-height: 0.8;
+  letter-spacing: -0.04em;
+  color: var(--bosque);
+  user-select: none;
+}
+
+.mono em {
+  font-style: italic;
+}
+
+.counter {
+  position: absolute;
+  left: 50%;
+  bottom: 56px;
+  translate: -50% 0;
+  width: min(320px, 70%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.symbol {
+  width: 64px;
+  height: 64px;
+}
+
+.pct {
+  font-family: var(--font-display);
+  font-size: var(--text-titulo-paso);
+  color: var(--bronce-oscuro);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  width: 100%;
+  height: 1px;
+  background: var(--crema-suave);
+}
+
+.line {
+  height: 1px;
+  width: 100%;
+  background: var(--bronce-oscuro);
+  transform: scaleX(var(--prog, 0));
+  transform-origin: left center;
+}
+
+.loader[data-fase='abre'] .top {
+  transform: translateY(-100%);
+}
+
+.loader[data-fase='abre'] .bottom {
+  transform: translateY(100%);
+}
+
+.loader[data-fase='abre'] .band,
+.loader[data-fase='abre'] .counter {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader {
+    display: none;
+  }
+}
