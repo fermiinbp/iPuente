@@ -33,7 +33,7 @@ import {
   coreWindowGeometry,
   facadeMatrices,
   furnitureMatrices,
-  fitDistance,
+  fitCamera,
   hvacGrilleMatrices,
   hvacMatrices,
   layoutFloors,
@@ -626,18 +626,18 @@ function Scene({
   const controls = useRef(null);
   const framed = useRef(false);
 
-  const target = useMemo(() => new Vector3(1.2, total * 0.47, 0.8), [total]);
-  const distance = useMemo(
+  const { distance, target } = useMemo(
     () =>
-      fitDistance({
-        aspect: height > 0 ? width / height : 1.4,
+      fitCamera({
+        width,
+        height,
         fovDeg: CAMERA.fov,
         azimuth: AZIMUTH,
         elevation: ELEVATION,
-        target,
-        height: total,
+        target: new Vector3(1.2, total * 0.47, 0.8),
+        layout,
       }),
-    [width, height, target, total],
+    [width, height, total, layout],
   );
 
   // Exposición baja para que el lima y el crema no se quemen con ACES.

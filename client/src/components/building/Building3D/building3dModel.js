@@ -1,6 +1,6 @@
 // Medidas (en metros) y constructores de geometría del edificio 3D. Sin React: solo funciones puras que
 // devuelven geometrías y matrices, para que Building3D.jsx las comparta entre plantas (instancias y mallas fusionadas).
-import { BufferAttribute, Object3D, Vector3 } from 'three';
+import { BufferAttribute, Object3D, PerspectiveCamera, Vector3 } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -18,7 +18,7 @@ export const BAY = 1.5; // separación de montantes
 export const FULL_PLAN = { cx: 0, cz: 0, w: 24, d: 12 }; // planta 2:1
 export const SETBACK_PLAN = { cx: 2, cz: -1.8, w: 20, d: 8.4 }; // retranqueo de las dos últimas plantas
 export const CORE = { w: 3.2, d: 5, x: 13.5, z: -1.2, cap: 2.8 }; // escalera y ascensor, pegados al lado derecho
-export const PLAZA = { w: 46, d: 32 };
+export const PLAZA = { w: 33, d: 23 }; // ~28 % menos que la original (46 x 32)
 
 const BEVEL = 0.02;
 const WALL_T = 0.14;
@@ -570,40 +570,91 @@ export function plazaGeometry(palette) {
 
 // Árboles low-poly de la plaza: posición y escala.
 export const TREES = [
-  [-16.5, 9, 1.05],
-  [17.5, 8.5, 1.15],
-  [-17, -8, 1.1],
+  [-14.6, 8.6, 1.0],
+  [15, 8.2, 1.05],
+  [-14.8, -7.4, 1.0],
 ];
 
-// Distancia de cámara para que el edificio ocupe ~70 % del alto y quepa a lo ancho (proyección ortogonal aproximada).
-export function fitDistance({ aspect, fovDeg, azimuth, elevation, target, height }) {
+// Volúmenes reales del edificio (sin plaza): cuerpo, retranqueo, núcleo y pilares de la marquesina, como
+// [min, max] en metros. Sirven para encuadrar y para medir cuánto ocupa en pantalla.
+export function buildingBoxes(layout) {
+  const top = buildingHeight(layout);
+  const firstSetback = layout.find((entry) => entry.plan === SETBACK_PLAN);
+  const ySetback = firstSetback ? firstSetback.y0 : top;
+  const rect = (plan, y0, y1) => [
+    new Vector3(plan.cx - plan.w / 2 - OVERHANG, y0, plan.cz - plan.d / 2 - OVERHANG),
+    new Vector3(plan.cx + plan.w / 2 + OVERHANG, y1, plan.cz + plan.d / 2 + OVERHANG),
+  ];
+  return [
+    rect(FULL_PLAN, 0, ySetback),
+    rect(SETBACK_PLAN, ySetback, top + ROOF_T + 1.4),
+    [
+      new Vector3(CORE.x - CORE.w / 2, 0, CORE.z - CORE.d / 2),
+      new Vector3(CORE.x + CORE.w / 2, top + CORE.cap + ROOF_T, CORE.z + CORE.d / 2),
+    ],
+    [new Vector3(-3.1, 0, FULL_PLAN.d / 2), new Vector3(3.1, 3.6, FULL_PLAN.d / 2 + 1.5 + 1.4)],
+  ];
+}
+
+// Encuadre por proyección real: devuelve la distancia y el punto de mira para que el edificio solo (sin plaza)
+// ocupe `fill` del alto del canvas, con el conjunto edificio + plaza centrado y a `margin` px de los bordes.
+// Si el conjunto no cabe con ese margen, se aleja lo justo.
+export function fitCamera({
+  width,
+  height,
+  fovDeg,
+  azimuth,
+  elevation,
+  target,
+  layout,
+  fill = 0.69,
+  margin = 24,
+}) {
+  const aspect = height > 0 && width > 0 ? width / height : 1.4;
   const v = new Vector3(
     Math.cos(elevation) * Math.sin(azimuth),
     Math.sin(elevation),
     Math.cos(elevation) * Math.cos(azimuth),
   );
+  const cam = new PerspectiveCamera(fovDeg, aspect, 1, 400);
+  const corners = (x0, x1, y0, y1, z0, z1) =>
+    [x0, x1].flatMap((x) => [y0, y1].flatMap((y) => [z0, z1].map((z) => new Vector3(x, y, z))));
+  const building = buildingBoxes(layout).flatMap(([a, b]) => corners(a.x, b.x, a.y, b.y, a.z, b.z));
+  const plaza = corners(-PLAZA.w / 2, PLAZA.w / 2, 0, 4.5, -PLAZA.d / 2, PLAZA.d / 2);
+  const all = [...building, ...plaza];
+  const extent = (points, d, at) => {
+    cam.position.copy(at).addScaledVector(v, d);
+    cam.lookAt(at);
+    cam.updateMatrixWorld(true);
+    cam.updateProjectionMatrix();
+    const box = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity };
+    for (const point of points) {
+      const n = point.clone().project(cam);
+      box.x0 = Math.min(box.x0, n.x);
+      box.x1 = Math.max(box.x1, n.x);
+      box.y0 = Math.min(box.y0, n.y);
+      box.y1 = Math.max(box.y1, n.y);
+    }
+    return box;
+  };
+  const at = target.clone();
+  const half = Math.tan((fovDeg * Math.PI) / 360);
   const right = new Vector3(v.z, 0, -v.x).normalize();
   const up = new Vector3().crossVectors(v, right).normalize();
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
-  const p = new Vector3();
-  for (const x of [-12.5, 15.2]) {
-    for (const z of [-6.5, 9.3]) {
-      for (const y of [0, height + CORE.cap + ROOF_T]) {
-        p.set(x, y, z).sub(target);
-        const px = p.dot(right);
-        const py = p.dot(up);
-        minX = Math.min(minX, px);
-        maxX = Math.max(maxX, px);
-        minY = Math.min(minY, py);
-        maxY = Math.max(maxY, py);
-      }
-    }
+  let d = 60;
+  for (let i = 0; i < 8; i += 1) {
+    const b = extent(building, d, at);
+    d *= (b.y1 - b.y0) / 2 / fill;
+    const u = extent(all, d, at);
+    at.addScaledVector(right, ((u.x0 + u.x1) / 2) * d * half * aspect);
+    at.addScaledVector(up, ((u.y0 + u.y1) / 2) * d * half);
   }
-  const k = 2 * Math.tan((fovDeg * Math.PI) / 360);
-  const byHeight = (maxY - minY) / (0.74 * k);
-  const byWidth = (maxX - minX) / (0.92 * k * Math.max(aspect, 0.3));
-  return Math.max(byHeight, byWidth);
+  const mx = 1 - (2 * margin) / Math.max(width, 1);
+  const my = 1 - (2 * margin) / Math.max(height, 1);
+  for (let i = 0; i < 60; i += 1) {
+    const u = extent(all, d, at);
+    if (Math.max(-u.x0, u.x1) <= mx && Math.max(-u.y0, u.y1) <= my) break;
+    d *= 1.01;
+  }
+  return { distance: d, target: at };
 }
