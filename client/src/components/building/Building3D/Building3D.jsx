@@ -43,6 +43,7 @@ import {
   roofGeometry,
   skylightMatrix,
   streetFurnitureGeometry,
+  terraceDeckGeometry,
   terraceGeometry,
   terraceRailGeometry,
   FULL_PLAN,
@@ -65,6 +66,7 @@ const TOKENS = [
   'no-alquila',
   'trama-no-alquila',
   'bronce',
+  'bronce-claro',
 ];
 
 const CAMERA = { fov: 30, near: 1, far: 400, position: [60, 40, 90] };
@@ -73,6 +75,7 @@ const ELEVATION = 0.34; // ligeramente picada (~19°)
 const KEY_STEP = 0.15; // radianes por pulsación de flecha
 const NO_RAYCAST = () => null;
 const UP = new Vector3(0, 1, 0);
+const EXPOSURE = 1;
 const GLASS_OPACITY = 0.35;
 const GLASS_OPACITY_GROUND = 0.22; // vestíbulo más transparente
 const GLASS_OPACITY_OPEN = 0.14; // la planta abierta se ve casi sin vidrio
@@ -123,8 +126,8 @@ function crearRecursos(colors) {
       transparent: true,
       opacity: GLASS_OPACITY,
       roughness: 0.05,
-      metalness: 0.1,
-      envMapIntensity: 1.4,
+      metalness: 0,
+      envMapIntensity: 2,
       depthWrite: false,
     });
   const cores = new Map();
@@ -151,6 +154,7 @@ function crearRecursos(colors) {
       if (!terraces.has(key)) {
         terraces.set(key, {
           slab: terraceGeometry(plan, upper),
+          deck: terraceDeckGeometry(plan, upper),
           rail: terraceRailGeometry(plan, upper),
         });
       }
@@ -164,9 +168,9 @@ function crearRecursos(colors) {
     trunk: new CylinderGeometry(0.14, 0.2, 1.4, 6),
     crown: new IcosahedronGeometry(1.5, 0),
     mats: {
-      plate: std(colors.linea, 0.55, 0.15),
+      plate: std(colors.linea, 0.7, 0),
       glass: glass(),
-      mullion: std(colors['bosque-profundo'], 0.45, 0.35),
+      mullion: std(colors['bosque-profundo'], 0.6, 0.1),
       dark: std(colors['bosque-profundo'], 0.7, 0.1),
       furniture: std(colors['crema-suave'].clone().multiplyScalar(0.72), 0.85, 0),
       band: std(colors.linea.clone().multiplyScalar(0.82), 0.8, 0),
@@ -177,10 +181,12 @@ function crearRecursos(colors) {
         envMapIntensity: 0.35,
       }),
       hatch: std(0xffffff, 0.9, 0, { map: trama, toneMapped: false, envMapIntensity: 0.35 }),
-      roof: std(colors.linea, 0.6, 0.1),
-      hvac: std(colors['no-alquila'], 0.6, 0.3),
+      roof: std(colors.linea, 0.75, 0),
+      // Terraza: el tono siguiente más oscuro que la cubierta, mezclando tokens.
+      terrace: std(colors.linea.clone().lerp(colors['bosque-elevado'], 0.65), 0.85, 0),
+      hvac: std(colors['no-alquila'], 0.7, 0.1),
       sky: glass(),
-      canopy: std(0xffffff, 0.5, 0.2, { vertexColors: true }),
+      canopy: std(0xffffff, 0.65, 0.05, { vertexColors: true }),
       plaza: std(0xffffff, 0.95, 0, { vertexColors: true }),
       trunk: std(colors.bronce.clone().multiplyScalar(0.6), 0.9),
       crown: std(colors['linea-plano'].clone().lerp(colors.libre, 0.35), 0.85, 0, {
@@ -199,6 +205,7 @@ function disposeResources(r) {
   r.coreWins.forEach((g) => g.dispose());
   r.terraces.forEach((t) => {
     t.slab.dispose();
+    t.deck.dispose();
     t.rail.dispose();
   });
   Object.values(r.rails).forEach((g) => g.dispose());
@@ -364,6 +371,7 @@ function Floor({
       band: resources.mats.band.clone(),
       furniture: resources.mats.furniture.clone(),
       roof: resources.mats.roof.clone(),
+      terrace: resources.mats.terrace.clone(),
       dark: resources.mats.dark.clone(),
       core: resources.mats.core.clone(),
       rooms: resources.mats.rooms.clone(),
@@ -385,6 +393,7 @@ function Floor({
       [mats.band, 1],
       [mats.roof, 1],
       [mats.furniture, 1],
+      [mats.terrace, 1],
       [mats.dark, 1],
       [mats.core, 1],
       [mats.rooms, 1],
@@ -522,6 +531,12 @@ function Floor({
       {terrace && (
         <group position={[0, h, 0]}>
           <mesh geometry={terrace.slab} material={mats.roof} castShadow receiveShadow />
+          <mesh
+            geometry={terrace.deck}
+            material={mats.terrace}
+            receiveShadow
+            raycast={NO_RAYCAST}
+          />
           <mesh geometry={terrace.rail} material={mats.dark} castShadow raycast={NO_RAYCAST} />
         </group>
       )}
@@ -603,6 +618,7 @@ function Scene({
   const selectedEntry = layout.find((entry) => entry.floor.id === selectedFloorId);
   const selectedLevel = selectedEntry ? selectedEntry.floor.number : null;
 
+  const getState = useThree((state) => state.get);
   const camera = useThree((state) => state.camera);
   const invalidate = useThree((state) => state.invalidate);
   const width = useThree((state) => state.size.width);
@@ -623,6 +639,12 @@ function Scene({
       }),
     [width, height, target, total],
   );
+
+  // Exposición baja para que el lima y el crema no se quemen con ACES.
+  useLayoutEffect(() => {
+    getState().gl.toneMappingExposure = EXPOSURE;
+    invalidate();
+  }, [getState, invalidate]);
 
   // Encuadre: la primera vez, el 3/4 inicial; al cambiar el tamaño se conserva el ángulo al que el usuario giró.
   useLayoutEffect(() => {
@@ -661,7 +683,7 @@ function Scene({
   return (
     <>
       {/* Reflejos del vidrio: luces rectangulares en vez de un HDR descargado, así no hay petición externa. */}
-      <Environment resolution={256} frames={1} environmentIntensity={0.9}>
+      <Environment resolution={256} frames={1} environmentIntensity={0.75}>
         <Lightformer
           form="rect"
           intensity={2.4}
@@ -697,10 +719,10 @@ function Scene({
       </Environment>
       <directionalLight
         castShadow
-        color={colors.crema}
-        intensity={2.6}
+        color={colors.crema.clone().lerp(colors['bronce-claro'], 0.18)}
+        intensity={2.4}
         position={[-16, 30, 20]}
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-30}
         shadow-camera-right={30}
         shadow-camera-top={30}
@@ -711,6 +733,8 @@ function Scene({
         shadow-normalBias={0.05}
         shadow-radius={4}
       />
+      {/* Relleno frío, sin sombra, desde el lado contrario al sol: el tono más fresco de la paleta. */}
+      <directionalLight color={colors['crema-suave']} intensity={0.95} position={[30, 10, 6]} />
       <OrbitControls
         ref={controls}
         target={target}
@@ -793,7 +817,7 @@ export default function Building3D({
         label={label}
         fallback={fallback}
         camera={CAMERA}
-        shadows
+        shadows="soft"
         className={styles.escena}
       >
         <Scene

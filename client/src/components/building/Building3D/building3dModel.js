@@ -1,6 +1,6 @@
 // Medidas (en metros) y constructores de geometría del edificio 3D. Sin React: solo funciones puras que
 // devuelven geometrías y matrices, para que Building3D.jsx las comparta entre plantas (instancias y mallas fusionadas).
-import { BoxGeometry, BufferAttribute, Object3D, Vector3 } from 'three';
+import { BufferAttribute, Object3D, Vector3 } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -20,6 +20,7 @@ export const SETBACK_PLAN = { cx: 2, cz: -1.8, w: 20, d: 8.4 }; // retranqueo de
 export const CORE = { w: 3.2, d: 5, x: 13.5, z: -1.2, cap: 2.8 }; // escalera y ascensor, pegados al lado derecho
 export const PLAZA = { w: 46, d: 32 };
 
+const BEVEL = 0.02;
 const WALL_T = 0.14;
 const WALL_H = 1.25;
 const DOOR_W = 1.1;
@@ -159,11 +160,11 @@ export function coreWindowGeometry(h) {
   ]);
 }
 
+// Caja con bisel de ~2 cm (menos en piezas más finas). No indexada, como RoundedBoxGeometry: mergeGeometries
+// exige que todas sean iguales.
 function boxAt(w, h, d, x, y, z) {
-  // No indexada, como RoundedBoxGeometry: mergeGeometries exige que todas sean iguales.
-  const indexed = new BoxGeometry(w, h, d);
-  const g = indexed.toNonIndexed();
-  indexed.dispose();
+  const radius = Math.min(BEVEL, Math.min(w, h, d) / 2.5);
+  const g = new RoundedBoxGeometry(w, h, d, 1, radius);
   g.translate(x, y, z);
   return g;
 }
@@ -479,6 +480,28 @@ export function terraceGeometry(plan, upper) {
         : boxAt(len, PARAPET_H, t, mid, py, edge),
     );
   }
+  return mergeAll(parts);
+}
+
+// Suelo de la terraza: lámina fina sobre el forjado, con un margen para que el peto la deje ver como otro tono.
+export function terraceDeckGeometry(plan, upper) {
+  const L = planRect(plan);
+  const U = planRect(upper);
+  const m = 0.05;
+  const parts = [];
+  const deck = (x0, x1, z0, z1) => {
+    if (x1 - x0 > 0.2 && z1 - z0 > 0.2) {
+      parts.push(
+        boxAt(x1 - x0 - m * 2, 0.03, z1 - z0 - m * 2, (x0 + x1) / 2, SLAB_T + 0.005, (z0 + z1) / 2),
+      );
+    }
+  };
+  const mx0 = Math.max(L.x0, U.x0);
+  const mx1 = Math.min(L.x1, U.x1);
+  deck(L.x0, Math.min(U.x0, L.x1), L.z0, L.z1);
+  deck(Math.max(U.x1, L.x0), L.x1, L.z0, L.z1);
+  deck(mx0, mx1, L.z0, Math.min(U.z0, L.z1));
+  deck(mx0, mx1, Math.max(U.z1, L.z0), L.z1);
   return mergeAll(parts);
 }
 
