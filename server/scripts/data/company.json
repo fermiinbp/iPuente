@@ -1,0 +1,12 @@
+{
+  "id": "demo-company",
+  "demo": true,
+  "nombre": "Espacios Demo Sevilla",
+  "razonSocial": "Espacios Demo Sevilla S.L. (ficticia)",
+  "cif": "B00000000",
+  "descripcion": "Empresa ficticia para desarrollo, tests y demo de iPuente.",
+  "email": "demo@example.com",
+  "telefono": "+34 000 000 000",
+  "direccion": "Calle Ficticia 1, 41001 Sevilla",
+  "estado": "aprobada"
+}

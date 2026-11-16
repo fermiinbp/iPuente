@@ -1,0 +1,41 @@
+{
+  "id": "demo-building",
+  "companyId": "demo-company",
+  "demo": true,
+  "nombre": "Edificio Demo Puerta de Sevilla",
+  "descripcion": "Edificio de oficinas ficticio con salas por horas, boxes y zonas comunes.",
+  "direccion": "Calle Ficticia 1",
+  "ciudad": "Sevilla",
+  "codigoPostal": "41001",
+  "pais": "España",
+  "latitud": 37.3891,
+  "longitud": -5.9845,
+  "numPlantas": 4,
+  "plantas": [
+    {
+      "id": "floor-0",
+      "nombre": "Planta baja",
+      "nivel": 0,
+      "archivo": "floor-0.json"
+    },
+    {
+      "id": "floor-1",
+      "nombre": "Planta 1",
+      "nivel": 1,
+      "archivo": "floor-1.json"
+    },
+    {
+      "id": "floor-2",
+      "nombre": "Planta 2",
+      "nivel": 2,
+      "archivo": "floor-2.json"
+    },
+    {
+      "id": "floor-3",
+      "nombre": "Planta 3",
+      "nivel": 3,
+      "archivo": "floor-3.json"
+    }
+  ],
+  "estado": "publicado"
+}
