@@ -27,7 +27,10 @@ const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
 export const config = {
   port: Number(process.env.PORT) || 3000,
-  appUrl: process.env.APP_URL || 'http://localhost:5173',
+  // En producción no hay valor por defecto: así localhost nunca acaba en el CORS desplegado.
+  appUrl:
+    process.env.APP_URL ||
+    (process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:5173'),
   firebase: {
     projectId: process.env.FIREBASE_PROJECT_ID,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
@@ -46,7 +49,17 @@ function getFirebaseApp() {
     );
   }
 
-  return initializeApp({ credential: cert({ projectId, clientEmail, privateKey: key }) });
+  // Si la clave está mal pegada, el error del SDK podría incluir trozos de ella: lo sustituimos por uno genérico.
+  let credential;
+  try {
+    credential = cert({ projectId, clientEmail, privateKey: key });
+  } catch {
+    throw new Error(
+      'FIREBASE_PRIVATE_KEY no es válida: cópiala entera del JSON de la cuenta de servicio, entre comillas dobles.',
+    );
+  }
+
+  return initializeApp({ credential });
 }
 
 // Firestore. Única puerta de acceso a la base de datos para los models.
