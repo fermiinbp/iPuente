@@ -41,7 +41,7 @@ export function layoutFloors(floors) {
   const sorted = [...floors].sort((a, b) => a.number - b.number);
   const top = sorted.length ? sorted[sorted.length - 1].number : 0;
   let y = BASE_Y;
-  return sorted.map((floor) => {
+  const entries = sorted.map((floor) => {
     const h = floor.off ? GROUND_H : FLOOR_H;
     const setback = !floor.off && sorted.length > 3 && floor.number >= top - 1;
     const entry = {
@@ -54,6 +54,11 @@ export function layoutFloors(floors) {
     y += h;
     return entry;
   });
+  // Huella de la planta de encima: si es menor, el techo de esta queda al aire y hay que cerrarlo (terraza).
+  entries.forEach((entry, i) => {
+    entry.upperPlan = entries[i + 1]?.plan ?? null;
+  });
+  return entries;
 }
 
 export function buildingHeight(layout) {
@@ -385,6 +390,85 @@ export function streetFurnitureGeometry(palette) {
   const geometry = mergeAll(parts);
   geometry.setAttribute('color', new BufferAttribute(new Float32Array(colors), 3));
   return geometry;
+}
+
+function planRect(plan) {
+  return {
+    x0: plan.cx - plan.w / 2 - OVERHANG,
+    x1: plan.cx + plan.w / 2 + OVERHANG,
+    z0: plan.cz - plan.d / 2 - OVERHANG,
+    z1: plan.cz + plan.d / 2 + OVERHANG,
+  };
+}
+
+// Lados de la planta que quedan al aire (la de encima está retranqueada más de 0,5 m).
+function openSides(L, U) {
+  return [
+    { open: U.x0 - L.x0 > 0.5, axis: 'z', at: L.x0, a: L.z0, b: L.z1, dir: 1 },
+    { open: L.x1 - U.x1 > 0.5, axis: 'z', at: L.x1, a: L.z0, b: L.z1, dir: -1 },
+    { open: U.z0 - L.z0 > 0.5, axis: 'x', at: L.z0, a: L.x0, b: L.x1, dir: 1 },
+    { open: L.z1 - U.z1 > 0.5, axis: 'x', at: L.z1, a: L.x0, b: L.x1, dir: -1 },
+  ].filter((side) => side.open);
+}
+
+// Techo de una planta cuya vecina de arriba está retranqueada: forjado con el mismo canto solo donde queda
+// al aire (la de arriba ya cubre el resto) y peto en los lados abiertos. Origen en la cara superior de la planta.
+export function terraceGeometry(plan, upper) {
+  const L = planRect(plan);
+  const U = planRect(upper);
+  const t = 0.22;
+  const parts = [];
+  const slab = (x0, x1, z0, z1) => {
+    if (x1 - x0 > 0.05 && z1 - z0 > 0.05) {
+      parts.push(boxAt(x1 - x0, SLAB_T, z1 - z0, (x0 + x1) / 2, SLAB_T / 2, (z0 + z1) / 2));
+    }
+  };
+  const mx0 = Math.max(L.x0, U.x0);
+  const mx1 = Math.min(L.x1, U.x1);
+  slab(L.x0, Math.min(U.x0, L.x1), L.z0, L.z1);
+  slab(Math.max(U.x1, L.x0), L.x1, L.z0, L.z1);
+  slab(mx0, mx1, L.z0, Math.min(U.z0, L.z1));
+  slab(mx0, mx1, Math.max(U.z1, L.z0), L.z1);
+  const py = SLAB_T + PARAPET_H / 2;
+  for (const side of openSides(L, U)) {
+    const len = side.b - side.a;
+    const mid = (side.a + side.b) / 2;
+    const edge = side.at + side.dir * (t / 2);
+    parts.push(
+      side.axis === 'z'
+        ? boxAt(t, PARAPET_H, len, edge, py, mid)
+        : boxAt(len, PARAPET_H, t, mid, py, edge),
+    );
+  }
+  return mergeAll(parts);
+}
+
+// Barandilla fina sobre el peto de la terraza.
+export function terraceRailGeometry(plan, upper) {
+  const L = planRect(plan);
+  const U = planRect(upper);
+  const y0 = SLAB_T + PARAPET_H;
+  const parts = [];
+  for (const side of openSides(L, U)) {
+    const len = side.b - side.a;
+    const n = Math.max(1, Math.round(len / BAY));
+    const edge = side.at + side.dir * 0.11;
+    for (let i = 0; i <= n; i++) {
+      const c = side.a + (i * len) / n;
+      parts.push(
+        side.axis === 'z'
+          ? boxAt(0.05, RAIL_H, 0.05, edge, y0 + RAIL_H / 2, c)
+          : boxAt(0.05, RAIL_H, 0.05, c, y0 + RAIL_H / 2, edge),
+      );
+    }
+    const mid = (side.a + side.b) / 2;
+    parts.push(
+      side.axis === 'z'
+        ? boxAt(0.04, 0.04, len, edge, y0 + RAIL_H, mid)
+        : boxAt(len, 0.04, 0.04, mid, y0 + RAIL_H, edge),
+    );
+  }
+  return mergeAll(parts);
 }
 
 // Marquesina de la entrada (pieza de bronce) con dos pilares y el hueco de la puerta.

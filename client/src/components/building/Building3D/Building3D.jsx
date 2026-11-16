@@ -42,6 +42,8 @@ import {
   roofGeometry,
   skylightMatrix,
   streetFurnitureGeometry,
+  terraceGeometry,
+  terraceRailGeometry,
   FULL_PLAN,
   SETBACK_PLAN,
 } from './building3dModel.js';
@@ -126,6 +128,7 @@ function crearRecursos(colors) {
     });
   const cores = new Map();
   const coreWins = new Map();
+  const terraces = new Map();
   return {
     palette,
     trama,
@@ -142,6 +145,17 @@ function crearRecursos(colors) {
       return coreWins.get(height);
     },
     coreWins,
+    terrace: (plan, upper) => {
+      const key = `${plan.cx}|${plan.cz}|${plan.w}|${plan.d}>${upper.cx}|${upper.cz}|${upper.w}|${upper.d}`;
+      if (!terraces.has(key)) {
+        terraces.set(key, {
+          slab: terraceGeometry(plan, upper),
+          rail: terraceRailGeometry(plan, upper),
+        });
+      }
+      return terraces.get(key);
+    },
+    terraces,
     rails: { full: railGeometry(FULL_PLAN), setback: railGeometry(SETBACK_PLAN) },
     furniture: streetFurnitureGeometry(palette),
     canopy: canopyGeometry(palette),
@@ -181,6 +195,10 @@ function disposeResources(r) {
   Object.values(r.roofs).forEach((g) => g.dispose());
   r.cores.forEach((g) => g.dispose());
   r.coreWins.forEach((g) => g.dispose());
+  r.terraces.forEach((t) => {
+    t.slab.dispose();
+    t.rail.dispose();
+  });
   Object.values(r.rails).forEach((g) => g.dispose());
   r.furniture.dispose();
   r.canopy.dispose();
@@ -325,7 +343,7 @@ function Floor({
   onHover,
   onSelect,
 }) {
-  const { floor, y0, h, plan, isTop } = entry;
+  const { floor, y0, h, plan, isTop, upperPlan } = entry;
   const invalidate = useThree((state) => state.invalidate);
   const group = useRef(null);
   const panesRef = useRef(null);
@@ -341,6 +359,7 @@ function Floor({
       glass: resources.mats.glass.clone(),
       mullion: resources.mats.mullion.clone(),
       band: resources.mats.band.clone(),
+      roof: resources.mats.roof.clone(),
       dark: resources.mats.dark.clone(),
       core: resources.mats.core.clone(),
       rooms: resources.mats.rooms.clone(),
@@ -360,6 +379,7 @@ function Floor({
       [mats.plate, 1],
       [mats.mullion, 1],
       [mats.band, 1],
+      [mats.roof, 1],
       [mats.dark, 1],
       [mats.core, 1],
       [mats.rooms, 1],
@@ -383,6 +403,7 @@ function Floor({
   );
   const facade = useMemo(() => facadeMatrices(plan, h, !!floor.off), [plan, h, floor.off]);
   const coreHeight = isTop ? h + ROOF_T + CORE.cap : h;
+  const terrace = upperPlan && upperPlan !== plan ? resources.terrace(plan, upperPlan) : null;
   const plateGeo = plan === FULL_PLAN ? resources.plates.full : resources.plates.setback;
 
   // Matrices de las instancias de la fachada.
@@ -474,6 +495,12 @@ function Floor({
       {interior.hatch && <mesh geometry={interior.hatch} material={mats.hatch} visible={active} />}
       <mesh geometry={resources.core(coreHeight)} material={mats.core} castShadow receiveShadow />
       <mesh geometry={resources.coreWin(h)} material={mats.dark} raycast={NO_RAYCAST} />
+      {terrace && (
+        <group position={[0, h, 0]}>
+          <mesh geometry={terrace.slab} material={mats.roof} castShadow receiveShadow />
+          <mesh geometry={terrace.rail} material={mats.dark} castShadow raycast={NO_RAYCAST} />
+        </group>
+      )}
       {floor.off && (
         <mesh
           geometry={resources.canopy}
