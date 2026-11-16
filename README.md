@@ -512,6 +512,29 @@ DAT001: diseño de datos, colecciones y relaciones
 - La revisa y la aprueba otra persona del equipo antes de fusionarla con `main`.
 - Lo que sobra no se borra por cuenta propia: se mueve a `_to_delete/` y se avisa al equipo.
 
+## Variables de entorno de la API (Firebase Admin)
+
+La API se conecta a Firestore y a Firebase Auth con `firebase-admin`, usando la clave de una **cuenta de servicio**. Esa clave da acceso total al proyecto: nunca se sube a Git ni se pega en el código.
+
+1. En la [Consola de Firebase](https://console.firebase.google.com/), abre el proyecto → ⚙️ **Configuración del proyecto** → pestaña **Cuentas de servicio**.
+2. Pulsa **Generar nueva clave privada**. Se descarga un JSON (`…-firebase-adminsdk-….json`). Guárdalo fuera del repo; el `.gitignore` lo ignora por si acaso.
+3. Copia `server/.env.example` a `server/.env` y rellena con los datos del JSON:
+
+| Variable | Campo del JSON |
+| --- | --- |
+| `FIREBASE_PROJECT_ID` | `project_id` |
+| `FIREBASE_CLIENT_EMAIL` | `client_email` |
+| `FIREBASE_PRIVATE_KEY` | `private_key`, entre comillas dobles y con los `\n` tal cual |
+
+4. Comprueba la conexión (escribe, lee y borra un documento en `_ping`):
+
+```bash
+cd server
+node --env-file=.env scripts/pingDb.js
+```
+
+En **Netlify**, las mismas variables van en *Site configuration → Environment variables*. `config.js` convierte los `\n` literales de la clave en saltos de línea reales.
+
 ## ESLint y Prettier
 
 **ESLint** busca errores en el código y **Prettier** le da formato. No se pisan: `eslint-config-prettier` apaga en ESLint las reglas de formato.
