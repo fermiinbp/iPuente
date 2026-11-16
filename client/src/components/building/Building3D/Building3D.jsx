@@ -32,6 +32,7 @@ import {
   coreGeometry,
   coreWindowGeometry,
   facadeMatrices,
+  furnitureMatrices,
   fitDistance,
   hvacGrilleMatrices,
   hvacMatrices,
@@ -167,6 +168,7 @@ function crearRecursos(colors) {
       glass: glass(),
       mullion: std(colors['bosque-profundo'], 0.45, 0.35),
       dark: std(colors['bosque-profundo'], 0.7, 0.1),
+      furniture: std(colors['crema-suave'].clone().multiplyScalar(0.72), 0.85, 0),
       band: std(colors.linea.clone().multiplyScalar(0.82), 0.8, 0),
       core: std(colors['foto-hueco'], 0.7),
       rooms: std(0xffffff, 0.85, 0, {
@@ -349,6 +351,7 @@ function Floor({
   const panesRef = useRef(null);
   const mullionsRef = useRef(null);
   const bandsRef = useRef(null);
+  const furnitureRef = useRef(null);
   const lift = useRef(0);
   const above = selectedLevel !== null && floor.number > selectedLevel;
   const targetLift = above ? LIFT : 0;
@@ -359,6 +362,7 @@ function Floor({
       glass: resources.mats.glass.clone(),
       mullion: resources.mats.mullion.clone(),
       band: resources.mats.band.clone(),
+      furniture: resources.mats.furniture.clone(),
       roof: resources.mats.roof.clone(),
       dark: resources.mats.dark.clone(),
       core: resources.mats.core.clone(),
@@ -380,6 +384,7 @@ function Floor({
       [mats.mullion, 1],
       [mats.band, 1],
       [mats.roof, 1],
+      [mats.furniture, 1],
       [mats.dark, 1],
       [mats.core, 1],
       [mats.rooms, 1],
@@ -401,6 +406,7 @@ function Floor({
     },
     [interior],
   );
+  const furniture = useMemo(() => furnitureMatrices(plan, floor), [plan, floor]);
   const facade = useMemo(() => facadeMatrices(plan, h, !!floor.off), [plan, h, floor.off]);
   const coreHeight = isTop ? h + ROOF_T + CORE.cap : h;
   const terrace = upperPlan && upperPlan !== plan ? resources.terrace(plan, upperPlan) : null;
@@ -418,6 +424,16 @@ function Floor({
     fill(bandsRef.current, facade.bands);
     invalidate();
   }, [facade, invalidate]);
+
+  // Mesas y sillas de las salas.
+  useLayoutEffect(() => {
+    const mesh = furnitureRef.current;
+    if (!mesh) return;
+    furniture.forEach((m, i) => mesh.setMatrixAt(i, m));
+    mesh.instanceMatrix.needsUpdate = true;
+    mesh.computeBoundingSphere();
+    invalidate();
+  }, [furniture, invalidate]);
 
   // Planta resaltada: forjado lima y colores de estado en suelo y tabiques; el resto, interior neutro.
   useLayoutEffect(() => {
@@ -491,6 +507,14 @@ function Floor({
         castShadow
         receiveShadow
       />
+      {furniture.length > 0 && (
+        <instancedMesh
+          ref={furnitureRef}
+          args={[resources.unit, mats.furniture, furniture.length]}
+          castShadow
+          raycast={NO_RAYCAST}
+        />
+      )}
       {interior.geometry && <mesh geometry={interior.geometry} material={mats.rooms} />}
       {interior.hatch && <mesh geometry={interior.hatch} material={mats.hatch} visible={active} />}
       <mesh geometry={resources.core(coreHeight)} material={mats.core} castShadow receiveShadow />

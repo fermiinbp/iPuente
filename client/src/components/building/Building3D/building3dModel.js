@@ -24,6 +24,7 @@ const WALL_T = 0.14;
 const WALL_H = 1.25;
 const DOOR_W = 1.1;
 const FLOOR_TILE = 0.08;
+const FLOOR_DIM = 0.4; // cuánto del color de estado se ve en el suelo en reposo
 
 // Seis salas por planta, como en el mockup (unidades de la losa original de 4,3 x 2,9).
 const LAYOUT = [
@@ -232,7 +233,9 @@ export function buildInterior(plan, floor, palette) {
       const rd = d * sz;
       const cx = plan.cx + x * sx;
       const cz = plan.cz + z * sz;
-      add(boxAt(rw, FLOOR_TILE, rd, cx, baseY + FLOOR_TILE / 2, cz), palette.floorNeutral, cs);
+      // En reposo el suelo ya apunta el estado de la sala, atenuado; al resaltar la planta se ve entero.
+      const dimmed = palette.floorNeutral.clone().lerp(cs, FLOOR_DIM);
+      add(boxAt(rw, FLOOR_TILE, rd, cx, baseY + FLOOR_TILE / 2, cz), dimmed, cs);
       const wy = baseY + FLOOR_TILE + WALL_H / 2;
       add(boxAt(WALL_T, WALL_H, rd, cx - rw / 2 + WALL_T / 2, wy, cz), palette.wallNeutral, cs);
       add(boxAt(WALL_T, WALL_H, rd, cx + rw / 2 - WALL_T / 2, wy, cz), palette.wallNeutral, cs);
@@ -286,6 +289,42 @@ export function buildInterior(plan, floor, palette) {
     neutral: new Float32Array(neutral),
     state: new Float32Array(state),
   };
+}
+
+// Siluetas de mobiliario (instancias de un cubo unidad): una mesa de reunión con su pie y cuatro sillas por sala.
+// Las salas «no se alquila» van vacías y la planta baja ya tiene su vestíbulo.
+export function furnitureMatrices(plan, floor) {
+  if (floor.off) return [];
+  const dummy = new Object3D();
+  const out = [];
+  const put = (x, y, z, sx, sy, sz) => {
+    dummy.position.set(x, y, z);
+    dummy.rotation.set(0, 0, 0);
+    dummy.scale.set(sx, sy, sz);
+    dummy.updateMatrix();
+    out.push(dummy.matrix.clone());
+  };
+  const sx = (plan.w / REF.w) * 0.97;
+  const sz = (plan.d / REF.d) * 0.97;
+  const y0 = SLAB_T + FLOOR_TILE;
+  LAYOUT.forEach(([x, z, w, d], i) => {
+    const status = floor.rooms?.[i];
+    if (!status || status === 'off') return;
+    const rw = w * sx;
+    const rd = d * sz;
+    const cx = plan.cx + x * sx;
+    const cz = plan.cz + z * sz;
+    const tw = Math.min(rw * 0.55, 1.7);
+    const td = Math.min(rd * 0.3, 0.8);
+    put(cx, y0 + 0.74, cz, tw, 0.05, td); // tablero
+    put(cx, y0 + 0.36, cz, tw * 0.5, 0.72, td * 0.4); // pie
+    for (const side of [-1, 1]) {
+      for (const k of [-0.25, 0.25]) {
+        put(cx + k * tw * 1.6, y0 + 0.23, cz + side * (td / 2 + 0.3), 0.38, 0.46, 0.38); // silla
+      }
+    }
+  });
+  return out;
 }
 
 // Cubierta: placa, peto perimetral, máquinas de climatización (instancias) y lucernario.
