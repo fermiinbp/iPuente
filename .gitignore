@@ -17,7 +17,10 @@ coverage/
 # Claude: lo personal de cada uno (hooks del visor)
 .claude/settings.local.json
 
-# BaaS
+# BaaS (y claves de cuentas de servicio de Firebase: nunca se suben)
+*serviceAccount*.json
+*service-account*.json
+*firebase-adminsdk*.json
 .firebase/
 firebase-debug.log*
 supabase/.temp/
