@@ -13,7 +13,7 @@ export const ROOF_T = 0.3;
 export const PARAPET_H = 0.5;
 export const RAIL_H = 0.55; // barandilla fina sobre el peto
 export const SPANDREL_H = 0.95; // banda de antepecho opaca sobre cada forjado
-export const LIFT = 7; // cuánto suben las plantas de encima de la seleccionada
+export const LIFT = FLOOR_H * 1.75; // cuánto sube el bloque de encima de la planta abierta (1,75 alturas de planta)
 export const BAY = 1.5; // separación de montantes
 export const FULL_PLAN = { cx: 0, cz: 0, w: 24, d: 12 }; // planta 2:1
 export const SETBACK_PLAN = { cx: 2, cz: -1.8, w: 20, d: 8.4 }; // retranqueo de las dos últimas plantas
@@ -92,7 +92,8 @@ export function facadeMatrices(plan, h, ground = false) {
   const dummy = new Object3D();
   const panes = [];
   const mullions = []; // montantes y travesaños: mismo material
-  const bands = []; // antepechos y pilares: mismo material
+  const bands = []; // antepechos (fachada)
+  const pillars = []; // pilares de las cuatro esquinas: se quedan al abrir la planta
   const put = (list, x, y, z, rot, sx, sy, sz) => {
     dummy.position.set(x, y, z);
     dummy.rotation.set(0, rot, 0);
@@ -135,7 +136,7 @@ export function facadeMatrices(plan, h, ground = false) {
   for (const sx of [-1, 1]) {
     for (const sz of [-1, 1]) {
       put(
-        bands,
+        pillars,
         plan.cx + (sx * plan.w) / 2,
         SLAB_T + colH / 2,
         plan.cz + (sz * plan.d) / 2,
@@ -146,7 +147,7 @@ export function facadeMatrices(plan, h, ground = false) {
       );
     }
   }
-  return { panes, mullions, bands };
+  return { panes, mullions, bands, pillars };
 }
 
 // Franjas verticales de ventanas pequeñas del núcleo (una planta): una en la cara frontal y dos en la lateral.
@@ -575,25 +576,35 @@ export const TREES = [
   [-14.8, -7.4, 1.0],
 ];
 
-// Volúmenes reales del edificio (sin plaza): cuerpo, retranqueo, núcleo y pilares de la marquesina, como
-// [min, max] en metros. Sirven para encuadrar y para medir cuánto ocupa en pantalla.
-export function buildingBoxes(layout) {
-  const top = buildingHeight(layout);
-  const firstSetback = layout.find((entry) => entry.plan === SETBACK_PLAN);
-  const ySetback = firstSetback ? firstSetback.y0 : top;
-  const rect = (plan, y0, y1) => [
-    new Vector3(plan.cx - plan.w / 2 - OVERHANG, y0, plan.cz - plan.d / 2 - OVERHANG),
-    new Vector3(plan.cx + plan.w / 2 + OVERHANG, y1, plan.cz + plan.d / 2 + OVERHANG),
-  ];
-  return [
-    rect(FULL_PLAN, 0, ySetback),
-    rect(SETBACK_PLAN, ySetback, top + ROOF_T + 1.4),
-    [
-      new Vector3(CORE.x - CORE.w / 2, 0, CORE.z - CORE.d / 2),
-      new Vector3(CORE.x + CORE.w / 2, top + CORE.cap + ROOF_T, CORE.z + CORE.d / 2),
-    ],
-    [new Vector3(-3.1, 0, FULL_PLAN.d / 2), new Vector3(3.1, 3.6, FULL_PLAN.d / 2 + 1.5 + 1.4)],
-  ];
+// Volúmenes reales del edificio (sin plaza), uno por planta: cuerpo, núcleo y pilares de la marquesina, como
+// [min, max] en metros. Con una planta abierta, las de encima suben LIFT. Sirven para encuadrar y para medir
+// cuánto ocupa en pantalla.
+export function buildingBoxes(layout, selectedLevel = null) {
+  const boxes = [];
+  layout.forEach((entry) => {
+    const lift = selectedLevel !== null && entry.floor.number > selectedLevel ? LIFT : 0;
+    const { plan, y0, h } = entry;
+    const y1 = y0 + h + (entry.isTop ? ROOF_T + 1.4 : 0);
+    boxes.push([
+      new Vector3(plan.cx - plan.w / 2 - OVERHANG, y0 + lift, plan.cz - plan.d / 2 - OVERHANG),
+      new Vector3(plan.cx + plan.w / 2 + OVERHANG, y1 + lift, plan.cz + plan.d / 2 + OVERHANG),
+    ]);
+    boxes.push([
+      new Vector3(CORE.x - CORE.w / 2, y0 + lift, CORE.z - CORE.d / 2),
+      new Vector3(
+        CORE.x + CORE.w / 2,
+        y0 + h + (entry.isTop ? ROOF_T + CORE.cap : 0) + lift,
+        CORE.z + CORE.d / 2,
+      ),
+    ]);
+    if (entry.floor.off) {
+      boxes.push([
+        new Vector3(-3.1, y0, FULL_PLAN.d / 2),
+        new Vector3(3.1, 3.6, FULL_PLAN.d / 2 + 1.5 + 1.4),
+      ]);
+    }
+  });
+  return boxes;
 }
 
 // Encuadre por proyección real: devuelve la distancia y el punto de mira para que el edificio solo (sin plaza)
@@ -607,6 +618,7 @@ export function fitCamera({
   elevation,
   target,
   layout,
+  selectedLevel = null,
   fill = 0.69,
   margin = 24,
 }) {
@@ -619,7 +631,9 @@ export function fitCamera({
   const cam = new PerspectiveCamera(fovDeg, aspect, 1, 400);
   const corners = (x0, x1, y0, y1, z0, z1) =>
     [x0, x1].flatMap((x) => [y0, y1].flatMap((y) => [z0, z1].map((z) => new Vector3(x, y, z))));
-  const building = buildingBoxes(layout).flatMap(([a, b]) => corners(a.x, b.x, a.y, b.y, a.z, b.z));
+  const building = buildingBoxes(layout, selectedLevel).flatMap(([a, b]) =>
+    corners(a.x, b.x, a.y, b.y, a.z, b.z),
+  );
   const plaza = corners(-PLAZA.w / 2, PLAZA.w / 2, 0, 4.5, -PLAZA.d / 2, PLAZA.d / 2);
   const all = [...building, ...plaza];
   const extent = (points, d, at) => {

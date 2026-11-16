@@ -2,7 +2,7 @@
 // cubierta con máquinas y una plaza con árboles. Los botones HTML mandan: `activeFloorId` resalta una planta
 // (forjado lima y estados de sala visibles a través del vidrio) y `selectedFloorId` la abre: las de encima suben
 // y se desvanecen. Cámara 3/4 con OrbitControls; render bajo demanda (invalidate solo mientras algo se mueve).
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, Environment, Lightformer, OrbitControls } from '@react-three/drei';
 import {
@@ -78,7 +78,7 @@ const UP = new Vector3(0, 1, 0);
 const EXPOSURE = 1;
 const GLASS_OPACITY = 0.35;
 const GLASS_OPACITY_GROUND = 0.22; // vestíbulo más transparente
-const GLASS_OPACITY_OPEN = 0.14; // la planta abierta se ve casi sin vidrio
+const DURATION = 450; // ms: despiece de plantas y encuadre de la cámara
 
 // Trama diagonal a 45° de «No se alquila» (misma idea que FloorPlan), con colores leídos de los tokens.
 function crearTrama(fondo, raya) {
@@ -217,7 +217,7 @@ function disposeResources(r) {
   Object.values(r.mats).forEach((m) => m.dispose());
 }
 
-// Desvanece un grupo de materiales hacia `target` (0 a 1). El flag `transparent` solo cambia al empezar y al
+// Desvanece un grupo de materiales hacia `value` (0 a 1). El flag `transparent` solo cambia al empezar y al
 // terminar de desvanecer, porque three recompila el shader al cambiarlo.
 function applyFade(group, fades, value) {
   for (const [material, base, isGlass] of fades) {
@@ -233,35 +233,46 @@ function applyFade(group, fades, value) {
   if (group) group.visible = value > 0.01;
 }
 
-function useFade(groupRef, fades, target, reduced) {
+function ease(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+}
+
+// Lleva un valor a `target` en DURATION ms con easing y llama a `apply` en cada fotograma. Si el objetivo cambia
+// a mitad de camino, parte del valor actual: sin saltos ni parpadeos. Con movimiento reducido salta directo.
+function useTween(target, reduced, apply) {
   const invalidate = useThree((state) => state.invalidate);
-  const op = useRef(target);
-  const apply = (value) => applyFade(groupRef.current, fades, value);
-
+  const tween = useRef({ value: target, from: target, to: target, t0: 0 });
+  const applyRef = useRef(apply);
   useLayoutEffect(() => {
-    applyFade(groupRef.current, fades, op.current);
-    invalidate();
-  }, [groupRef, fades, invalidate]);
-
-  useEffect(() => {
-    invalidate();
-  }, [target, invalidate]);
-
-  useFrame((_, delta) => {
-    const diff = target - op.current;
-    if (Math.abs(diff) < 0.01 || reduced) {
-      if (op.current !== target) {
-        op.current = target;
-        apply(target);
-      }
-      return;
-    }
-    op.current += diff * Math.min(1, delta * 9);
-    apply(op.current);
-    invalidate();
+    applyRef.current = apply;
   });
 
-  return op;
+  useLayoutEffect(() => {
+    apply(tween.current.value);
+    invalidate();
+  }, [apply, invalidate]);
+
+  useLayoutEffect(() => {
+    const t = tween.current;
+    if (t.to === target) return;
+    t.from = t.value;
+    t.to = target;
+    t.t0 = performance.now();
+    if (reduced) {
+      t.value = target;
+      applyRef.current(target);
+    }
+    invalidate();
+  }, [target, reduced, invalidate]);
+
+  useFrame(() => {
+    const t = tween.current;
+    if (t.value === t.to) return;
+    const p = Math.min(1, (performance.now() - t.t0) / DURATION);
+    t.value = p >= 1 ? t.to : t.from + (t.to - t.from) * ease(p);
+    apply(t.value);
+    if (p < 1) invalidate();
+  });
 }
 
 function Roof({ entry, hidden, resources, reduced }) {
@@ -287,7 +298,8 @@ function Roof({ entry, hidden, resources, reduced }) {
     ],
     [mats],
   );
-  useFade(group, fades, hidden ? 0 : 1, reduced);
+  const applyRoof = useCallback((value) => applyFade(group.current, fades, value), [fades]);
+  useTween(hidden ? 0 : 1, reduced, applyRoof);
   const hvac = useMemo(() => hvacMatrices(plan), [plan]);
   const grille = useMemo(() => hvacGrilleMatrices(plan), [plan]);
   const sky = useMemo(() => skylightMatrix(plan), [plan]);
@@ -359,9 +371,9 @@ function Floor({
   const mullionsRef = useRef(null);
   const bandsRef = useRef(null);
   const furnitureRef = useRef(null);
-  const lift = useRef(0);
+  const shell = useRef(null);
+  const pillarsRef = useRef(null);
   const above = selectedLevel !== null && floor.number > selectedLevel;
-  const targetLift = above ? LIFT : 0;
 
   const mats = useMemo(
     () => ({
@@ -369,6 +381,8 @@ function Floor({
       glass: resources.mats.glass.clone(),
       mullion: resources.mats.mullion.clone(),
       band: resources.mats.band.clone(),
+      pillar: resources.mats.band.clone(),
+      rail: resources.mats.dark.clone(),
       furniture: resources.mats.furniture.clone(),
       roof: resources.mats.roof.clone(),
       terrace: resources.mats.terrace.clone(),
@@ -381,28 +395,28 @@ function Floor({
   );
   useEffect(() => () => Object.values(mats).forEach((m) => m.dispose()), [mats]);
 
-  const glassBase = selected
-    ? GLASS_OPACITY_OPEN
-    : floor.off
-      ? GLASS_OPACITY_GROUND
-      : GLASS_OPACITY;
+  const glassBase = floor.off ? GLASS_OPACITY_GROUND : GLASS_OPACITY;
+  // Al abrir la planta se desvanece solo su envolvente (fachada y techo); la estructura se queda.
   const fades = useMemo(
     () => [
-      [mats.plate, 1],
       [mats.mullion, 1],
       [mats.band, 1],
       [mats.roof, 1],
-      [mats.furniture, 1],
       [mats.terrace, 1],
-      [mats.dark, 1],
-      [mats.core, 1],
-      [mats.rooms, 1],
-      [mats.hatch, 1],
+      [mats.rail, 1],
       [mats.glass, glassBase, true],
     ],
     [mats, glassBase],
   );
-  useFade(group, fades, above ? 0 : 1, reduced);
+  const applyShell = useCallback((value) => applyFade(shell.current, fades, value), [fades]);
+  useTween(selected ? 0 : 1, reduced, applyShell);
+  const applyLift = useCallback(
+    (value) => {
+      if (group.current) group.current.position.y = y0 + value;
+    },
+    [y0],
+  );
+  useTween(above ? LIFT : 0, reduced, applyLift);
 
   const interior = useMemo(
     () => buildInterior(plan, floor, resources.palette),
@@ -431,6 +445,7 @@ function Floor({
     fill(panesRef.current, facade.panes);
     fill(mullionsRef.current, facade.mullions);
     fill(bandsRef.current, facade.bands);
+    fill(pillarsRef.current, facade.pillars);
     invalidate();
   }, [facade, invalidate]);
 
@@ -455,64 +470,59 @@ function Floor({
     invalidate();
   }, [active, mats, colors, interior, invalidate]);
 
-  // Posición: las plantas de encima de la abierta suben (con movimiento reducido, saltan).
-  useLayoutEffect(() => {
-    lift.current = targetLift;
-    if (group.current) group.current.position.y = y0 + targetLift;
-    // Solo al montar: después anima useFrame.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  useEffect(() => {
-    invalidate();
-  }, [targetLift, invalidate]);
-  useFrame((_, delta) => {
-    const g = group.current;
-    if (!g) return;
-    const diff = targetLift - lift.current;
-    if (reduced || Math.abs(diff) < 0.005) {
-      lift.current = targetLift;
-    } else {
-      lift.current += diff * Math.min(1, delta * 8);
-      invalidate();
-    }
-    g.position.y = y0 + lift.current;
-  });
-
-  const interactive = !above;
-  const handlers = interactive
-    ? {
-        onPointerOver: (event) => {
-          event.stopPropagation();
-          if (event.nativeEvent.pointerType === 'mouse') onHover?.(floor.id);
-          event.nativeEvent.target.style.cursor = 'pointer';
-        },
-        onPointerOut: (event) => {
-          event.nativeEvent.target.style.cursor = '';
-        },
-        onClick: (event) => {
-          event.stopPropagation();
-          if (event.delta > 6) return; // era un arrastre para girar, no un clic
-          onSelect?.(floor.id);
-        },
-      }
-    : {};
+  // Clic en cualquier bloque (también en el que ha subido) abre esa planta.
+  const handlers = {
+    onPointerOver: (event) => {
+      event.stopPropagation();
+      if (event.nativeEvent.pointerType === 'mouse') onHover?.(floor.id);
+      event.nativeEvent.target.style.cursor = 'pointer';
+    },
+    onPointerOut: (event) => {
+      event.nativeEvent.target.style.cursor = '';
+    },
+    onClick: (event) => {
+      event.stopPropagation();
+      if (event.delta > 6) return; // era un arrastre para girar, no un clic
+      onSelect?.(floor.id);
+    },
+  };
 
   return (
     <group ref={group} {...handlers}>
       <mesh geometry={plateGeo} material={mats.plate} castShadow receiveShadow />
+      <group ref={shell}>
+        <instancedMesh
+          ref={panesRef}
+          args={[resources.unit, mats.glass, facade.panes.length]}
+          renderOrder={2}
+        />
+        <instancedMesh
+          ref={mullionsRef}
+          args={[resources.unit, mats.mullion, facade.mullions.length]}
+          raycast={NO_RAYCAST}
+        />
+        <instancedMesh
+          ref={bandsRef}
+          args={[resources.unit, mats.band, facade.bands.length]}
+          castShadow
+          receiveShadow
+        />
+        {terrace && (
+          <group position={[0, h, 0]}>
+            <mesh geometry={terrace.slab} material={mats.roof} castShadow receiveShadow />
+            <mesh
+              geometry={terrace.deck}
+              material={mats.terrace}
+              receiveShadow
+              raycast={NO_RAYCAST}
+            />
+            <mesh geometry={terrace.rail} material={mats.rail} castShadow raycast={NO_RAYCAST} />
+          </group>
+        )}
+      </group>
       <instancedMesh
-        ref={panesRef}
-        args={[resources.unit, mats.glass, facade.panes.length]}
-        renderOrder={2}
-      />
-      <instancedMesh
-        ref={mullionsRef}
-        args={[resources.unit, mats.mullion, facade.mullions.length]}
-        raycast={NO_RAYCAST}
-      />
-      <instancedMesh
-        ref={bandsRef}
-        args={[resources.unit, mats.band, facade.bands.length]}
+        ref={pillarsRef}
+        args={[resources.unit, mats.pillar, facade.pillars.length]}
         castShadow
         receiveShadow
       />
@@ -521,25 +531,18 @@ function Floor({
           ref={furnitureRef}
           args={[resources.unit, mats.furniture, furniture.length]}
           castShadow
+          receiveShadow
           raycast={NO_RAYCAST}
         />
       )}
-      {interior.geometry && <mesh geometry={interior.geometry} material={mats.rooms} />}
-      {interior.hatch && <mesh geometry={interior.hatch} material={mats.hatch} visible={active} />}
+      {interior.geometry && (
+        <mesh geometry={interior.geometry} material={mats.rooms} receiveShadow />
+      )}
+      {interior.hatch && (
+        <mesh geometry={interior.hatch} material={mats.hatch} visible={active} receiveShadow />
+      )}
       <mesh geometry={resources.core(coreHeight)} material={mats.core} castShadow receiveShadow />
       <mesh geometry={resources.coreWin(h)} material={mats.dark} raycast={NO_RAYCAST} />
-      {terrace && (
-        <group position={[0, h, 0]}>
-          <mesh geometry={terrace.slab} material={mats.roof} castShadow receiveShadow />
-          <mesh
-            geometry={terrace.deck}
-            material={mats.terrace}
-            receiveShadow
-            raycast={NO_RAYCAST}
-          />
-          <mesh geometry={terrace.rail} material={mats.dark} castShadow raycast={NO_RAYCAST} />
-        </group>
-      )}
       {floor.off && (
         <mesh
           geometry={resources.canopy}
@@ -548,14 +551,7 @@ function Floor({
           raycast={NO_RAYCAST}
         />
       )}
-      {isTop && (
-        <Roof
-          entry={entry}
-          hidden={selectedLevel !== null}
-          resources={resources}
-          reduced={reduced}
-        />
-      )}
+      {isTop && <Roof entry={entry} hidden={selected} resources={resources} reduced={reduced} />}
     </group>
   );
 }
@@ -626,7 +622,8 @@ function Scene({
   const controls = useRef(null);
   const framed = useRef(false);
 
-  const { distance, target } = useMemo(
+  // Encuadre cerrado (68-70 % del alto) y encuadre del edificio partido, que debe caber entero con margen.
+  const closedView = useMemo(
     () =>
       fitCamera({
         width,
@@ -639,6 +636,25 @@ function Scene({
       }),
     [width, height, total, layout],
   );
+  const openView = useMemo(
+    () =>
+      selectedLevel === null
+        ? null
+        : fitCamera({
+            width,
+            height,
+            fovDeg: CAMERA.fov,
+            azimuth: AZIMUTH,
+            elevation: ELEVATION,
+            target: new Vector3(1.2, (total + LIFT) * 0.47, 0.8),
+            layout,
+            selectedLevel,
+            fill: 0.92,
+          }),
+    [width, height, total, layout, selectedLevel],
+  );
+  const view = openView ?? closedView;
+  const farthest = Math.max(closedView.distance, view.distance);
 
   // Exposición baja para que el lima y el crema no se quemen con ACES.
   useLayoutEffect(() => {
@@ -646,11 +662,29 @@ function Scene({
     invalidate();
   }, [getState, invalidate]);
 
-  // Encuadre: la primera vez, el 3/4 inicial; al cambiar el tamaño se conserva el ángulo al que el usuario giró.
+  // Encuadre: la primera vez, el 3/4 inicial; al abrir o cerrar una planta, la cámara viaja en DURATION ms
+  // conservando el ángulo al que el usuario giró; al cambiar el tamaño se recoloca sin animar.
+  const cameraTween = useRef(null);
+  const prevLevel = useRef(selectedLevel);
   useLayoutEffect(() => {
+    const ctl = controls.current;
+    const levelChanged = prevLevel.current !== selectedLevel;
+    prevLevel.current = selectedLevel;
+    if (framed.current && levelChanged && !reduced && ctl) {
+      cameraTween.current = {
+        fromTarget: ctl.target.clone(),
+        last: ctl.target.clone(),
+        fromDistance: camera.position.distanceTo(ctl.target),
+        toTarget: view.target.clone(),
+        toDistance: view.distance,
+        t0: performance.now(),
+      };
+      invalidate();
+      return;
+    }
     const dir = new Vector3();
-    if (framed.current) {
-      dir.subVectors(camera.position, target).normalize();
+    if (framed.current && ctl) {
+      dir.subVectors(camera.position, ctl.target).normalize();
     } else {
       dir.set(
         Math.cos(ELEVATION) * Math.sin(AZIMUTH),
@@ -659,26 +693,46 @@ function Scene({
       );
       framed.current = true;
     }
-    camera.position.copy(target).addScaledVector(dir, distance);
-    camera.lookAt(target);
+    cameraTween.current = null;
+    ctl?.target.copy(view.target);
+    camera.position.copy(view.target).addScaledVector(dir, view.distance);
+    camera.lookAt(view.target);
     camera.updateProjectionMatrix();
-    controls.current?.update();
+    ctl?.update();
     invalidate();
-  }, [camera, target, distance, invalidate]);
+  }, [camera, view, selectedLevel, reduced, invalidate]);
+
+  useFrame(() => {
+    const tween = cameraTween.current;
+    const ctl = controls.current;
+    if (!tween || !ctl) return;
+    const p = Math.min(1, (performance.now() - tween.t0) / DURATION);
+    const e = ease(p);
+    const dir = camera.position.clone().sub(tween.last).normalize();
+    ctl.target.lerpVectors(tween.fromTarget, tween.toTarget, e);
+    tween.last.copy(ctl.target);
+    const distance = tween.fromDistance + (tween.toDistance - tween.fromDistance) * e;
+    camera.position.copy(ctl.target).addScaledVector(dir, distance);
+    ctl.update();
+    if (p < 1) invalidate();
+    else cameraTween.current = null;
+  });
 
   // Giro con el teclado (flechas del contenedor): un paso fijo alrededor del edificio.
   useEffect(() => {
     turnRef.current = (step) => {
-      const offset = camera.position.clone().sub(target).applyAxisAngle(UP, step);
-      camera.position.copy(target).add(offset);
-      camera.lookAt(target);
-      controls.current?.update();
+      const ctl = controls.current;
+      if (!ctl) return;
+      const offset = camera.position.clone().sub(ctl.target).applyAxisAngle(UP, step);
+      camera.position.copy(ctl.target).add(offset);
+      camera.lookAt(ctl.target);
+      ctl.update();
       invalidate();
     };
     return () => {
       turnRef.current = null;
     };
-  }, [turnRef, camera, target, invalidate]);
+  }, [turnRef, camera, invalidate]);
 
   return (
     <>
@@ -737,7 +791,6 @@ function Scene({
       <directionalLight color={colors['crema-suave']} intensity={0.95} position={[30, 10, 6]} />
       <OrbitControls
         ref={controls}
-        target={target}
         enablePan={false}
         enableZoom={zoom}
         enableDamping={!reduced}
@@ -745,8 +798,8 @@ function Scene({
         rotateSpeed={0.7}
         minPolarAngle={0.55}
         maxPolarAngle={Math.PI / 2 - 0.1}
-        minDistance={distance * 0.55}
-        maxDistance={distance * 1.25}
+        minDistance={Math.min(closedView.distance, view.distance) * 0.55}
+        maxDistance={farthest * 1.25}
       />
 
       <mesh geometry={resources.plaza} material={resources.mats.plaza} receiveShadow />
