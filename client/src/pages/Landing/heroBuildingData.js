@@ -1,6 +1,6 @@
 // Plantas del edificio del hero (ejemplo, sin API). Misma forma que FLOORS de data.js, más lo que
 // necesita la escena 3D: `rooms` es el estado de ejemplo de cada sala de la planta ('free', 'busy' u 'off').
-// De arriba abajo; la planta baja es recepción y no se alquila.
+// Cinco plantas, como en el mockup, de arriba abajo; la planta baja es recepción y no se alquila.
 
 const countFree = (rooms) => rooms.filter((state) => state === 'free').length;
 

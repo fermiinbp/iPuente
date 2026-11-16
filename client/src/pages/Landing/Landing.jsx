@@ -49,11 +49,11 @@ export default function Landing() {
         <div className={styles.heroInner}>
           <div className={styles.heroText}>
             <h1 className={styles.heroTitle} id="hero-titulo">
-              Elige tu sala sin ir a ciegas.
+              Reserva salas por horas viendo el plano del edificio.
             </h1>
             <p className={styles.lead}>
-              Mira el edificio, abre la planta y comprueba qué salas están libres. Reservas por
-              horas y pagas online.
+              Abre la planta, mira qué salas están libres y cuánto cuestan, y paga online. Sin
+              llamadas ni correos.
             </p>
             <form className={styles.search} aria-label="Buscar salas" onSubmit={handleSearch}>
               <div className={`${styles.field} ${styles.fieldCity}`}>
@@ -67,7 +67,6 @@ export default function Landing() {
               </div>
               <Button type="submit">Buscar</Button>
             </form>
-            <p className={styles.hint}>Pronto filtraremos por ciudad, fecha y personas.</p>
           </div>
 
           <div className={styles.heroBuilding}>

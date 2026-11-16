@@ -25,6 +25,14 @@ export default function BuildingHero({
   // Última planta confirmada por clic o teclado: es lo único que anuncia el lector de pantalla.
   const [announced, setAnnounced] = useState('');
   const announcedFloor = floors.find((floor) => floor.id === announced);
+  // Planta abierta en el 3D (las de encima suben y se desvanecen): se abre y se cierra con un clic.
+  const [selectedId, setSelectedId] = useState('');
+
+  function handleSelect(id) {
+    onSelectFloor(id);
+    setSelectedId((current) => (current === id ? '' : id));
+    setAnnounced(id);
+  }
 
   const ghost = (
     <div className={styles.ghost} aria-hidden="true">
@@ -43,11 +51,14 @@ export default function BuildingHero({
               <Building3D
                 floors={floors}
                 activeFloorId={activeFloorId}
+                selectedFloorId={selectedId}
+                onHoverFloor={onSelectFloor}
+                onSelectFloor={handleSelect}
                 label={`Maqueta 3D del ${buildingName}`}
               />
             </Suspense>
           </ErrorBoundary>
-          <p className={styles.hint}>Arrastra o usa las flechas para girar</p>
+          <p className={styles.hint}>Arrastra para girar y pulsa una planta para abrirla</p>
         </div>
       )}
       <div
@@ -71,10 +82,7 @@ export default function BuildingHero({
               type="button"
               className={rowClass}
               aria-pressed={isActive}
-              onClick={() => {
-                onSelectFloor(floor.id);
-                setAnnounced(floor.id);
-              }}
+              onClick={() => handleSelect(floor.id)}
               onPointerEnter={(event) => {
                 if (event.pointerType === 'mouse') onSelectFloor(floor.id);
               }}

@@ -155,7 +155,7 @@
   flex-direction: column;
   justify-content: center;
   gap: 6px;
-  height: clamp(280px, 60vw, 440px);
+  height: clamp(360px, 78vw, 620px);
 }
 
 .ghostSlab {

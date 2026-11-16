@@ -18,8 +18,8 @@ export default function CompaniesCta() {
       innerClassName={styles.inner}
     >
       <div className={styles.text}>
-        <SectionTitle id="empresas-titulo">¿Tienes oficinas?</SectionTitle>
-        <p className={styles.lead}>Publícalas en minutos: sube tu plano y detectamos tus salas.</p>
+        <SectionTitle id="empresas-titulo">Tus oficinas, publicadas en minutos</SectionTitle>
+        <p className={styles.lead}>Sube la imagen del plano y la IA detecta tus salas.</p>
         <ol className={styles.steps}>
           {COMPANY_STEPS.map((step, index) => (
             <li key={step} className={styles.step}>
