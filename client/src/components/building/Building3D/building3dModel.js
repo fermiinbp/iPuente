@@ -10,7 +10,9 @@ export const FLOOR_H = 3.4; // plantas tipo
 export const SLAB_T = 0.34; // forjado (el canto se ve en cada planta)
 export const OVERHANG = 0.3; // cuánto sobresale el forjado del vidrio
 export const ROOF_T = 0.3;
-export const PARAPET_H = 0.9;
+export const PARAPET_H = 0.5;
+export const RAIL_H = 0.55; // barandilla fina sobre el peto
+export const SPANDREL_H = 0.95; // banda de antepecho opaca sobre cada forjado
 export const LIFT = 7; // cuánto suben las plantas de encima de la seleccionada
 export const BAY = 1.5; // separación de montantes
 export const FULL_PLAN = { cx: 0, cz: 0, w: 24, d: 12 }; // planta 2:1
@@ -73,13 +75,24 @@ export function coreGeometry(height) {
   return g;
 }
 
-// Vidrios (instancias) y montantes de la fachada: cada ~1,5 m, ajustados al largo de cada cara.
-export function facadeMatrices(plan, h) {
-  const paneH = h - SLAB_T;
-  const y = SLAB_T + paneH / 2;
+// Fachada de una planta (instancias): vidrio, montantes y travesaño (perfiles con ~5 cm de relieve),
+// banda de antepecho opaca sobre el forjado y pilares de esquina. La planta baja va sin antepecho (más transparente).
+export function facadeMatrices(plan, h, ground = false) {
+  const spandrel = ground ? 0 : SPANDREL_H;
+  const glassY0 = SLAB_T + spandrel;
+  const glassH = h - glassY0;
+  const yGlass = glassY0 + glassH / 2;
   const dummy = new Object3D();
   const panes = [];
-  const mullions = [];
+  const mullions = []; // montantes y travesaños: mismo material
+  const bands = []; // antepechos y pilares: mismo material
+  const put = (list, x, y, z, rot, sx, sy, sz) => {
+    dummy.position.set(x, y, z);
+    dummy.rotation.set(0, rot, 0);
+    dummy.scale.set(sx, sy, sz);
+    dummy.updateMatrix();
+    list.push(dummy.matrix.clone());
+  };
   const faces = [
     { len: plan.w, x: 0, z: plan.d / 2, rot: 0, ends: true },
     { len: plan.w, x: 0, z: -plan.d / 2, rot: 0, ends: true },
@@ -89,25 +102,55 @@ export function facadeMatrices(plan, h) {
   for (const face of faces) {
     const n = Math.max(1, Math.round(face.len / BAY));
     const bay = face.len / n;
-    const at = (s) =>
+    const at = (s, y) =>
       face.rot === 0 ? [plan.cx + s, y, plan.cz + face.z] : [plan.cx + face.x, y, plan.cz + s];
     for (let i = 0; i < n; i++) {
-      dummy.position.set(...at(-face.len / 2 + (i + 0.5) * bay));
-      dummy.rotation.set(0, face.rot, 0);
-      dummy.scale.set(bay - 0.12, paneH, 0.05);
-      dummy.updateMatrix();
-      panes.push(dummy.matrix.clone());
+      put(
+        panes,
+        ...at(-face.len / 2 + (i + 0.5) * bay, yGlass),
+        face.rot,
+        bay - 0.12,
+        glassH,
+        0.05,
+      );
     }
     for (let i = 0; i <= n; i++) {
       if (!face.ends && (i === 0 || i === n)) continue; // las esquinas ya las pone la otra cara
-      dummy.position.set(...at(-face.len / 2 + i * bay));
-      dummy.rotation.set(0, face.rot, 0);
-      dummy.scale.set(0.14, paneH, 0.26);
-      dummy.updateMatrix();
-      mullions.push(dummy.matrix.clone());
+      put(mullions, ...at(-face.len / 2 + i * bay, yGlass), face.rot, 0.12, glassH, 0.2);
+    }
+    // Travesaño a media altura del vidrio, con relieve.
+    put(mullions, ...at(0, yGlass), face.rot, face.len, 0.08, 0.2);
+    if (spandrel > 0)
+      put(bands, ...at(0, SLAB_T + spandrel / 2), face.rot, face.len, spandrel, 0.16);
+  }
+  // Pilares en las cuatro esquinas.
+  const colH = h - SLAB_T;
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      put(
+        bands,
+        plan.cx + (sx * plan.w) / 2,
+        SLAB_T + colH / 2,
+        plan.cz + (sz * plan.d) / 2,
+        0,
+        0.42,
+        colH,
+        0.42,
+      );
     }
   }
-  return { panes, mullions };
+  return { panes, mullions, bands };
+}
+
+// Franjas verticales de ventanas pequeñas del núcleo (una planta): una en la cara frontal y dos en la lateral.
+export function coreWindowGeometry(h) {
+  const wh = h - 1.8;
+  const y = h / 2;
+  return mergeAll([
+    boxAt(0.5, wh, 0.06, CORE.x, y, CORE.z + CORE.d / 2 + 0.02),
+    boxAt(0.06, wh, 0.5, CORE.x + CORE.w / 2 + 0.02, y, CORE.z - 1),
+    boxAt(0.06, wh, 0.5, CORE.x + CORE.w / 2 + 0.02, y, CORE.z + 1),
+  ]);
 }
 
 function boxAt(w, h, d, x, y, z) {
@@ -257,14 +300,15 @@ export function roofGeometry(plan) {
   ]);
 }
 
+const HVAC_UNITS = [
+  [-6, -1.2, 3.2, 1.5, 2.1],
+  [-1.5, -1.6, 2.6, 1.1, 1.8],
+  [3, -1, 3, 1.7, 2.2],
+];
+
 export function hvacMatrices(plan) {
   const dummy = new Object3D();
-  const units = [
-    [-6, -1.2, 3.2, 1.5, 2.1],
-    [-1.5, -1.6, 2.6, 1.1, 1.8],
-    [3, -1, 3, 1.7, 2.2],
-  ];
-  return units.map(([x, z, w, h, d]) => {
+  return HVAC_UNITS.map(([x, z, w, h, d]) => {
     dummy.position.set(plan.cx + x, ROOF_T + h / 2, plan.cz + z);
     dummy.scale.set(w, h, d);
     dummy.rotation.set(0, 0, 0);
@@ -281,6 +325,68 @@ export function skylightMatrix(plan) {
   return dummy.matrix.clone();
 }
 
+// Barandilla fina sobre el peto: postes cada ~1,5 m y pasamanos.
+export function railGeometry(plan) {
+  const w = plan.w + OVERHANG * 2 - 0.22;
+  const d = plan.d + OVERHANG * 2 - 0.22;
+  const y0 = ROOF_T + PARAPET_H;
+  const parts = [];
+  const post = (x, z) =>
+    parts.push(boxAt(0.05, RAIL_H, 0.05, plan.cx + x, y0 + RAIL_H / 2, plan.cz + z));
+  const nx = Math.max(1, Math.round(w / BAY));
+  const nz = Math.max(1, Math.round(d / BAY));
+  for (let i = 0; i <= nx; i++) {
+    post(-w / 2 + (i * w) / nx, d / 2);
+    post(-w / 2 + (i * w) / nx, -d / 2);
+  }
+  for (let j = 1; j < nz; j++) {
+    post(w / 2, -d / 2 + (j * d) / nz);
+    post(-w / 2, -d / 2 + (j * d) / nz);
+  }
+  const yr = y0 + RAIL_H;
+  parts.push(boxAt(w, 0.04, 0.04, plan.cx, yr, plan.cz + d / 2));
+  parts.push(boxAt(w, 0.04, 0.04, plan.cx, yr, plan.cz - d / 2));
+  parts.push(boxAt(0.04, 0.04, d, plan.cx + w / 2, yr, plan.cz));
+  parts.push(boxAt(0.04, 0.04, d, plan.cx - w / 2, yr, plan.cz));
+  return mergeAll(parts);
+}
+
+// Rejilla de cada máquina: panel oscuro en su cara frontal.
+export function hvacGrilleMatrices(plan) {
+  const dummy = new Object3D();
+  return HVAC_UNITS.map(([x, z, w, h, d]) => {
+    dummy.position.set(plan.cx + x, ROOF_T + h * 0.5, plan.cz + z + d / 2 + 0.02);
+    dummy.scale.set(w * 0.72, h * 0.6, 0.05);
+    dummy.rotation.set(0, 0, 0);
+    dummy.updateMatrix();
+    return dummy.matrix.clone();
+  });
+}
+
+// Mobiliario de la acera (escala humana): dos bancos y dos farolas, en una sola malla con color por vértice.
+export function streetFurnitureGeometry(palette) {
+  const parts = [];
+  const colors = [];
+  const add = (g, color) => {
+    pushColor(colors, g.getAttribute('position').count, color);
+    parts.push(g);
+  };
+  const y = BASE_Y;
+  for (const x of [-7.5, 7.5]) {
+    add(boxAt(1.7, 0.08, 0.45, x, y + 0.45, 9.8), palette.bronce);
+    add(boxAt(1.7, 0.4, 0.06, x, y + 0.72, 10.02), palette.bronce);
+    add(boxAt(0.08, 0.45, 0.4, x - 0.7, y + 0.22, 9.8), palette.door);
+    add(boxAt(0.08, 0.45, 0.4, x + 0.7, y + 0.22, 9.8), palette.door);
+  }
+  for (const x of [-10.5, 10.5]) {
+    add(boxAt(0.1, 4.2, 0.1, x, y + 2.1, 10.4), palette.door);
+    add(boxAt(0.5, 0.12, 0.3, x, y + 4.26, 10.4), palette.wallNeutral);
+  }
+  const geometry = mergeAll(parts);
+  geometry.setAttribute('color', new BufferAttribute(new Float32Array(colors), 3));
+  return geometry;
+}
+
 // Marquesina de la entrada (pieza de bronce) con dos pilares y el hueco de la puerta.
 export function canopyGeometry(palette) {
   const z = FULL_PLAN.d / 2 + 1.5;
@@ -290,11 +396,11 @@ export function canopyGeometry(palette) {
     pushColor(colors, g.getAttribute('position').count, color);
     parts.push(g);
   };
-  const slab = new RoundedBoxGeometry(6.4, 0.22, 3.4, 2, 0.05);
+  const slab = new RoundedBoxGeometry(6.4, 0.12, 3.4, 2, 0.03);
   slab.translate(0, 3.5, z);
   add(slab, palette.bronce);
-  add(boxAt(0.2, 3.4, 0.2, -2.9, 1.7, z + 1.4), palette.bronce);
-  add(boxAt(0.2, 3.4, 0.2, 2.9, 1.7, z + 1.4), palette.bronce);
+  add(boxAt(0.14, 3.4, 0.14, -2.9, 1.7, z + 1.4), palette.bronce);
+  add(boxAt(0.14, 3.4, 0.14, 2.9, 1.7, z + 1.4), palette.bronce);
   add(boxAt(2.4, 2.8, 0.12, 0, 1.4 + SLAB_T / 2, FULL_PLAN.d / 2 + 0.02), palette.door);
   const geometry = mergeAll(parts);
   geometry.setAttribute('color', new BufferAttribute(new Float32Array(colors), 3));
@@ -319,11 +425,8 @@ export function plazaGeometry(palette) {
 // Árboles low-poly de la plaza: posición y escala.
 export const TREES = [
   [-16.5, 9, 1.05],
-  [-9.5, 11, 0.85],
-  [10, 11.5, 1],
   [17.5, 8.5, 1.15],
   [-17, -8, 1.1],
-  [8, -11, 0.9],
 ];
 
 // Distancia de cámara para que el edificio ocupe ~70 % del alto y quepa a lo ancho (proyección ortogonal aproximada).

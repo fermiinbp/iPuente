@@ -30,14 +30,18 @@ import {
   buildingHeight,
   canopyGeometry,
   coreGeometry,
+  coreWindowGeometry,
   facadeMatrices,
   fitDistance,
+  hvacGrilleMatrices,
   hvacMatrices,
   layoutFloors,
   plateGeometry,
   plazaGeometry,
+  railGeometry,
   roofGeometry,
   skylightMatrix,
+  streetFurnitureGeometry,
   FULL_PLAN,
   SETBACK_PLAN,
 } from './building3dModel.js';
@@ -67,6 +71,7 @@ const KEY_STEP = 0.15; // radianes por pulsación de flecha
 const NO_RAYCAST = () => null;
 const UP = new Vector3(0, 1, 0);
 const GLASS_OPACITY = 0.35;
+const GLASS_OPACITY_GROUND = 0.22; // vestíbulo más transparente
 const GLASS_OPACITY_OPEN = 0.14; // la planta abierta se ve casi sin vidrio
 
 // Trama diagonal a 45° de «No se alquila» (misma idea que FloorPlan), con colores leídos de los tokens.
@@ -120,6 +125,7 @@ function crearRecursos(colors) {
       depthWrite: false,
     });
   const cores = new Map();
+  const coreWins = new Map();
   return {
     palette,
     trama,
@@ -131,6 +137,13 @@ function crearRecursos(colors) {
       return cores.get(height);
     },
     cores,
+    coreWin: (height) => {
+      if (!coreWins.has(height)) coreWins.set(height, coreWindowGeometry(height));
+      return coreWins.get(height);
+    },
+    coreWins,
+    rails: { full: railGeometry(FULL_PLAN), setback: railGeometry(SETBACK_PLAN) },
+    furniture: streetFurnitureGeometry(palette),
     canopy: canopyGeometry(palette),
     plaza: plazaGeometry(palette),
     trunk: new CylinderGeometry(0.14, 0.2, 1.4, 6),
@@ -139,6 +152,8 @@ function crearRecursos(colors) {
       plate: std(colors.linea, 0.55, 0.15),
       glass: glass(),
       mullion: std(colors['bosque-profundo'], 0.45, 0.35),
+      dark: std(colors['bosque-profundo'], 0.7, 0.1),
+      band: std(colors.linea.clone().multiplyScalar(0.82), 0.8, 0),
       core: std(colors['foto-hueco'], 0.7),
       rooms: std(0xffffff, 0.85, 0, {
         vertexColors: true,
@@ -165,6 +180,9 @@ function disposeResources(r) {
   Object.values(r.plates).forEach((g) => g.dispose());
   Object.values(r.roofs).forEach((g) => g.dispose());
   r.cores.forEach((g) => g.dispose());
+  r.coreWins.forEach((g) => g.dispose());
+  Object.values(r.rails).forEach((g) => g.dispose());
+  r.furniture.dispose();
   r.canopy.dispose();
   r.plaza.dispose();
   r.trunk.dispose();
@@ -228,6 +246,7 @@ function Roof({ entry, hidden, resources, reduced }) {
       roof: resources.mats.roof.clone(),
       hvac: resources.mats.hvac.clone(),
       sky: resources.mats.sky.clone(),
+      dark: resources.mats.dark.clone(),
     }),
     [resources],
   );
@@ -236,23 +255,29 @@ function Roof({ entry, hidden, resources, reduced }) {
     () => [
       [mats.roof, 1],
       [mats.hvac, 1],
+      [mats.dark, 1],
       [mats.sky, GLASS_OPACITY, true],
     ],
     [mats],
   );
   useFade(group, fades, hidden ? 0 : 1, reduced);
   const hvac = useMemo(() => hvacMatrices(plan), [plan]);
+  const grille = useMemo(() => hvacGrilleMatrices(plan), [plan]);
   const sky = useMemo(() => skylightMatrix(plan), [plan]);
+  const grilleRef = useRef(null);
   const skyRef = useRef(null);
 
   useLayoutEffect(() => {
     hvac.forEach((m, i) => hvacRef.current.setMatrixAt(i, m));
     hvacRef.current.instanceMatrix.needsUpdate = true;
     hvacRef.current.computeBoundingSphere();
+    grille.forEach((m, i) => grilleRef.current.setMatrixAt(i, m));
+    grilleRef.current.instanceMatrix.needsUpdate = true;
+    grilleRef.current.computeBoundingSphere();
     skyRef.current.setMatrixAt(0, sky);
     skyRef.current.instanceMatrix.needsUpdate = true;
     skyRef.current.computeBoundingSphere();
-  }, [hvac, sky]);
+  }, [hvac, grille, sky]);
 
   return (
     <group ref={group} position={[0, h, 0]}>
@@ -265,6 +290,17 @@ function Roof({ entry, hidden, resources, reduced }) {
       <instancedMesh
         ref={hvacRef}
         args={[resources.unit, mats.hvac, hvac.length]}
+        castShadow
+        raycast={NO_RAYCAST}
+      />
+      <instancedMesh
+        ref={grilleRef}
+        args={[resources.unit, mats.dark, grille.length]}
+        raycast={NO_RAYCAST}
+      />
+      <mesh
+        geometry={plan === FULL_PLAN ? resources.rails.full : resources.rails.setback}
+        material={mats.dark}
         castShadow
         raycast={NO_RAYCAST}
       />
@@ -294,6 +330,7 @@ function Floor({
   const group = useRef(null);
   const panesRef = useRef(null);
   const mullionsRef = useRef(null);
+  const bandsRef = useRef(null);
   const lift = useRef(0);
   const above = selectedLevel !== null && floor.number > selectedLevel;
   const targetLift = above ? LIFT : 0;
@@ -303,6 +340,8 @@ function Floor({
       plate: resources.mats.plate.clone(),
       glass: resources.mats.glass.clone(),
       mullion: resources.mats.mullion.clone(),
+      band: resources.mats.band.clone(),
+      dark: resources.mats.dark.clone(),
       core: resources.mats.core.clone(),
       rooms: resources.mats.rooms.clone(),
       hatch: resources.mats.hatch.clone(),
@@ -311,11 +350,17 @@ function Floor({
   );
   useEffect(() => () => Object.values(mats).forEach((m) => m.dispose()), [mats]);
 
-  const glassBase = selected ? GLASS_OPACITY_OPEN : GLASS_OPACITY;
+  const glassBase = selected
+    ? GLASS_OPACITY_OPEN
+    : floor.off
+      ? GLASS_OPACITY_GROUND
+      : GLASS_OPACITY;
   const fades = useMemo(
     () => [
       [mats.plate, 1],
       [mats.mullion, 1],
+      [mats.band, 1],
+      [mats.dark, 1],
       [mats.core, 1],
       [mats.rooms, 1],
       [mats.hatch, 1],
@@ -336,7 +381,7 @@ function Floor({
     },
     [interior],
   );
-  const facade = useMemo(() => facadeMatrices(plan, h), [plan, h]);
+  const facade = useMemo(() => facadeMatrices(plan, h, !!floor.off), [plan, h, floor.off]);
   const coreHeight = isTop ? h + ROOF_T + CORE.cap : h;
   const plateGeo = plan === FULL_PLAN ? resources.plates.full : resources.plates.setback;
 
@@ -349,6 +394,7 @@ function Floor({
     };
     fill(panesRef.current, facade.panes);
     fill(mullionsRef.current, facade.mullions);
+    fill(bandsRef.current, facade.bands);
     invalidate();
   }, [facade, invalidate]);
 
@@ -418,9 +464,16 @@ function Floor({
         args={[resources.unit, mats.mullion, facade.mullions.length]}
         raycast={NO_RAYCAST}
       />
+      <instancedMesh
+        ref={bandsRef}
+        args={[resources.unit, mats.band, facade.bands.length]}
+        castShadow
+        receiveShadow
+      />
       {interior.geometry && <mesh geometry={interior.geometry} material={mats.rooms} />}
       {interior.hatch && <mesh geometry={interior.hatch} material={mats.hatch} visible={active} />}
       <mesh geometry={resources.core(coreHeight)} material={mats.core} castShadow receiveShadow />
+      <mesh geometry={resources.coreWin(h)} material={mats.dark} raycast={NO_RAYCAST} />
       {floor.off && (
         <mesh
           geometry={resources.canopy}
@@ -623,6 +676,12 @@ function Scene({
 
       <mesh geometry={resources.plaza} material={resources.mats.plaza} receiveShadow />
       <Trees resources={resources} />
+      <mesh
+        geometry={resources.furniture}
+        material={resources.mats.canopy}
+        castShadow
+        raycast={NO_RAYCAST}
+      />
       <ContactShadows
         position={[0, BASE_Y + 0.01, 0]}
         scale={46}
