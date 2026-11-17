@@ -156,3 +156,65 @@
   width: 35%;
   height: 35%;
 }
+
+/* Detección de salas: antes de empezar están ocultas; durante «play» una línea recorre el plano y cada sala aparece a su paso. */
+.scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--bronce);
+  box-shadow: 0 0 18px 6px color-mix(in srgb, var(--bronce) 55%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.editor[data-phase='antes'] .room {
+  opacity: 0;
+}
+
+.editor[data-phase='play'] .scan {
+  animation: escaneo 1300ms var(--ease-in-out) both;
+}
+
+.editor[data-phase='play'] .room {
+  animation: salaDetectada 420ms var(--ease-out) both;
+}
+
+.editor[data-phase='play'] .room1 {
+  animation-delay: 250ms;
+}
+
+.editor[data-phase='play'] .room3 {
+  animation-delay: 550ms;
+}
+
+.editor[data-phase='play'] .room2 {
+  animation-delay: 800ms;
+}
+
+.editor[data-phase='play'] .room4 {
+  animation-delay: 1050ms;
+}
+
+@keyframes escaneo {
+  0% {
+    left: 7%;
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    left: 93%;
+    opacity: 0;
+  }
+}
+
+@keyframes salaDetectada {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
