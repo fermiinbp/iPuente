@@ -23,12 +23,10 @@ export default function RoomShape({
   lineActive,
   reducedMotion,
   onSelect,
-  // Luz e interior (opcionales: sin `recursos` la sala se dibuja como antes, sin paredes ni luz).
+  // Interior y luz (opcionales: sin `recursos` la sala se dibuja como antes, sin paredes ni luz).
   recursos,
   doorSide = 1,
   lit = false,
-  canLight = false,
-  onToggleLight,
 }) {
   const invalidate = useThree((estado) => estado.invalidate);
   const elevador = useRef(null);
@@ -92,11 +90,8 @@ export default function RoomShape({
             size={size}
             doorSide={doorSide}
             lit={lit}
-            canLight={canLight}
-            furnished={room.status !== 'off'}
             recursos={recursos}
             reducedMotion={reducedMotion}
-            onToggleLight={onToggleLight}
           />
         )}
         <lineSegments

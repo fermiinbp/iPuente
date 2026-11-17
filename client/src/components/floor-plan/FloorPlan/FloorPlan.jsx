@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import {
   BoxGeometry,
   CanvasTexture,
+  ConeGeometry,
+  CylinderGeometry,
   LineBasicMaterial,
   MeshBasicMaterial,
   MeshStandardMaterial,
@@ -34,6 +36,8 @@ const NOMBRES_COLOR = [
   'bronce-claro',
   'crema-suave',
   'bosque-profundo',
+  'foto-hueco',
+  'linea',
 ];
 
 // Iluminación general: sube con cada sala encendida. Todas encendidas equivale a la luz de siempre.
@@ -153,16 +157,19 @@ export default function FloorPlan({ plan, selectedId, onSelect, litIds = [] }) {
       texturaHalo: crearHalo(),
       colorLuz: colores['bronce-claro'],
       pared: new MeshStandardMaterial({ color: colores.papel, roughness: 0.7, toneMapped: false }),
-      mesa: new MeshStandardMaterial({
-        color: colores.bronce,
-        roughness: 0.6,
-        toneMapped: false,
-      }),
-      silla: new MeshStandardMaterial({
-        color: colores['crema-suave'],
-        roughness: 0.8,
-        toneMapped: false,
-      }),
+      mesa: estandar(colores.bronce),
+      escritorio: estandar(colores['bronce-claro']),
+      silla: estandar(colores['crema-suave']),
+      pizarra: estandar(colores.papel),
+      sofa: estandar(colores['foto-hueco']),
+      maceta: estandar(colores['bronce']),
+      planta: estandar(colores.libre),
+      pantallaOff: estandar(colores['bosque-profundo']),
+      // La pantalla encendida no depende de la luz de la escena: brilla por sí sola.
+      pantallaOn: new MeshBasicMaterial({ color: colores.papel, toneMapped: false }),
+      geoSilla: new BoxGeometry(0.11, 0.07, 0.11),
+      geoMaceta: new CylinderGeometry(0.05, 0.04, 0.09, 8),
+      geoPlanta: new ConeGeometry(0.08, 0.2, 7),
     };
   }, [colores, ancho, fondo, plan.corridor.height]);
 

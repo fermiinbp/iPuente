@@ -179,7 +179,6 @@ export default function FloorSection() {
                   selectedId={selectedId}
                   onSelect={setSelectedId}
                   litIds={litIds}
-                  onToggleLight={toggleLight}
                 />
               </LazyCanvas>
             </Suspense>
