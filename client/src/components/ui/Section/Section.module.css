@@ -1,3 +1,8 @@
+.section {
+  position: relative;
+  isolation: isolate;
+}
+
 .toneBase {
   background: var(--bosque);
 }
@@ -10,11 +15,18 @@
   background: var(--bosque-profundo);
 }
 
+.toneCrema {
+  --foco: var(--foco-sobre-claro);
+  background: var(--crema);
+  color: var(--bosque);
+}
+
 .bordered {
   border-top: 1px solid var(--linea);
 }
 
 .inner {
+  position: relative;
   max-width: var(--ancho-max);
   margin: 0 auto;
   padding: clamp(64px, 8vw, 104px) var(--gutter);
@@ -22,4 +34,38 @@
 
 .spacious {
   padding-block: clamp(64px, 8vw, 112px);
+}
+
+/* Decoración: capa detrás del contenido, sin pointer-events. */
+.decorGlow::before,
+.decorGrid::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.decorGlow::before {
+  background:
+    radial-gradient(
+      55% 60% at 70% 45%,
+      color-mix(in srgb, var(--bronce) 20%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      40% 50% at 8% 90%,
+      color-mix(in srgb, var(--lima) 7%, transparent),
+      transparent 70%
+    );
+}
+
+.decorGrid::before {
+  background-image:
+    linear-gradient(var(--linea-plano) 1px, transparent 1px),
+    linear-gradient(90deg, var(--linea-plano) 1px, transparent 1px);
+  background-size: 56px 56px;
+  opacity: 0.22;
+  -webkit-mask-image: radial-gradient(ellipse 70% 80% at 50% 40%, #000 15%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 80% at 50% 40%, #000 15%, transparent 75%);
 }

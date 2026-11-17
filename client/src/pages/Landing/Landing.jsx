@@ -1,5 +1,5 @@
 // Home: hero con el edificio por plantas, buscador, salas destacadas, cómo funciona y llamada a empresas.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import BuildingHero from '@/components/building/BuildingHero/BuildingHero.jsx';
@@ -31,6 +31,15 @@ export default function Landing() {
   const navigate = useNavigate();
   // Se calcula una sola vez, antes de que el cargador marque la sesión como vista.
   const [entranceDelay] = useState(heroEntranceDelay);
+  const heroRef = useRef(null);
+
+  // Foco de luz que sigue al ratón por el hero. Solo ratón: en táctil queda el resplandor fijo.
+  function handleHeroPointerMove(event) {
+    if (event.pointerType !== 'mouse') return;
+    const box = event.currentTarget.getBoundingClientRect();
+    heroRef.current?.style.setProperty('--mx', `${event.clientX - box.left}px`);
+    heroRef.current?.style.setProperty('--my', `${event.clientY - box.top}px`);
+  }
   const [floorId, setFloorId] = useState(DEFAULT_FLOOR_ID);
   const [filter, setFilter] = useState(ROOM_FILTERS[0]);
 
@@ -57,7 +66,9 @@ export default function Landing() {
       <LandingLoader />
 
       <section
+        ref={heroRef}
         className={styles.hero}
+        onPointerMove={handleHeroPointerMove}
         aria-labelledby="hero-titulo"
         style={{ '--entrada-base': `${entranceDelay}ms` }}
       >
@@ -103,7 +114,7 @@ export default function Landing() {
       <FloorSection />
       <NearbySection />
 
-      <Section id="salas" titleId="salas-titulo" tone="elevated">
+      <Section id="salas" titleId="salas-titulo" decor="grid">
         <div className={styles.roomsHead}>
           <SectionTitle id="salas-titulo">Salas destacadas</SectionTitle>
           <RoomFilters filters={ROOM_FILTERS} active={filter} onChange={setFilter} />

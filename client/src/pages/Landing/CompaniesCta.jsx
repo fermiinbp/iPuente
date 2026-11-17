@@ -47,7 +47,8 @@ export default function CompaniesCta() {
     <Section
       id="empresas"
       titleId="empresas-titulo"
-      tone="deep"
+      tone="elevated"
+      decor="glow"
       bordered={false}
       innerClassName={styles.inner}
     >

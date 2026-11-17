@@ -19,7 +19,8 @@
     opacity var(--dur-fast) var(--ease-out),
     color var(--dur-fast) var(--ease-out),
     background var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-media) var(--ease-out);
 }
 
 .button:active {
@@ -53,6 +54,13 @@
 @media (hover: hover) and (pointer: fine) {
   .primary:hover {
     background: var(--crema-suave);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -8px rgb(0 0 0 / 0.5);
+  }
+
+  .primary:active:hover {
+    transform: scale(0.97);
+    box-shadow: none;
   }
 
   .secondary:hover {
@@ -69,7 +77,8 @@
     transition: none;
   }
 
-  .button:active {
+  .button:active,
+  .primary:hover {
     transform: none;
   }
 }

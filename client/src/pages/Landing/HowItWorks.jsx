@@ -72,7 +72,7 @@ const VISUALS = [FloorsVisual, PlanVisual, PayVisual];
 
 export default function HowItWorks() {
   return (
-    <Section id="como" titleId="como-titulo">
+    <Section id="como" titleId="como-titulo" tone="crema" bordered={false}>
       <SectionTitle id="como-titulo">Cómo funciona</SectionTitle>
       <ol className={styles.steps}>
         {HOW_IT_WORKS_STEPS.map((step, index) => {

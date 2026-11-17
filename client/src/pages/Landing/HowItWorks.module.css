@@ -34,7 +34,7 @@
   font-style: italic;
   font-size: 56px;
   line-height: 1;
-  color: var(--bronce);
+  color: var(--bronce-oscuro);
 }
 
 .stepTitle {
@@ -54,7 +54,7 @@
   right: 0;
   bottom: -4px;
   height: 2px;
-  background: var(--bronce);
+  background: var(--bronce-oscuro);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform var(--dur-media) var(--ease-out);
@@ -63,7 +63,7 @@
 .stepText {
   max-width: 24em;
   font-size: var(--text-interfaz);
-  color: var(--crema-suave);
+  color: var(--bosque);
 }
 
 /* Paso 1: plantas del edificio */
