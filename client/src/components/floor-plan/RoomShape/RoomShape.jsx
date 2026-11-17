@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import { BoxGeometry, EdgesGeometry } from 'three';
+import RoomInterior from '../RoomInterior/RoomInterior.jsx';
 import styles from './RoomShape.module.css';
 
 const ALTURA = 0.12;
@@ -22,6 +23,12 @@ export default function RoomShape({
   lineActive,
   reducedMotion,
   onSelect,
+  // Luz e interior (opcionales: sin `recursos` la sala se dibuja como antes, sin paredes ni luz).
+  recursos,
+  doorSide = 1,
+  lit = false,
+  canLight = false,
+  onToggleLight,
 }) {
   const invalidate = useThree((estado) => estado.invalidate);
   const elevador = useRef(null);
@@ -79,6 +86,19 @@ export default function RoomShape({
             document.body.style.cursor = '';
           }}
         />
+        {recursos && (
+          <RoomInterior
+            room={room}
+            size={size}
+            doorSide={doorSide}
+            lit={lit}
+            canLight={canLight}
+            furnished={room.status !== 'off'}
+            recursos={recursos}
+            reducedMotion={reducedMotion}
+            onToggleLight={onToggleLight}
+          />
+        )}
         <lineSegments
           geometry={bordes}
           material={selected ? lineActive : lineBase}
