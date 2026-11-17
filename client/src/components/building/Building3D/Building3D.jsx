@@ -1,7 +1,7 @@
 // Edificio 3D procedural del hero: muro cortina de vidrio con montantes, forjados, núcleo de comunicaciones,
 // cubierta con máquinas y una plaza con árboles. Los botones HTML mandan: `activeFloorId` resalta una planta
 // (forjado lima y estados de sala visibles a través del vidrio) y `selectedFloorId` la abre: las de encima suben
-// y se desvanecen. Cámara 3/4 con OrbitControls; render bajo demanda (invalidate solo mientras algo se mueve).
+// como un bloque y la planta abierta pierde fachada y techo. Cámara 3/4 con OrbitControls; render bajo demanda (invalidate solo mientras algo se mueve).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, Environment, Lightformer, OrbitControls } from '@react-three/drei';
@@ -9,6 +9,8 @@ import {
   BoxGeometry,
   CanvasTexture,
   CylinderGeometry,
+  DataTexture,
+  EquirectangularReflectionMapping,
   IcosahedronGeometry,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
@@ -78,6 +80,7 @@ const UP = new Vector3(0, 1, 0);
 const EXPOSURE = 1;
 const GLASS_OPACITY = 0.35;
 const GLASS_OPACITY_GROUND = 0.22; // vestíbulo más transparente
+const COLOR_AMBIENTE_SALAS = 90; // gris (0-255) del ambiente de las salas
 const DURATION = 450; // ms: despiece de plantas y encuadre de la cámara
 
 // Trama diagonal a 45° de «No se alquila» (misma idea que FloorPlan), con colores leídos de los tokens.
@@ -118,6 +121,16 @@ function crearRecursos(colors) {
     sidewalk: colors.linea,
   };
   const trama = crearTrama(colors['no-alquila'], colors['trama-no-alquila']);
+  // Ambiente propio y muy tenue para suelos y tabiques de las salas: con el de la escena (0,75) el ambiente aclara
+  // tanto la zona en sombra que la sombra del bloque levantado casi no se distingue.
+  const roomEnv = new DataTexture(
+    new Uint8Array([COLOR_AMBIENTE_SALAS, COLOR_AMBIENTE_SALAS, COLOR_AMBIENTE_SALAS, 255]),
+    1,
+    1,
+  );
+  roomEnv.mapping = EquirectangularReflectionMapping;
+  roomEnv.colorSpace = SRGBColorSpace;
+  roomEnv.needsUpdate = true;
   const std = (color, roughness, metalness = 0, extra = {}) =>
     new MeshStandardMaterial({ color, roughness, metalness, ...extra });
   const glass = () =>
@@ -136,6 +149,7 @@ function crearRecursos(colors) {
   return {
     palette,
     trama,
+    roomEnv,
     unit: new BoxGeometry(1, 1, 1),
     plates: { full: plateGeometry(FULL_PLAN), setback: plateGeometry(SETBACK_PLAN) },
     roofs: { full: roofGeometry(FULL_PLAN), setback: roofGeometry(SETBACK_PLAN) },
@@ -178,9 +192,15 @@ function crearRecursos(colors) {
       rooms: std(0xffffff, 0.85, 0, {
         vertexColors: true,
         toneMapped: false,
-        envMapIntensity: 0.35,
+        envMap: roomEnv,
+        envMapIntensity: 1,
       }),
-      hatch: std(0xffffff, 0.9, 0, { map: trama, toneMapped: false, envMapIntensity: 0.35 }),
+      hatch: std(0xffffff, 0.9, 0, {
+        map: trama,
+        toneMapped: false,
+        envMap: roomEnv,
+        envMapIntensity: 1,
+      }),
       roof: std(colors.linea, 0.75, 0),
       // Terraza: el tono siguiente más oscuro que la cubierta, mezclando tokens.
       terrace: std(colors.linea.clone().lerp(colors['bosque-elevado'], 0.65), 0.85, 0),
@@ -198,6 +218,7 @@ function crearRecursos(colors) {
 
 function disposeResources(r) {
   r.trama.dispose();
+  r.roomEnv.dispose();
   r.unit.dispose();
   Object.values(r.plates).forEach((g) => g.dispose());
   Object.values(r.roofs).forEach((g) => g.dispose());
