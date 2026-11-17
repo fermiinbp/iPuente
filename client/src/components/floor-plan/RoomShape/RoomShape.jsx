@@ -100,7 +100,8 @@ export default function RoomShape({
           position={[0, ALTURA / 2 + 0.01, 0]}
         />
         <Html
-          position={[0, ALTURA + 0.1, 0]}
+          // Junto al borde delantero, para no tapar la mesa y las sillas del interior.
+          position={[0, ALTURA + 0.1, size[1] / 2 - 0.16]}
           center
           pointerEvents="none"
           zIndexRange={[10, 0]}
