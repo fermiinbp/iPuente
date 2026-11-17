@@ -12,6 +12,12 @@
 
 .label {
   line-height: 1.2;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+/* Al enfocar el campo, su etiqueta se enciende. */
+.field:focus-within .label {
+  color: var(--crema);
 }
 
 .input {

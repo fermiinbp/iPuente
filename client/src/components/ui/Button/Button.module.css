@@ -65,10 +65,17 @@
 
   .secondary:hover {
     border-color: var(--crema);
+    transform: translateY(-2px);
   }
 
   .ghost:hover {
     background: var(--bosque-elevado);
+    transform: translateY(-2px);
+  }
+
+  .secondary:active:hover,
+  .ghost:active:hover {
+    transform: scale(0.97);
   }
 }
 
@@ -78,7 +85,9 @@
   }
 
   .button:active,
-  .primary:hover {
+  .primary:hover,
+  .secondary:hover,
+  .ghost:hover {
     transform: none;
   }
 }
