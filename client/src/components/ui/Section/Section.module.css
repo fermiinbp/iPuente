@@ -49,13 +49,13 @@
 .decorGlow::before {
   background:
     radial-gradient(
-      55% 60% at 70% 45%,
-      color-mix(in srgb, var(--bronce) 20%, transparent),
-      transparent 70%
+      60% 65% at 72% 48%,
+      color-mix(in srgb, var(--foto-hueco) 75%, transparent),
+      transparent 72%
     ),
     radial-gradient(
-      40% 50% at 8% 90%,
-      color-mix(in srgb, var(--lima) 7%, transparent),
+      35% 45% at 6% 95%,
+      color-mix(in srgb, var(--bronce) 10%, transparent),
       transparent 70%
     );
 }
