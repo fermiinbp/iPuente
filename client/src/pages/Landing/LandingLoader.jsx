@@ -4,30 +4,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import simbolo from '@/assets/images/ipuente-simbolo.svg';
+import {
+  HOLD_MS,
+  LOAD_MS,
+  markLoaderSeen as markSeen,
+  OPEN_MS,
+  shouldShowLoader,
+} from './loaderSession.js';
 import styles from './LandingLoader.module.css';
 
-const LOAD_MS = 1100;
-const HOLD_MS = 250;
-const OPEN_MS = 900;
 const SAFETY_MS = 4000;
-const SESSION_KEY = 'ipuente-loader-visto';
-
-function shouldShowLoader() {
-  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false;
-  try {
-    return sessionStorage.getItem(SESSION_KEY) !== '1';
-  } catch {
-    return true;
-  }
-}
-
-function markSeen() {
-  try {
-    sessionStorage.setItem(SESSION_KEY, '1');
-  } catch {
-    // Sin sessionStorage: se mostrará de nuevo, no pasa nada.
-  }
-}
 
 export default function LandingLoader() {
   // Fases: carga (contador 0 a 100 %), abre (las mitades se separan) y done (se desmonta).

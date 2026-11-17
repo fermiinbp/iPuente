@@ -37,6 +37,57 @@
   color: var(--crema-suave);
 }
 
+.fact {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-5) 0 0;
+  font-size: var(--text-interfaz);
+  font-weight: 600;
+  color: var(--crema);
+}
+
+.factDot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radio-pildora);
+  background: var(--libre);
+  box-shadow: 0 0 0 4px rgb(195 227 176 / 0.2);
+}
+
+/* Entrada del hero al cargar: cada pieza sube y aparece, una detrás de otra. Espera a que termine el cargador. */
+.heroTitle,
+.lead,
+.fact,
+.search,
+.heroBuilding {
+  animation: heroEntra 640ms var(--ease-out) both;
+  animation-delay: calc(var(--entrada-base, 0ms) + var(--orden, 0) * 90ms);
+}
+
+.heroTitle {
+  --orden: 0;
+}
+
+.lead {
+  --orden: 1;
+}
+
+.fact {
+  --orden: 2;
+}
+
+.search {
+  --orden: 3;
+}
+
+.heroBuilding {
+  --orden: 2;
+  animation-name: heroEntraEdificio;
+  animation-duration: 900ms;
+}
+
 .search {
   display: flex;
   flex-direction: column;
@@ -115,5 +166,19 @@
   .heroText,
   .heroBuilding {
     flex: 1 1 0;
+  }
+}
+
+@keyframes heroEntra {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+@keyframes heroEntraEdificio {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98);
   }
 }

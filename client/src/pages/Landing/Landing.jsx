@@ -16,12 +16,21 @@ import { FLOORS_HERO } from './heroBuildingData.js';
 import HowItWorks from './HowItWorks.jsx';
 import styles from './Landing.module.css';
 import LandingLoader from './LandingLoader.jsx';
+import { heroEntranceDelay } from './loaderSession.js';
+import { FLOOR_PLAN } from './floorPlanData.js';
 import NearbySection from './NearbySection.jsx';
 import RoomFilters from './RoomFilters.jsx';
+
+// Dato de la primera pantalla: salas libres hoy y precio más bajo del plano de ejemplo.
+const FREE_ROOMS = FLOOR_PLAN.rooms.filter((room) => room.status === 'free');
+const FREE_COUNT = FREE_ROOMS.length;
+const MIN_PRICE = Math.min(...FREE_ROOMS.map((room) => room.price));
 
 export default function Landing() {
   usePageTitle('Salas por horas');
   const navigate = useNavigate();
+  // Se calcula una sola vez, antes de que el cargador marque la sesión como vista.
+  const [entranceDelay] = useState(heroEntranceDelay);
   const [floorId, setFloorId] = useState(DEFAULT_FLOOR_ID);
   const [filter, setFilter] = useState(ROOM_FILTERS[0]);
 
@@ -45,7 +54,11 @@ export default function Landing() {
     <div className={styles.page}>
       <LandingLoader />
 
-      <section className={styles.hero} aria-labelledby="hero-titulo">
+      <section
+        className={styles.hero}
+        aria-labelledby="hero-titulo"
+        style={{ '--entrada-base': `${entranceDelay}ms` }}
+      >
         <div className={styles.heroInner}>
           <div className={styles.heroText}>
             <h1 className={styles.heroTitle} id="hero-titulo">
@@ -54,6 +67,10 @@ export default function Landing() {
             <p className={styles.lead}>
               Abre la planta, mira qué salas están libres y cuánto cuestan, y paga online. Sin
               llamadas ni correos.
+            </p>
+            <p className={styles.fact}>
+              <span className={styles.factDot} aria-hidden="true" />
+              {FREE_COUNT} salas libres hoy en {BUILDING.name}, desde {MIN_PRICE} €/hora.
             </p>
             <form className={styles.search} aria-label="Buscar salas" onSubmit={handleSearch}>
               <div className={`${styles.field} ${styles.fieldCity}`}>
