@@ -4,9 +4,12 @@ import symbol from '@/assets/images/ipuente-simbolo.svg';
 import { formatPrice } from '@/utils/formatPrice.js';
 import styles from './RoomCard.module.css';
 
-export default function RoomCard({ room }) {
+// variant: 'default' (tarjeta vertical), 'featured' (grande, con la sala protagonista) o 'compact' (en fila).
+const VARIANT_CLASS = { featured: styles.featured, compact: styles.compact };
+
+export default function RoomCard({ room, variant = 'default' }) {
   return (
-    <Link className={styles.card} to={`/rooms/${room.id}`}>
+    <Link className={`${styles.card} ${VARIANT_CLASS[variant] ?? ''}`} to={`/rooms/${room.id}`}>
       <span className={styles.photo} aria-hidden="true">
         <span className={styles.symbol} style={{ '--simbolo': `url(${symbol})` }} />
       </span>

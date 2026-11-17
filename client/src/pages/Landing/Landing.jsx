@@ -36,6 +36,8 @@ export default function Landing() {
 
   const rooms =
     filter === ROOM_FILTERS[0] ? FEATURED_ROOMS : FEATURED_ROOMS.filter((r) => r.type === filter);
+  // Con tres salas o más, la primera va grande y las demás en fila; con menos, tarjetas iguales.
+  const featuredLayout = rooms.length >= 3;
 
   // De momento no hay ruta con el listado de edificios: se lleva al edificio de ejemplo con la búsqueda.
   function handleSearch(event) {
@@ -107,10 +109,16 @@ export default function Landing() {
           <RoomFilters filters={ROOM_FILTERS} active={filter} onChange={setFilter} />
         </div>
         {rooms.length > 0 ? (
-          <ul className={styles.grid}>
-            {rooms.map((room) => (
-              <li key={room.id}>
-                <RoomCard room={room} />
+          <ul className={`${styles.grid} ${featuredLayout ? styles.gridFeatured : ''}`}>
+            {rooms.map((room, index) => (
+              <li
+                key={room.id}
+                className={featuredLayout && index === 0 ? styles.featuredItem : ''}
+              >
+                <RoomCard
+                  room={room}
+                  variant={featuredLayout ? (index === 0 ? 'featured' : 'compact') : 'default'}
+                />
               </li>
             ))}
           </ul>
