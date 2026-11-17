@@ -1,6 +1,6 @@
 // Una sala del plano 3D: caja de poca altura con su etiqueta. Sube al seleccionarla y baja al soltarla.
 // El movimiento se hace mutando un ref en useFrame (sin setState) y pidiendo fotogramas solo mientras queda recorrido.
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import { BoxGeometry, EdgesGeometry } from 'three';
@@ -10,7 +10,7 @@ import styles from './RoomShape.module.css';
 const ALTURA = 0.12;
 const ELEVACION = 0.3;
 // Al pasar el ratón la sala sube un poco para indicar que se puede pulsar.
-const ELEVACION_HOVER = 0.05;
+const ELEVACION_HOVER = 0.16;
 const VELOCIDAD = 9;
 const UMBRAL = 0.002;
 
@@ -33,7 +33,8 @@ export default function RoomShape({
   const invalidate = useThree((estado) => estado.invalidate);
   const elevador = useRef(null);
   const objetivo = useRef(0);
-  const encima = useRef(false);
+  // Con el ratón encima la sala sube, se perfila en lima y enseña un adelanto de su luz.
+  const [encima, setEncima] = useState(false);
 
   const geometria = useMemo(() => new BoxGeometry(size[0], ALTURA, size[1]), [size]);
   const bordes = useMemo(() => new EdgesGeometry(geometria), [geometria]);
@@ -49,10 +50,10 @@ export default function RoomShape({
 
   // Cambia el objetivo y pide fotogramas. Con movimiento reducido salta directo, sin animar.
   useEffect(() => {
-    objetivo.current = selected ? ELEVACION : encima.current ? ELEVACION_HOVER : 0;
+    objetivo.current = selected ? ELEVACION : encima ? ELEVACION_HOVER : 0;
     if (reducedMotion && elevador.current) elevador.current.position.y = objetivo.current;
     invalidate();
-  }, [selected, reducedMotion, invalidate]);
+  }, [selected, encima, reducedMotion, invalidate]);
 
   useFrame((_, delta) => {
     const grupo = elevador.current;
@@ -82,15 +83,11 @@ export default function RoomShape({
           onPointerOver={(evento) => {
             evento.stopPropagation();
             document.body.style.cursor = 'pointer';
-            encima.current = true;
-            if (!selected) objetivo.current = ELEVACION_HOVER;
-            invalidate();
+            setEncima(true);
           }}
           onPointerOut={() => {
             document.body.style.cursor = '';
-            encima.current = false;
-            if (!selected) objetivo.current = 0;
-            invalidate();
+            setEncima(false);
           }}
         />
         {recursos && (
@@ -99,13 +96,14 @@ export default function RoomShape({
             size={size}
             doorSide={doorSide}
             lit={lit}
+            hover={encima}
             recursos={recursos}
             reducedMotion={reducedMotion}
           />
         )}
         <lineSegments
           geometry={bordes}
-          material={selected ? lineActive : lineBase}
+          material={selected || encima ? lineActive : lineBase}
           position={[0, ALTURA / 2 + 0.01, 0]}
         />
         <Html
@@ -117,7 +115,7 @@ export default function RoomShape({
           aria-hidden="true"
         >
           <span
-            className={`${styles.chip} ${styles[room.status]} ${selected ? styles.selected : ''}`}
+            className={`${styles.chip} ${styles[room.status]} ${selected ? styles.selected : ''} ${encima ? styles.hover : ''}`}
             aria-hidden="true"
           >
             {room.id}

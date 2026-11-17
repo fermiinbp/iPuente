@@ -14,6 +14,8 @@ const ANCHO_PUERTA = 0.46;
 const VELOCIDAD = 6;
 const UMBRAL = 0.01;
 const OPACIDAD_HALO = 0.8;
+// Adelanto de la luz al pasar el ratón por una sala apagada.
+const OPACIDAD_HOVER = 0.5;
 const MAX_SILLAS = 10;
 
 // Paredes de la sala: cuatro tramos, y el del lado del pasillo se parte en dos para dejar la puerta.
@@ -67,7 +69,15 @@ function contenidoDeSala(room, [ancho, fondo]) {
   };
 }
 
-export default function RoomInterior({ room, size, doorSide, lit, recursos, reducedMotion }) {
+export default function RoomInterior({
+  room,
+  size,
+  doorSide,
+  lit,
+  hover = false,
+  recursos,
+  reducedMotion,
+}) {
   const invalidate = useThree((estado) => estado.invalidate);
   const halo = useRef(null);
   const sillasRef = useRef(null);
@@ -117,14 +127,15 @@ export default function RoomInterior({ room, size, doorSide, lit, recursos, redu
   }, [contenido, invalidate]);
 
   useEffect(() => {
-    if (reducedMotion && halo.current) halo.current.opacity = lit ? OPACIDAD_HALO : 0;
+    if (reducedMotion && halo.current)
+      halo.current.opacity = lit ? OPACIDAD_HALO : hover ? OPACIDAD_HOVER : 0;
     invalidate();
-  }, [lit, reducedMotion, invalidate]);
+  }, [lit, hover, reducedMotion, invalidate]);
 
   useFrame((_, delta) => {
     const material = halo.current;
     if (!material) return;
-    const objetivo = lit ? OPACIDAD_HALO : 0;
+    const objetivo = lit ? OPACIDAD_HALO : hover ? OPACIDAD_HOVER : 0;
     const resto = objetivo - material.opacity;
     if (Math.abs(resto) < UMBRAL) {
       material.opacity = objetivo;
