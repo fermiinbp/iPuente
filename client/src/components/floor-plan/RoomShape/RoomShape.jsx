@@ -9,6 +9,8 @@ import styles from './RoomShape.module.css';
 
 const ALTURA = 0.12;
 const ELEVACION = 0.3;
+// Al pasar el ratón la sala sube un poco para indicar que se puede pulsar.
+const ELEVACION_HOVER = 0.05;
 const VELOCIDAD = 9;
 const UMBRAL = 0.002;
 
@@ -31,6 +33,7 @@ export default function RoomShape({
   const invalidate = useThree((estado) => estado.invalidate);
   const elevador = useRef(null);
   const objetivo = useRef(0);
+  const encima = useRef(false);
 
   const geometria = useMemo(() => new BoxGeometry(size[0], ALTURA, size[1]), [size]);
   const bordes = useMemo(() => new EdgesGeometry(geometria), [geometria]);
@@ -46,7 +49,7 @@ export default function RoomShape({
 
   // Cambia el objetivo y pide fotogramas. Con movimiento reducido salta directo, sin animar.
   useEffect(() => {
-    objetivo.current = selected ? ELEVACION : 0;
+    objetivo.current = selected ? ELEVACION : encima.current ? ELEVACION_HOVER : 0;
     if (reducedMotion && elevador.current) elevador.current.position.y = objetivo.current;
     invalidate();
   }, [selected, reducedMotion, invalidate]);
@@ -65,7 +68,7 @@ export default function RoomShape({
 
   const alPulsar = (evento) => {
     evento.stopPropagation();
-    onSelect(selected ? null : room.id);
+    onSelect(room.id);
   };
 
   return (
@@ -79,9 +82,15 @@ export default function RoomShape({
           onPointerOver={(evento) => {
             evento.stopPropagation();
             document.body.style.cursor = 'pointer';
+            encima.current = true;
+            if (!selected) objetivo.current = ELEVACION_HOVER;
+            invalidate();
           }}
           onPointerOut={() => {
             document.body.style.cursor = '';
+            encima.current = false;
+            if (!selected) objetivo.current = 0;
+            invalidate();
           }}
         />
         {recursos && (

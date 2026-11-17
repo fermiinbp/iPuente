@@ -47,14 +47,22 @@ export default function FloorSection() {
     </p>
   );
 
-  const toggle = (id) => setSelectedId((actual) => (actual === id ? null : id));
-
-  const toggleLight = (id) => {
+  // Un clic en una sala la selecciona y enciende su luz; otro clic la deselecciona y la apaga.
+  // La sala que no se alquila se selecciona (para ver su detalle) pero no se ilumina.
+  function pressRoom(id) {
+    if (id === null) {
+      setSelectedId(null);
+      return;
+    }
+    const wasSelected = selectedId === id;
+    setSelectedId(wasSelected ? null : id);
     if (!LIGHTABLE.includes(id)) return;
-    setLitIds((actual) => (actual.includes(id) ? actual.filter((x) => x !== id) : [...actual, id]));
-  };
-  const allLit = LIGHTABLE.every((id) => litIds.includes(id));
-  const setAllLights = () => setLitIds(allLit ? [] : LIGHTABLE);
+    setLitIds((actual) => {
+      const lit = actual.includes(id);
+      if (wasSelected) return lit ? actual.filter((x) => x !== id) : actual;
+      return lit ? actual : [...actual, id];
+    });
+  }
 
   // Juego: encender las salas libres. Al completarlas todas, mensaje y destello (una vez por vez).
   const freeLit = FREE_IDS.filter((id) => litIds.includes(id)).length;
@@ -78,26 +86,16 @@ export default function FloorSection() {
       <div className={styles.info}>
         <SectionTitle id="planta-titulo">{FLOOR_PLAN.name}</SectionTitle>
         <p className={styles.summary}>
-          {freeCount} de {rooms.length} salas libres hoy. Elige una sala para verla en el plano y
-          enciende sus luces.
+          {freeCount} de {rooms.length} salas libres hoy. Pulsa una sala para verla en el plano y
+          encender su luz.
         </p>
 
-        <div className={styles.lights}>
-          <p className={styles.lightsScore}>
-            Luces de las salas libres:{' '}
-            <strong>
-              {freeLit} de {FREE_IDS.length}
-            </strong>
-          </p>
-          <button
-            type="button"
-            className={styles.master}
-            aria-pressed={allLit}
-            onClick={setAllLights}
-          >
-            {allLit ? 'Apagar todas las luces' : 'Encender todas las luces'}
-          </button>
-        </div>
+        <p className={styles.lightsScore}>
+          Luces de las salas libres:{' '}
+          <strong>
+            {freeLit} de {FREE_IDS.length}
+          </strong>
+        </p>
         <p
           className={`${styles.celebration} ${celebrating ? styles.celebrationOn : ''}`}
           role="status"
@@ -110,15 +108,13 @@ export default function FloorSection() {
         <div role="group" aria-label="Salas de la planta" className={styles.list}>
           {rooms.map((room) => {
             const active = room.id === selectedId;
-            const canLight = LIGHTABLE.includes(room.id);
-            const lit = litIds.includes(room.id);
             return (
               <div key={room.id} className={styles.row}>
                 <button
                   type="button"
                   className={`${styles.room} ${active ? styles.roomActive : ''}`}
                   aria-pressed={active}
-                  onClick={() => toggle(room.id)}
+                  onClick={() => pressRoom(room.id)}
                 >
                   <span className={styles.bar} aria-hidden="true" />
                   <span className={styles.roomName}>{room.name}</span>
@@ -129,16 +125,6 @@ export default function FloorSection() {
                     />
                     {STATUS_LABELS[room.status]}
                   </span>
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.switch} ${lit ? styles.switchOn : ''}`}
-                  aria-pressed={lit}
-                  aria-label={`Luz de ${room.name}`}
-                  disabled={!canLight}
-                  onClick={() => toggleLight(room.id)}
-                >
-                  <span className={styles.knob} aria-hidden="true" />
                 </button>
               </div>
             );
@@ -170,14 +156,14 @@ export default function FloorSection() {
             <Suspense fallback={<p className={styles.note}>Cargando el plano…</p>}>
               <LazyCanvas
                 lazy
-                label="Plano 3D de la Planta 2 con seis salas y sus luces. Usa la lista de salas para elegir una y sus interruptores para encender las luces."
+                label="Plano 3D de la Planta 2 con seis salas y sus luces. Pulsa una sala, en el plano o en la lista, para seleccionarla y encender su luz."
                 camera={FLOOR_CAMERA}
                 className={styles.canvas}
               >
                 <FloorPlan
                   plan={FLOOR_PLAN}
                   selectedId={selectedId}
-                  onSelect={setSelectedId}
+                  onSelect={pressRoom}
                   litIds={litIds}
                 />
               </LazyCanvas>

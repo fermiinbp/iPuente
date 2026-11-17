@@ -157,50 +157,14 @@
   transform: scale(0.97);
 }
 
-/* Juego de luces: marcador, interruptor general y un interruptor por sala. */
-.lights {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-4);
-  margin-top: var(--space-5);
-}
-
 .lightsScore {
-  margin: 0;
+  margin: var(--space-5) 0 0;
   font-size: var(--text-interfaz);
   color: var(--crema-suave);
 }
 
 .lightsScore strong {
   color: var(--crema);
-}
-
-.master {
-  min-height: 44px;
-  padding: 0 var(--space-5);
-  border: 1px solid var(--bronce-claro);
-  border-radius: var(--radio-pildora);
-  background: transparent;
-  color: var(--bronce-claro);
-  font-family: var(--font-body);
-  font-size: var(--text-interfaz);
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    transform var(--dur-fast) var(--ease-out),
-    background var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
-}
-
-.master[aria-pressed='true'] {
-  background: var(--bronce-claro);
-  color: var(--bosque-profundo);
-}
-
-.master:active {
-  transform: scale(0.97);
 }
 
 .celebration {
@@ -215,58 +179,6 @@
 
 .celebrationOn {
   animation: mensajeLuz 420ms var(--ease-out) both;
-}
-
-.switch {
-  position: relative;
-  flex: none;
-  width: 52px;
-  height: 44px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-
-/* Pastilla de 44 x 24 dentro de un botón de 52 x 44 (zona táctil). */
-.switch::before {
-  content: '';
-  position: absolute;
-  inset: 10px 4px;
-  border: 1px solid var(--borde-control);
-  border-radius: var(--radio-pildora);
-  background: var(--bosque-profundo);
-  transition:
-    background var(--dur-media) var(--ease-out),
-    border-color var(--dur-media) var(--ease-out);
-}
-
-.knob {
-  position: absolute;
-  top: 14px;
-  left: 8px;
-  width: 16px;
-  height: 16px;
-  border-radius: var(--radio-pildora);
-  background: var(--crema-suave);
-  transition:
-    transform var(--dur-media) var(--ease-out),
-    background var(--dur-media) var(--ease-out);
-}
-
-.switchOn::before {
-  border-color: var(--bronce-claro);
-  background: var(--bronce);
-}
-
-.switchOn .knob {
-  transform: translateX(20px);
-  background: var(--papel);
-}
-
-.switch:disabled {
-  opacity: 0.35;
-  cursor: default;
 }
 
 .legend {
@@ -351,10 +263,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .stageFlash::before,
-  .celebrationOn,
-  .switch::before,
-  .knob,
-  .master {
+  .celebrationOn {
     animation: none;
     transition: none;
   }
