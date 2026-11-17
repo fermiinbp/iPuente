@@ -1,7 +1,7 @@
 .steps {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
-  gap: var(--space-6) 40px;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: var(--space-7) 40px;
   margin: var(--space-7) 0 0;
   padding: 0;
   list-style: none;
@@ -11,8 +11,22 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding-top: 20px;
-  border-top: 1px solid var(--linea);
+}
+
+/* Mini-visual de cada paso: decorativo, el texto del paso ya lo cuenta. */
+.visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  margin-bottom: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque-elevado);
+  transition:
+    transform var(--dur-media) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
 }
 
 .number {
@@ -24,14 +38,187 @@
 }
 
 .stepTitle {
+  position: relative;
+  align-self: flex-start;
   font-family: var(--font-display);
   font-size: var(--text-titulo-paso);
   line-height: 1.1;
   letter-spacing: var(--tracking-titular);
 }
 
+/* El subrayado se dibuja al pasar el ratón por el paso. */
+.stepTitle::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 2px;
+  background: var(--bronce);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-media) var(--ease-out);
+}
+
 .stepText {
   max-width: 24em;
   font-size: var(--text-interfaz);
   color: var(--crema-suave);
+}
+
+/* Paso 1: plantas del edificio */
+.floors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.floor,
+.floorActive {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 10px var(--space-4);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-chip);
+  font-size: var(--text-pequeno);
+  color: var(--crema-suave);
+  transition: transform var(--dur-media) var(--ease-out);
+}
+
+.floorActive {
+  border-color: var(--lima);
+  background: var(--bosque);
+  font-weight: 600;
+  color: var(--crema);
+}
+
+/* Paso 2: plano con salas */
+.plan {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.room {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  border-radius: var(--radio-chip);
+  font-size: var(--text-pequeno);
+  font-weight: 600;
+}
+
+.free {
+  background: var(--libre);
+  color: var(--libre-texto);
+}
+
+.occupied {
+  background: var(--ocupada);
+  color: var(--ocupada-texto);
+}
+
+.off {
+  background: var(--no-alquila);
+  color: var(--no-alquila-texto);
+}
+
+.roomSelected {
+  outline: 3px solid var(--lima);
+  outline-offset: 2px;
+}
+
+.priceTag {
+  position: absolute;
+  top: -14px;
+  left: 6px;
+  padding: 2px var(--space-3);
+  border-radius: var(--radio-pildora);
+  background: var(--crema);
+  font-size: var(--text-etiqueta);
+  font-weight: 700;
+  color: var(--bosque);
+  transition: transform var(--dur-media) var(--ease-out);
+}
+
+/* Paso 3: resumen de pago */
+.ticket {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-4);
+  border-radius: var(--radio-plano);
+  background: var(--papel);
+  color: var(--bosque);
+}
+
+.ticketRoom {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.1;
+}
+
+.ticketTime {
+  font-size: var(--text-pequeno);
+}
+
+.ticketTotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--bosque);
+  font-size: var(--text-pequeno);
+}
+
+.ticketTotal strong {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+}
+
+.ticketChip {
+  align-self: flex-start;
+  padding: 2px var(--space-3);
+  border-radius: var(--radio-pildora);
+  background: var(--libre);
+  font-size: var(--text-etiqueta);
+  font-weight: 700;
+  color: var(--libre-texto);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .step:hover .visual {
+    transform: translateY(-2px);
+    border-color: var(--crema-suave);
+  }
+
+  .step:hover .stepTitle::after {
+    transform: scaleX(1);
+  }
+
+  .step:hover .floorActive {
+    transform: translateX(6px);
+  }
+
+  .step:hover .priceTag {
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step:hover .visual,
+  .step:hover .floorActive,
+  .step:hover .priceTag {
+    transform: none;
+  }
 }
