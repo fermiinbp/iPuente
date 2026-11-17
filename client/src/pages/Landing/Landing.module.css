@@ -47,17 +47,30 @@
 }
 
 .heroInner {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
+  /* Móvil: texto, edificio con su historia y, justo debajo, el buscador. */
+  display: grid;
+  grid-template-areas:
+    'texto'
+    'edificio'
+    'buscador';
+  gap: var(--space-7);
   position: relative;
   max-width: var(--ancho-max);
   margin: 0 auto;
   padding: clamp(48px, 7vw, 96px) var(--gutter) clamp(56px, 7vw, 104px);
 }
 
-.heroText,
+.heroText {
+  grid-area: texto;
+}
+
 .heroBuilding {
+  grid-area: edificio;
+}
+
+.heroText,
+.heroBuilding,
+.search {
   min-width: 0;
 }
 
@@ -113,10 +126,11 @@
 }
 
 .search {
+  grid-area: buscador;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  margin-top: var(--space-6);
+  margin-top: 0;
   padding: var(--space-2);
   border: 1px solid var(--borde-control);
   border-radius: var(--radio-buscador);
@@ -214,15 +228,28 @@
     display: none;
   }
 
+  /* Escritorio: texto y buscador a la izquierda, uno bajo otro; el edificio a la derecha ocupa las dos filas. */
   .heroInner {
-    flex-direction: row;
-    align-items: center;
-    gap: var(--space-8);
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'texto edificio'
+      'buscador edificio';
+    grid-template-rows: auto 1fr;
+    column-gap: var(--space-8);
+    row-gap: 0;
   }
 
-  .heroText,
+  .heroText {
+    align-self: start;
+  }
+
+  .search {
+    align-self: start;
+    margin-top: var(--space-6);
+  }
+
   .heroBuilding {
-    flex: 1 1 0;
+    align-self: start;
   }
 
   .gridFeatured {

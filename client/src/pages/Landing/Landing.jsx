@@ -75,18 +75,6 @@ export default function Landing() {
               capacidad. Para equipos y profesionales que necesitan una sala unas horas: eliges,
               pagas online y listo.
             </p>
-            <form className={styles.search} aria-label="Buscar salas" onSubmit={handleSearch}>
-              <div className={`${styles.field} ${styles.fieldCity}`}>
-                <Input label="Ciudad" name="city" type="text" placeholder="Sevilla" />
-              </div>
-              <div className={styles.field}>
-                <Input label="Fecha" name="date" type="date" />
-              </div>
-              <div className={styles.field}>
-                <Input label="Personas" name="people" type="number" min="1" placeholder="10" />
-              </div>
-              <Button type="submit">Buscar salas</Button>
-            </form>
           </div>
 
           <div className={styles.heroBuilding}>
@@ -96,6 +84,19 @@ export default function Landing() {
               startDelay={entranceDelay}
             />
           </div>
+
+          <form className={styles.search} aria-label="Buscar salas" onSubmit={handleSearch}>
+            <div className={`${styles.field} ${styles.fieldCity}`}>
+              <Input label="Ciudad" name="city" type="text" placeholder="Sevilla" />
+            </div>
+            <div className={styles.field}>
+              <Input label="Fecha" name="date" type="date" />
+            </div>
+            <div className={styles.field}>
+              <Input label="Personas" name="people" type="number" min="1" placeholder="10" />
+            </div>
+            <Button type="submit">Buscar salas</Button>
+          </form>
         </div>
       </section>
 
