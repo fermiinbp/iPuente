@@ -1,5 +1,5 @@
-// Interior de una sala del plano 3D: paredes con puerta al pasillo, mesa con sillas, lámpara y halo de luz.
-// La luz se enciende y se apaga con un fundido (mutando refs en useFrame, sin setState). La lámpara es pulsable.
+// Interior de una sala del plano 3D: paredes con puerta al pasillo, mesa con sillas y halo de luz.
+// La luz se enciende y se apaga con un fundido (mutando refs en useFrame, sin setState).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { AdditiveBlending, BoxGeometry, PlaneGeometry } from 'three';
@@ -35,17 +35,7 @@ function tramosDePared([ancho, fondo], ladoPuerta) {
   return tramos;
 }
 
-export default function RoomInterior({
-  room,
-  size,
-  doorSide,
-  lit,
-  canLight,
-  furnished,
-  recursos,
-  reducedMotion,
-  onToggleLight,
-}) {
+export default function RoomInterior({ size, doorSide, lit, furnished, recursos, reducedMotion }) {
   const invalidate = useThree((estado) => estado.invalidate);
   const halo = useRef(null);
   const [ancho, fondo] = size;
@@ -89,11 +79,6 @@ export default function RoomInterior({
     material.opacity += resto * Math.min(1, delta * VELOCIDAD);
     invalidate();
   });
-
-  const alPulsarLampara = (evento) => {
-    evento.stopPropagation();
-    if (canLight) onToggleLight(room.id);
-  };
 
   const sillas = [
     [-ancho * 0.12, -fondo * 0.2],
@@ -148,22 +133,6 @@ export default function RoomInterior({
           toneMapped={false}
         />
       </mesh>
-
-      {canLight && (
-        <mesh
-          position={[-ancho * 0.32, ALTURA_SUELO + ALTURA_PARED + 0.1, -fondo * 0.3]}
-          geometry={recursos.geoLampara}
-          material={lit ? recursos.lamparaOn : recursos.lamparaOff}
-          onClick={alPulsarLampara}
-          onPointerOver={(evento) => {
-            evento.stopPropagation();
-            document.body.style.cursor = 'pointer';
-          }}
-          onPointerOut={() => {
-            document.body.style.cursor = '';
-          }}
-        />
-      )}
     </group>
   );
 }

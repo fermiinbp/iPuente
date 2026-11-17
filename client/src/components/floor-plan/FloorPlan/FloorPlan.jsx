@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef } from 'react';
 import {
   BoxGeometry,
   CanvasTexture,
-  SphereGeometry,
   LineBasicMaterial,
   MeshBasicMaterial,
   MeshStandardMaterial,
@@ -117,7 +116,7 @@ function Ambiente({ fraccion, reducedMotion }) {
   );
 }
 
-export default function FloorPlan({ plan, selectedId, onSelect, litIds = [], onToggleLight }) {
+export default function FloorPlan({ plan, selectedId, onSelect, litIds = [] }) {
   const colores = useCssColors(NOMBRES_COLOR);
   const reducedMotion = useReducedMotion();
 
@@ -164,12 +163,6 @@ export default function FloorPlan({ plan, selectedId, onSelect, litIds = [], onT
         roughness: 0.8,
         toneMapped: false,
       }),
-      lamparaOn: new MeshBasicMaterial({ color: colores['bronce-claro'], toneMapped: false }),
-      lamparaOff: new MeshBasicMaterial({
-        color: colores['bosque-profundo'],
-        toneMapped: false,
-      }),
-      geoLampara: new SphereGeometry(0.06, 16, 12),
     };
   }, [colores, ancho, fondo, plan.corridor.height]);
 
@@ -230,8 +223,6 @@ export default function FloorPlan({ plan, selectedId, onSelect, litIds = [], onT
           recursos={recursos}
           doorSide={sala.y < plan.corridor.y ? 1 : -1}
           lit={encendidas.has(sala.id)}
-          canLight={sala.status !== 'off'}
-          onToggleLight={onToggleLight}
         />
       ))}
     </group>
