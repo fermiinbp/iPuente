@@ -48,7 +48,6 @@ export default function CompaniesCta() {
       id="empresas"
       titleId="empresas-titulo"
       tone="elevated"
-      decor="glow"
       bordered={false}
       innerClassName={styles.inner}
     >

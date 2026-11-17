@@ -41,14 +41,7 @@ export default function FloorSection() {
   const toggle = (id) => setSelectedId((actual) => (actual === id ? null : id));
 
   return (
-    <Section
-      id="planta"
-      titleId="planta-titulo"
-      tone="deep"
-      decor="glow"
-      spacious
-      innerClassName={styles.inner}
-    >
+    <Section id="planta" titleId="planta-titulo" tone="deep" spacious innerClassName={styles.inner}>
       <div className={styles.info}>
         <SectionTitle id="planta-titulo">{FLOOR_PLAN.name}</SectionTitle>
         <p className={styles.summary}>

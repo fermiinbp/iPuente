@@ -46,6 +46,7 @@
 }
 
 .editor {
+  position: relative;
   flex: 1.2 1 min(440px, 100%);
   min-width: 0;
   padding: var(--space-4);
@@ -217,4 +218,18 @@
     opacity: 0;
     transform: scale(0.94);
   }
+}
+
+/* Resplandor pegado al plano: va con él en móvil y en escritorio, sin quedar lejos. */
+.editor::before {
+  content: '';
+  position: absolute;
+  inset: -22% -14%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--foto-hueco) 80%, transparent),
+    transparent
+  );
 }

@@ -155,6 +155,7 @@
 }
 
 .stage {
+  position: relative;
   flex: 1.35 1 540px;
   min-width: 0;
   height: clamp(380px, 56vw, 600px);
@@ -169,6 +170,20 @@
   margin: 0;
   font-size: var(--text-interfaz);
   color: var(--crema-suave);
+}
+
+/* Resplandor pegado al plano: va con él en móvil y en escritorio, sin quedar lejos. */
+.stage::before {
+  content: '';
+  position: absolute;
+  inset: -22% -14%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--foto-hueco) 80%, transparent),
+    transparent
+  );
 }
 
 @media (hover: hover) and (pointer: fine) {
