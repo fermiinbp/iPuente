@@ -1,6 +1,7 @@
 // Plantas del edificio del hero (ejemplo, sin API). Misma forma que FLOORS de data.js, más lo que
 // necesita la escena 3D: `rooms` es el estado de ejemplo de cada sala de la planta ('free', 'busy' u 'off').
 // De arriba abajo; la planta baja es recepción y no se alquila.
+import { FLOOR_PLAN } from './floorPlanData.js';
 
 const countFree = (rooms) => rooms.filter((state) => state === 'free').length;
 
@@ -72,3 +73,26 @@ export const FLOORS_HERO = [
     rooms: plantaBaja,
   },
 ];
+
+// Historia del hero: planta, sala y franja que se enseñan solos (ejemplo, sin API).
+export const HERO_STORY = {
+  floorId: 'planta-2',
+  roomId: '2.03',
+  start: '10:00',
+  end: '12:00',
+  hours: 2,
+};
+
+// Salas de una planta para el plano del hero: la geometría, el precio y el equipamiento vienen de la
+// Planta 2 de ejemplo (FLOOR_PLAN) y el estado de la planta (`busy` pasa a `occupied`).
+export function roomsForFloor(floor) {
+  return FLOOR_PLAN.rooms.map((room, index) => {
+    const state = floor.rooms[index];
+    return {
+      ...room,
+      id: `${floor.number}.0${index + 1}`,
+      name: `Sala ${floor.number}.0${index + 1}`,
+      status: state === 'busy' ? 'occupied' : state,
+    };
+  });
+}

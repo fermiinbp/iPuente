@@ -28,7 +28,6 @@
 /* En móvil el edificio va primero y su halo de bronce lo acompaña, centrado en la maqueta 3D. */
 .heroBuilding {
   position: relative;
-  order: -1;
 }
 
 .heroBuilding::before {
@@ -62,9 +61,18 @@
   min-width: 0;
 }
 
+.eyebrow {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-etiqueta);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bronce-claro);
+}
+
 .heroTitle {
-  font-size: var(--text-hero);
-  line-height: var(--leading-hero);
+  font-size: clamp(42px, 5.6vw, 84px);
+  line-height: 1;
 }
 
 .lead {
@@ -75,35 +83,17 @@
   color: var(--crema-suave);
 }
 
-.fact {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  margin: var(--space-5) 0 0;
-  font-size: var(--text-interfaz);
-  font-weight: 600;
-  color: var(--crema);
-}
-
-.factDot {
-  flex: none;
-  width: 10px;
-  height: 10px;
-  border-radius: var(--radio-pildora);
-  background: var(--libre);
-  box-shadow: 0 0 0 4px rgb(195 227 176 / 0.2);
-}
-
 /* Entrada del hero al cargar: cada pieza sube y aparece, una detrás de otra. Espera a que termine el cargador. */
+.eyebrow,
 .heroTitle,
 .lead,
-.fact,
 .search,
 .heroBuilding {
   animation: heroEntra 640ms var(--ease-out) both;
   animation-delay: calc(var(--entrada-base, 0ms) + var(--orden, 0) * 90ms);
 }
 
+.eyebrow,
 .heroTitle {
   --orden: 0;
 }
@@ -112,12 +102,8 @@
   --orden: 1;
 }
 
-.fact {
-  --orden: 2;
-}
-
 .search {
-  --orden: 3;
+  --orden: 2;
 }
 
 .heroBuilding {

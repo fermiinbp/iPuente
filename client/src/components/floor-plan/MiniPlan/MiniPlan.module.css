@@ -1,0 +1,103 @@
+.plan {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radio-plano);
+  background: var(--papel);
+}
+
+/* Las salas dejan un hueco de 2 px entre sí con el borde del propio botón. */
+.room {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0;
+  border: 2px solid var(--papel);
+  border-radius: var(--radio-chip);
+  font-family: var(--font-body);
+  font-size: var(--text-etiqueta);
+  line-height: 1.15;
+  cursor: default;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    outline-color var(--dur-fast) var(--ease-out);
+}
+
+.code {
+  font-weight: 700;
+}
+
+.state {
+  font-size: 12px;
+}
+
+.free {
+  background: var(--libre);
+  color: var(--libre-texto);
+  cursor: pointer;
+}
+
+.occupied {
+  background: var(--ocupada);
+  color: var(--ocupada-texto);
+}
+
+.off {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--no-alquila) 0 6px,
+    var(--trama-no-alquila) 6px 12px
+  );
+  color: var(--no-alquila-texto);
+}
+
+.selected {
+  z-index: 1;
+  outline: 3px solid var(--lima);
+  outline-offset: 0;
+  animation: salaElegida 220ms var(--ease-out);
+}
+
+/* Sobre fondo papel el foco lima no se ve: se usa el bosque. */
+.room:focus-visible {
+  outline: 3px solid var(--foco-sobre-claro);
+  outline-offset: 2px;
+}
+
+.price {
+  position: absolute;
+  top: -12px;
+  right: 4px;
+  padding: 1px var(--space-2);
+  border-radius: var(--radio-pildora);
+  background: var(--bosque);
+  color: var(--crema);
+  font-size: var(--text-etiqueta);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .free:hover {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes salaElegida {
+  from {
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room {
+    transition: none;
+    animation: none;
+  }
+
+  .free:hover {
+    transform: none;
+  }
+}

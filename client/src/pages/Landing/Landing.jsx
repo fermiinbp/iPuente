@@ -2,7 +2,6 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
-import BuildingHero from '@/components/building/BuildingHero/BuildingHero.jsx';
 import RoomCard from '@/components/room/RoomCard/RoomCard.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
@@ -10,21 +9,15 @@ import Input from '@/components/ui/Input/Input.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
 import CompaniesCta from './CompaniesCta.jsx';
-import { BUILDING, DEFAULT_FLOOR_ID, FEATURED_ROOMS, ROOM_FILTERS } from './data.js';
+import { BUILDING, FEATURED_ROOMS, ROOM_FILTERS } from './data.js';
 import FloorSection from './FloorSection.jsx';
-import { FLOORS_HERO } from './heroBuildingData.js';
+import HeroStory from './HeroStory.jsx';
 import HowItWorks from './HowItWorks.jsx';
 import styles from './Landing.module.css';
 import LandingLoader from './LandingLoader.jsx';
 import { heroEntranceDelay } from './loaderSession.js';
-import { FLOOR_PLAN } from './floorPlanData.js';
 import NearbySection from './NearbySection.jsx';
 import RoomFilters from './RoomFilters.jsx';
-
-// Dato de la primera pantalla: salas libres hoy y precio más bajo del plano de ejemplo.
-const FREE_ROOMS = FLOOR_PLAN.rooms.filter((room) => room.status === 'free');
-const FREE_COUNT = FREE_ROOMS.length;
-const MIN_PRICE = Math.min(...FREE_ROOMS.map((room) => room.price));
 
 export default function Landing() {
   usePageTitle('Salas por horas');
@@ -40,7 +33,6 @@ export default function Landing() {
     heroRef.current?.style.setProperty('--mx', `${event.clientX - box.left}px`);
     heroRef.current?.style.setProperty('--my', `${event.clientY - box.top}px`);
   }
-  const [floorId, setFloorId] = useState(DEFAULT_FLOOR_ID);
   const [filter, setFilter] = useState(ROOM_FILTERS[0]);
 
   const rooms =
@@ -74,16 +66,14 @@ export default function Landing() {
       >
         <div className={styles.heroInner}>
           <div className={styles.heroText}>
+            <p className={styles.eyebrow}>Salas de oficina por horas</p>
             <h1 className={styles.heroTitle} id="hero-titulo">
-              Reserva salas por horas viendo el plano del edificio.
+              Elige tu sala en el plano y resérvala por horas.
             </h1>
             <p className={styles.lead}>
-              Abre la planta, mira qué salas están libres y cuánto cuestan, y paga online. Sin
-              llamadas ni correos.
-            </p>
-            <p className={styles.fact}>
-              <span className={styles.factDot} aria-hidden="true" />
-              {FREE_COUNT} salas libres hoy en {BUILDING.name}, desde {MIN_PRICE} €/hora.
+              iPuente te enseña cada planta del edificio con sus salas libres, su precio y su
+              capacidad. Para equipos y profesionales que necesitan una sala unas horas: eliges,
+              pagas online y listo.
             </p>
             <form className={styles.search} aria-label="Buscar salas" onSubmit={handleSearch}>
               <div className={`${styles.field} ${styles.fieldCity}`}>
@@ -95,17 +85,15 @@ export default function Landing() {
               <div className={styles.field}>
                 <Input label="Personas" name="people" type="number" min="1" placeholder="10" />
               </div>
-              <Button type="submit">Buscar</Button>
+              <Button type="submit">Buscar salas</Button>
             </form>
           </div>
 
           <div className={styles.heroBuilding}>
-            <BuildingHero
+            <HeroStory
               buildingId={BUILDING.id}
               buildingName={BUILDING.name}
-              floors={FLOORS_HERO}
-              activeFloorId={floorId}
-              onSelectFloor={setFloorId}
+              startDelay={entranceDelay}
             />
           </div>
         </div>

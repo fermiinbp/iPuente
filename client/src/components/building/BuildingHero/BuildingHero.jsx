@@ -18,6 +18,12 @@ export default function BuildingHero({
   floors,
   activeFloorId,
   onSelectFloor,
+  // Opcionales: con `selectedFloorId` la planta abierta la decide quien usa el componente (`onOpenFloor`).
+  selectedFloorId,
+  onOpenFloor,
+  showInfo = true,
+  hint = 'Arrastra para girar y pulsa una planta para abrirla',
+  children,
 }) {
   const active = floors.find((floor) => floor.id === activeFloorId);
   const [webgl] = useState(() => hasWebGL());
@@ -26,11 +32,14 @@ export default function BuildingHero({
   const [announced, setAnnounced] = useState('');
   const announcedFloor = floors.find((floor) => floor.id === announced);
   // Planta abierta en el 3D (las de encima suben y se desvanecen): se abre y se cierra con un clic.
-  const [selectedId, setSelectedId] = useState('');
+  const [ownSelectedId, setOwnSelectedId] = useState('');
+  const controlled = selectedFloorId !== undefined;
+  const selectedId = controlled ? selectedFloorId : ownSelectedId;
 
   function handleSelect(id) {
     onSelectFloor(id);
-    setSelectedId((current) => (current === id ? '' : id));
+    if (controlled) onOpenFloor?.(id);
+    else setOwnSelectedId((current) => (current === id ? '' : id));
     setAnnounced(id);
   }
 
@@ -58,9 +67,10 @@ export default function BuildingHero({
               />
             </Suspense>
           </ErrorBoundary>
-          <p className={styles.hint}>Arrastra para girar y pulsa una planta para abrirla</p>
+          <p className={styles.hint}>{hint}</p>
         </div>
       )}
+      {children}
       <div
         role="group"
         aria-label={`Plantas del ${buildingName}`}
@@ -104,7 +114,7 @@ export default function BuildingHero({
             : `${announcedFloor.name} seleccionada. ${announcedFloor.free} salas libres hoy.`
           : ''}
       </p>
-      <div className={styles.info}>
+      <div className={styles.info} hidden={!showInfo}>
         {active && (
           <>
             <p className={styles.infoTitle}>{active.name}</p>
