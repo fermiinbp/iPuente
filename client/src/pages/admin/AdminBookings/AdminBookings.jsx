@@ -1,5 +1,14 @@
 // Todas las reservas.
+import PageContainer from '@/components/ui/PageContainer/PageContainer.jsx';
+import { usePageTitle } from '@/hooks/usePageTitle.js';
 
 export default function AdminBookings() {
-  return <h1>AdminBookings</h1>;
+  usePageTitle('Reservas');
+
+  return (
+    <PageContainer>
+      <h1>Reservas</h1>
+      <p>Esta pantalla estará disponible pronto.</p>
+    </PageContainer>
+  );
 }

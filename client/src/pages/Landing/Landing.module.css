@@ -1,1 +1,125 @@
-/* Estilos de Landing (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de Landing (CSS Module). Mobile first: una columna; las columnas llegan con @media al final. */
+
+/* El layout ya no pone padding a <main>: las secciones llegan al borde. */
+.page {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.hero {
+  background: var(--bosque);
+}
+
+.heroInner {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: clamp(48px, 7vw, 96px) var(--gutter) clamp(56px, 7vw, 104px);
+}
+
+.heroText,
+.heroBuilding {
+  min-width: 0;
+}
+
+.heroTitle {
+  font-size: var(--text-hero);
+  line-height: var(--leading-hero);
+}
+
+.lead {
+  max-width: 30em;
+  margin: var(--space-5) 0 0;
+  font-size: var(--text-lead);
+  line-height: 1.55;
+  color: var(--crema-suave);
+}
+
+.search {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 36px;
+  padding: var(--space-2);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-buscador);
+  background: var(--bosque-elevado);
+}
+
+.field {
+  min-width: 0;
+}
+
+.field + .field {
+  border-top: 1px solid var(--borde-control);
+}
+
+.hint {
+  margin: var(--space-3) var(--space-1) 0;
+  font-size: var(--text-pequeno);
+  color: var(--crema-suave);
+}
+
+.roomsHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px 40px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: var(--space-6) var(--space-5);
+  margin: 40px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.empty {
+  margin: var(--space-5) 0 0;
+}
+
+@media (min-width: 600px) {
+  .search {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .field {
+    flex: 1 1 140px;
+  }
+
+  .fieldCity {
+    flex-grow: 2;
+    flex-basis: 160px;
+  }
+
+  .field + .field {
+    border-top: 0;
+    border-left: 1px solid var(--borde-control);
+  }
+
+  .search > button,
+  .search > a {
+    flex: 1 1 130px;
+    min-height: 56px;
+  }
+}
+
+@media (min-width: 960px) {
+  .heroInner {
+    flex-direction: row;
+    align-items: center;
+    gap: 56px 64px;
+  }
+
+  .heroText,
+  .heroBuilding {
+    flex: 1 1 0;
+  }
+}

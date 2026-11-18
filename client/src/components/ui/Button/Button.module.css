@@ -1,1 +1,75 @@
-/* Estilos de Button (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 26px;
+  border: 1px solid transparent;
+  border-radius: var(--radio-pildora);
+  background: transparent;
+  color: var(--crema);
+  font-family: var(--font-body);
+  font-size: var(--text-interfaz);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.button:active {
+  transform: scale(0.97);
+}
+
+.primary {
+  min-height: 52px;
+  background: var(--crema);
+  color: var(--bosque);
+}
+
+.secondary {
+  border-color: var(--crema-suave);
+  background: transparent;
+  color: var(--crema);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--crema);
+}
+
+.button:disabled,
+.button[aria-disabled='true'] {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: default;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .primary:hover {
+    background: var(--crema-suave);
+  }
+
+  .secondary:hover {
+    border-color: var(--crema);
+  }
+
+  .ghost:hover {
+    background: var(--bosque-elevado);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .button:active {
+    transform: none;
+  }
+}

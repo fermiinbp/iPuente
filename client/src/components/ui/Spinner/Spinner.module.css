@@ -1,1 +1,51 @@
-/* Estilos de Spinner (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+.spinner {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--crema);
+  font-size: var(--text-interfaz);
+}
+
+.ring {
+  box-sizing: border-box;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--borde-control);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+.small {
+  gap: 0;
+}
+
+.small .ring {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+/* En la variante pequeña el texto solo lo leen los lectores de pantalla. */
+.small .text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring {
+    animation: none;
+    border-top-color: var(--borde-control);
+    border-right-color: currentColor;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
