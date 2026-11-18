@@ -241,7 +241,7 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/services/availabilityService.js` | Reglas de disponibilidad: calcula los huecos libres de una sala con su `openingHours`, sus reservas activas (`CONFIRMED` y `PENDING_PAYMENT` sin caducar) y sus `blocks`; detecta solapes (`nuevoInicio < existenteFin && nuevoFin > existenteInicio`) en una transacción y marca como `EXPIRED` las reservas provisionales caducadas. |
+| `server/src/services/availabilityService.js` | Reglas de disponibilidad: calcula las horas libres de una sala a partir de sus reservas `CONFIRMED` y sus `blocks`, y detecta solapes (`nuevoInicio < existenteFin && nuevoFin > existenteInicio`) dentro de una transacción de Firestore. |
 | `server/src/services/bookingsService.js` | Crear, listar y cancelar reservas; calcula en el servidor `price`, `pricePeriod` y `totalAmount` a partir del `price` de la sala. |
 | `server/src/services/paymentsService.js` | Crea sesiones de Stripe Checkout, procesa el webhook (firma verificada) y hace reembolsos. |
 | `server/src/services/mapDetectionService.js` | Envía la imagen del plano a la IA con visión, le pide solo JSON con las salas detectadas (nombre, código, posición y tamaño) y lo valida antes de devolverlo como borrador de `mapData`. |
@@ -285,7 +285,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | `server/tests/integration/health.test.js` | Test de integración: la API arranca y `GET /api/health` responde `{ ok: true }`. |
 | `server/tests/integration/auth.test.js` | Test de integración: `auth` y `requireRole` con `verifyIdToken` sustituido por un doble (`401 NO_TOKEN`, `401 INVALID_TOKEN`, `403 FORBIDDEN`) y `GET /api/users/me`. |
 | `server/tests/integration/docs.test.js` | Test de integración: la especificación OpenAPI se genera y documenta todas las rutas. |
-| `server/tests/unit/availability.test.js` | Tests unitarios de las reglas de disponibilidad (solapes y bordes de franja). Pendientes hasta implementar `availabilityService`. |
+| `server/tests/unit/availability.test.js` | Tests unitarios de las reglas de disponibilidad: solapes, bordes de franja, horas libres y `assertSlotAvailable` con models dobles. |
 | `server/tests/unit/mapValidator.test.js` | Tests unitarios del validator de mapas: rechaza salas fuera del plano o con tipo inválido. |
  
 ### Documentación: `docs/`
