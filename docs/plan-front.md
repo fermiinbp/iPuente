@@ -11,27 +11,41 @@ Tamaños orientativos: **S** ≈ medio día · **M** ≈ 1–2 días · **L** �
 
 Todavía no hay endpoints en la API: todas las páginas se maquetan con **datos de prueba** (UI015) y se conectarán a la API en una épica futura (`INT`).
 
-## Épica 1 · `UI` Base común (la coge cualquiera de los dos)
+Estado en el tablero: la épica `UI` (#72) y sus 15 issues están creadas. Las épicas `CLI`, `EMP` y `ADM` están pendientes de crear.
+
+## Épica 1 · `UI` Base común (la coge cualquiera de los dos) · #72
 
 Bloquea al resto, así que va primero. Se reparte por orden de llegada: cada uno se asigna la siguiente libre. UI001, UI012 y UI015 son las primeras porque desbloquean todas las páginas.
 
+SET010 (#64, «Componentes comunes react») se cerró por duplicada: su contenido está repartido en UI002, UI003 y UI004. Su «botón flecha» se descarta porque no aparece en los wireframes; en su lugar, UI002 incluye `IconButton` y `BackLink`.
+
 | Issue | Contenido | Tam. | Depende de |
 | --- | --- | --- | --- |
-| UI001 · Tokens de interfaz para los componentes | Espaciado, colores de interfaz, campos, elevación, capas y transiciones en `style.css` y `fundamentos.md` | S | Decidir color de paneles y texto pequeño |
-| UI002 · Botón y spinner | `Button` (variantes, `loading`, `disabled`), `Spinner` | S | UI001 |
-| UI003 · Campos de formulario | `Input`, `Select`, `Textarea`, `Checkbox` | M | UI001 |
-| UI004 · Etiquetas | `Chip`, `Avatar`, `StatusBadge` (todos los estados) | S | UI001 |
-| UI005 · Bloques de estado | `Alert`, `EmptyState`, `StatCard`, `ErrorState` | M | UI002 |
-| UI006 · Modales | `Modal` (Escape, foco atrapado) y `ConfirmModal` (motivo opcional) | M | UI002, UI003 |
-| UI007 · Tablas de panel | `DataTable` (acciones, vacío, tarjetas en móvil) y `FilterBar` | L | UI003, UI005 |
-| UI008 · Subida de archivos | `FileDropzone` | S | UI002 |
-| UI009 · Cabecera | `Header`, `UserMenu`, `MobileMenu` según el rol | M | UI004 |
-| UI010 · Plantilla pública | `Layout`, `Footer`, `CookieBanner` | S | UI009 |
-| UI011 · Plantilla de paneles | `DashboardLayout` con menú de empresa y de admin | M | UI009 |
-| UI012 · Rutas | Todas las rutas nuevas en `App.jsx`, con `PrivateRoute` y `RoleRoute` | S | — |
-| UI013 · Plano de planta | `FloorPlan`, `RoomShape`, `Legend` a partir de `demo-floor.json` | L | UI001 |
-| UI014 · Detalle de reserva | `BookingDetail` con acciones según el rol | M | UI004, UI006 |
-| UI015 · Datos de prueba | Datos de prueba servidos por los services (ver abajo) | M | — |
+| #75 · UI001 · Tokens de interfaz para los componentes | Espaciado, colores de interfaz, campos, elevación, capas y transiciones en `style.css` y `fundamentos.md` | S | Decidir color de paneles y texto pequeño |
+| #76 · UI002 · Botones, enlace Volver y spinner | `Button` (variantes, `loading`, `disabled`), `IconButton` (solo icono, con `aria-label`), `BackLink` («← Volver a…») y `Spinner` | M | UI001 |
+| #77 · UI003 · Campos de formulario | `Input`, `Select`, `Textarea`, `Checkbox` | M | UI001 |
+| #78 · UI004 · Etiquetas: chip, avatar y estado | `Chip`, `Avatar`, `StatusBadge` (todos los estados) | S | UI001 |
+| #79 · UI005 · Bloques de estado | `Alert`, `EmptyState`, `StatCard`, `ErrorState` | M | UI002 |
+| #80 · UI006 · Modal y modal de confirmación | `Modal` (Escape, foco atrapado) y `ConfirmModal` (motivo opcional) | M | UI002, UI003 |
+| #81 · UI007 · Tabla y filtros de los paneles | `DataTable` (acciones, vacío, tarjetas en móvil) y `FilterBar` | L | UI003, UI005 |
+| #82 · UI008 · Subida de archivos | `FileDropzone` | S | UI002 |
+| #83 · UI009 · Cabecera con menú de usuario y menú móvil | `Header`, `UserMenu`, `MobileMenu` según el rol | M | UI004 |
+| #84 · UI010 · Plantilla pública y banner de cookies | `Layout`, `Footer`, `CookieBanner` | S | UI009 |
+| #85 · UI011 · Plantilla de los paneles | `DashboardLayout` con menú de empresa y de admin | M | UI009 |
+| #73 · UI012 · Rutas de las páginas nuevas | Las 9 páginas nuevas con su ruta, alta de empresa fuera del panel y «Ajustes» en el menú de empresa (ver abajo) | S | — |
+| #86 · UI013 · Plano de planta | `FloorPlan`, `RoomShape`, `Legend` a partir de `demo-floor.json` | L | UI001 |
+| #87 · UI014 · Detalle de reserva común | `BookingDetail` con acciones según el rol | M | UI004, UI006 |
+| #74 · UI015 · Datos de prueba servidos por los services | Datos de prueba servidos por los services (ver abajo) | M | — |
+
+### UI012 · Rutas de las páginas nuevas
+
+Las rutas de las páginas que ya existían las hizo SET002 (#17). Falta:
+
+- Crear el esqueleto de las páginas nuevas y su ruta: `Search` (`/search`), `ForgotPassword` (`/forgot-password`), `ResetPassword` (`/reset-password`), `BookingDetailPage` (`/my-bookings/:bookingId`), `CompanyRequestStatus` (`/company/request`), `CompanyBookingDetail` (`/company/bookings/:bookingId`), `CompanySettings` (`/company/settings`), `AdminCompanyDetail` (`/admin/companies/:companyId`) y `AdminBookingDetail` (`/admin/bookings/:bookingId`).
+- Sacar `company/register` y `company/request` del `DashboardLayout`: quien pide el alta todavía es cliente.
+- Añadir «Ajustes» al menú lateral de empresa.
+
+Las guardas de ruta no entran aquí: necesitan el `AuthProvider` conectado a Firebase Auth y van en **DAT009 · AuthProvider y guardas de ruta en el front (#88)**, dentro de la épica DAT (#3). DAT009 depende de UI012.
 
 ### UI001 · Tokens de interfaz para los componentes
 
@@ -123,7 +137,7 @@ Es la épica más ligera porque casi todo reutiliza piezas comunes (`DataTable`,
 
 | Fase | Persona A | Persona B |
 | --- | --- | --- |
-| 1 · Base | Se reparten UI001–UI015 por orden de llegada. Primero UI001, UI012 y UI015 | |
+| 1 · Base | Se reparten UI001–UI015 por orden de llegada. Primero UI001, UI012 y UI015. Después de UI012, DAT009 (guardas) | |
 | 2 | CLI001 → CLI012 | EMP001 → EMP012 (el editor, EMP004, empieza en cuanto estén UI001 y UI002) |
 | 3 | ADM001 → ADM006 | Lo que quede de empresa y ayuda en admin si acaba antes |
 | 4 · Extras | CLI013, CLI014 | EMP013 |
