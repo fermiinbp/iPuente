@@ -90,39 +90,140 @@ Aparecen en el prototipo y no estaban en la lista base. Se incluyen para que el 
 
 Texto normal exige 4,5:1 (AA). Texto grande (desde 24 px, o 18,66 px en negrita) y componentes de interfaz exigen 3:1.
 
-| Par                                                     | Ratio | Exigido | Resultado            |
-| ------------------------------------------------------- | ----- | ------- | -------------------- |
-| `--crema` sobre `--bosque`                              | 11,38 | 4,5     | AA                   |
-| `--crema` sobre `--bosque-elevado`                      | 9,12  | 4,5     | AA                   |
-| `--crema` sobre `--bosque-profundo`                     | 13,75 | 4,5     | AA                   |
-| `--crema` sobre `--foto-hueco`                          | 7,00  | 4,5     | AA                   |
-| `--crema-suave` sobre `--bosque`                        | 7,88  | 4,5     | AA                   |
-| `--crema-suave` sobre `--bosque-elevado`                | 6,32  | 4,5     | AA                   |
-| `--crema-suave` sobre `--bosque-profundo`               | 9,52  | 4,5     | AA                   |
-| `--lima` sobre `--bosque`                               | 9,47  | 4,5     | AA                   |
-| `--lima` sobre `--bosque-elevado`                       | 7,59  | 4,5     | AA                   |
-| `--lima` sobre `--bosque-profundo`                      | 11,44 | 4,5     | AA                   |
-| `#18240f` sobre `--lima` (filtro activo)                | 11,44 | 4,5     | AA                   |
-| `--bronce` sobre `--bosque` (números de 56 px)          | 4,28  | 3       | AA solo texto grande |
-| `--bronce` sobre `--bosque-elevado`                     | 3,43  | 3       | AA solo texto grande |
-| `--bronce` sobre `--bosque-profundo` (números de 22 px) | 5,17  | 4,5     | AA                   |
-| `--bosque` sobre `--crema` (botón principal)            | 11,38 | 4,5     | AA                   |
-| `--bosque` sobre `--papel` (logo sobre claro)           | 12,82 | 4,5     | AA                   |
-| `--bronce-oscuro` sobre `--crema`                       | 5,00  | 4,5     | AA                   |
-| `--bronce-oscuro` sobre `--papel`                       | 5,63  | 4,5     | AA                   |
-| `#18240f` sobre `--bronce` (chip «salas detectadas»)    | 5,17  | 4,5     | AA                   |
-| `#ffffff` sobre `--bronce-oscuro` (etiqueta «Sala n»)   | 5,88  | 4,5     | AA                   |
-| `--libre-texto` sobre `--libre`                         | 11,69 | 4,5     | AA                   |
-| `--ocupada-texto` sobre `--ocupada`                     | 4,63  | 4,5     | AA                   |
-| `--no-alquila-texto` sobre `--no-alquila`               | 7,92  | 4,5     | AA                   |
-| `--no-alquila-texto` sobre `--trama-no-alquila`         | 5,03  | 4,5     | AA                   |
-| `--lima` sobre `--bosque` (anillo de foco)              | 9,47  | 3       | AA                   |
-| `--lima` sobre `--bosque-profundo` (anillo de foco)     | 11,44 | 3       | AA                   |
+| Par                                                           | Ratio | Exigido | Resultado            |
+| ------------------------------------------------------------- | ----- | ------- | -------------------- |
+| `--crema` sobre `--bosque`                                    | 11,38 | 4,5     | AA                   |
+| `--crema` sobre `--bosque-elevado`                            | 9,12  | 4,5     | AA                   |
+| `--crema` sobre `--bosque-profundo`                           | 13,75 | 4,5     | AA                   |
+| `--crema` sobre `--foto-hueco`                                | 7,00  | 4,5     | AA                   |
+| `--crema-suave` sobre `--bosque`                              | 7,88  | 4,5     | AA                   |
+| `--crema-suave` sobre `--bosque-elevado`                      | 6,32  | 4,5     | AA                   |
+| `--crema-suave` sobre `--bosque-profundo`                     | 9,52  | 4,5     | AA                   |
+| `--lima` sobre `--bosque`                                     | 9,47  | 4,5     | AA                   |
+| `--lima` sobre `--bosque-elevado`                             | 7,59  | 4,5     | AA                   |
+| `--lima` sobre `--bosque-profundo`                            | 11,44 | 4,5     | AA                   |
+| `#18240f` sobre `--lima` (filtro activo)                      | 11,44 | 4,5     | AA                   |
+| `--bronce` sobre `--bosque` (números de 56 px)                | 4,28  | 3       | AA solo texto grande |
+| `--bronce` sobre `--bosque-elevado`                           | 3,43  | 3       | AA solo texto grande |
+| `--bronce` sobre `--bosque-profundo` (números de 22 px)       | 5,17  | 4,5     | AA                   |
+| `--bosque` sobre `--crema` (botón principal)                  | 11,38 | 4,5     | AA                   |
+| `--bosque` sobre `--papel` (logo sobre claro)                 | 12,82 | 4,5     | AA                   |
+| `--bronce-oscuro` sobre `--crema`                             | 5,00  | 4,5     | AA                   |
+| `--bronce-oscuro` sobre `--papel`                             | 5,63  | 4,5     | AA                   |
+| `#18240f` sobre `--bronce` (chip «salas detectadas»)          | 5,17  | 4,5     | AA                   |
+| `#ffffff` sobre `--bronce-oscuro` (etiqueta «Sala n»)         | 5,88  | 4,5     | AA                   |
+| `--libre-texto` sobre `--libre`                               | 11,69 | 4,5     | AA                   |
+| `--ocupada-texto` sobre `--ocupada`                           | 4,63  | 4,5     | AA                   |
+| `--no-alquila-texto` sobre `--no-alquila`                     | 7,92  | 4,5     | AA                   |
+| `--no-alquila-texto` sobre `--trama-no-alquila`               | 5,03  | 4,5     | AA                   |
+| `--lima` sobre `--bosque` (anillo de foco)                    | 9,47  | 3       | AA                   |
+| `--lima` sobre `--bosque-profundo` (anillo de foco)           | 11,44 | 3       | AA                   |
+| `--error` sobre `--bosque`                                    | 5,89  | 4,5     | AA                   |
+| `--error` sobre `--bosque-elevado`                            | 4,72  | 4,5     | AA                   |
+| `--error` sobre `--bosque-profundo`                           | 7,11  | 4,5     | AA                   |
+| `--aviso` sobre `--bosque`                                    | 8,01  | 4,5     | AA                   |
+| `--aviso` sobre `--bosque-elevado`                            | 6,43  | 4,5     | AA                   |
+| `--aviso` sobre `--bosque-profundo`                           | 9,68  | 4,5     | AA                   |
+| `--exito` sobre `--bosque`                                    | 8,29  | 4,5     | AA                   |
+| `--exito` sobre `--bosque-elevado`                            | 6,65  | 4,5     | AA                   |
+| `--exito` sobre `--bosque-profundo`                           | 10,02 | 4,5     | AA                   |
+| `--info` sobre `--bosque`                                     | 7,61  | 4,5     | AA                   |
+| `--info` sobre `--bosque-elevado`                             | 6,10  | 4,5     | AA                   |
+| `--info` sobre `--bosque-profundo`                            | 9,20  | 4,5     | AA                   |
+| `--borde-control` (`--crema-suave`) sobre `--campo-fondo`     | 9,52  | 3       | AA                   |
+| `--campo-placeholder` sobre `--campo-fondo`                   | 9,52  | 4,5     | AA                   |
+| `--crema` sobre `--campo-fondo`                               | 13,75 | 4,5     | AA                   |
+| `--campo-desactivado-texto` sobre `--campo-desactivado-fondo` | 4,23  | —       | Exento (desactivado) |
+| `--lima` (foco) sobre `--campo-fondo`                         | 11,44 | 3       | AA                   |
 
-Dos puntos que hay que vigilar, porque no cumplen y conviene decidirlos antes de maquetar:
+Dos puntos que había que vigilar:
 
 - **`--bronce` sobre `--bosque-elevado` (3,43:1)** solo vale para texto grande. No usarlo para texto normal sobre secciones elevadas.
-- **Los filetes no llegan a 3:1:** `--linea` sobre `--bosque` da 2,23, sobre `--bosque-elevado` 1,79; `--linea-plano` da 2,67 y 2,14. Como separadores decorativos están exentos. Los bordes de controles (chips de filtro inactivos, campos del buscador, botón «Menú») identifican un componente y deberían llegar a 3:1. Una opción es usar `--crema-suave` (7,88:1) como borde de control, pero eso cambia el prototipo y no lo he aplicado.
+- **Los filetes no llegan a 3:1:** `--linea` sobre `--bosque` da 2,23, sobre `--bosque-elevado` 1,79; `--linea-plano` da 2,67 y 2,14. Como separadores decorativos están exentos. **Resuelto para los bordes de control:** chips y campos usan `--borde-control` (`--crema-suave`), que llega a 3:1 con margen.
+
+### 2.4 Tokens de interfaz
+
+Los añade UI001 para los componentes de `components/ui/`. Decisiones:
+
+- **Paneles oscuros:** un solo tema, Bosque. No hay tema claro.
+- **Texto pequeño de 14 px:** se recupera solo para chips, cabeceras de tabla, etiquetas de campo y ayudas.
+- **Una sola sombra para lo flotante:** es una excepción al criterio «sin sombras» de 1.2. Si el equipo la rechaza, el token `--sombra-flotante` pasa a `none`.
+
+Colores de interfaz (texto, icono y borde; el fondo de `Alert` es `--bosque-elevado`):
+
+| Token     | Hex       | Uso                                                   |
+| --------- | --------- | ----------------------------------------------------- |
+| `--error` | `#f2937a` | Errores de campo, `Alert` de error, estados de fallo. |
+| `--aviso` | `#e9c46a` | `Alert` de aviso, estados pendientes.                 |
+| `--exito` | `#a9d98f` | `Alert` de éxito, estados correctos.                  |
+| `--info`  | `#9fc9e3` | `Alert` informativo.                                  |
+
+`--ocupada` sigue siendo solo estado de sala. Los cuatro cumplen AA sobre `--bosque`, `--bosque-elevado` y `--bosque-profundo` (tabla 2.3).
+
+Campos de formulario:
+
+| Token                       | Valor                    | Uso                           |
+| --------------------------- | ------------------------ | ----------------------------- |
+| `--campo-fondo`             | `var(--bosque-profundo)` | Fondo del campo.              |
+| `--campo-borde`             | `var(--borde-control)`   | Borde en reposo.              |
+| `--campo-borde-foco`        | `var(--foco)`            | Borde con foco.               |
+| `--campo-placeholder`       | `var(--crema-suave)`     | Placeholder.                  |
+| `--campo-desactivado-fondo` | `var(--bosque)`          | Fondo del campo desactivado.  |
+| `--campo-desactivado-texto` | `#8b947f`                | Texto del campo desactivado.  |
+| `--campo-alto`              | `44px`                   | Alto mínimo, objetivo táctil. |
+
+El radio de los campos es `--radio-plano`.
+
+### 2.5 Espaciado, forma, movimiento, elevación y capas
+
+**Espaciado.** Escala `--space-1` a `--space-9`:
+
+| Token | `--space-1` | `--space-2` | `--space-3` | `--space-4` | `--space-5` | `--space-6` | `--space-7` | `--space-8` | `--space-9` |
+| ----- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
+| Valor | 4 px        | 8 px        | 12 px       | 16 px       | 24 px       | 32 px       | 48 px       | 64 px       | 96 px       |
+
+`--espacio-seccion` (`clamp(64px, 8vw, 104px)`) marca el ritmo vertical entre secciones.
+
+**Forma.** `--radio-plano` vale 8 px: plano de empresas, piezas pequeñas y campos de formulario.
+
+**Foco.** `--foco` es lima. Dentro de superficies claras (crema, papel, libre) se redefine como `--foco-sobre-claro` (`--bosque`, 11,4:1 sobre crema).
+
+**Movimiento.** Salida suave y corta. Todo por debajo de 300 ms; `prefers-reduced-motion` lo anula.
+
+| Token           | Valor                             |
+| --------------- | --------------------------------- |
+| `--dur-fast`    | 150 ms                            |
+| `--dur-media`   | 250 ms                            |
+| `--ease-out`    | `cubic-bezier(0.23, 1, 0.32, 1)`  |
+| `--ease-in-out` | `cubic-bezier(0.77, 0, 0.175, 1)` |
+
+**Elevación.** Una sola sombra, solo para lo que flota (modal, menús, banner, hoja inferior).
+
+| Token               | Valor                          | Uso                           |
+| ------------------- | ------------------------------ | ----------------------------- |
+| `--sombra-flotante` | `0 8px 24px rgb(0 0 0 / 0.35)` | Elementos flotantes.          |
+| `--velo-modal`      | `rgb(10 16 8 / 0.72)`          | Fondo atenuado tras un modal. |
+
+**Capas.**
+
+| Token          | Valor | Uso                              |
+| -------------- | ----- | -------------------------------- |
+| `--z-cabecera` | 100   | Cabecera fija.                   |
+| `--z-menu`     | 200   | Menús desplegables.              |
+| `--z-panel`    | 300   | Panel lateral y hoja inferior.   |
+| `--z-modal`    | 400   | Modales.                         |
+| `--z-aviso`    | 500   | Banner de cookies.               |
+| `--z-carga`    | 600   | Pantalla de carga de la landing. |
+
+**Breakpoints.** Es una convención: una variable no funciona dentro de `@media`.
+
+| Dispositivo | Ancho           |
+| ----------- | --------------- |
+| Móvil       | menos de 600 px |
+| Tablet      | 600 px a 899 px |
+| Escritorio  | 900 px o más    |
+
+Excepciones existentes: `DashboardLayout` usa 48 rem y la Landing 960 px.
 
 ## 3. Tipografía
 
@@ -141,27 +242,33 @@ https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&fam
 
 ### 3.2 Escala (según Paleta-Bosque)
 
-| Uso                         | Estilo                                                                                                         |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Titular hero                | Newsreader 400, `clamp(54px, 7.4vw, 116px)`, interlineado 0,94                                                 |
-| Titular de sección          | Newsreader 400, `clamp(40px, 5vw, 76px)` y `clamp(42px, 5.6vw, 88px)`                                          |
-| Declaración de sección      | Newsreader 400, `clamp(34px, 4.7vw, 72px)`, interlineado 1,08                                                  |
-| Nombre de sala              | Newsreader 400, `clamp(30px, 3.5vw, 50px)`                                                                     |
-| Titular activo              | Newsreader cursiva, 28 px, en lima. Marca el elemento seleccionado de una lista                                |
-| Cuerpo                      | Hanken Grotesk 400, 17 px / 26 px                                                                              |
-| Interfaz (botones, enlaces) | Hanken Grotesk 500 a 600, 14 a 16 px                                                                           |
-| Menú y enlaces              | Hanken Grotesk 500, 15 px, minúsculas con inicial («Para empresas»), sin flechas «→», objetivo táctil de 44 px |
-| Etiquetas pequeñas          | Hanken Grotesk 12 a 13 px, solo en la fila bajo el titular                                                     |
+| Uso                                   | Estilo                                                                                                         |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Titular hero                          | Newsreader 400, `clamp(54px, 7.4vw, 116px)`, interlineado 0,94                                                 |
+| Titular de sección                    | Newsreader 400, `clamp(40px, 5vw, 76px)` y `clamp(42px, 5.6vw, 88px)`                                          |
+| Declaración de sección                | Newsreader 400, `clamp(34px, 4.7vw, 72px)`, interlineado 1,08                                                  |
+| Nombre de sala                        | Newsreader 400, `clamp(30px, 3.5vw, 50px)`                                                                     |
+| Titular activo                        | Newsreader cursiva, 28 px, en lima. Marca el elemento seleccionado de una lista                                |
+| Cuerpo                                | Hanken Grotesk 400, 17 px / 26 px                                                                              |
+| Interfaz (botones, enlaces)           | Hanken Grotesk 500 a 600, 14 a 16 px                                                                           |
+| Menú y enlaces                        | Hanken Grotesk 500, 15 px, minúsculas con inicial («Para empresas»), sin flechas «→», objetivo táctil de 44 px |
+| Etiquetas pequeñas                    | Hanken Grotesk 12 a 13 px, solo en la fila bajo el titular                                                     |
+| Lead (`--text-lead`)                  | 18 px, texto introductorio                                                                                     |
+| Texto pequeño (`--text-pequeno`)      | 14 px, solo chips, cabeceras de tabla, etiquetas de campo y ayudas                                             |
+| Etiqueta (`--text-etiqueta`)          | 13 px                                                                                                          |
+| Título de paso (`--text-titulo-paso`) | 30 px                                                                                                          |
+| Lista (`--text-lista`)                | 26 px                                                                                                          |
+| Lista en móvil (`--text-lista-movil`) | 22 px                                                                                                          |
 
 Cifras con `font-variant-numeric: tabular-nums`. Tracking de titulares `-0.015em`.
 
 Decisión: la escala es la de `Paleta-Bosque`, con una excepción en el menú y los enlaces. Allí se sigue `referencia-01-landing.html`: minúsculas con inicial a 15 px y sin flechas «→» en botones ni enlaces. Se descartan el menú en mayúsculas de 13 px y las flechas de `Paleta-Bosque`, por legibilidad (las mayúsculas con tildes se leen peor) y para cumplir los 44 px de objetivo táctil. Si algún día se quiere una flecha decorativa, ha de llevar `aria-hidden="true"`.
 
-`referencia-01-landing.html` usa además hero de 52 a 104 px, títulos de 40 a 68 px y etiquetas de 14 px. Esos valores no se aplican.
+`referencia-01-landing.html` usa además hero de 52 a 104 px, títulos de 40 a 68 px y etiquetas de 14 px. Esos valores no se aplican, con una excepción (UI001): el texto de 14 px se recupera como `--text-pequeno`, solo para chips, cabeceras de tabla, etiquetas de campo y ayudas.
 
 ## 4. Variables CSS
 
-Listas para pegar en el bloque `:root` de `client/styles/style.css`. Ese archivo no se ha tocado.
+Es copia del `:root` de `client/styles/style.css`; si cambia uno, cambia el otro.
 
 ```css
 :root {
@@ -219,5 +326,70 @@ Listas para pegar en el bloque `:root` de `client/styles/style.css`. Ese archivo
   --radio-chip: 4px;
   --ancho-max: 1280px;
   --gutter: clamp(20px, 4vw, 56px);
+  --radio-plano: 8px; /* plano de empresas y piezas pequeñas */
+
+  /* Foco y controles. --foco se redefine dentro de superficies claras (crema, papel, libre): el lima no se ve sobre ellas. */
+  --foco: var(--lima);
+  --foco-sobre-claro: var(--bosque); /* 11,4:1 sobre crema */
+  /* Bordes de chips y campos: 6,3:1 sobre bosque elevado (--linea no llega a 3:1). */
+  --borde-control: var(--crema-suave);
+
+  /* Movimiento: salida suave y corta. Pulsación 100-160 ms; el resto por debajo de 300 ms. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --dur-fast: 150ms;
+  --dur-media: 250ms;
+
+  /* Escala tipográfica de apoyo (mínimo 12 px) */
+  --text-lead: 18px;
+  --text-pequeno: 14px;
+  --text-etiqueta: 13px;
+  --text-titulo-paso: 30px;
+  --text-lista: 26px;
+  --text-lista-movil: 22px;
+
+  /* Escala de espaciado (4, 8, 12, 16, 24, 32, 48, 64, 96) y ritmo vertical de sección */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --espacio-seccion: clamp(64px, 8vw, 104px);
+
+  /* Colores de interfaz (Alert, errores de campo, StatusBadge). Texto, icono y borde; el fondo de Alert es --bosque-elevado. AA sobre bosque, bosque elevado y bosque profundo. --ocupada sigue siendo solo estado de sala. */
+  --error: #f2937a;
+  --aviso: #e9c46a;
+  --exito: #a9d98f;
+  --info: #9fc9e3;
+
+  /* Campos de formulario */
+  --campo-fondo: var(--bosque-profundo);
+  --campo-borde: var(--borde-control);
+  --campo-borde-foco: var(--foco);
+  --campo-placeholder: var(--crema-suave);
+  --campo-desactivado-fondo: var(--bosque);
+  --campo-desactivado-texto: #8b947f;
+  --campo-alto: 44px; /* objetivo táctil */
+  /* Radio de los campos: --radio-plano */
+
+  /* Elevación: una sola sombra, solo para lo que flota (modal, menús, banner, hoja inferior) */
+  --sombra-flotante: 0 8px 24px rgb(0 0 0 / 0.35);
+  --velo-modal: rgb(10 16 8 / 0.72);
+
+  /* Capas */
+  --z-cabecera: 100;
+  --z-menu: 200;
+  --z-panel: 300; /* SidePanel, BottomSheet */
+  --z-modal: 400;
+  --z-aviso: 500; /* CookieBanner */
+  --z-carga: 600; /* pantalla de carga de la landing */
+
+  /* Breakpoints (convención; una variable no funciona dentro de @media):
+     móvil < 600px · tablet 600px–899px · escritorio >= 900px.
+     Excepciones existentes: DashboardLayout 48rem, Landing 960px. */
 }
 ```
