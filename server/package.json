@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "node --test",
+    "seed": "node --env-file=.env scripts/seed.js",
     "make-admin": "node --env-file=.env scripts/makeAdmin.js",
     "get-token": "node --env-file=.env scripts/getToken.js"
   },
