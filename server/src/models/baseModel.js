@@ -13,11 +13,12 @@ export function toObject(snap) {
 export const now = () => FieldValue.serverTimestamp();
 
 // Ejecuta una consulta y devuelve sus documentos como objetos planos.
-export async function runQuery(query, { orderBy, direction = 'asc', limit } = {}) {
+// Con { tx } la lee dentro de una transacción de Firestore.
+export async function runQuery(query, { orderBy, direction = 'asc', limit, tx } = {}) {
   let q = query;
   if (orderBy) q = q.orderBy(orderBy, direction);
   if (limit) q = q.limit(limit);
-  const snap = await q.get();
+  const snap = tx ? await tx.get(q) : await q.get();
   return snap.docs.map(toObject);
 }
 
