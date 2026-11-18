@@ -1,13 +1,16 @@
-// Punto de entrada de React: monta <App /> dentro del router (el AuthProvider se añadirá con Firebase).
+// Punto de entrada de React: monta <App /> dentro del router y del AuthProvider.
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 import App from './App.jsx';
+import { AuthProvider } from './context/AuthProvider.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
 );
