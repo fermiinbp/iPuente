@@ -50,6 +50,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/hooks/useMapEditor.js` | Estado y acciones del editor de mapas: salas, selección, dibujar, mover, redimensionar, borrar, deshacer y cargar el borrador de la IA. |
 | `client/src/hooks/useFetch.js` | Hook genérico para llamar a un service y gestionar `data`, `loading` y `error` en las pantallas. |
 | `client/src/services/apiClient.js` | Cliente HTTP único: añade el token de Firebase a cada petición y convierte los errores de la API (`{ error: { code, message } }`) en excepciones. |
+| `client/src/services/healthService.js` | Lectura de comprobación: llama a `/api/health` a través de `apiClient`. |
 | `client/src/services/buildingsService.js` | Llamadas públicas de edificios: listado y detalle con sus plantas. |
 | `client/src/services/floorsService.js` | Llamada pública del mapa de una planta con el estado de cada sala en una fecha. |
 | `client/src/services/roomsService.js` | Ficha de sala y huecos libres. |
