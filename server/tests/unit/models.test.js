@@ -199,6 +199,33 @@ describe('blockModel', () => {
   });
 });
 
+describe('listByRoom con transacción', () => {
+  it('bookingModel y blockModel devuelven los documentos del rango dentro de runTransaction', async () => {
+    const at = (day, hour) => new Date(2026, 10, day, hour);
+    await bookingModel.create({ roomId: 'r1', startDate: at(19, 9) }, { id: 'b1' });
+    await bookingModel.create({ roomId: 'r1', startDate: at(20, 9) }, { id: 'b2' });
+    await blockModel.create({ roomId: 'r1', startDate: at(19, 15) }, { id: 'k1' });
+    await blockModel.create({ roomId: 'r1', startDate: at(21, 15) }, { id: 'k2' });
+    const range = { from: at(19, 0), to: at(20, 0) };
+
+    const [bookings, blocks] = await fake.runTransaction((tx) =>
+      Promise.all([
+        bookingModel.listByRoom('r1', { ...range, tx }),
+        blockModel.listByRoom('r1', { ...range, tx }),
+      ]),
+    );
+
+    assert.deepEqual(
+      bookings.map((b) => b.id),
+      ['b1'],
+    );
+    assert.deepEqual(
+      blocks.map((b) => b.id),
+      ['k1'],
+    );
+  });
+});
+
 describe('occupancyModel', () => {
   it('slotId tiene un formato fijo y create no permite ocupar dos veces la misma hora', async () => {
     const id = occupancyModel.slotId('r1', '2026-11-19', 9);
