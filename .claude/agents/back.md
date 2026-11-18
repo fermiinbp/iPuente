@@ -1,6 +1,6 @@
 ---
 name: back
-description: Implementa la capa de datos del proyecto React: servicios de src/services/ que hablan con el BaaS (Supabase o Firebase) y reglas de seguridad de la base de datos.
+description: "Implementa la capa de datos del proyecto React: servicios de src/services/ que hablan con el BaaS (Supabase o Firebase) y reglas de seguridad de la base de datos."
 tools: Read, Edit, Write, Grep, Glob, Bash
 model: sonnet
 ---

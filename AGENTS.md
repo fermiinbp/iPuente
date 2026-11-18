@@ -60,6 +60,8 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/services/adminService.js` | Panel de admin: empresas, usuarios, reservas, pagos y reembolsos. |
 | `client/src/services/uploadService.js` | Sube planos y fotos directamente a Firebase Storage y devuelve su URL y su ruta. |
 | `client/src/components/ui/Button/Button.jsx` + `.module.css` | Botón reutilizable con variantes primario, secundario y fantasma. |
+| `client/src/components/ui/IconButton/IconButton.jsx` + `.module.css` | Botón solo con icono y `aria-label` obligatorio (barra del editor, cerrar paneles y modales, menú móvil). |
+| `client/src/components/ui/BackLink/BackLink.jsx` + `.module.css` | Enlace «← Volver a…» con la flecha decorativa (`aria-hidden`). |
 | `client/src/components/ui/Input/Input.jsx` + `.module.css` | Campo de formulario con etiqueta, ayuda y mensaje de error. |
 | `client/src/components/ui/Modal/Modal.jsx` + `.module.css` | Ventana modal accesible (cierre con Escape y foco atrapado). |
 | `client/src/components/ui/Spinner/Spinner.jsx` + `.module.css` | Indicador de carga. |
