@@ -22,6 +22,8 @@ export default function BuildingHero({
   selectedFloorId,
   onOpenFloor,
   showInfo = true,
+  // Con `false` no se pinta la rejilla de botones de planta: quien lo usa pone su propio selector.
+  showFloorList = true,
   hint = 'Arrastra para girar y pulsa una planta para abrirla',
   children,
 }) {
@@ -71,41 +73,43 @@ export default function BuildingHero({
         </div>
       )}
       {children}
-      <div
-        role="group"
-        aria-label={`Plantas del ${buildingName}`}
-        className={`${styles.building} ${use3d ? styles.compact : ''}`}
-      >
-        <div className={styles.roof} aria-hidden="true" />
-        {floors.map((floor) => {
-          const isActive = floor.id === activeFloorId;
-          const rowClass = [
-            styles.floor,
-            isActive ? styles.active : '',
-            floor.off ? styles.ground : '',
-          ]
-            .filter(Boolean)
-            .join(' ');
-          return (
-            <button
-              key={floor.id}
-              type="button"
-              className={rowClass}
-              aria-pressed={isActive}
-              onClick={() => handleSelect(floor.id)}
-              onPointerEnter={(event) => {
-                if (event.pointerType === 'mouse') onSelectFloor(floor.id);
-              }}
-            >
-              <span className={styles.slab} aria-hidden="true">
-                <span className={styles.windows} />
-              </span>
-              <span className={styles.name}>{floor.name}</span>
-            </button>
-          );
-        })}
-        <div className={styles.base} aria-hidden="true" />
-      </div>
+      {showFloorList && (
+        <div
+          role="group"
+          aria-label={`Plantas del ${buildingName}`}
+          className={`${styles.building} ${use3d ? styles.compact : ''}`}
+        >
+          <div className={styles.roof} aria-hidden="true" />
+          {floors.map((floor) => {
+            const isActive = floor.id === activeFloorId;
+            const rowClass = [
+              styles.floor,
+              isActive ? styles.active : '',
+              floor.off ? styles.ground : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
+            return (
+              <button
+                key={floor.id}
+                type="button"
+                className={rowClass}
+                aria-pressed={isActive}
+                onClick={() => handleSelect(floor.id)}
+                onPointerEnter={(event) => {
+                  if (event.pointerType === 'mouse') onSelectFloor(floor.id);
+                }}
+              >
+                <span className={styles.slab} aria-hidden="true">
+                  <span className={styles.windows} />
+                </span>
+                <span className={styles.name}>{floor.name}</span>
+              </button>
+            );
+          })}
+          <div className={styles.base} aria-hidden="true" />
+        </div>
+      )}
 
       <p className={styles.srOnly} aria-live="polite">
         {announcedFloor

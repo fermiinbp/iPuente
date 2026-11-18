@@ -67,7 +67,9 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/layout/Footer/Footer.jsx` + `.module.css` | Pie de página. |
 | `client/src/components/layout/DashboardLayout/DashboardLayout.jsx` + `.module.css` | Plantilla con menú lateral para los paneles de empresa y admin. |
 | `client/src/components/building/BuildingHero/BuildingHero.jsx` + `.module.css` | Imagen del edificio con una banda clicable por planta (hover ilumina la planta y muestra las salas libres). |
-| `client/src/components/building/Building3D/Building3D.jsx` + `.module.css` | Extra: edificio 3D generado a partir de las plantas guardadas (Three.js). |
+| `client/src/components/building/Building3D/Building3D.jsx` + `.module.css` | Extra: edificio 3D (muro cortina, núcleo, cubierta, plaza) generado a partir de las plantas; la planta seleccionada se abre en vista despiece (Three.js). |
+| `client/src/components/building/Building3D/building3dModel.js` | Medidas en metros y constructores de geometría del edificio 3D (forjados, fachada en instancias, interiores, cubierta, encuadre de cámara). Sin React. |
+| `client/src/components/building/FloorSelector/FloorSelector.jsx` + `.module.css` | Selector compacto de plantas (columna tipo ascensor, tira horizontal en móvil) con indicador deslizante, salas libres por planta y teclado ↑/↓. |
 | `client/src/components/building/NearbyMap/NearbyMap.jsx` + `.module.css` | Sección «Qué hay cerca»: mapa ilustrado con puntos de interés (estación de tren, metro, parking…) y tiempos. |
 | `client/src/components/floor-plan/FloorPlan/FloorPlan.jsx` + `.module.css` | Plano SVG de una planta para clientes, generado desde el `mapData` de la planta y coloreado por el estado de cada sala. |
 | `client/src/components/floor-plan/RoomShape/RoomShape.jsx` + `.module.css` | Una sala del plano: rectángulo con código y nombre, clicable y accesible con teclado. |

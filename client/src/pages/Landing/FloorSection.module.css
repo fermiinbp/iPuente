@@ -221,6 +221,19 @@
   animation: destello 1400ms var(--ease-out);
 }
 
+/* Al cambiar de planta, título, lista y plano entran desde el lado hacia el que se ha movido la persona. */
+.swap {
+  animation: plantaEntra 320ms var(--ease-out) both;
+}
+
+.swap[data-direction='down'] {
+  --entra-desde: 16px;
+}
+
+.swap[data-direction='up'] {
+  --entra-desde: -16px;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .room:hover {
     color: var(--lima);
@@ -244,6 +257,13 @@
   }
 }
 
+@keyframes plantaEntra {
+  from {
+    opacity: 0;
+    transform: translateY(var(--entra-desde, 16px));
+  }
+}
+
 @keyframes mensajeLuz {
   from {
     opacity: 0;
@@ -262,6 +282,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .swap {
+    animation: none;
+  }
+
   .stageFlash::before,
   .celebrationOn {
     animation: none;

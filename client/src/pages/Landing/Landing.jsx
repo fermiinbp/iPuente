@@ -78,11 +78,7 @@ export default function Landing() {
           </div>
 
           <div className={styles.heroBuilding}>
-            <HeroStory
-              buildingId={BUILDING.id}
-              buildingName={BUILDING.name}
-              startDelay={entranceDelay}
-            />
+            <HeroStory buildingId={BUILDING.id} buildingName={BUILDING.name} />
           </div>
 
           <form className={styles.search} aria-label="Buscar salas" onSubmit={handleSearch}>
@@ -100,7 +96,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <FloorSection />
+      <FloorSection buildingName={BUILDING.name} />
       <NearbySection />
 
       <Section id="salas" titleId="salas-titulo" decor="grid">

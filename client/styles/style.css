@@ -87,6 +87,7 @@
   --space-7: 48px;
   --space-8: 64px;
   --space-9: 96px;
+  --alto-cabecera: 81px; /* 80 de la barra + 1 de borde */
   --espacio-seccion: clamp(64px, 8vw, 104px);
 }
 
@@ -95,6 +96,10 @@
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+html {
+  scroll-padding-top: var(--alto-cabecera);
 }
 
 body {
