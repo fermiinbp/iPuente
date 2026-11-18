@@ -115,10 +115,11 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/package.json` | Dependencias y scripts de la API (`dev`, `start`, `lint`, `test`, `seed`, `make-admin`). |
+| `server/package.json` | Dependencias y scripts de la API (`dev`, `start`, `lint`, `test`, `seed`, `make-admin`, `get-token`). |
 | `server/eslint.config.js` | Reglas de ESLint para Node. |
 | `server/.env.example` | Plantilla de variables secretas de la API (Firebase Admin, Stripe, IA, URL de la web, puerto). Se copia a `.env` y nunca se sube. |
 | `server/scripts/makeAdmin.js` | Script para convertir en admin a un usuario ya registrado (`npm run make-admin -w server -- correo@ejemplo.com`). |
+| `server/scripts/getToken.js` | Hace login con email y contraseña (`accounts:signInWithPassword` con `FIREBASE_WEB_API_KEY`) e imprime el ID token para probar la API en `/api/docs` (`npm run get-token -w server -- correo contraseña`). |
 | `server/scripts/seed.js` | Carga datos de demo en Firestore (empresa, edificio, plantas y salas) a partir de `scripts/data/`. |
 | `server/scripts/data/demo-floor.json` | Ejemplo de mapa de planta en el formato que usan el editor, el plano y la API. Sirve para el seed y para probar el front sin backend. |
  
@@ -127,6 +128,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | Archivo | Para qué sirve |
 | --- | --- |
 | `server/src/config/config.js` | Configuración del backend y conexión a la base de datos: lee y valida las variables de entorno y conecta con Firebase (Firestore y Auth) mediante `firebase-admin`. |
+| `server/src/config/roles.js` | Roles de usuario (`CLIENT`, `COMPANY`, `ADMIN`) del custom claim `role`, los mismos que en el front. |
 | `server/src/config/swagger.js` | Documentación de la API con Swagger: genera la especificación OpenAPI leyendo los comentarios `@openapi` de las rutas y la sirve en `/api/docs`. |
 | `server/src/config/stripe.js` | Cliente de Stripe (modo test) creado con la clave secreta. |
 | `server/src/config/ai.js` | Cliente del modelo de IA con visión (Anthropic) que detecta las salas en los planos. |
@@ -231,7 +233,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | Archivo | Para qué sirve |
 | --- | --- |
 | `server/tests/integration/health.test.js` | Test de integración: la API arranca y `GET /api/health` responde `{ ok: true }`. |
-| `server/tests/integration/auth.test.js` | Test de integración: las rutas privadas sin token devuelven `401` y las validaciones devuelven `400` con el formato de error común. |
+| `server/tests/integration/auth.test.js` | Test de integración: `auth` y `requireRole` con `verifyIdToken` sustituido por un doble (`401 NO_TOKEN`, `401 INVALID_TOKEN`, `403 FORBIDDEN`) y `GET /api/users/me`. |
 | `server/tests/integration/docs.test.js` | Test de integración: la especificación OpenAPI se genera y documenta todas las rutas. |
 | `server/tests/unit/availability.test.js` | Tests unitarios de las reglas de disponibilidad (solapes y bordes de franja). Pendientes hasta implementar `availabilityService`. |
 | `server/tests/unit/mapValidator.test.js` | Tests unitarios del validator de mapas: rechaza salas fuera del plano o con tipo inválido. |
