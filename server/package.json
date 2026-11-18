@@ -8,7 +8,9 @@
     "start": "node src/server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "node --test"
+    "test": "node --test",
+    "make-admin": "node --env-file=.env scripts/makeAdmin.js",
+    "get-token": "node --env-file=.env scripts/getToken.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
