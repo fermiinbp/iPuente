@@ -62,11 +62,32 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/ui/Input/Input.jsx` + `.module.css` | Campo de formulario con etiqueta, ayuda y mensaje de error. |
 | `client/src/components/ui/Modal/Modal.jsx` + `.module.css` | Ventana modal accesible (cierre con Escape y foco atrapado). |
 | `client/src/components/ui/Spinner/Spinner.jsx` + `.module.css` | Indicador de carga. |
-| `client/src/components/ui/StatusBadge/StatusBadge.jsx` + `.module.css` | Etiqueta de estado: de una sala (libre, ocupada, no reservable), de una reserva (`PENDING_PAYMENT`, `CONFIRMED`…) o de una empresa (verificada o pendiente). |
+| `client/src/components/ui/StatusBadge/StatusBadge.jsx` + `.module.css` | Etiqueta de estado: de una sala (libre, ocupada, no reservable; en el panel de empresa: publicada, sin precio, oculta), de una reserva (`PENDING_PAYMENT`, `CONFIRMED`…), de un pago o de una empresa (verificada, pendiente, rechazada o suspendida). |
+| `client/src/components/ui/Select/Select.jsx` + `.module.css` | Desplegable con etiqueta, ayuda y mensaje de error (buscador, filtros, cambio de rol). |
+| `client/src/components/ui/Textarea/Textarea.jsx` + `.module.css` | Texto largo con etiqueta y error (motivo de rechazo, suspensión, cancelación o bloqueo). |
+| `client/src/components/ui/Checkbox/Checkbox.jsx` + `.module.css` | Casilla con etiqueta (equipamiento, aceptar condiciones). |
+| `client/src/components/ui/Chip/Chip.jsx` + `.module.css` | Píldora pequeña: filtro seleccionable por tipo de sala o etiqueta informativa (`Black Room I · 25 €/h`). |
+| `client/src/components/ui/Avatar/Avatar.jsx` + `.module.css` | Círculo con la foto o las iniciales del usuario. |
+| `client/src/components/ui/Alert/Alert.jsx` + `.module.css` | Mensaje de error, aviso o éxito dentro de una pantalla. |
+| `client/src/components/ui/EmptyState/EmptyState.jsx` + `.module.css` | Estado vacío con título, texto y acciones (sin resultados, sin edificios, sin reservas). |
+| `client/src/components/ui/StatCard/StatCard.jsx` + `.module.css` | Cifra destacada con título para los resúmenes de empresa y admin. |
+| `client/src/components/ui/ConfirmModal/ConfirmModal.jsx` + `.module.css` | Modal de confirmación sobre `Modal`: título, texto, motivo opcional y acción (cancelar reserva, rechazar o suspender empresa, reembolsar, eliminar sala). |
+| `client/src/components/ui/DataTable/DataTable.jsx` + `.module.css` | Tabla de los paneles: columnas, acciones por fila y estado vacío; en móvil pasa a tarjetas. |
+| `client/src/components/ui/FilterBar/FilterBar.jsx` + `.module.css` | Fila de filtros (edificio, planta, estado, fechas) encima de las tablas. |
+| `client/src/components/ui/FileDropzone/FileDropzone.jsx` + `.module.css` | Zona para arrastrar o seleccionar archivos; la usan `PlanUploader` y las fotos de sala. |
+| `client/src/components/ui/CookieBanner/CookieBanner.jsx` + `.module.css` | Aviso de cookies que recuerda la elección del usuario. |
+| `client/src/components/ui/ErrorState/ErrorState.jsx` + `.module.css` | Error del servidor o sin conexión, con botón de reintentar. |
 | `client/src/components/layout/Header/Header.jsx` + `.module.css` | Cabecera: logo, navegación, acceso y menú según el rol. |
+| `client/src/components/layout/UserMenu/UserMenu.jsx` + `.module.css` | Menú desplegable del usuario en escritorio (reservas, panel según rol, cerrar sesión). |
+| `client/src/components/layout/MobileMenu/MobileMenu.jsx` + `.module.css` | Menú de navegación a pantalla completa en móvil. |
 | `client/src/components/layout/Footer/Footer.jsx` + `.module.css` | Pie de página. |
 | `client/src/components/layout/DashboardLayout/DashboardLayout.jsx` + `.module.css` | Plantilla con menú lateral para los paneles de empresa y admin. |
+| `client/src/components/search/SearchBar/SearchBar.jsx` + `.module.css` | Buscador de ciudad, fecha y personas (landing y resultados). |
+| `client/src/components/search/CategoryFilters/CategoryFilters.jsx` + `.module.css` | Filtros por tipo de sala (reuniones, eventos, formación, boxes privados). |
+| `client/src/components/search/BuildingCard/BuildingCard.jsx` + `.module.css` | Tarjeta de edificio en los resultados: foto, dirección, salas libres y precio desde. |
+| `client/src/components/search/SearchMap/SearchMap.jsx` + `.module.css` | Extra: mapa de resultados con un pin por edificio, resaltado al pasar por su tarjeta. |
 | `client/src/components/building/BuildingHero/BuildingHero.jsx` + `.module.css` | Imagen del edificio con una banda clicable por planta (hover ilumina la planta y muestra las salas libres). |
+| `client/src/components/building/FloorSelector/FloorSelector.jsx` + `.module.css` | Lista de plantas del edificio con sus salas libres, para elegir planta. |
 | `client/src/components/building/Building3D/Building3D.jsx` + `.module.css` | Extra: edificio 3D generado a partir de las plantas guardadas (Three.js). |
 | `client/src/components/building/NearbyMap/NearbyMap.jsx` + `.module.css` | Sección «Qué hay cerca»: mapa ilustrado con puntos de interés (estación de tren, metro, parking…) y tiempos. |
 | `client/src/components/floor-plan/FloorPlan/FloorPlan.jsx` + `.module.css` | Plano SVG de una planta para clientes, generado desde el `mapData` de la planta y coloreado por el estado de cada sala. |
@@ -78,31 +99,55 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/map-editor/RoomPropertiesPanel/RoomPropertiesPanel.jsx` + `.module.css` | Panel lateral con los datos de la sala seleccionada (código, nombre, tipo). |
 | `client/src/components/map-editor/PlanUploader/PlanUploader.jsx` + `.module.css` | Subida de la imagen del plano (arrastrar o seleccionar). |
 | `client/src/components/map-editor/DetectionOverlay/DetectionOverlay.jsx` + `.module.css` | Estado «Analizando tu plano…» con animación de escaneo mientras responde la IA. |
+| `client/src/components/map-editor/EditorStartChoice/EditorStartChoice.jsx` + `.module.css` | Elección inicial del editor: detectar salas con IA o dibujarlas a mano. |
+| `client/src/components/map-editor/DetectionError/DetectionError.jsx` + `.module.css` | Aviso de fallo en la detección con IA, con opción de reintentar o dibujar a mano. |
+| `client/src/components/map-editor/UnsavedChangesModal/UnsavedChangesModal.jsx` + `.module.css` | Aviso al salir del editor con cambios sin guardar. |
+| `client/src/components/map-editor/PublishValidationModal/PublishValidationModal.jsx` + `.module.css` | Comprobaciones antes de publicar una planta (salas sin nombre, sin precio…). |
+| `client/src/components/company/BuildingFormModal/BuildingFormModal.jsx` + `.module.css` | Formulario para crear o editar un edificio. |
+| `client/src/components/company/BuildingMenu/BuildingMenu.jsx` + `.module.css` | Menú de acciones de un edificio: editar, añadir planta y eliminar. |
+| `client/src/components/company/FloorList/FloorList.jsx` + `.module.css` | Plantas de un edificio con su estado y acceso al editor de mapas. |
+| `client/src/components/company/RoomEditPanel/RoomEditPanel.jsx` + `.module.css` | Panel para editar los datos comerciales de una sala: precio, capacidad, equipamiento y horario. |
+| `client/src/components/company/RoomPhotosManager/RoomPhotosManager.jsx` + `.module.css` | Subida, orden y portada de las fotos de una sala. |
+| `client/src/components/company/BlockHoursModal/BlockHoursModal.jsx` + `.module.css` | Modal para bloquear horas de una sala (fecha, franja y motivo). |
+| `client/src/components/admin/RoleSelect/RoleSelect.jsx` + `.module.css` | Selector para cambiar el rol de un usuario. |
 | `client/src/components/room/RoomCard/RoomCard.jsx` + `.module.css` | Tarjeta resumen de una sala (foto, nombre, capacidad, precio). |
 | `client/src/components/room/RoomSidePanel/RoomSidePanel.jsx` + `.module.css` | Panel lateral que se abre al pulsar una sala del plano. |
+| `client/src/components/room/RoomGallery/RoomGallery.jsx` + `.module.css` | Galería de fotos de la sala. |
+| `client/src/components/room/AmenitiesList/AmenitiesList.jsx` + `.module.css` | Equipamiento de la sala con icono y texto. |
 | `client/src/components/room/AvailabilityCalendar/AvailabilityCalendar.jsx` + `.module.css` | Huecos libres de una sala por día. |
 | `client/src/components/booking/BookingForm/BookingForm.jsx` + `.module.css` | Formulario de reserva: fecha y franja horaria (`startDate` y `endDate`). |
 | `client/src/components/booking/BookingSummary/BookingSummary.jsx` + `.module.css` | Resumen de la reserva con el precio que devuelve la API. |
+| `client/src/components/booking/BookingCard/BookingCard.jsx` + `.module.css` | Fila de una reserva en «Mis reservas»: sala, fecha, importe y estado. |
+| `client/src/components/booking/BookingDetail/BookingDetail.jsx` + `.module.css` | Detalle de una reserva, común a cliente, empresa y admin; cada rol ve sus acciones. |
 | `client/src/components/layout/Layout/Layout.jsx` + `.module.css` | Plantilla común de las páginas públicas: cabecera, contenido (`<Outlet />`) y pie. |
 | `client/src/pages/Landing/Landing.jsx` + `.module.css` | Home: hero con el edificio por plantas, buscador, salas destacadas, cómo funciona y llamada a empresas. |
+| `client/src/pages/Search/Search.jsx` + `.module.css` | Resultados de búsqueda: edificios con salas libres según ciudad, fecha y personas, con filtros y estado sin resultados. |
 | `client/src/pages/Building/Building.jsx` + `.module.css` | Página de un edificio: plantas, salas libres y «Qué hay cerca». |
 | `client/src/pages/Floor/Floor.jsx` + `.module.css` | Página de una planta: plano, selector de fecha y panel de sala. |
 | `client/src/pages/Room/Room.jsx` + `.module.css` | Ficha de sala con galería, equipamiento, disponibilidad y reserva. |
 | `client/src/pages/Login/Login.jsx` + `.module.css` | Inicio de sesión con email o Google. |
 | `client/src/pages/Register/Register.jsx` + `.module.css` | Registro de cliente. |
+| `client/src/pages/ForgotPassword/ForgotPassword.jsx` + `.module.css` | Recuperar contraseña: pide el email y envía el enlace. |
+| `client/src/pages/ResetPassword/ResetPassword.jsx` + `.module.css` | Recuperar contraseña: formulario de nueva contraseña desde el enlace. |
 | `client/src/pages/MyBookings/MyBookings.jsx` + `.module.css` | Reservas del cliente: próximas y pasadas, con cancelación. |
-| `client/src/pages/PaymentResult/PaymentResult.jsx` + `.module.css` | Vuelta desde Stripe: reserva confirmada o pago cancelado. |
+| `client/src/pages/BookingDetailPage/BookingDetailPage.jsx` + `.module.css` | Detalle de una reserva del cliente, con cancelación. |
+| `client/src/pages/PaymentResult/PaymentResult.jsx` + `.module.css` | Vuelta desde Stripe: reserva confirmada, pago cancelado o reserva expirada. |
 | `client/src/pages/NotFound/NotFound.jsx` + `.module.css` | Página 404. |
-| `client/src/pages/company/CompanyDashboard/CompanyDashboard.jsx` + `.module.css` | Resumen del panel de empresa. |
+| `client/src/pages/company/CompanyDashboard/CompanyDashboard.jsx` + `.module.css` | Resumen del panel de empresa, con estado vacío en el primer acceso (sin edificios). |
 | `client/src/pages/company/CompanyRegister/CompanyRegister.jsx` + `.module.css` | Solicitud de alta como empresa (queda pendiente de aprobación). |
+| `client/src/pages/company/CompanyRequestStatus/CompanyRequestStatus.jsx` + `.module.css` | Estado de la solicitud de alta: en revisión o rechazada con su motivo. |
 | `client/src/pages/company/CompanyBuildings/CompanyBuildings.jsx` + `.module.css` | Edificios y plantas de la empresa. |
 | `client/src/pages/company/MapEditorPage/MapEditorPage.jsx` + `.module.css` | Página del editor de mapas de una planta: subir plano, detectar, corregir, guardar y publicar. |
-| `client/src/pages/company/CompanyRooms/CompanyRooms.jsx` + `.module.css` | Datos comerciales de las salas: precio, capacidad, equipamiento y fotos. |
+| `client/src/pages/company/CompanyRooms/CompanyRooms.jsx` + `.module.css` | Datos comerciales de las salas: precio, capacidad, equipamiento y fotos; estados y ocultar o mostrar sala. |
 | `client/src/pages/company/CompanyBookings/CompanyBookings.jsx` + `.module.css` | Reservas de las salas de la empresa y bloqueo de horas. |
+| `client/src/pages/company/CompanyBookingDetail/CompanyBookingDetail.jsx` + `.module.css` | Detalle de una reserva de la empresa, con cancelación. |
+| `client/src/pages/company/CompanySettings/CompanySettings.jsx` + `.module.css` | Ajustes de la empresa: cobros con Stripe Connect. |
 | `client/src/pages/admin/AdminDashboard/AdminDashboard.jsx` + `.module.css` | Resumen del panel de admin. |
-| `client/src/pages/admin/AdminCompanies/AdminCompanies.jsx` + `.module.css` | Aprobar o suspender empresas. |
+| `client/src/pages/admin/AdminCompanies/AdminCompanies.jsx` + `.module.css` | Aprobar, rechazar o suspender empresas. |
+| `client/src/pages/admin/AdminCompanyDetail/AdminCompanyDetail.jsx` + `.module.css` | Detalle de una empresa: datos, edificios y acciones de aprobar, rechazar o suspender. |
 | `client/src/pages/admin/AdminUsers/AdminUsers.jsx` + `.module.css` | Usuarios y cambio de rol. |
 | `client/src/pages/admin/AdminBookings/AdminBookings.jsx` + `.module.css` | Todas las reservas. |
+| `client/src/pages/admin/AdminBookingDetail/AdminBookingDetail.jsx` + `.module.css` | Detalle de cualquier reserva. |
 | `client/src/pages/admin/AdminPayments/AdminPayments.jsx` + `.module.css` | Pagos y reembolsos. |
 | `client/src/utils/formatPrice.js` | Formatea importes en euros (`25` → `25,00 €`). |
 | `client/src/utils/dates.js` | Utilidades de fechas: formato `AAAA-MM-DD`, horas y rangos para el calendario. |
