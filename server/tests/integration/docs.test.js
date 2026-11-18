@@ -20,6 +20,13 @@ describe('Documentación de la API (Swagger)', () => {
     assert.ok(swaggerSpec.paths['/health']?.get, 'GET /health no está en la especificación');
   });
 
+  it('/users/me aparece documentada, protegida con bearerAuth', () => {
+    const op = swaggerSpec.paths['/users/me']?.get;
+    assert.ok(op, 'GET /users/me no está en la especificación');
+    assert.deepEqual(op.security, [{ bearerAuth: [] }]);
+    assert.ok(op.responses['401'], 'falta la respuesta 401');
+  });
+
   describe('GET /api/docs', () => {
     let server;
     let baseUrl;
