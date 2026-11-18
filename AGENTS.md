@@ -165,7 +165,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `server/.env.example` | Plantilla de variables secretas de la API (Firebase Admin, Stripe, IA, URL de la web, puerto). Se copia a `.env` y nunca se sube. |
 | `server/scripts/makeAdmin.js` | Script para convertir en admin a un usuario ya registrado (`npm run make-admin -w server -- correo@ejemplo.com`). |
 | `server/scripts/getToken.js` | Hace login con email y contraseña (`accounts:signInWithPassword` con `FIREBASE_WEB_API_KEY`) e imprime el ID token para probar la API en `/api/docs` (`npm run get-token -w server -- correo contraseña`). |
-| `server/scripts/seed.js` | Carga datos de demo en Firestore (empresa, edificio, plantas y salas) a partir de `scripts/data/`. |
+| `server/scripts/seed.js` | Carga datos de demo en Firestore (empresa, edificio, plantas con su mapa, salas y unas reservas confirmadas) a partir de `scripts/data/`. Idempotente: ids fijos y `set` con `merge` (`npm run seed -w server`). |
 | `server/scripts/data/demo-floor.json` | Ejemplo de mapa de planta en el formato que usan el editor, el plano y la API. Sirve para el seed y para probar el front sin backend. |
  
 ### Back: `server/src/config/`
@@ -254,12 +254,15 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
  
 | Archivo | Para qué sirve |
 | --- | --- |
+| `server/src/models/baseModel.js` | Funciones comunes de los models (`findById`, `create`, `upsert`, `update`, `remove`, `listBy`): añaden `createdAt` y `updatedAt` con `serverTimestamp()` y aceptan `{ tx }` para transacciones. |
 | `server/src/models/userModel.js` | Acceso a la colección `users` (id = UID de Firebase Auth). Campos: name, surname, email, phone, role (`CLIENT` \| `COMPANY` \| `ADMIN`), createdAt, updatedAt. |
 | `server/src/models/companyModel.js` | Acceso a la colección `companies` y a su subcolección `members` (userId, role `OWNER` \| `MANAGER` \| `EMPLOYEE`, joinedAt). Campos: name, legalName, taxId, description, logoUrl, email, phone, address, verified, createdAt, updatedAt. |
 | `server/src/models/buildingModel.js` | Acceso a la colección `buildings`. Campos: companyId, name, description, address, city, postalCode, country, latitude, longitude, floorCount, status, createdAt, updatedAt. |
-| `server/src/models/floorModel.js` | Acceso a la colección `floors`. Campos: buildingId, name, level, mapImageUrl, mapData (cada sala con su id, posición, anchura, altura y enlace a `offices`; formato por concretar con el editor), status, createdAt, updatedAt. |
-| `server/src/models/officeModel.js` | Acceso a la colección `offices` (las salas) y a sus subcolecciones `blocks` (startDate, endDate, reason) e `images` (url, storagePath, order, isCover). Campos: companyId, buildingId, floorId, name, code, description, surface, capacity, price, pricePeriod (`HOUR`), amenities, status, openingHours, createdAt, updatedAt. |
-| `server/src/models/bookingModel.js` | Acceso a la colección `bookings`. Campos: userId, companyId, officeId, startDate, endDate, price, pricePeriod, totalAmount, status (`PENDING_PAYMENT` \| `CONFIRMED` \| `CANCELLED` \| `EXPIRED` \| `COMPLETED`), paymentId, createdAt, updatedAt. |
+| `server/src/models/floorModel.js` | Acceso a la colección `floors`. Campos: companyId, buildingId, name, level, mapImageUrl, status, createdAt, updatedAt y el mapa en el formato del editor: ancho, alto, origen y `salas` (id, codigo, nombre, tipo, x, y, w, h; el id es el de su documento en `rooms`). |
+| `server/src/models/roomModel.js` | Acceso a la colección `rooms` (las salas; id = id de la sala en `floors.salas`). Campos: companyId, buildingId, floorId, name, code, type, description, surface, capacity, price, pricePeriod (`HOUR`), amenities, bookable, status, openingHours, createdAt, updatedAt. |
+| `server/src/models/blockModel.js` | Acceso a la colección `blocks`: horas bloqueadas por la empresa en una sala. Campos: companyId, roomId, startDate, endDate, reason, createdAt, updatedAt. |
+| `server/src/models/occupancyModel.js` | Acceso a la colección `occupancy`: una ficha por sala y hora ocupada con id fijo `roomId_AAAA-MM-DD_HH`, para que dos reservas no puedan coger la misma hora. Campos: companyId, roomId, date, hour, bookingId o blockId, createdAt, updatedAt. |
+| `server/src/models/bookingModel.js` | Acceso a la colección `bookings`. Campos: userId, companyId, roomId, startDate, endDate, price, pricePeriod, totalAmount, status (`PENDING_PAYMENT` \| `CONFIRMED` \| `CANCELLED` \| `EXPIRED` \| `COMPLETED`), paymentId, createdAt, updatedAt. |
 | `server/src/models/paymentModel.js` | Acceso a la colección `payments`. Campos: bookingId, userId, amount, currency (`EUR`), provider (`STRIPE`), providerPaymentId, status (`PENDING` \| `SUCCEEDED` \| `FAILED` \| `REFUNDED`), createdAt, updatedAt. |
 | `server/src/models/favoriteModel.js` | Acceso a la colección `favorites`: salas guardadas por cada usuario. Estructura por definir; relaciona un usuario con una sala. |
  
