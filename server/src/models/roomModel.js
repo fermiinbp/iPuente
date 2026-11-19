@@ -1,7 +1,7 @@
 // Acceso a la colección rooms (las salas). El id de cada documento es el id de la sala en floors.salas.
 // Campos: companyId, buildingId, floorId, name, code, type (sala | box | comun | cocina | pasillo), description, surface, capacity,
 // price, pricePeriod (HOUR), amenities, bookable, status (ACTIVE | INACTIVE), openingHours, createdAt, updatedAt.
-import { createModel } from './baseModel.js';
+import { createModel, runQuery } from './baseModel.js';
 
 const base = createModel('rooms');
 
@@ -14,6 +14,16 @@ export function listByFloor(floorId, { tx } = {}) {
 
 export function listByBuilding(buildingId) {
   return base.listBy('buildingId', buildingId);
+}
+
+// Salas de varios edificios, en lotes de 30 ids (límite de `in`): una consulta por lote.
+export async function listByBuildings(buildingIds) {
+  const chunks = [];
+  for (let i = 0; i < buildingIds.length; i += 30) chunks.push(buildingIds.slice(i, i + 30));
+  const results = await Promise.all(
+    chunks.map((ids) => runQuery(base.collection().where('buildingId', 'in', ids))),
+  );
+  return results.flat();
 }
 
 export function listByCompany(companyId) {
