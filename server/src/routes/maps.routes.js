@@ -1,4 +1,5 @@
-// Rutas de mapas de planta del panel de empresa: guardar el mapa y publicar la planta.
+// Rutas de mapas de planta del panel de empresa: guardar el mapa, publicar la planta
+// (POST /company/floors/:id/publish) y despublicarla (POST /company/floors/:id/unpublish).
 import { Router } from 'express';
 
 import { ROLES } from '../config/roles.js';
@@ -18,7 +19,7 @@ const router = Router();
  *   put:
  *     tags: [Mapas]
  *     summary: Guarda el mapa de una planta propia
- *     description: 'Sustituye el mapa de la planta y sincroniza sus salas: crea las nuevas (no reservables y sin precio), actualiza nombre, código y tipo de las existentes y marca como no reservables las que ya no están en el mapa. No cambia el estado de publicación; si la planta está publicada y deja de tener salas reservables con precio, la respuesta incluye `aviso`. Solo para empresas aprobadas.'
+ *     description: 'Sustituye el mapa de la planta y sincroniza sus salas: crea las nuevas (no reservables y sin precio), actualiza nombre, código y tipo de las existentes y marca como no reservables las que ya no están en el mapa. No cambia el estado de publicación; si la planta está publicada y deja de tener salas reservables con precio, la respuesta incluye `aviso`. Si hay reservas futuras (CONFIRMED o PENDING_PAYMENT) en sus salas, `reservasFuturas` las cuenta y `aviso` (texto único, se combinan los avisos) lo indica; siguen en pie y no se bloquea. Solo para empresas aprobadas.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -131,6 +132,43 @@ router.post(
   ...mapValidator.publishFloor,
   validate,
   asyncHandler(ctrl.publishFloor),
+);
+
+/**
+ * @openapi
+ * /company/floors/{id}/unpublish:
+ *   post:
+ *     tags: [Mapas]
+ *     summary: Vuelve una planta propia a borrador
+ *     description: 'Es idempotente. Si el edificio está publicado y era su última planta publicada, sigue publicado y la respuesta incluye `aviso`. Si hay reservas futuras (CONFIRMED o PENDING_PAYMENT) en sus salas, `reservasFuturas` las cuenta y `aviso` (texto único, se combinan los avisos) lo indica; siguen en pie y no se bloquea. Solo para empresas aprobadas; ajena 403, inexistente 404.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 'Planta en borrador con `id, buildingId, numero, nombre, publicado: false, reservasFuturas` y `aviso` opcional.'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.post(
+  '/company/floors/:id/unpublish',
+  auth,
+  requireRole(ROLES.COMPANY),
+  requireApprovedCompany,
+  ...mapValidator.unpublishFloor,
+  validate,
+  asyncHandler(ctrl.unpublishFloor),
 );
 
 export default router;

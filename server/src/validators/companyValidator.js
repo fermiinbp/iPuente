@@ -1,5 +1,5 @@
 // Validación del panel de empresa: alta, edificios, plantas, datos de sala y bloqueos.
-import { body } from 'express-validator';
+import { body, query } from 'express-validator';
 
 import { idParam } from './commonValidator.js';
 
@@ -154,4 +154,32 @@ export const updateRoom = [
     .withMessage('reservable debe ser true o false'),
   fotos,
   fotosItems,
+];
+
+export const buildingIdOnly = [idParam];
+
+const idQuery = (field) =>
+  query(field)
+    .optional()
+    .isString()
+    .bail()
+    .matches(/^[A-Za-z0-9_-]{1,128}$/)
+    .withMessage(`${field} no es válido`);
+
+export const listRooms = [
+  idQuery('buildingId'),
+  idQuery('floorId'),
+  query('estado')
+    .optional()
+    .isString()
+    .bail()
+    .isIn(['publicada', 'sin_precio', 'oculta'])
+    .withMessage('estado debe ser publicada, sin_precio u oculta'),
+];
+
+export const setRoomVisibility = [
+  idParam,
+  body('visible')
+    .custom((v) => typeof v === 'boolean')
+    .withMessage('visible debe ser true o false'),
 ];

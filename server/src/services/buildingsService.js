@@ -30,8 +30,13 @@ async function countFreeRooms(floorId, fecha) {
 }
 
 export async function listPublished() {
-  const buildings = await buildingModel.listByStatus('PUBLISHED');
-  return buildings.map(toPublic);
+  const [buildings, floors] = await Promise.all([
+    buildingModel.listByStatus('PUBLISHED'),
+    floorModel.listByStatus('PUBLISHED'),
+  ]);
+  // Solo edificios con al menos una planta publicada.
+  const withFloors = new Set(floors.map((f) => f.buildingId));
+  return buildings.filter((b) => withFloors.has(b.id)).map(toPublic);
 }
 
 export async function getPublished(id, fecha = todayString()) {

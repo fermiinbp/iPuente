@@ -107,3 +107,5 @@ function checkMapBody(req, res, next) {
 
 export const saveMap = [idParam, checkMapBody];
 export const publishFloor = [idParam];
+
+export const unpublishFloor = [idParam];

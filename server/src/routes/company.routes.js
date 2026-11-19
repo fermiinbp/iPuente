@@ -64,7 +64,7 @@ router.get('/companies/me', auth, requireRole(ROLES.COMPANY), asyncHandler(ctrl.
  *   get:
  *     tags: [Empresa]
  *     summary: Lista los edificios de la empresa
- *     description: 'Devuelve `{ id, nombre, direccion, ciudad, descripcion, fotos, publicado }`. Solo para empresas aprobadas.'
+ *     description: 'Devuelve `{ id, nombre, direccion, ciudad, descripcion, fotos, publicado, plantas }`, donde `plantas` es `[{ id, numero, nombre, publicado, salas }]` ordenadas por número (`salas` = salas activas). Solo para empresas aprobadas.'
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -233,7 +233,7 @@ router.patch(
  *   patch:
  *     tags: [Empresa]
  *     summary: Edita los datos comerciales de una sala propia
- *     description: 'Campos opcionales (al menos uno): `nombre`, `capacidad`, `m2`, `precioHora`, `equipamiento`, `reservable`, `fotos`. Devuelve `{ id, floorId, buildingId, codigo, nombre, capacidad, m2, precioHora, equipamiento, reservable, fotos }`. Solo para empresas aprobadas; cada empresa solo accede a lo suyo (403 si es de otra, 404 si no existe).'
+ *     description: 'Campos opcionales (al menos uno): `nombre`, `capacidad`, `m2`, `precioHora`, `equipamiento`, `reservable`, `fotos`. Devuelve `{ id, floorId, buildingId, codigo, nombre, capacidad, m2, precioHora, equipamiento, reservable, fotos }`. Solo para empresas aprobadas; cada empresa solo accede a lo suyo (403 si es de otra, 404 si no existe). Una sala que ya no está en el mapa da `ROOM_INACTIVE` (400).'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -262,6 +262,172 @@ router.patch(
   ...companyValidator.updateRoom,
   validate,
   asyncHandler(ctrl.updateRoom),
+);
+
+/**
+ * @openapi
+ * /company/buildings/{id}/publish:
+ *   post:
+ *     tags: [Empresa]
+ *     summary: Publica un edificio propio
+ *     description: 'Requiere al menos una planta publicada (`NO_PUBLISHED_FLOORS`). Es idempotente. Solo para empresas aprobadas; ajeno 403, inexistente 404.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 'Edificio publicado (`publicado: true`).'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.post(
+  '/company/buildings/:id/publish',
+  auth,
+  requireRole(ROLES.COMPANY),
+  requireApprovedCompany,
+  ...companyValidator.buildingIdOnly,
+  validate,
+  asyncHandler(ctrl.publishBuilding),
+);
+
+/**
+ * @openapi
+ * /company/buildings/{id}/unpublish:
+ *   post:
+ *     tags: [Empresa]
+ *     summary: Vuelve un edificio propio a borrador
+ *     description: 'Es idempotente. Si hay reservas futuras (CONFIRMED o PENDING_PAYMENT) en sus salas, no se bloquea: se devuelven `reservasFuturas` y un `aviso`. Solo para empresas aprobadas; ajeno 403, inexistente 404.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 'Edificio en borrador (`publicado: false`) con `reservasFuturas` y `aviso` opcional.'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.post(
+  '/company/buildings/:id/unpublish',
+  auth,
+  requireRole(ROLES.COMPANY),
+  requireApprovedCompany,
+  ...companyValidator.buildingIdOnly,
+  validate,
+  asyncHandler(ctrl.unpublishBuilding),
+);
+
+/**
+ * @openapi
+ * /company/rooms:
+ *   get:
+ *     tags: [Empresa]
+ *     summary: Lista las salas de la empresa con su estado
+ *     description: 'Solo salas activas, ordenadas por edificio, planta y código. Cada una incluye `estado`: `sin_precio` (sin precio mayor que 0), `publicada` (con precio y reservable) u `oculta`. Si se pasa `buildingId` o `floorId` deben ser propios (403 si son de otra empresa, 404 si no existen). Solo para empresas aprobadas.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: buildingId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: floorId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: estado
+ *         schema:
+ *           type: string
+ *           enum: [publicada, sin_precio, oculta]
+ *     responses:
+ *       200:
+ *         description: 'Lista de salas con `id, floorId, buildingId, codigo, nombre, capacidad, m2, precioHora, equipamiento, reservable, fotos, estado`.'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.get(
+  '/company/rooms',
+  auth,
+  requireRole(ROLES.COMPANY),
+  requireApprovedCompany,
+  ...companyValidator.listRooms,
+  validate,
+  asyncHandler(ctrl.listRooms),
+);
+
+/**
+ * @openapi
+ * /company/rooms/{id}/visibility:
+ *   patch:
+ *     tags: [Empresa]
+ *     summary: Muestra u oculta una sala propia
+ *     description: 'Body `{ visible }` (booleano). Mostrar una sala sin precio mayor que 0 da `ROOM_WITHOUT_PRICE`; una sala que ya no está en el mapa da `ROOM_INACTIVE`. Con `visible: false` y reservas futuras (CONFIRMED o PENDING_PAYMENT) se devuelven `reservasFuturas` y un `aviso`; no se bloquea. Solo para empresas aprobadas; ajena 403, inexistente 404.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [visible]
+ *             properties:
+ *               visible:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: 'Sala con su `estado` (y `reservasFuturas` y `aviso` opcional si `visible: false`).'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.patch(
+  '/company/rooms/:id/visibility',
+  auth,
+  requireRole(ROLES.COMPANY),
+  requireApprovedCompany,
+  ...companyValidator.setRoomVisibility,
+  validate,
+  asyncHandler(ctrl.setRoomVisibility),
 );
 
 export default router;
