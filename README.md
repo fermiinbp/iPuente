@@ -23,7 +23,7 @@ iPuente es un portal donde las empresas publican sus oficinas y salas, y los cli
  
 **Para las empresas que alquilan espacios:** mostrar sus oficinas de forma visual exige fotos, planos y una web propia, y las reservas se gestionan a mano por correo o teléfono, con solapes y huecos perdidos.
  
-iPuente une las dos partes en un mismo sitio. La empresa convierte su plano en un mapa interactivo en minutos, sin dibujar desde cero. El cliente ve el edificio, el plano de cada planta y la disponibilidad real de cada sala, y reserva y paga sin intermediarios.
+iPuente une las dos partes en un mismo sitio. La empresa convierte su plano en un mapa interactivo en minutos, sin dibujar desde cero. El cliente ve el edificio, el plano de cada planta y la disponibilidad real de cada sala, y reserva sin intermediarios.
  
 ## Cómo funciona
  
@@ -40,7 +40,7 @@ iPuente une las dos partes en un mismo sitio. La empresa convierte su plano en u
 1. Busca un edificio y lo explora en 3D.
 2. Pulsa una planta y ve su plano con las salas libres, ocupadas y no reservables.
 3. Pulsa una sala y ve su ficha: precio, capacidad, equipamiento, fotos y huecos libres.
-4. Reserva por fecha y franja horaria, y paga online.
+4. Reserva por fecha y franja horaria; la reserva queda confirmada al hacerla (el pago online con Stripe es un extra).
 
 
 
@@ -51,7 +51,7 @@ iPuente une las dos partes en un mismo sitio. La empresa convierte su plano en u
 - **Disponibilidad siempre al día.** El servidor calcula los huecos libres de cada sala en el momento de consultarla, a partir de su horario, sus reservas y sus bloqueos, así que el plano muestra siempre la ocupación real sin guardar los horarios libres por separado.
 - **Archivos en el mismo sitio.** Firebase Storage guarda los planos y las fotos de las salas, y Firestore solo conserva su URL y su ruta.
 - **Seguridad por rol en la propia base de datos.** Con las reglas de Firestore, los edificios y planos publicados son de lectura pública, cada empresa solo puede ver lo suyo, y reservas, pagos y roles solo se escriben desde nuestras funciones del servidor.
-- **Sin servidor que mantener.** El plan gratuito cubre el proyecto, y Firebase se integra con Netlify Functions mediante `firebase-admin` para la lógica protegida: reservas, pagos con Stripe y análisis de planos con IA, cuyas claves nunca llegan al navegador.
+- **Sin servidor que mantener.** El plan gratuito cubre el proyecto, y Firebase se integra con Netlify Functions mediante `firebase-admin` para la lógica protegida: reservas, pagos con Stripe (extra) y análisis de planos con IA, cuyas claves nunca llegan al navegador.
 **Frente a Supabase (PostgreSQL):** Supabase sería mejor opción con un modelo muy relacional o con informes complejos en SQL. Para un proyecto de pocas semanas y un modelo sencillo, Firebase nos da autenticación, base de datos y almacenamiento de archivos con menos configuración.
  
 **Limitaciones que asumimos:** Firestore no impide por sí solo que dos reservas se solapen, así que lo comprobamos con una transacción en una función del servidor. Las estadísticas de los paneles también se calculan en funciones, porque Firestore no tiene consultas de agregación tan potentes como SQL.
@@ -68,9 +68,9 @@ iPuente une las dos partes en un mismo sitio. La empresa convierte su plano en u
 | Rol | Quién es | Qué puede hacer |
 | --- | --- | --- |
 | Visitante | Cualquiera sin cuenta | Explorar edificios en 3D, plantas, planos y fichas con precios. Al reservar se le pide registro. |
-| Cliente | Persona o empresa que alquila | Reservar y pagar, ver y cancelar sus reservas, editar su perfil, guardar salas favoritas. |
+| Cliente | Persona o empresa que alquila | Reservar, ver y cancelar sus reservas, editar su perfil, guardar salas favoritas. |
 | Empresa | Propietaria o gestora de un espacio | Dar de alta edificios y plantas, subir planos, usar el editor de mapas, gestionar sus salas y ver las reservas de sus espacios. Solo ve y modifica lo suyo. |
-| Admin | Equipo de iPuente | Aprobar o suspender empresas, gestionar usuarios y roles, ver todas las reservas y pagos, hacer reembolsos. |
+| Admin | Equipo de iPuente | Aprobar o suspender empresas, gestionar usuarios y roles, ver todas las reservas (pagos y reembolsos: extra). |
  
 Nadie puede registrarse como admin, y las cuentas de empresa quedan pendientes hasta que un admin las aprueba.
  
@@ -81,8 +81,8 @@ Nadie puede registrarse como admin, y las cuentas de empresa quedan pendientes h
 | HU-01 | Como **visitante**, quiero explorar un edificio en 3D y elegir una planta, para hacerme una idea del espacio sin ir en persona. |
 | HU-02 | Como **visitante**, quiero ver en el plano de cada planta qué salas están libres en una fecha, para saber rápido qué opciones tengo. |
 | HU-03 | Como **visitante**, quiero ver el precio, la capacidad, los m² y el equipamiento de una sala, para saber si encaja con mi evento antes de registrarme. |
-| HU-04 | Como **visitante**, quiero registrarme con mi email o mi cuenta de Google, para poder reservar sin rellenar formularios largos. |
-| HU-05 | Como **cliente**, quiero reservar una sala por fecha y franja horaria y pagarla online, para cerrar el alquiler en un solo paso. |
+| HU-04 | Como **visitante**, quiero registrarme con mi email o mi cuenta de Google (Google: extra), para poder reservar sin rellenar formularios largos. |
+| HU-05 | Como **cliente**, quiero reservar una sala por fecha y franja horaria, para cerrar el alquiler en un solo paso. |
 | HU-06 | Como **cliente**, quiero ver y cancelar mis reservas, para gestionar cambios de planes sin llamar a nadie. |
 | HU-07 | Como **empresa**, quiero registrarme y dar de alta mi edificio con sus plantas, para publicar mis espacios en el portal. |
 | HU-08 | Como **empresa**, quiero subir la imagen de mi plano y que se detecten las salas automáticamente, para no tener que dibujar el mapa desde cero. |
@@ -90,7 +90,7 @@ Nadie puede registrarse como admin, y las cuentas de empresa quedan pendientes h
 | HU-10 | Como **empresa**, quiero indicar el precio, la capacidad, el equipamiento y las fotos de cada sala, para que los clientes tengan toda la información. |
 | HU-11 | Como **empresa**, quiero ver las reservas de mis salas y bloquear horas, para controlar la ocupación de mis espacios. |
 | HU-12 | Como **admin**, quiero aprobar o suspender empresas, para que solo se publiquen espacios reales. |
-| HU-13 | Como **admin**, quiero ver todas las reservas y pagos y hacer reembolsos, para resolver incidencias. |
+| HU-13 | Como **admin**, quiero ver todas las reservas y pagos y hacer reembolsos (pagos y reembolsos: extra), para resolver incidencias. |
  
 ## Alcance del MVP
  
@@ -98,29 +98,30 @@ Nadie puede registrarse como admin, y las cuentas de empresa quedan pendientes h
  
 | # | Funcionalidad | Historias |
 | --- | --- | --- |
-| 1 | Registro e inicio de sesión con email y Google; roles de cliente, empresa y admin | HU-04, HU-07 |
+| 1 | Registro e inicio de sesión con email; roles de cliente, empresa y admin | HU-04, HU-07 |
 | 2 | Alta de empresa, edificio y plantas | HU-07 |
 | 3 | Editor de mapas: plano subido como fondo y salas como rectángulos que se dibujan, mueven, redimensionan y nombran | HU-09 |
 | 4 | Detección automática de salas a partir de la imagen del plano, con IA, como borrador editable | HU-08 |
 | 5 | Guardar el mapa de cada planta en Firestore | HU-08, HU-09 |
 | 6 | Datos de cada sala: precio por hora, capacidad, m², equipamiento y fotos | HU-10 |
 | 7 | Plano 2D clicable para clientes, con colores según el estado de cada sala (libre, ocupada, no reservable) | HU-02 |
-| 8 | Ficha de sala con huecos libres | HU-03 |
-| 9 | Reserva por fecha y franja horaria, sin solapes | HU-05 |
-| 10 | Pago online con Stripe en modo de prueba, a una cuenta única de la plataforma | HU-05 |
-| 11 | «Mis reservas»: consultar y cancelar | HU-06 |
-| 12 | Panel de empresa: sus salas, reservas y bloqueos | HU-11 |
-| 13 | Panel de admin: aprobar empresas, usuarios, reservas, pagos y reembolsos | HU-12, HU-13 |
-| 14 | Diseño responsive (móvil, tablet y escritorio) | Todas |
+| 8 | Selector de hora que actualiza la ocupación del plano | HU-02 |
+| 9 | Buscador de edificios por ciudad, capacidad y equipamiento | HU-01 |
+| 10 | Ficha de sala con huecos libres | HU-03 |
+| 11 | Reserva por fecha y franja horaria, sin solapes; la reserva queda confirmada al hacerla, sin pago online | HU-05 |
+| 12 | «Mis reservas»: consultar y cancelar | HU-06 |
+| 13 | Panel de empresa: sus salas, reservas y bloqueos | HU-11 |
+| 14 | Panel de admin: aprobar empresas y consultar usuarios y reservas | HU-12, HU-13 |
+| 15 | Diseño responsive (móvil, tablet y escritorio) | Todas |
  
 **Orden de desarrollo:** primero el editor manual (punto 3), que garantiza que siempre haya mapa; después la detección automática (punto 4), que rellena ese mismo editor. Si falta tiempo, la detección automática es lo primero que se recorta y el portal sigue funcionando.
  
 ### Extras (solo si el MVP está terminado, por orden de prioridad)
  
-1. Edificio 3D generado a partir de las plantas guardadas (Three.js): plantas apiladas y cada sala como un bloque. Mientras no esté, la landing usa una imagen del edificio con zonas clicables por planta.
-2. Buscador de edificios por ciudad, capacidad y equipamiento.
-3. Filtro por necesidades que resalta en el plano las salas que encajan.
-4. Selector de hora que actualiza la ocupación del plano.
+1. Inicio de sesión con Google, además del registro con email.
+2. Pago online con Stripe en modo de prueba, a una cuenta única de la plataforma, y gestión de pagos y reembolsos desde el panel de admin. Hasta entonces, la reserva se confirma sin pago.
+3. Edificio 3D generado a partir de las plantas guardadas (Three.js): plantas apiladas y cada sala como un bloque. Mientras no esté, la landing usa una imagen del edificio con zonas clicables por planta.
+4. Filtro por necesidades que resalta en el plano las salas que encajan.
 5. Vista 360º de cada sala desde su ficha.
 6. Dashboard con gráficas de ocupación e ingresos para empresas y admin.
 7. Emails de confirmación y recordatorio.
@@ -155,7 +156,9 @@ La estructura principal propuesta es:
 | `companies` | Empresas que publican y gestionan espacios. |
 | `buildings` | Edificios dados de alta por las empresas. |
 | `floors` | Plantas pertenecientes a cada edificio y sus mapas. |
-| `offices` | Salas y espacios disponibles para alquilar. |
+| `rooms` | Salas y espacios disponibles para alquilar. |
+| `blocks` | Horas bloqueadas por la empresa en una sala. |
+| `occupancy` | Una ficha por sala y hora ocupada, con id `roomId_AAAA-MM-DD_HH`; impide reservas dobles. |
 | `bookings` | Reservas realizadas por los clientes. |
 | `payments` | Operaciones de pago asociadas a las reservas. |
 | `favorites` | Salas guardadas como favoritas por los usuarios. |
@@ -163,8 +166,6 @@ La estructura principal propuesta es:
 Subcolecciones previstas:
 
 - `companies/{companyId}/members`: usuarios que pertenecen a una empresa y sus permisos.
-- `offices/{officeId}/blocks`: periodos bloqueados manualmente por la empresa.
-- `offices/{officeId}/images`: imágenes asociadas a una sala.
 
 ## 2. Definición de colecciones
 
@@ -190,13 +191,16 @@ Almacena la información de las empresas que publican espacios.
 | --- | --- |
 | `name` | Nombre comercial. |
 | `legalName` | Razón social. |
-| `taxId` | Identificador fiscal. |
+| `taxId` | Identificador fiscal (CIF normalizado: mayúsculas, sin espacios ni guiones). |
+| `contactName` | Persona de contacto. |
 | `description` | Descripción de la empresa. |
 | `logoUrl` | URL del logotipo. |
 | `email` | Correo de contacto. |
 | `phone` | Teléfono de contacto. |
 | `address` | Dirección de la empresa. |
-| `verified` | Indica si la empresa ha sido aprobada por un administrador. |
+| `ownerUid` | UID del usuario que dio de alta la empresa. |
+| `status` | Estado de la solicitud: `PENDING`, `APPROVED` o `REJECTED`. `SUSPENDED` está previsto (lo añade la issue de admin). |
+| `verified` | `true` si `status` es `APPROVED`. |
 | `createdAt` | Fecha de creación. |
 | `updatedAt` | Última actualización. |
 
@@ -226,7 +230,8 @@ Almacena los edificios publicados por las empresas.
 | `latitude` | Latitud. |
 | `longitude` | Longitud. |
 | `floorCount` | Número de plantas. |
-| `status` | Estado del edificio. |
+| `photos` | Lista de URLs de fotos del edificio. |
+| `status` | Estado del edificio: `DRAFT` (borrador) o `PUBLISHED` (publicado). |
 | `createdAt` | Fecha de creación. |
 | `updatedAt` | Última actualización. |
 
@@ -236,31 +241,24 @@ Contiene la información de las plantas y los datos necesarios para representar 
 
 | Campo | Descripción |
 | --- | --- |
+| `companyId` | Empresa propietaria o gestora. |
 | `buildingId` | Identificador del edificio al que pertenece. |
 | `name` | Nombre o denominación de la planta. |
 | `level` | Número o nivel de planta. |
 | `mapImageUrl` | URL de la imagen original del plano. |
-| `mapData` | Datos geométricos de las salas y sus posiciones. |
-| `status` | Estado de la planta. |
+| `ancho` | Ancho del plano, en las unidades del editor. |
+| `alto` | Alto del plano, en las unidades del editor. |
+| `origen` | Cómo se creó el mapa: `manual` o `ia`. |
+| `salas` | Lista de salas del mapa: `{ id, codigo, nombre, tipo, x, y, w, h }`. El `id` es el id de su documento en `rooms`. |
+| `status` | Estado de la planta: `DRAFT` (borrador) o `PUBLISHED` (publicada). |
 | `createdAt` | Fecha de creación. |
 | `updatedAt` | Última actualización. |
 
-**Campo `mapData`:**
+Los campos del mapa (`ancho`, `alto`, `origen` y `salas`) son los mismos que usan el editor, el plano de los clientes y la API, y se guardan y se leen de una vez. `tipo` es `sala`, `box`, `comun`, `cocina` o `pasillo`. Hay un ejemplo en `server/scripts/data/demo-floor.json`.
 
-Se almacena como un objeto estructurado con la información necesaria para representar las salas sobre la imagen del plano.
+### `rooms`
 
-Cada sala debe incluir, como mínimo:
-
-- Identificador de la sala.
-- Posición horizontal y vertical.
-- Anchura y altura.
-- Información necesaria para relacionarla con su documento en `offices`.
-
-El formato definitivo se concretará durante el desarrollo del editor de mapas.
-
-### `offices`
-
-Almacena la información de cada sala o espacio que puede alquilarse.
+Almacena la información de cada sala o espacio que puede alquilarse. El id de cada documento es el `id` de la sala en `floors.salas`.
 
 | Campo | Descripción |
 | --- | --- |
@@ -269,41 +267,49 @@ Almacena la información de cada sala o espacio que puede alquilarse.
 | `floorId` | Planta en la que se encuentra. |
 | `name` | Nombre de la sala. |
 | `code` | Código identificativo de la sala. |
+| `type` | Tipo de espacio: `sala`, `box`, `comun`, `cocina` o `pasillo`. |
 | `description` | Descripción del espacio. |
 | `surface` | Superficie en metros cuadrados. |
 | `capacity` | Capacidad máxima de personas. |
 | `price` | Precio por hora. |
 | `pricePeriod` | Periodo de facturación, inicialmente `HOUR`. |
 | `amenities` | Equipamiento y servicios disponibles. |
-| `status` | Estado de publicación de la sala. |
-| `openingHours` | Horario habitual en el que se puede alquilar. |
+| `photos` | Lista de URLs de fotos de la sala. |
+| `bookable` | Indica si la empresa la ofrece para reservar. |
+| `status` | `ACTIVE` o `INACTIVE` (la sala ya no está en el mapa de su planta; no se borra para conservar sus reservas). |
+| `openingHours` | Horario habitual en el que se puede alquilar (de momento `null`: se usa el horario reservable de 8 a 20). |
 | `createdAt` | Fecha de creación. |
 | `updatedAt` | Última actualización. |
 
-**Subcolección `blocks`**
+### `blocks`
 
 Almacena los periodos en los que la empresa bloquea manualmente una sala. Por ejemplo, cuando necesita utilizarla para sus propias actividades o realizar tareas de mantenimiento.
 
 | Campo | Descripción |
 | --- | --- |
+| `companyId` | Empresa propietaria de la sala. |
+| `roomId` | Sala bloqueada. |
 | `startDate` | Fecha y hora de inicio del bloqueo. |
 | `endDate` | Fecha y hora de finalización. |
 | `reason` | Motivo del bloqueo. |
 | `createdAt` | Fecha de creación. |
+| `updatedAt` | Última actualización. |
 
 Los bloqueos no representan reservas de clientes. Su única función es impedir que esos intervalos se puedan alquilar.
 
-**Subcolección `images`**
+### `occupancy`
 
-Almacena las referencias a las imágenes de cada sala.
+Una ficha por sala y hora ocupada, con id fijo `roomId_AAAA-MM-DD_HH` (por ejemplo, `p0-s01_2026-11-18_09`). Como el id es único, dos reservas no pueden ocupar la misma hora: la segunda falla dentro de la transacción. No guarda datos del cliente.
 
 | Campo | Descripción |
 | --- | --- |
-| `url` | URL de la imagen en Firebase Storage. |
-| `storagePath` | Ruta del archivo en Storage. |
-| `order` | Orden de visualización. |
-| `isCover` | Indica si es la imagen principal. |
+| `companyId` | Empresa propietaria de la sala. |
+| `roomId` | Sala ocupada. |
+| `date` | Día, en formato `AAAA-MM-DD`. |
+| `hour` | Hora de inicio (0-23). |
+| `bookingId` o `blockId` | Reserva o bloqueo que ocupa esa hora. |
 | `createdAt` | Fecha de creación. |
+| `updatedAt` | Última actualización. |
 
 ### `bookings`
 
@@ -313,28 +319,29 @@ Almacena las reservas realizadas por los clientes.
 | --- | --- |
 | `userId` | Cliente que realiza la reserva. |
 | `companyId` | Empresa propietaria de la sala. |
-| `officeId` | Sala reservada. |
+| `roomId` | Sala reservada. |
 | `startDate` | Fecha y hora de inicio. |
 | `endDate` | Fecha y hora de finalización. |
 | `price` | Precio aplicado por hora. |
 | `pricePeriod` | Periodo de facturación: `HOUR`. |
 | `totalAmount` | Importe total de la reserva. |
 | `status` | Estado de la reserva. |
-| `paymentId` | Identificador del pago asociado. |
+| `paymentId` | Identificador del pago asociado (`null` mientras no haya pago online). |
+| `cancelledAt` | Fecha de cancelación, si se cancela. |
 | `createdAt` | Fecha de creación. |
 | `updatedAt` | Última actualización. |
 
 Estados posibles:
 
-- `PENDING_PAYMENT`: pendiente de completar el pago.
-- `CONFIRMED`: pago verificado y reserva confirmada.
+- `CONFIRMED`: reserva hecha. En el MVP la reserva nace así, sin pago online.
 - `CANCELLED`: reserva cancelada.
-- `EXPIRED`: reserva provisional caducada.
 - `COMPLETED`: alquiler finalizado.
+- `PENDING_PAYMENT`: pendiente de completar el pago. Solo con el extra de Stripe.
+- `EXPIRED`: reserva provisional caducada sin pagar. Solo con el extra de Stripe.
 
 ### `payments`
 
-Registra las operaciones de pago realizadas mediante Stripe.
+Registra las operaciones de pago realizadas mediante Stripe. Solo se usa con el extra de pago online.
 
 | Campo | Descripción |
 | --- | --- |
@@ -370,11 +377,11 @@ Aunque Firestore es una base de datos NoSQL y no utiliza claves foráneas como u
 | Empresa - Miembros | N | Subcolección `members`. |
 | Empresa - Edificios | 1 | `companyId` en `buildings`. |
 | Edificio - Plantas | 1 | `buildingId` en `floors`. |
-| Planta - Salas | 1 | `floorId` en `offices`. |
-| Sala - Bloqueos | 1 | Subcolección `blocks`. |
-| Sala - Imágenes | 1 | Subcolección `images`. |
+| Planta - Salas | 1 | `floorId` en `rooms`. |
+| Sala - Bloqueos | 1 | `roomId` en `blocks`. |
+| Sala - Ocupación | 1 | `roomId` en `occupancy`. |
 | Usuario - Reservas | 1 | `userId` en `bookings`. |
-| Sala - Reservas | 1 | `officeId` en `bookings`. |
+| Sala - Reservas | 1 | `roomId` en `bookings`. |
 | Empresa - Reservas | 1 | `companyId` en `bookings`. |
 | Reserva - Pagos | 1 potencial | `bookingId` en `payments`. |
 
@@ -395,8 +402,8 @@ buildings/
       {floorId}/
         floor-plan.png
 
-offices/
-  {officeId}/
+rooms/
+  {roomId}/
     images/
       image_01.jpg
       image_02.jpg
@@ -412,7 +419,7 @@ Las reglas de Firestore deben garantizar que cada usuario solo pueda acceder a l
 | `companies` | Los miembros autorizados pueden gestionar su empresa. |
 | `buildings` | Los edificios publicados son de lectura pública; su gestión corresponde a la empresa propietaria. |
 | `floors` | Las plantas publicadas son de lectura pública; su edición corresponde a la empresa propietaria. |
-| `offices` | Las salas publicadas son de lectura pública; su gestión corresponde a la empresa propietaria. |
+| `rooms` | Las salas publicadas son de lectura pública; su gestión corresponde a la empresa propietaria. |
 | `blocks` | Solo los miembros autorizados de la empresa pueden crear, consultar, modificar o eliminar bloqueos. |
 | `bookings` | Cada cliente consulta sus reservas; las empresas consultan las reservas de sus espacios. |
 | `payments` | Acceso restringido; las operaciones se gestionan desde el servidor. |
@@ -425,9 +432,9 @@ No se almacenan todos los horarios libres como documentos. La disponibilidad de 
 
 Para determinar si una sala puede reservarse, el servidor consulta:
 
-1. El horario habitual de apertura almacenado en `offices`.
-2. Las reservas existentes en `bookings`, teniendo en cuenta las reservas confirmadas y las provisionales que todavía no han caducado.
-3. Los bloqueos manuales almacenados en la subcolección `blocks`.
+1. El horario reservable, de 8 a 20.
+2. Las reservas existentes en `bookings`, teniendo en cuenta las reservas confirmadas (y, con el extra de Stripe, las provisionales que todavía no han caducado).
+3. Los bloqueos manuales almacenados en la colección `blocks`.
 
 A partir de esos datos, el servidor determina qué intervalos están libres y puede ofrecerlos al cliente.
 
@@ -438,9 +445,9 @@ Firestore no impide automáticamente que dos documentos representen reservas con
 1. Comprobar que la sala está publicada.
 2. Consultar las reservas y bloqueos que coincidan con el intervalo solicitado.
 3. Comprobar que no existe ningún solapamiento.
-4. Crear la reserva provisional y gestionar el bloqueo temporal del horario durante el pago.
-5. Confirmar la reserva cuando Stripe notifique que el pago se ha completado correctamente.
-6. Liberar el horario si el pago falla o la reserva provisional caduca.
+4. Crear la reserva `CONFIRMED` y sus fichas de `occupancy` en una transacción. Si otra reserva ya ha cogido alguna de esas horas, responde `409 SLOT_TAKEN`.
+
+Con el extra de Stripe, la reserva se crea como provisional (`PENDING_PAYMENT`), se confirma cuando Stripe notifica que el pago se ha completado y se libera el horario si el pago falla o la reserva caduca.
 
 Estas operaciones deben diseñarse para evitar condiciones de carrera cuando varios clientes intentan reservar simultáneamente.
 
@@ -462,7 +469,6 @@ Los índices definitivos se añadirán conforme se implementen las consultas de 
 
 Algunos aspectos del modelo deberán concretarse durante el desarrollo:
 
-- Formato definitivo de `mapData` y sistema de coordenadas del editor.
 - Estructura exacta de `openingHours`.
 - Gestión de los bloqueos temporales durante el pago.
 - Política de cancelaciones y reembolsos.
@@ -471,6 +477,65 @@ Algunos aspectos del modelo deberán concretarse durante el desarrollo:
 - Necesidad de conservar un historial de operaciones y cambios de estado.
 
 Este diseño constituye una propuesta inicial y podrá evolucionar según las necesidades reales de implementación.
+
+## 9. Idioma de la API
+
+- **Body y respuestas de la API, en español** (`nombre`, `precioHora`, `fecha`, `inicio`, `fin`, `estado`), que es lo que usan el front y los textos de la interfaz.
+- **Campos de Firestore, en inglés** (`name`, `price`, `startDate`, `endDate`, `status`), como en las tablas de arriba.
+- Los ids se llaman igual en los dos lados (`roomId`, `floorId`, `buildingId`) y los valores de estado de Firestore (`CONFIRMED`, `FREE`…) no se traducen salvo que se indique.
+- Los services hacen la traducción con una lista blanca de campos: lo que no está en la tabla se ignora.
+
+Equivalencias por recurso (campo de la API → campo de Firestore):
+
+| Recurso | API (español) | Firestore (inglés) |
+| --- | --- | --- |
+| Empresa (registro) | `nombreEmpresa` | `companies.name` |
+| Empresa (registro) | `cif` | `companies.taxId` |
+| Empresa (registro) | `contacto` | `companies.contactName` |
+| Empresa (registro) | `telefono` | `companies.phone` |
+| Empresa (registro) | `email` | `companies.email` (y el email de acceso) |
+| Empresa (registro) | `nombre` (del usuario) | `users.name` |
+| Empresa | `estado` (`pendiente`, `aprobada`, `rechazada`) | `companies.status` (`PENDING`, `APPROVED`, `REJECTED`) |
+| Edificio | `nombre` | `name` |
+| Edificio | `direccion` | `address` |
+| Edificio | `ciudad` | `city` |
+| Edificio | `descripcion` | `description` |
+| Edificio | `fotos` | `photos` |
+| Edificio | `codigoPostal` | `postalCode` |
+| Edificio | `pais` | `country` |
+| Edificio | `latitud` | `latitude` |
+| Edificio | `longitud` | `longitude` |
+| Edificio | `numPlantas` | `floorCount` |
+| Edificio | `publicado` | `status === 'PUBLISHED'` |
+| Planta | `numero` (panel de empresa) o `nivel` (API pública) | `level` |
+| Planta | `nombre` | `name` |
+| Planta | `publicado` | `status === 'PUBLISHED'` |
+| Planta | `buildingId` (panel de empresa) o `edificioId` (API pública) | `buildingId` |
+| Planta | `ancho`, `alto`, `origen`, `salas` | Iguales: `ancho`, `alto`, `origen`, `salas` |
+| Sala | `codigo` | `code` |
+| Sala | `nombre` | `name` |
+| Sala | `tipo` | `type` |
+| Sala | `descripcion` | `description` |
+| Sala | `capacidad` | `capacity` |
+| Sala | `m2` | `surface` |
+| Sala | `precioHora` | `price` |
+| Sala | `periodoPrecio` | `pricePeriod` |
+| Sala | `equipamiento` | `amenities` |
+| Sala | `reservable` | `bookable` |
+| Sala | `fotos` | `photos` |
+| Sala | `estado` en el plano público (`FREE`, `OCCUPIED`, `UNAVAILABLE`) | Calculado en cada consulta; no se guarda |
+| Sala | `estado` en el panel de empresa (`publicada`, `sin_precio`, `oculta`) | Calculado; disponible tras fusionar #170 (DAT018) |
+| Reserva | `roomId` | `roomId` |
+| Reserva | `fecha` + `inicio` | `startDate` |
+| Reserva | `fecha` + `fin` | `endDate` |
+| Reserva | `precioHora` | `price` |
+| Reserva | `importe` | `totalAmount` |
+| Reserva | `estado` (`CONFIRMED`, `CANCELLED`…, sin traducir) | `status` |
+| Reserva | `horas` | Calculado (`fin - inicio`); no se guarda |
+
+**Excepción conocida:** `GET /api/companies/me` todavía responde en inglés (`name`, `taxId`, `contactName`, `phone`, `email`, `createdAt`; solo `estado` va en español). Está pendiente de traducir en una issue de código.
+
+Publicar y despublicar un edificio (`publicado`, que cambia `status` entre `DRAFT` y `PUBLISHED`) y los filtros de `GET /api/company/rooms` estarán disponibles tras fusionar #170 (DAT018).
 
 # Convenciones de trabajo
 
