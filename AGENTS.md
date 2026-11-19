@@ -12,8 +12,8 @@
 | `.editorconfig` | Mismo formato básico en cualquier editor: UTF-8, 2 espacios, saltos de línea LF. |
 | `.prettierrc` | Reglas de Prettier (comillas simples, punto y coma, 100 caracteres) para que los 4 escribamos igual. |
 | `.prettierignore` | Carpetas que Prettier no toca. |
-| `firebase.json` | Indica a Firebase CLI dónde están las reglas de Firestore y de Storage y los índices de Firestore (`firebase deploy --only firestore,storage`). |
-| `firestore.rules` | Reglas de seguridad de Firestore: el navegador nunca escribe; lee lo publicado, cada empresa lo suyo y cada cliente sus reservas. |
+| `firebase.json` | Indica a Firebase CLI dónde están las reglas y los índices de Firestore (`npx firebase-tools deploy --only firestore`). Storage se añadirá cuando tenga reglas. |
+| `firestore.rules` | Reglas de seguridad de Firestore: el navegador no lee ni escribe directamente (todo pasa por la API, que usa `firebase-admin`). Si el front necesita leer algo, se abre solo esa lectura. |
 | `firestore.indexes.json` | Índices compuestos de Firestore que necesitan las consultas de reservas y plantas. |
 | `netlify/functions/api.js` | Única Netlify Function: envuelve la app de Express (`server/src/app.js`) con `serverless-http` para que la API funcione en Netlify sin servidor propio. |
 | `CLAUDE.md` | Instrucciones que Claude Code lee al empezar: qué es el proyecto, qué agente usar y las reglas clave. |
