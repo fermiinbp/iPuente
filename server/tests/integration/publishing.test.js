@@ -223,7 +223,7 @@ describe('Publicar edificios y gestionar salas', () => {
   describe('visibilidad pública del edificio', () => {
     it('aparece en GET /api/buildings al publicar y desaparece al despublicar', async () => {
       const list = async () =>
-        (await (await fetch(`${baseUrl}/api/buildings`)).json()).map((x) => x.id);
+        (await (await fetch(`${baseUrl}/api/buildings`)).json()).edificios.map((x) => x.id);
       assert.ok(!(await list()).includes('b-a'));
       await call('POST', '/api/company/buildings/b-a/publish', { token: 'a' });
       assert.ok((await list()).includes('b-a'));
@@ -320,7 +320,8 @@ describe('Publicar edificios y gestionar salas', () => {
     it('GET /api/buildings no lista edificios PUBLISHED sin plantas publicadas', async () => {
       await buildingModel.update('b-a2', { status: 'PUBLISHED' });
       await buildingModel.update('b-a', { status: 'PUBLISHED' });
-      const ids = (await (await fetch(`${baseUrl}/api/buildings`)).json()).map((x) => x.id);
+      const res = await fetch(`${baseUrl}/api/buildings`);
+      const ids = (await res.json()).edificios.map((x) => x.id);
       assert.ok(ids.includes('b-a'));
       assert.ok(!ids.includes('b-a2'));
     });

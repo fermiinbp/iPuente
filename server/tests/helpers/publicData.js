@@ -141,6 +141,44 @@ export async function seedPublicData() {
   });
 }
 
+// Añade para el buscador (todo con companyId c1):
+//  b-mal «Centro Málaga» (PUBLISHED, con foto), planta f-mal PUBLISHED con
+//    r-mal-box (box, 2 pers., 10 €, wifi), r-mal-big (sala, 40 pers., 60 €, wifi+pantalla+proyector)
+//    y r-mal-full (sala, 4 pers., 15 €, wifi, CONFIRMED el 15/06 de 8 a 20);
+//  f-mal-draft (DRAFT) con r-mal-draft de 1 € que nunca debe contar;
+//  b-empty (PUBLISHED, planta PUBLISHED) con solo una sala no reservable.
+export async function seedSearchData() {
+  await buildingModel.upsert('b-mal', {
+    ...building('Centro Málaga', 'PUBLISHED'),
+    city: 'Málaga',
+    photos: ['https://example.com/malaga.jpg'],
+  });
+  await buildingModel.upsert('b-empty', {
+    ...building('Edificio vacío', 'PUBLISHED'),
+    city: 'Cádiz',
+  });
+  await floorModel.upsert('f-mal', floor('b-mal', 'Planta Málaga', 0, 'PUBLISHED', ['r-mal-box']));
+  await floorModel.upsert(
+    'f-mal-draft',
+    floor('b-mal', 'Planta Málaga borrador', 1, 'DRAFT', ['r-mal-draft']),
+  );
+  await floorModel.upsert('f-empty', floor('b-empty', 'Planta vacía', 0, 'PUBLISHED', ['r-empty']));
+  const mal = (id, extra) => roomModel.upsert(id, room('f-mal', 'b-mal', id, extra));
+  await mal('r-mal-box', { type: 'box', capacity: 2, price: 10, amenities: ['wifi'], photos: [] });
+  await mal('r-mal-big', {
+    capacity: 40,
+    price: 60,
+    amenities: ['wifi', 'pantalla', 'proyector'],
+  });
+  await mal('r-mal-full', { capacity: 4, price: 15, amenities: ['wifi'] });
+  await roomModel.upsert(
+    'r-mal-draft',
+    room('f-mal-draft', 'b-mal', 'r-mal-draft', { price: 1, capacity: 100 }),
+  );
+  await roomModel.upsert('r-empty', room('f-empty', 'b-empty', 'r-empty', { bookable: false }));
+  await bookingModel.upsert('bk-mal', booking('r-mal-full', 'CONFIRMED', 8, 20));
+}
+
 // Añade a f-0 una sala reservable y activa pero sin precio (r-noprice), para probar que no cuenta.
 export async function seedRoomWithoutPrice() {
   const f0 = await floorModel.findById('f-0');
