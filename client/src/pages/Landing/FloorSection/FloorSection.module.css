@@ -30,7 +30,7 @@
   justify-content: space-between;
   gap: var(--space-1) var(--space-4);
   width: 100%;
-  min-height: 44px;
+  min-height: var(--campo-alto);
   padding: 10px 0 10px 22px;
   border: 0;
   border-bottom: 1px solid var(--linea);
@@ -131,7 +131,7 @@
 }
 
 .clear {
-  min-height: 44px;
+  min-height: var(--campo-alto);
   padding: 0;
   border: 0;
   background: transparent;
