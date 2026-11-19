@@ -34,7 +34,7 @@ export function freeSlots(items, { desde = 8, hasta = 21 } = {}) {
 }
 
 // Convierte un Date o un Timestamp de Firestore en Date.
-const toDate = (value) => (typeof value.toDate === 'function' ? value.toDate() : value);
+export const toDate = (value) => (typeof value.toDate === 'function' ? value.toDate() : value);
 
 // Convierte un documento del model en una franja { tipo, status, inicio, fin } de horas enteras.
 export function toSlot(doc, tipo) {

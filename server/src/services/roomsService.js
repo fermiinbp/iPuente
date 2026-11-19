@@ -8,7 +8,7 @@ import { HttpError } from '../utils/httpError.js';
 import { BOOKING_HOURS, freeSlots, getDayItems, isBookable } from './availabilityService.js';
 
 // Devuelve { room, floor, building } si la sala es pública; si no, lanza 404.
-async function findPublicRoom(id) {
+export async function findPublicRoom(id) {
   const notFound = () => new HttpError(404, 'NOT_FOUND', 'La sala no existe');
   const room = await roomModel.findById(id);
   if (!room || room.status === 'INACTIVE') throw notFound();

@@ -39,6 +39,25 @@ const definition = {
       },
     },
     schemas: {
+      MyBooking: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          roomId: { type: 'string' },
+          sala: {
+            type: 'object',
+            nullable: true,
+            properties: { nombre: { type: 'string' }, codigo: { type: 'string' } },
+          },
+          fecha: { type: 'string', format: 'date' },
+          inicio: { type: 'integer' },
+          fin: { type: 'integer' },
+          horas: { type: 'integer' },
+          precioHora: { type: 'number' },
+          importe: { type: 'number' },
+          estado: { type: 'string', example: 'CONFIRMED' },
+        },
+      },
       Error: {
         type: 'object',
         required: ['error'],
