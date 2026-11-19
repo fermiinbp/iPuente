@@ -220,7 +220,7 @@ Reglas de `express-validator`: un archivo por recurso y un export por endpoint (
 | `server/src/validators/companyValidator.js` | Validación del panel de empresa: alta, edificios, plantas, datos de sala y bloqueos. |
 | `server/src/validators/mapValidator.js` | Validación de mapas: `validateMap` (función pura: dimensiones, origen, salas dentro del plano, tipos `ROOM_TYPES` e ids únicos), `saveMap` y `publishFloor` para las rutas. |
 | `server/src/validators/adminValidator.js` | Validación del panel de admin: aprobar o suspender empresas (`verified`) y cambio de rol. |
-| `server/src/validators/buildingValidator.js` | Validación de edificios públicos: id en la URL y fecha opcional del detalle (`getById`) y filtros del buscador (`search`: todos opcionales, rechaza arrays y claves con corchetes). |
+| `server/src/validators/buildingValidator.js` | Validación de edificios públicos: id en la URL y fecha opcional del detalle (`getById`) y filtros del buscador (`search`: todos opcionales, rechaza arrays y claves con corchetes, con el error en el nombre base de la clave; `page` hasta 10000). |
 | `server/src/validators/floorValidator.js` | Validación del mapa público de una planta: id en la URL y fecha y hora opcionales; rechaza con 400 las claves `hora[]` y `hora[x]`. |
 | `server/src/validators/roomValidator.js` | Validación de salas públicas: id en la URL y fecha opcional para la disponibilidad. |
  
@@ -241,7 +241,7 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/controllers/buildingsController.js` | Controlador de edificios públicos. Lee `req`, llama al service y responde; nunca habla con Firestore. |
+| `server/src/controllers/buildingsController.js` | Controlador de edificios públicos. Lee `req`, llama al service y responde (el buscador, sin `fecha`, con `Cache-Control: public, max-age=30`); nunca habla con Firestore. |
 | `server/src/controllers/floorsController.js` | Controlador del mapa público de una planta. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/roomsController.js` | Controlador de fichas y disponibilidad de salas. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/bookingsController.js` | Controlador de reservas del cliente. Lee `req`, llama al service y responde; nunca habla con Firestore. |

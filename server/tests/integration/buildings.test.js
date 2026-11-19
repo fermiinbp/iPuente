@@ -209,6 +209,8 @@ describe('Edificios públicos', () => {
           'orden=barato',
           'page=0',
           'page=1.5',
+          'page=10001',
+          `page=${'9'.repeat(30)}`,
           'limit=0',
           'limit=51',
           'fecha=2026-02-30',
@@ -226,6 +228,20 @@ describe('Edificios públicos', () => {
           assert.equal(status, 400, qs);
           assert.equal(body.error.code, 'VALIDATION_ERROR', qs);
         }
+      });
+
+      it('el error por corchetes apunta al nombre base de la clave', async () => {
+        const { status, body } = await search('personas[a]=1');
+        assert.equal(status, 400);
+        assert.equal(body.error.details[0].field, 'personas');
+      });
+
+      it('envía Cache-Control corto solo cuando no viene fecha', async () => {
+        const sin = await fetch(`${baseUrl}/api/buildings?ciudad=sevilla`);
+        assert.equal(sin.headers.get('cache-control'), 'public, max-age=30');
+        const con = await fetch(`${baseUrl}/api/buildings?fecha=${FECHA}`);
+        assert.equal(con.status, 200);
+        assert.equal(con.headers.get('cache-control')?.includes('public') ?? false, false);
       });
 
       it('acepta tildes en el equipamiento y límites correctos', async () => {

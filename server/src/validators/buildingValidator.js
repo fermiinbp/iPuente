@@ -1,6 +1,7 @@
 // Validación de edificios públicos: id en la URL y fecha opcional para el detalle, y filtros del buscador.
 import { query } from 'express-validator';
 
+import { HttpError } from '../utils/httpError.js';
 import { normalizeText } from '../utils/text.js';
 import { fechaQuery, idParam } from './commonValidator.js';
 
@@ -10,10 +11,15 @@ const isText = (v) => typeof v === 'string';
 const isScalar = (v) => typeof v === 'string' || typeof v === 'number';
 
 // Rechaza claves como ciudad[] o personas[a]: Express no las agrupa en el parámetro y se
-// ignorarían sin avisar.
-const sinCorchetes = query('ciudad')
-  .custom((_, { req }) => !Object.keys(req.query).some((k) => k.includes('[')))
-  .withMessage('los parámetros no admiten corchetes');
+// ignorarían sin avisar. El error apunta al nombre base de la clave (antes del corchete).
+function sinCorchetes(req, res, next) {
+  const clave = Object.keys(req.query).find((k) => k.includes('['));
+  if (clave === undefined) return next();
+  const err = new HttpError(400, 'VALIDATION_ERROR', 'La petición no es válida');
+  const field = clave.slice(0, clave.indexOf('[')) || 'query';
+  err.details = [{ field, message: 'los parámetros no admiten corchetes' }];
+  return next(err);
+}
 
 // Equipamiento en CSV: hasta 30 elementos; cada uno, tras normalizar, solo [a-z0-9_ -] y ≤ 50.
 const equipamiento = query('equipamiento')
@@ -71,8 +77,8 @@ export const search = [
     .optional()
     .custom(isScalar)
     .bail()
-    .isInt({ min: 1, allow_leading_zeroes: false })
-    .withMessage('page debe ser un entero mayor o igual que 1'),
+    .isInt({ min: 1, max: 10000, allow_leading_zeroes: false })
+    .withMessage('page debe ser un entero entre 1 y 10000'),
   query('limit')
     .optional()
     .custom(isScalar)

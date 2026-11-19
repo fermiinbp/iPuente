@@ -5,6 +5,8 @@ import * as buildingsService from '../services/buildingsService.js';
 export async function listBuildings(req, res) {
   const q = req.query;
   const num = (v) => (v === undefined ? undefined : Number(v));
+  // Caché corta solo sin fecha: con fecha la disponibilidad cambia con cada reserva.
+  if (q.fecha === undefined) res.set('Cache-Control', 'public, max-age=30');
   res.json(
     await buildingsService.searchPublished({
       ciudad: q.ciudad,

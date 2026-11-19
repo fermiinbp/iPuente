@@ -66,6 +66,7 @@ const router = Router();
  *         schema:
  *           type: integer
  *           minimum: 1
+ *           maximum: 10000
  *           default: 1
  *       - in: query
  *         name: limit
@@ -76,7 +77,13 @@ const router = Router();
  *           default: 20
  *     responses:
  *       200:
- *         description: Página de edificios que encajan.
+ *         description: Página de edificios que encajan. Sin `fecha` lleva `Cache-Control public, max-age=30`.
+ *         headers:
+ *           Cache-Control:
+ *             description: Solo presente cuando no se envía `fecha`.
+ *             schema:
+ *               type: string
+ *               example: public, max-age=30
  *         content:
  *           application/json:
  *             schema:
