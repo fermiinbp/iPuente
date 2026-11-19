@@ -18,3 +18,14 @@ export function listByRoom(roomId, { from, to, tx } = {}) {
   if (to) query = query.where('startDate', '<', to);
   return runQuery(query, { orderBy: 'startDate', tx });
 }
+
+// Bloqueos de una empresa que empiezan en [from, to), en orden cronológico (índice
+// companyId + startDate ASC). Máximo `limit` resultados.
+export function listByCompanyInRange(companyId, { from, to, limit = 500 }) {
+  const query = base
+    .collection()
+    .where('companyId', '==', companyId)
+    .where('startDate', '>=', from)
+    .where('startDate', '<', to);
+  return runQuery(query, { orderBy: 'startDate', limit });
+}
