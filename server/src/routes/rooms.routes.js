@@ -14,7 +14,7 @@ const router = Router();
  *   get:
  *     tags: [Público]
  *     summary: Ficha de una sala
- *     description: 'No necesita token. Devuelve los datos públicos de una sala de una planta publicada: capacidad, precio, equipamiento, fotos y su ubicación.'
+ *     description: 'No necesita token. Devuelve los datos públicos de una sala de una planta publicada: capacidad, precio, equipamiento, fotos y su ubicación. Una sala no reservable (oculta o sin precio) responde 404.'
  *     parameters:
  *       - in: path
  *         name: id
@@ -115,7 +115,7 @@ router.get('/rooms/:id', ...roomValidator.getById, validate, asyncHandler(getRoo
  *   get:
  *     tags: [Público]
  *     summary: Horas libres de una sala en un día
- *     description: 'No necesita token. Devuelve las horas de inicio libres entre las 8:00 y las 20:00. Una sala no reservable devuelve la lista vacía. Sin fecha, hoy. Nunca incluye quién ha reservado.'
+ *     description: 'No necesita token. Devuelve las horas de inicio libres entre las 8:00 y las 20:00. Una sala no reservable (oculta o sin precio) responde 404. Sin fecha, hoy. Nunca incluye quién ha reservado.'
  *     parameters:
  *       - in: path
  *         name: id

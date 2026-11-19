@@ -269,7 +269,7 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
 | `server/src/services/adminService.js` | Aprobación y suspensión de empresas y listados globales. |
 | `server/src/services/buildingsService.js` | Edificios públicos: listado de publicados y detalle con sus plantas y las salas libres de cada una en una fecha. Nunca devuelve quién reservó. |
 | `server/src/services/floorsService.js` | Mapa público de una planta publicada: sus salas con estado (`FREE`, `OCCUPIED`, `UNAVAILABLE`), capacidad y precio (solo de las salas reservables; si no, `null`) en una fecha o, con `hora`, a esa hora. Lee reservas y bloqueos por lotes. |
-| `server/src/services/roomsService.js` | Ficha pública de una sala y sus horas libres de un día (8–20); `404` si la sala, su planta o su edificio no están publicados. |
+| `server/src/services/roomsService.js` | Ficha pública de una sala y sus horas libres de un día (8–20); `404` si la sala no es reservable (oculta o sin precio) o si ella, su planta o su edificio no están publicados. |
  
 ### Back: `server/src/models/`
  
@@ -309,7 +309,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | `server/tests/integration/docs.test.js` | Test de integración: la especificación OpenAPI se genera y documenta todas las rutas. |
 | `server/tests/integration/buildings.test.js` | Test de integración de `GET /api/buildings` y `/buildings/:id` con Firestore sustituido por un doble: solo publicados, salas libres por planta, 404 y 400. |
 | `server/tests/integration/floors.test.js` | Test de integración de `GET /api/floors/:id`: estado de cada sala (`FREE`, `OCCUPIED`, `UNAVAILABLE`) en una fecha y a una hora (bordes, bloqueos, sala sin precio), precio y capacidad `null` en salas no reservables, 404 y 400 (incluye `hora[]=10`). |
-| `server/tests/integration/rooms.test.js` | Test de integración de `GET /api/rooms/:id` y `/rooms/:id/availability`: ficha, horas libres de 8 a 20, 404 y 400; ninguna respuesta incluye datos de clientes. |
+| `server/tests/integration/rooms.test.js` | Test de integración de `GET /api/rooms/:id` y `/rooms/:id/availability`: ficha, horas libres de 8 a 20, 404 (también sala oculta o sin precio) y 400; ninguna respuesta incluye datos de clientes. |
 | `server/tests/integration/bookings.test.js` | Test de integración de las reservas del cliente con auth y Firestore sustituidos por dobles: crear (201, 409 `SLOT_TAKEN`, 400, 404, 401), importe y estado no manipulables, occupancy sin datos personales, `GET /bookings/me` y cancelar (200, 403, 400, 404). |
 | `server/tests/integration/publishing.test.js` | Test de integración de publicar edificios y gestionar salas de empresa: publicar/despublicar edificio y planta (`NO_PUBLISHED_FLOORS`, aviso, idempotencia), efecto en la API pública, `GET /company/buildings` con plantas, `GET /company/rooms` con estado y filtros, visibilidad de sala (`ROOM_WITHOUT_PRICE`, `ROOM_INACTIVE`) y permisos. |
 | `server/tests/helpers/publicData.js` | Datos de prueba de los endpoints públicos (edificios, plantas, salas, reservas y un bloqueo) y utilidades para levantar la app y hacer peticiones. |
