@@ -9,7 +9,10 @@ export const idParam = param('id')
   .notEmpty()
   .withMessage('id es obligatorio')
   .isLength({ max: 128 })
-  .withMessage('id es demasiado largo');
+  .withMessage('id es demasiado largo')
+  // Solo letras, números, guion y guion bajo: así un id con «/» no puede apuntar a otra ruta de Firestore.
+  .matches(/^[A-Za-z0-9_-]+$/)
+  .withMessage('id no es válido');
 
 export const fechaQuery = query('fecha')
   .optional()

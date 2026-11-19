@@ -102,6 +102,8 @@ const router = Router();
  *                 id: floor-0
  *                 nombre: Planta baja
  *                 nivel: 0
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
