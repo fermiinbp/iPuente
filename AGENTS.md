@@ -187,6 +187,7 @@ Cada archivo define los endpoints de un recurso y los documenta con un comentari
 | Archivo | Para qué sirve |
 | --- | --- |
 | `server/src/routes/health.routes.js` | Ruta pública `GET /api/health` para comprobar que la API responde. Es el ejemplo de comentario `@openapi` para el resto de rutas. |
+| `server/src/routes/auth.routes.js` | Rutas públicas de registro: `POST /api/auth/register/client` y `/register/company` (la empresa queda pendiente de aprobación). |
 | `server/src/routes/buildings.routes.js` | Rutas públicas de edificios: listado de edificios publicados y detalle con sus plantas. |
 | `server/src/routes/floors.routes.js` | Ruta pública del mapa de una planta con el estado de cada sala en una fecha. |
 | `server/src/routes/rooms.routes.js` | Rutas públicas de salas: ficha y horas libres. |
@@ -207,6 +208,7 @@ Reglas de `express-validator`: un archivo por recurso y un export por endpoint (
 | `server/src/validators/commonValidator.js` | Reglas reutilizables: id en la URL, fecha `AAAA-MM-DD` en la query y franja horaria. |
 | `server/src/validators/bookingValidator.js` | Validación de reservas: crear (`roomId`, `fecha`, `inicio`, `fin`; fecha no pasada, horas enteras e `inicio < fin`) y cancelar (id en la URL). |
 | `server/src/validators/userValidator.js` | Validación del perfil de usuario. |
+| `server/src/validators/authValidator.js` | Validación del registro: email, contraseña (mín. 8), nombres, CIF español con dígito de control y teléfono de 9 dígitos. |
 | `server/src/validators/companyValidator.js` | Validación del panel de empresa: alta, edificios, plantas, datos de sala y bloqueos. |
 | `server/src/validators/mapValidator.js` | Validación de mapas: URL del plano para la IA, JSON del mapa (dimensiones y salas dentro del plano) y publicación. |
 | `server/src/validators/adminValidator.js` | Validación del panel de admin: aprobar o suspender empresas (`verified`) y cambio de rol. |
@@ -220,6 +222,7 @@ Reglas de `express-validator`: un archivo por recurso y un export por endpoint (
 | --- | --- |
 | `server/src/middlewares/auth.js` | Verifica el token de Firebase de la cabecera `Authorization` y deja en `req.user` el `uid`, el rol y el `companyId`. |
 | `server/src/middlewares/requireRole.js` | Corta la petición con `403` si el rol del usuario no es uno de los permitidos. |
+| `server/src/middlewares/requireApprovedCompany.js` | Tras `auth` y `requireRole`: corta con `403 COMPANY_NOT_APPROVED` si la empresa no está aprobada y la deja en `req.company`. |
 | `server/src/middlewares/validate.js` | Recoge el resultado de los validators de `express-validator` y, si hay errores, responde `400 VALIDATION_ERROR` con el detalle por campo. |
 | `server/src/middlewares/errorHandler.js` | Respuesta de error única `{ error: { code, message, details } }` y 404 para rutas que no existen. Oculta el detalle de los 500. |
 | `server/src/middlewares/rateLimit.js` | Límites de peticiones: uno general para la API y otro estricto para la detección con IA (cuesta dinero). |
@@ -236,6 +239,7 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
 | `server/src/controllers/bookingsController.js` | Controlador de reservas del cliente. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/paymentsController.js` | Controlador de pagos: checkout de Stripe y webhook. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/usersController.js` | Controlador del perfil de usuario. Lee `req`, llama al service y responde; nunca habla con Firestore. |
+| `server/src/controllers/authController.js` | Controlador del registro de clientes y empresas. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/companyController.js` | Controlador del panel de empresa: alta, edificios, plantas, salas, reservas y bloqueos. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/mapsController.js` | Controlador de mapas: detección con IA, guardar y publicar. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/adminController.js` | Controlador del panel de admin. Lee `req`, llama al service y responde; nunca habla con Firestore. |
@@ -251,6 +255,7 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
 | `server/src/services/mapsService.js` | Guarda el `mapData` de una planta, sincroniza la colección `offices` (crea, conserva o desactiva salas) y publica. |
 | `server/src/services/companyService.js` | Alta de empresas, edificios y plantas; comprueba que cada recurso pertenece a la empresa del usuario. |
 | `server/src/services/usersService.js` | Perfil de usuario y asignación de rol (`CLIENT`, `COMPANY`, `ADMIN`) mediante custom claims (`role`, `companyId`). |
+| `server/src/services/authService.js` | Registro: crea el usuario en Firebase Auth, su ficha en `users` (y la empresa pendiente) y su rol; si algo falla, deshace lo creado. Traduce `auth/email-already-exists` a `409 EMAIL_EXISTS`. `setAuthClientForTests` sustituye Firebase Auth en tests. |
 | `server/src/services/adminService.js` | Aprobación y suspensión de empresas y listados globales. |
 | `server/src/services/buildingsService.js` | Edificios públicos: listado de publicados y detalle con sus plantas y las salas libres de cada una en una fecha. Nunca devuelve quién reservó. |
 | `server/src/services/floorsService.js` | Mapa público de una planta publicada: sus salas con estado (`FREE`, `OCCUPIED`, `UNAVAILABLE`), capacidad y precio en una fecha. |
@@ -264,7 +269,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | --- | --- |
 | `server/src/models/baseModel.js` | Funciones comunes de los models (`findById`, `create`, `upsert`, `update`, `remove`, `listBy`): añaden `createdAt` y `updatedAt` con `serverTimestamp()` y aceptan `{ tx }` para transacciones. |
 | `server/src/models/userModel.js` | Acceso a la colección `users` (id = UID de Firebase Auth). Campos: name, surname, email, phone, role (`CLIENT` \| `COMPANY` \| `ADMIN`), createdAt, updatedAt. |
-| `server/src/models/companyModel.js` | Acceso a la colección `companies` y a su subcolección `members` (userId, role `OWNER` \| `MANAGER` \| `EMPLOYEE`, joinedAt). Campos: name, legalName, taxId, description, logoUrl, email, phone, address, verified, createdAt, updatedAt. |
+| `server/src/models/companyModel.js` | Acceso a la colección `companies` y a su subcolección `members` (userId, role `OWNER` \| `MANAGER` \| `EMPLOYEE`, joinedAt). Campos: name, legalName, taxId (CIF normalizado), contactName, description, logoUrl, email, phone, address, ownerUid, status (`PENDING` \| `APPROVED` \| `REJECTED`), verified (status === `APPROVED`), createdAt, updatedAt. `findByTaxId` busca por CIF. |
 | `server/src/models/buildingModel.js` | Acceso a la colección `buildings`. Campos: companyId, name, description, address, city, postalCode, country, latitude, longitude, floorCount, status, createdAt, updatedAt. |
 | `server/src/models/floorModel.js` | Acceso a la colección `floors`. Campos: companyId, buildingId, name, level, mapImageUrl, status, createdAt, updatedAt y el mapa en el formato del editor: ancho, alto, origen y `salas` (id, codigo, nombre, tipo, x, y, w, h; el id es el de su documento en `rooms`). |
 | `server/src/models/roomModel.js` | Acceso a la colección `rooms` (las salas; id = id de la sala en `floors.salas`). Campos: companyId, buildingId, floorId, name, code, type, description, surface, capacity, price, pricePeriod (`HOUR`), amenities, bookable, status, openingHours, createdAt, updatedAt. |
@@ -279,6 +284,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | Archivo | Para qué sirve |
 | --- | --- |
 | `server/src/utils/httpError.js` | Clase `HttpError(status, code, message)` para lanzar errores con código HTTP desde cualquier capa. |
+| `server/src/utils/cif.js` | `normalizeCif` (mayúsculas, sin espacios ni guiones) e `isValidCif` (formato y dígito de control del CIF). |
 | `server/src/utils/asyncHandler.js` | Envuelve controladores `async` para que sus errores lleguen al `errorHandler`. |
 | `server/src/utils/dates.js` | Utilidades de fechas: validar `AAAA-MM-DD` (fecha real del calendario), `todayString` y `dayRange` (rango de un día en hora local). |
 | `server/src/app.js` | Configura Express sin arrancarlo: CORS, límite de peticiones, webhook de Stripe (body sin parsear), JSON, `/api/health`, documentación Swagger en `/api/docs`, rutas y manejo de errores. Lo usan `server.js`, la Netlify Function y los tests. |
@@ -298,6 +304,9 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | `server/tests/helpers/publicData.js` | Datos de prueba de los endpoints públicos (edificios, plantas, salas, reservas y un bloqueo) y utilidades para levantar la app y hacer peticiones. |
 | `server/tests/unit/availability.test.js` | Tests unitarios de las reglas de disponibilidad: solapes, bordes de franja, horas libres y `assertSlotAvailable` con models dobles. |
 | `server/tests/unit/mapValidator.test.js` | Tests unitarios del validator de mapas: rechaza salas fuera del plano o con tipo inválido. |
+| `server/tests/integration/register.test.js` | Test de integración del registro (`POST /api/auth/register/client` y `/company`) y `GET /api/companies/me`, con Firebase Auth, token y Firestore sustituidos por dobles: claims y estado fijados por el servidor, `409 EMAIL_EXISTS` y `COMPANY_EXISTS`, rollback si falla Firestore, `400` y permisos. |
+| `server/tests/unit/cif.test.js` | Tests unitarios de `utils/cif.js`: normalizar y validar el dígito de control del CIF. |
+| `server/tests/unit/requireApprovedCompany.test.js` | Tests unitarios del middleware `requireApprovedCompany`: pasa solo con empresa aprobada (`403 COMPANY_NOT_APPROVED`, `401` sin usuario). |
  
 ### Documentación: `docs/`
  

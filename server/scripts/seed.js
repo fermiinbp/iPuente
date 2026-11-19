@@ -37,6 +37,8 @@ function nextWorkingDay(from) {
   return day;
 }
 
+const SEED_STATUS = { aprobada: 'APPROVED', rechazada: 'REJECTED' };
+
 async function seedCompany(company) {
   await companyModel.upsert(company.id, {
     name: company.nombre,
@@ -47,6 +49,7 @@ async function seedCompany(company) {
     email: company.email,
     phone: company.telefono,
     address: company.direccion,
+    status: SEED_STATUS[company.estado] ?? 'PENDING',
     verified: company.estado === 'aprobada',
     demo: true,
   });

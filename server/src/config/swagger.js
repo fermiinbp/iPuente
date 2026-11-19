@@ -23,6 +23,7 @@ const definition = {
   servers: [{ url: '/api' }],
   tags: [
     { name: 'Público', description: 'Endpoints abiertos, sin sesión.' },
+    { name: 'Auth', description: 'Registro de clientes y empresas.' },
     { name: 'Cliente', description: 'Reservas y perfil del cliente autenticado.' },
     { name: 'Empresa', description: 'Panel de empresa: edificios, plantas, salas y reservas.' },
     { name: 'Mapas', description: 'Detección con IA, guardado y publicación de mapas de planta.' },
