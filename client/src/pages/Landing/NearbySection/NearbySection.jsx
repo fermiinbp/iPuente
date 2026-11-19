@@ -4,7 +4,7 @@ import { lazy, Suspense, useState } from 'react';
 import ErrorBoundary from '@/components/three/ErrorBoundary/ErrorBoundary.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
-import { NEARBY_BUILDING, NEARBY_PLACES } from './nearbyData.js';
+import { NEARBY_BUILDING, NEARBY_PLACES } from '../nearbyData.js';
 import styles from './NearbySection.module.css';
 
 // LazyCanvas importa @react-three/fiber: se carga en diferido para que Three.js no entre en la carga inicial.

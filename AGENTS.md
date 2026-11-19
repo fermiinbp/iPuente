@@ -124,6 +124,12 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/booking/BookingDetail/BookingDetail.jsx` + `.module.css` | Detalle de una reserva, común a cliente, empresa y admin; cada rol ve sus acciones. |
 | `client/src/components/layout/Layout/Layout.jsx` + `.module.css` | Plantilla común de las páginas públicas: cabecera, contenido (`<Outlet />`) y pie. |
 | `client/src/pages/Landing/Landing.jsx` + `.module.css` | Home: hero con el edificio por plantas, buscador, salas destacadas, cómo funciona y llamada a empresas. |
+| `client/src/pages/Landing/LandingLoader/LandingLoader.jsx` + `.module.css` | Pantalla de carga de la Landing: el monograma «iP» se abre como una puerta; se puede saltar. |
+| `client/src/pages/Landing/FloorSection/FloorSection.jsx` + `.module.css` | Sección de la Landing con una planta: lista de salas, detalle de la seleccionada y plano 3D. |
+| `client/src/pages/Landing/NearbySection/NearbySection.jsx` + `.module.css` | Sección «Alrededor del edificio» de la Landing: mapa 3D de los puntos cercanos y lista accesible con sus tiempos. |
+| `client/src/pages/Landing/HowItWorks/HowItWorks.jsx` + `.module.css` | Sección «Cómo funciona» de la Landing: tres pasos numerados. |
+| `client/src/pages/Landing/CompaniesCta/CompaniesCta.jsx` + `.module.css` | Sección «¿Tienes oficinas?» de la Landing: pasos, botón «Publica tu oficina» e ilustración del editor. |
+| `client/src/pages/Landing/*.js` | Datos de prueba de la Landing (edificio, plantas, salas destacadas, plano y lugares cercanos) hasta que los sirvan los services. |
 | `client/src/pages/Search/Search.jsx` + `.module.css` | Resultados de búsqueda: edificios con salas libres según ciudad, fecha y personas, con filtros y estado sin resultados. |
 | `client/src/pages/Building/Building.jsx` + `.module.css` | Página de un edificio: plantas, salas libres y «Qué hay cerca». |
 | `client/src/pages/Floor/Floor.jsx` + `.module.css` | Página de una planta: plano, selector de fecha y panel de sala. |

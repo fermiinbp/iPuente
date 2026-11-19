@@ -5,7 +5,7 @@ import ErrorBoundary from '@/components/three/ErrorBoundary/ErrorBoundary.jsx';
 import Legend from '@/components/floor-plan/Legend/Legend.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
-import { FLOOR_CAMERA, FLOOR_PLAN, STATUS_LABELS } from './floorPlanData.js';
+import { FLOOR_CAMERA, FLOOR_PLAN, STATUS_LABELS } from '../floorPlanData.js';
 import styles from './FloorSection.module.css';
 
 // Three.js va en un trozo aparte que no pesa en el archivo principal. El hero lo pide al cargar la página y estas

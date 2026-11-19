@@ -4,20 +4,20 @@ import { useNavigate } from 'react-router';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import BuildingHero from '@/components/building/BuildingHero/BuildingHero.jsx';
 import RoomCard from '@/components/room/RoomCard/RoomCard.jsx';
+import CategoryFilters from '@/components/search/CategoryFilters/CategoryFilters.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
-import CompaniesCta from './CompaniesCta.jsx';
+import CompaniesCta from './CompaniesCta/CompaniesCta.jsx';
 import { BUILDING, DEFAULT_FLOOR_ID, FEATURED_ROOMS, ROOM_FILTERS } from './data.js';
-import FloorSection from './FloorSection.jsx';
+import FloorSection from './FloorSection/FloorSection.jsx';
 import { FLOORS_HERO } from './heroBuildingData.js';
-import HowItWorks from './HowItWorks.jsx';
+import HowItWorks from './HowItWorks/HowItWorks.jsx';
 import styles from './Landing.module.css';
-import LandingLoader from './LandingLoader.jsx';
-import NearbySection from './NearbySection.jsx';
-import RoomFilters from './RoomFilters.jsx';
+import LandingLoader from './LandingLoader/LandingLoader.jsx';
+import NearbySection from './NearbySection/NearbySection.jsx';
 
 export default function Landing() {
   usePageTitle('Salas por horas');
@@ -88,7 +88,7 @@ export default function Landing() {
       <Section id="salas" titleId="salas-titulo" tone="elevated">
         <div className={styles.roomsHead}>
           <SectionTitle id="salas-titulo">Salas destacadas</SectionTitle>
-          <RoomFilters filters={ROOM_FILTERS} active={filter} onChange={setFilter} />
+          <CategoryFilters filters={ROOM_FILTERS} active={filter} onChange={setFilter} />
         </div>
         {rooms.length > 0 ? (
           <ul className={styles.grid}>

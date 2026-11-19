@@ -2,7 +2,7 @@
 import Button from '@/components/ui/Button/Button.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
-import { COMPANY_STEPS } from './data.js';
+import { COMPANY_STEPS } from '../data.js';
 import styles from './CompaniesCta.module.css';
 
 const ROOM_LABELS = ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4'];
