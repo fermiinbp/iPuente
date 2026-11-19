@@ -195,7 +195,7 @@ Cada archivo define los endpoints de un recurso y los documenta con un comentari
 | `server/src/routes/health.routes.js` | Ruta pública `GET /api/health` para comprobar que la API responde. Es el ejemplo de comentario `@openapi` para el resto de rutas. |
 | `server/src/routes/auth.routes.js` | Rutas públicas de registro: `POST /api/auth/register/client` y `/register/company` (la empresa queda pendiente de aprobación). |
 | `server/src/routes/buildings.routes.js` | Rutas públicas de edificios: listado de edificios publicados y detalle con sus plantas. |
-| `server/src/routes/floors.routes.js` | Ruta pública del mapa de una planta con el estado de cada sala en una fecha. |
+| `server/src/routes/floors.routes.js` | Ruta pública del mapa de una planta con el estado de cada sala en una fecha y, con `hora` (8–19), a esa hora. |
 | `server/src/routes/rooms.routes.js` | Rutas públicas de salas: ficha y horas libres. |
 | `server/src/routes/bookings.routes.js` | Rutas de reservas del cliente: crear, listar las propias y cancelar. |
 | `server/src/routes/payments.routes.js` | (extra) Rutas de pago del cliente: crea la sesión de Stripe Checkout. El webhook va en `webhook.routes.js`. |
@@ -212,7 +212,7 @@ Reglas de `express-validator`: un archivo por recurso y un export por endpoint (
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/validators/commonValidator.js` | Reglas reutilizables: id en la URL, fecha `AAAA-MM-DD` en la query y franja horaria. |
+| `server/src/validators/commonValidator.js` | Reglas reutilizables: id en la URL, fecha `AAAA-MM-DD` y hora entera (8–19) en la query y franja horaria. |
 | `server/src/validators/bookingValidator.js` | Validación de reservas: crear (`roomId`, `fecha`, `inicio`, `fin`; fecha no pasada, horas enteras e `inicio < fin`) y cancelar (id en la URL). |
 | `server/src/validators/userValidator.js` | Validación del perfil de usuario. |
 | `server/src/validators/authValidator.js` | Validación del registro: email, contraseña (mín. 8), nombres, CIF español con dígito de control y teléfono de 9 dígitos. |
@@ -220,7 +220,7 @@ Reglas de `express-validator`: un archivo por recurso y un export por endpoint (
 | `server/src/validators/mapValidator.js` | Validación de mapas: `validateMap` (función pura: dimensiones, origen, salas dentro del plano, tipos `ROOM_TYPES` e ids únicos), `saveMap` y `publishFloor` para las rutas. |
 | `server/src/validators/adminValidator.js` | Validación del panel de admin: aprobar o suspender empresas (`verified`) y cambio de rol. |
 | `server/src/validators/buildingValidator.js` | Validación de edificios públicos: id en la URL y fecha opcional del detalle. |
-| `server/src/validators/floorValidator.js` | Validación del mapa público de una planta: id en la URL y fecha opcional. |
+| `server/src/validators/floorValidator.js` | Validación del mapa público de una planta: id en la URL y fecha y hora opcionales. |
 | `server/src/validators/roomValidator.js` | Validación de salas públicas: id en la URL y fecha opcional para la disponibilidad. |
  
 ### Back: `server/src/middlewares/`
@@ -255,7 +255,7 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/services/availabilityService.js` | Reglas de disponibilidad: calcula las horas libres de una sala (horario reservable 8–20) a partir de sus reservas `CONFIRMED` y sus `blocks`, el estado de una sala en un día (`FREE`, `OCCUPIED` o `UNAVAILABLE`) y detecta solapes (`nuevoInicio < existenteFin && nuevoFin > existenteInicio`) dentro de una transacción de Firestore. |
+| `server/src/services/availabilityService.js` | Reglas de disponibilidad: calcula las horas libres de una sala (horario reservable 8–20) a partir de sus reservas `CONFIRMED` y sus `blocks`, el estado de una sala en un día o en una hora (`FREE`, `OCCUPIED` o `UNAVAILABLE`; una sala sin precio no es reservable) y detecta solapes (`nuevoInicio < existenteFin && nuevoFin > existenteInicio`) dentro de una transacción de Firestore. |
 | `server/src/services/bookingsService.js` | Crear, listar y cancelar reservas; calcula en el servidor `price`, `pricePeriod` y `totalAmount` a partir del `price` de la sala. |
 | `server/src/services/paymentsService.js` | (extra) Crea sesiones de Stripe Checkout, procesa el webhook (firma verificada) y hace reembolsos. |
 | `server/src/services/mapDetectionService.js` | Envía la imagen del plano a la IA con visión, le pide solo JSON con las salas detectadas (nombre, código, posición y tamaño) y lo valida antes de devolverlo como borrador del mapa (`ancho`, `alto`, `origen`, `salas`). |
@@ -267,7 +267,7 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
 | `server/src/services/authService.js` | Registro: crea el usuario en Firebase Auth, su ficha en `users` (y la empresa pendiente) y su rol; si algo falla, deshace lo creado. Traduce `auth/email-already-exists` a `409 EMAIL_EXISTS`. `setAuthClientForTests` sustituye Firebase Auth en tests. |
 | `server/src/services/adminService.js` | Aprobación y suspensión de empresas y listados globales. |
 | `server/src/services/buildingsService.js` | Edificios públicos: listado de publicados y detalle con sus plantas y las salas libres de cada una en una fecha. Nunca devuelve quién reservó. |
-| `server/src/services/floorsService.js` | Mapa público de una planta publicada: sus salas con estado (`FREE`, `OCCUPIED`, `UNAVAILABLE`), capacidad y precio en una fecha. |
+| `server/src/services/floorsService.js` | Mapa público de una planta publicada: sus salas con estado (`FREE`, `OCCUPIED`, `UNAVAILABLE`), capacidad y precio en una fecha o, con `hora`, a esa hora. |
 | `server/src/services/roomsService.js` | Ficha pública de una sala y sus horas libres de un día (8–20); `404` si la sala, su planta o su edificio no están publicados. |
  
 ### Back: `server/src/models/`
@@ -307,12 +307,12 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | `server/tests/integration/auth.test.js` | Test de integración: `auth` y `requireRole` con `verifyIdToken` sustituido por un doble (`401 NO_TOKEN`, `401 INVALID_TOKEN`, `403 FORBIDDEN`) y `GET /api/users/me`. |
 | `server/tests/integration/docs.test.js` | Test de integración: la especificación OpenAPI se genera y documenta todas las rutas. |
 | `server/tests/integration/buildings.test.js` | Test de integración de `GET /api/buildings` y `/buildings/:id` con Firestore sustituido por un doble: solo publicados, salas libres por planta, 404 y 400. |
-| `server/tests/integration/floors.test.js` | Test de integración de `GET /api/floors/:id`: estado de cada sala (`FREE`, `OCCUPIED`, `UNAVAILABLE`) en una fecha, 404 y 400. |
+| `server/tests/integration/floors.test.js` | Test de integración de `GET /api/floors/:id`: estado de cada sala (`FREE`, `OCCUPIED`, `UNAVAILABLE`) en una fecha y a una hora (bordes, bloqueos, sala sin precio), 404 y 400. |
 | `server/tests/integration/rooms.test.js` | Test de integración de `GET /api/rooms/:id` y `/rooms/:id/availability`: ficha, horas libres de 8 a 20, 404 y 400; ninguna respuesta incluye datos de clientes. |
 | `server/tests/integration/bookings.test.js` | Test de integración de las reservas del cliente con auth y Firestore sustituidos por dobles: crear (201, 409 `SLOT_TAKEN`, 400, 404, 401), importe y estado no manipulables, occupancy sin datos personales, `GET /bookings/me` y cancelar (200, 403, 400, 404). |
 | `server/tests/integration/publishing.test.js` | Test de integración de publicar edificios y gestionar salas de empresa: publicar/despublicar edificio y planta (`NO_PUBLISHED_FLOORS`, aviso, idempotencia), efecto en la API pública, `GET /company/buildings` con plantas, `GET /company/rooms` con estado y filtros, visibilidad de sala (`ROOM_WITHOUT_PRICE`, `ROOM_INACTIVE`) y permisos. |
 | `server/tests/helpers/publicData.js` | Datos de prueba de los endpoints públicos (edificios, plantas, salas, reservas y un bloqueo) y utilidades para levantar la app y hacer peticiones. |
-| `server/tests/unit/availability.test.js` | Tests unitarios de las reglas de disponibilidad: solapes, bordes de franja, horas libres y `assertSlotAvailable` con models dobles. |
+| `server/tests/unit/availability.test.js` | Tests unitarios de las reglas de disponibilidad: solapes, bordes de franja, horas libres, `roomStatusAtHour`, `isBookable` y `assertSlotAvailable` con models dobles. |
 | `server/tests/unit/mapValidator.test.js` | Tests unitarios de `validateMap`: mapa válido (y `floor-0.json`), salas fuera del plano, coordenadas y tamaños inválidos, tipo, id repetido o con barra, campos que faltan, origen, tipos de dato y más de 300 salas, con el `field` de cada error. |
 | `server/tests/unit/ownershipService.test.js` | Tests unitarios de `ownershipService`: 404 si el recurso no existe, 403 si es de otra empresa y devolución del recurso propio (edificio, planta, sala). |
 | `server/tests/integration/company.test.js` | Test de integración de `/api/company/*` (edificios, plantas y salas): permisos (401, 403 `FORBIDDEN`, 403 `COMPANY_NOT_APPROVED`), recurso ajeno sin cambios, 404, 409 `FLOOR_EXISTS`, 400 de validación y campos protegidos ignorados. |
