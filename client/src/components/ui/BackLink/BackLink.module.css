@@ -1,0 +1,45 @@
+/* Como los enlaces del menú (fundamentos.md): 15 px, peso 500 y 44 px de alto como mínimo. */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--campo-alto);
+  color: var(--crema);
+  font-family: var(--font-body);
+  font-size: var(--text-menu);
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.backLink:active {
+  transform: scale(0.97);
+}
+
+.arrow {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .backLink:hover {
+    color: var(--crema-suave);
+  }
+
+  .backLink:hover .arrow {
+    transform: translateX(calc(-1 * var(--space-1)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backLink,
+  .arrow {
+    transition: none;
+  }
+
+  .backLink:active,
+  .backLink:hover .arrow {
+    transform: none;
+  }
+}
