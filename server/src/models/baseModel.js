@@ -76,3 +76,8 @@ export function createModel(collectionName) {
 
   return { collection, docRef, findById, create, upsert, update, remove, listBy };
 }
+
+// Ejecuta fn dentro de una transacción de Firestore; los models reciben su tx con { tx }.
+export function runTransaction(fn) {
+  return db().runTransaction(fn);
+}
