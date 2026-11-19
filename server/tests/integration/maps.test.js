@@ -224,13 +224,49 @@ describe('Mapa de planta: guardar y publicar', () => {
       assert.equal(r.body.error.code, 'ROOM_ID_TAKEN');
     });
 
-    it('no reactiva una room INACTIVE al volver a guardar', async () => {
+    it('una room INACTIVE que vuelve al mapa se reactiva sin tocar sus datos comerciales', async () => {
       await put('f-a', mapa([sala('r1')]));
-      await roomModel.update('r1', { status: 'INACTIVE' });
+      await roomModel.update('r1', { status: 'INACTIVE', price: 25, bookable: false });
       await put('f-a', mapa([sala('r1', { nombre: 'Otro' })]));
       const room = await roomModel.findById('r1');
-      assert.equal(room.status, 'INACTIVE');
+      assert.equal(room.status, 'ACTIVE');
+      assert.equal(room.bookable, false);
+      assert.equal(room.price, 25);
       assert.equal(room.name, 'Otro');
+    });
+
+    it('sala quitada sin ser reservable: INACTIVE; ya INACTIVE no cuenta como desactivada', async () => {
+      await put('f-a', mapa([sala('r1'), sala('r2')]));
+      const r = await put('f-a', mapa([sala('r2')]));
+      assert.equal(r.body.salasDesactivadas, 1);
+      assert.equal((await roomModel.findById('r1')).status, 'INACTIVE');
+      assert.equal((await roomModel.findById('r1')).bookable, false);
+      const again = await put('f-a', mapa([sala('r2')]));
+      assert.equal(again.body.salasDesactivadas, 0);
+    });
+
+    it('sala quitada del mapa: fuera del panel, 400 ROOM_INACTIVE, 404 público y se reactiva', async () => {
+      await seedBookable('r1');
+      await put('f-a', mapa([sala('r1'), sala('r2')]));
+      await put('f-a', mapa([sala('r2')]));
+      assert.equal((await roomModel.findById('r1')).status, 'INACTIVE');
+      const list = await call('GET', '/api/company/rooms', { token: 'a' });
+      assert.ok(!list.body.some((x) => x.id === 'r1'));
+      const vis = await call('PATCH', '/api/company/rooms/r1/visibility', {
+        token: 'a',
+        body: { visible: true },
+      });
+      assert.equal(vis.status, 400);
+      assert.equal(vis.body.error.code, 'ROOM_INACTIVE');
+      const patch = await call('PATCH', '/api/company/rooms/r1', {
+        token: 'a',
+        body: { nombre: 'X' },
+      });
+      assert.equal(patch.status, 400);
+      assert.equal(patch.body.error.code, 'ROOM_INACTIVE');
+      assert.equal((await fetch(`${baseUrl}/api/rooms/r1`)).status, 404);
+      await put('f-a', mapa([sala('r1'), sala('r2')]));
+      assert.equal((await roomModel.findById('r1')).status, 'ACTIVE');
     });
 
     it('planta publicada sin salas reservables: 200 con aviso y sigue PUBLISHED', async () => {

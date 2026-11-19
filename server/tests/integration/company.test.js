@@ -152,6 +152,10 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
         descripcion: '',
         fotos: [],
         publicado: false,
+        plantas: [
+          { id: 'f-a0', numero: 0, nombre: 'Baja', publicado: false, salas: 0 },
+          { id: 'f-a1', numero: 1, nombre: 'Primera', publicado: false, salas: 0 },
+        ],
       });
     });
   });
