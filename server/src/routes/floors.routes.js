@@ -1,4 +1,4 @@
-// Ruta pública del mapa de una planta con el estado de cada sala en una fecha.
+// Ruta pública del mapa de una planta con el estado de cada sala en una fecha y, opcional, hora.
 import { Router } from 'express';
 
 import { getFloor } from '../controllers/floorsController.js';
@@ -14,7 +14,7 @@ const router = Router();
  *   get:
  *     tags: [Público]
  *     summary: Mapa de una planta con el estado de sus salas
- *     description: 'No necesita token. Devuelve el plano de una planta publicada y, por cada sala, su estado ese día (FREE, OCCUPIED o UNAVAILABLE). Sin fecha, hoy. Nunca incluye quién ha reservado.'
+ *     description: 'No necesita token. Devuelve el plano de una planta publicada y, por cada sala, su estado ese día o, con hora, a esa hora (FREE, OCCUPIED o UNAVAILABLE). Sin fecha, hoy. Una sala sin precio figura como UNAVAILABLE. Nunca incluye quién ha reservado.'
  *     parameters:
  *       - in: path
  *         name: id
@@ -30,6 +30,15 @@ const router = Router();
  *           type: string
  *           format: date
  *         example: '2026-06-15'
+ *       - in: query
+ *         name: hora
+ *         required: false
+ *         description: Hora de inicio a consultar (entero de 8 a 19). Sin hora, el estado es el del día completo.
+ *         schema:
+ *           type: integer
+ *           minimum: 8
+ *           maximum: 19
+ *         example: 10
  *     responses:
  *       200:
  *         description: Mapa de la planta.
@@ -49,6 +58,9 @@ const router = Router();
  *                 fecha:
  *                   type: string
  *                   format: date
+ *                 hora:
+ *                   type: integer
+ *                   description: Solo si se pidió una hora.
  *                 ancho:
  *                   type: number
  *                 alto:

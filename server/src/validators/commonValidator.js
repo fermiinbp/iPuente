@@ -1,6 +1,7 @@
 // Reglas reutilizables: id en la URL, fecha AAAA-MM-DD en la query y franja horaria.
 import { param, query } from 'express-validator';
 
+import { BOOKING_HOURS } from '../services/availabilityService.js';
 import { isValidDateString } from '../utils/dates.js';
 
 export const idParam = param('id')
@@ -18,3 +19,13 @@ export const fechaQuery = query('fecha')
   .optional()
   .custom((value) => isValidDateString(value))
   .withMessage('fecha debe ser AAAA-MM-DD');
+
+// Hora entera del horario reservable (8-19); rechaza decimales, texto y listas (hora[]=).
+export const horaQuery = query('hora')
+  .optional()
+  .custom((value) => typeof value === 'string' || typeof value === 'number')
+  .withMessage('hora debe ser un entero entre 8 y 19')
+  .bail()
+  .isInt({ min: BOOKING_HOURS.desde, max: BOOKING_HOURS.hasta - 1, allow_leading_zeroes: false })
+  .withMessage('hora debe ser un entero entre 8 y 19')
+  .toInt();

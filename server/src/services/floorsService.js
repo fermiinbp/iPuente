@@ -1,13 +1,19 @@
 // Mapa público de una planta: sus salas con el estado (libre, ocupada, no disponible) de una fecha.
-// Solo devuelve estados; nunca quién ha reservado.
+// Con hora, el estado es el de esa hora; sin ella, el del día completo. Nunca quién ha reservado.
 import * as buildingModel from '../models/buildingModel.js';
 import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
-import { getDayItems, isBookable, ROOM_STATUS, roomStatus } from './availabilityService.js';
+import {
+  getDayItems,
+  isBookable,
+  ROOM_STATUS,
+  roomStatus,
+  roomStatusAtHour,
+} from './availabilityService.js';
 
-export async function getPublishedMap(id, fecha = todayString()) {
+export async function getPublishedMap(id, fecha = todayString(), hora) {
   const notFound = () => new HttpError(404, 'NOT_FOUND', 'La planta no existe');
   const floor = await floorModel.findById(id);
   if (!floor || floor.status !== 'PUBLISHED') throw notFound();
@@ -22,6 +28,9 @@ export async function getPublishedMap(id, fecha = todayString()) {
     ),
   );
 
+  const statusOf = (room, items) =>
+    hora === undefined ? roomStatus(room, items) : roomStatusAtHour(room, items, hora);
+
   const salas = (floor.salas ?? []).map((s) => {
     const room = roomsById.get(s.id);
     return {
@@ -33,7 +42,7 @@ export async function getPublishedMap(id, fecha = todayString()) {
       y: s.y,
       w: s.w,
       h: s.h,
-      estado: room ? roomStatus(room, itemsById.get(room.id) ?? []) : ROOM_STATUS.UNAVAILABLE,
+      estado: room ? statusOf(room, itemsById.get(room.id) ?? []) : ROOM_STATUS.UNAVAILABLE,
       capacidad: room?.capacity ?? null,
       precioHora: room?.price ?? null,
     };
@@ -45,6 +54,7 @@ export async function getPublishedMap(id, fecha = todayString()) {
     nivel: floor.level,
     edificioId: floor.buildingId,
     fecha,
+    ...(hora !== undefined && { hora }),
     ancho: floor.ancho,
     alto: floor.alto,
     salas,

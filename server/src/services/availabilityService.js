@@ -86,9 +86,25 @@ export async function getDayItems(
   ];
 }
 
-// Una sala se puede reservar si existe, es reservable y está activa.
+// Una sala se puede reservar si existe, es reservable, está activa y tiene precio mayor que 0.
 export function isBookable(room) {
-  return Boolean(room) && room.bookable === true && room.status === 'ACTIVE';
+  return (
+    Boolean(room) &&
+    room.bookable === true &&
+    room.status === 'ACTIVE' &&
+    typeof room.price === 'number' &&
+    room.price > 0
+  );
+}
+
+// Estado de una sala en una hora concreta: UNAVAILABLE si no es reservable, OCCUPIED si algún
+// item activo solapa con [hora, hora + 1), si no FREE.
+export function roomStatusAtHour(room, items, hora) {
+  if (!isBookable(room)) return ROOM_STATUS.UNAVAILABLE;
+  const slot = { inicio: hora, fin: hora + 1 };
+  return items.filter(isActive).some((item) => overlaps(slot, item))
+    ? ROOM_STATUS.OCCUPIED
+    : ROOM_STATUS.FREE;
 }
 
 // Estado de una sala un día: UNAVAILABLE si no es reservable, OCCUPIED si hay algo activo, si no FREE.

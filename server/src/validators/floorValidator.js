@@ -1,4 +1,4 @@
-// Validación del mapa público de una planta: id en la URL y fecha opcional.
-import { fechaQuery, idParam } from './commonValidator.js';
+// Validación del mapa público de una planta: id en la URL y fecha y hora opcionales.
+import { fechaQuery, horaQuery, idParam } from './commonValidator.js';
 
-export const getById = [idParam, fechaQuery];
+export const getById = [idParam, fechaQuery, horaQuery];
