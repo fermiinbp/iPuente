@@ -7,6 +7,7 @@ import buildingsRoutes from './buildings.routes.js';
 import companyRoutes from './company.routes.js';
 import floorsRoutes from './floors.routes.js';
 import healthRoutes from './health.routes.js';
+import mapsRoutes from './maps.routes.js';
 import roomsRoutes from './rooms.routes.js';
 import usersRoutes from './users.routes.js';
 
@@ -18,6 +19,7 @@ router.use(bookingsRoutes);
 router.use(buildingsRoutes);
 router.use(companyRoutes);
 router.use(floorsRoutes);
+router.use(mapsRoutes);
 router.use(roomsRoutes);
 router.use(usersRoutes);
 

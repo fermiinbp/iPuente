@@ -7,8 +7,9 @@ const base = createModel('rooms');
 
 export const { findById, create, upsert, update, remove } = base;
 
-export function listByFloor(floorId) {
-  return base.listBy('floorId', floorId);
+// Con { tx } la consulta se lee dentro de una transacción.
+export function listByFloor(floorId, { tx } = {}) {
+  return base.listBy('floorId', floorId, { tx });
 }
 
 export function listByBuilding(buildingId) {
