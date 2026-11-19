@@ -4,7 +4,14 @@ import { after, before, beforeEach, describe, it } from 'node:test';
 
 import { setDbForTests } from '../../src/config/config.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
-import { FECHA, getJson, listen, privateWordsIn, seedPublicData } from '../helpers/publicData.js';
+import {
+  FECHA,
+  getJson,
+  listen,
+  privateWordsIn,
+  seedPublicData,
+  seedRoomWithoutPrice,
+} from '../helpers/publicData.js';
 
 describe('Mapa público de una planta', () => {
   let server;
@@ -71,4 +78,83 @@ describe('Mapa público de una planta', () => {
       assert.equal(body.error.details[0].field, 'fecha');
     });
   }
+
+  describe('con hora', () => {
+    const estadoA = async (hora) => {
+      const { status, body, text } = await getJson(
+        baseUrl,
+        `/api/floors/f-0?fecha=${FECHA}&hora=${hora}`,
+      );
+      assert.equal(status, 200);
+      return { body, text, estado: Object.fromEntries(body.salas.map((s) => [s.id, s.estado])) };
+    };
+
+    it('una sala con reserva 10-12 está libre a las 9 y ocupada a las 10 y a las 11', async () => {
+      assert.equal((await estadoA(9)).estado['r-busy'], 'FREE');
+      assert.equal((await estadoA(10)).estado['r-busy'], 'OCCUPIED');
+      assert.equal((await estadoA(11)).estado['r-busy'], 'OCCUPIED');
+    });
+
+    it('la hora en que termina la reserva (12) queda libre', async () => {
+      assert.equal((await estadoA(12)).estado['r-busy'], 'FREE');
+    });
+
+    it('un bloqueo 14-16 ocupa a las 14 y 15 y deja libre a las 13 y a las 16', async () => {
+      assert.equal((await estadoA(14)).estado['r-block'], 'OCCUPIED');
+      assert.equal((await estadoA(15)).estado['r-block'], 'OCCUPIED');
+      assert.equal((await estadoA(13)).estado['r-block'], 'FREE');
+      assert.equal((await estadoA(16)).estado['r-block'], 'FREE');
+    });
+
+    it('las salas no reservables siguen UNAVAILABLE y las canceladas libres', async () => {
+      const { estado } = await estadoA(10);
+      assert.equal(estado['r-nobook'], 'UNAVAILABLE');
+      assert.equal(estado['r-inactive'], 'UNAVAILABLE');
+      assert.equal(estado['r-ghost'], 'UNAVAILABLE');
+      assert.equal(estado['r-cancel'], 'FREE');
+    });
+
+    it('devuelve la hora pedida y no incluye datos de clientes', async () => {
+      const { body, text } = await estadoA(10);
+      assert.equal(body.hora, 10);
+      assert.deepEqual(privateWordsIn(text), []);
+    });
+
+    it('sin hora la respuesta no lleva el campo hora', async () => {
+      const { body } = await getJson(baseUrl, `/api/floors/f-0?fecha=${FECHA}`);
+      assert.equal('hora' in body, false);
+    });
+
+    for (const hora of ['7', '20', '9.5', 'abc', '']) {
+      it(`responde 400 VALIDATION_ERROR con hora=${hora}`, async () => {
+        const { status, body } = await getJson(
+          baseUrl,
+          `/api/floors/f-0?fecha=${FECHA}&hora=${hora}`,
+        );
+        assert.equal(status, 400);
+        assert.equal(body.error.code, 'VALIDATION_ERROR');
+        assert.equal(body.error.details[0].field, 'hora');
+      });
+    }
+
+    it('responde 400 con la hora repetida (hora=10&hora=11)', async () => {
+      for (const q of ['hora=10&hora=11']) {
+        const { status, body } = await getJson(baseUrl, `/api/floors/f-0?fecha=${FECHA}&${q}`);
+        assert.equal(status, 400);
+        assert.equal(body.error.code, 'VALIDATION_ERROR');
+      }
+    });
+  });
+
+  describe('sala reservable sin precio', () => {
+    beforeEach(seedRoomWithoutPrice);
+
+    it('figura UNAVAILABLE en el día completo y a una hora', async () => {
+      for (const q of ['', '&hora=9']) {
+        const { status, body } = await getJson(baseUrl, `/api/floors/f-0?fecha=${FECHA}${q}`);
+        assert.equal(status, 200);
+        assert.equal(body.salas.find((s) => s.id === 'r-noprice').estado, 'UNAVAILABLE');
+      }
+    });
+  });
 });

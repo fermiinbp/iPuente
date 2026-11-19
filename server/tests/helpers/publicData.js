@@ -140,3 +140,10 @@ export async function seedPublicData() {
     reason: 'Mantenimiento',
   });
 }
+
+// Añade a f-0 una sala reservable y activa pero sin precio (r-noprice), para probar que no cuenta.
+export async function seedRoomWithoutPrice() {
+  const f0 = await floorModel.findById('f-0');
+  await floorModel.update('f-0', { salas: [...f0.salas, sala('r-noprice', 840)] });
+  await roomModel.upsert('r-noprice', room('f-0', 'b-pub', 'r-noprice', { price: null }));
+}

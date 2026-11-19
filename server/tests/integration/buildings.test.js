@@ -5,7 +5,14 @@ import { after, before, beforeEach, describe, it } from 'node:test';
 import { setDbForTests } from '../../src/config/config.js';
 import * as bookingModel from '../../src/models/bookingModel.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
-import { FECHA, getJson, listen, privateWordsIn, seedPublicData } from '../helpers/publicData.js';
+import {
+  FECHA,
+  getJson,
+  listen,
+  privateWordsIn,
+  seedPublicData,
+  seedRoomWithoutPrice,
+} from '../helpers/publicData.js';
 
 describe('Edificios públicos', () => {
   let server;
@@ -92,6 +99,14 @@ describe('Edificios públicos', () => {
       assert.equal(status, 400);
       assert.equal(body.error.code, 'VALIDATION_ERROR');
       assert.equal(body.error.details[0].field, 'fecha');
+    });
+
+    it('una sala reservable sin precio no cuenta como libre', async () => {
+      const antes = await getJson(baseUrl, `/api/buildings/b-pub?fecha=${FECHA}`);
+      await seedRoomWithoutPrice();
+      const { status, body } = await getJson(baseUrl, `/api/buildings/b-pub?fecha=${FECHA}`);
+      assert.equal(status, 200);
+      assert.equal(body.salasLibres, antes.body.salasLibres);
     });
   });
 });
