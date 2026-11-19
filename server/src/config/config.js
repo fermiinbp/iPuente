@@ -62,8 +62,17 @@ function getFirebaseApp() {
   return initializeApp({ credential });
 }
 
+// Doble de Firestore para los tests unitarios de los models (nunca se usa en la app).
+let testDb = null;
+
+// Sustituye Firestore por un doble en memoria. Pasa null para volver al Firestore real.
+export function setDbForTests(fakeDb) {
+  testDb = fakeDb;
+}
+
 // Firestore. Única puerta de acceso a la base de datos para los models.
 export function db() {
+  if (testDb) return testDb;
   return getFirestore(getFirebaseApp());
 }
 

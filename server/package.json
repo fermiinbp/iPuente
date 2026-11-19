@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "node --test",
+    "seed": "node --env-file=.env scripts/seed.js",
     "make-admin": "node --env-file=.env scripts/makeAdmin.js",
     "get-token": "node --env-file=.env scripts/getToken.js"
   },
@@ -21,6 +22,7 @@
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.3.0",
+    "express-validator": "^7.3.2",
     "firebase-admin": "^14.5.1",
     "swagger-jsdoc": "^6.3.0",
     "swagger-ui-express": "^5.0.1"

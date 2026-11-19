@@ -2,7 +2,7 @@
 .loader {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--z-carga);
   cursor: pointer;
 }
 

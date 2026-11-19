@@ -89,6 +89,38 @@
   --space-9: 96px;
   --alto-cabecera: 81px; /* 80 de la barra + 1 de borde */
   --espacio-seccion: clamp(64px, 8vw, 104px);
+
+  /* Colores de interfaz (Alert, errores de campo, StatusBadge). Texto, icono y borde; el fondo de Alert es --bosque-elevado. AA sobre bosque, bosque elevado y bosque profundo. --ocupada sigue siendo solo estado de sala. */
+  --error: #f2937a;
+  --aviso: #e9c46a;
+  --exito: #a9d98f;
+  --info: #9fc9e3;
+
+  /* Campos de formulario */
+  --campo-fondo: var(--bosque-profundo);
+  --campo-borde: var(--borde-control);
+  --campo-borde-foco: var(--foco);
+  --campo-placeholder: var(--crema-suave);
+  --campo-desactivado-fondo: var(--bosque);
+  --campo-desactivado-texto: #8b947f;
+  --campo-alto: 44px; /* objetivo táctil */
+  /* Radio de los campos: --radio-plano */
+
+  /* Elevación: una sola sombra, solo para lo que flota (modal, menús, banner, hoja inferior) */
+  --sombra-flotante: 0 8px 24px rgb(0 0 0 / 0.35);
+  --velo-modal: rgb(10 16 8 / 0.72);
+
+  /* Capas */
+  --z-cabecera: 100;
+  --z-menu: 200;
+  --z-panel: 300; /* SidePanel, BottomSheet */
+  --z-modal: 400;
+  --z-aviso: 500; /* CookieBanner */
+  --z-carga: 600; /* pantalla de carga de la landing */
+
+  /* Breakpoints (convención; una variable no funciona dentro de @media):
+     móvil < 600px · tablet 600px–899px · escritorio >= 900px.
+     Excepciones existentes: DashboardLayout 48rem, Landing 960px. */
 }
 
 /* Reset mínimo */

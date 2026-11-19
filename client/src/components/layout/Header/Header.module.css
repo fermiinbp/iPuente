@@ -126,7 +126,7 @@
 
 .panel {
   position: absolute;
-  z-index: 20;
+  z-index: var(--z-menu);
   top: 72px;
   right: var(--gutter);
   display: flex;
