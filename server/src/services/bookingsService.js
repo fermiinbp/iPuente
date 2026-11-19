@@ -60,12 +60,22 @@ function translateConflict(err) {
 
 // Crea una reserva CONFIRMED y bloquea cada hora, todo en una transacción.
 export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
-  const { room } = await findPublicRoom(roomId);
-  assertBookable(room, inicio, fin);
+  // Fuera de la transacción: 404 si la sala, su planta o su edificio no están publicados.
+  const { room: publicRoom } = await findPublicRoom(roomId);
+  assertBookable(publicRoom, inicio, fin);
   const horas = fin - inicio;
-  const importe = room.price * horas;
+  let room;
+  let importe;
   try {
     const id = await runTransaction(async (tx) => {
+      // Se vuelve a leer la sala dentro de la transacción: si la empresa cambia el precio
+      // o la oculta mientras tanto, la reserva usa los datos del momento del commit.
+      room = await roomModel.findById(roomId, { tx });
+      if (!room || room.status === 'INACTIVE') {
+        throw new HttpError(404, 'NOT_FOUND', 'La sala no existe');
+      }
+      assertBookable(room, inicio, fin);
+      importe = room.price * horas;
       await assertSlotAvailable(roomId, fecha, inicio, fin, tx);
       const bookingId = await bookingModel.create(
         {
