@@ -115,7 +115,7 @@
   .heroInner {
     flex-direction: row;
     align-items: center;
-    gap: 56px 64px;
+    gap: 56px var(--space-8);
   }
 
   .heroText,

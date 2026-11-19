@@ -27,7 +27,7 @@
 .menuLink {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--campo-alto);
   color: var(--crema-suave);
   text-decoration: none;
   transition:

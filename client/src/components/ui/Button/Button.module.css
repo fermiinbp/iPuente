@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: 44px;
+  min-height: var(--campo-alto);
   padding: 0 26px;
   border: 1px solid transparent;
   border-radius: var(--radio-pildora);
@@ -27,9 +27,17 @@
 }
 
 .primary {
-  min-height: 52px;
   background: var(--crema);
   color: var(--bosque);
+}
+
+/* Tamaños. Van después de .button para ganarle en la cascada. */
+.md {
+  min-height: var(--campo-alto);
+}
+
+.lg {
+  min-height: 52px;
 }
 
 .secondary {

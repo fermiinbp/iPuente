@@ -1,7 +1,7 @@
 // Sección «Cómo funciona»: tres pasos numerados.
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
-import { HOW_IT_WORKS_STEPS } from './data.js';
+import { HOW_IT_WORKS_STEPS } from '../data.js';
 import styles from './HowItWorks.module.css';
 
 export default function HowItWorks() {

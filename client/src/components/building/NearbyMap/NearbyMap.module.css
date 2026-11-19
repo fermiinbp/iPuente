@@ -8,12 +8,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   white-space: nowrap;
 }
 
 .hereTag {
-  padding: 2px 8px;
+  padding: 2px var(--space-2);
   border: 1px solid var(--crema);
   border-radius: var(--radio-chip);
   background: transparent;
