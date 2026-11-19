@@ -55,7 +55,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/services/floorsService.js` | Llamada pública del mapa de una planta con el estado de cada sala en una fecha. |
 | `client/src/services/roomsService.js` | Ficha de sala y huecos libres. |
 | `client/src/services/bookingsService.js` | Reservas del cliente: crear, listar y cancelar. |
-| `client/src/services/paymentsService.js` | Pide a la API la URL de Stripe Checkout de una reserva. |
+| `client/src/services/paymentsService.js` | (extra) Pide a la API la URL de Stripe Checkout de una reserva. |
 | `client/src/services/companyService.js` | Panel de empresa: alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos. |
 | `client/src/services/adminService.js` | Panel de admin: empresas, usuarios, reservas, pagos y reembolsos. |
 | `client/src/services/uploadService.js` | Sube planos y fotos directamente a Firebase Storage y devuelve su URL y su ruta. |
@@ -65,7 +65,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/ui/Input/Input.jsx` + `.module.css` | Campo de formulario con etiqueta, ayuda y mensaje de error. |
 | `client/src/components/ui/Modal/Modal.jsx` + `.module.css` | Ventana modal accesible (cierre con Escape y foco atrapado). |
 | `client/src/components/ui/Spinner/Spinner.jsx` + `.module.css` | Indicador de carga. |
-| `client/src/components/ui/StatusBadge/StatusBadge.jsx` + `.module.css` | Etiqueta de estado: de una sala (libre, ocupada, no reservable; en el panel de empresa: publicada, sin precio, oculta), de una reserva (`PENDING_PAYMENT`, `CONFIRMED`…), de un pago o de una empresa (verificada, pendiente, rechazada o suspendida). |
+| `client/src/components/ui/StatusBadge/StatusBadge.jsx` + `.module.css` | Etiqueta de estado: de una sala (libre, ocupada, no reservable; en el panel de empresa: publicada, sin precio, oculta), de una reserva (`CONFIRMED`, `CANCELLED`…; `PENDING_PAYMENT` solo con el extra de Stripe), de un pago o de una empresa (verificada, pendiente, rechazada o suspendida). |
 | `client/src/components/ui/Select/Select.jsx` + `.module.css` | Desplegable con etiqueta, ayuda y mensaje de error (buscador, filtros, cambio de rol). |
 | `client/src/components/ui/Textarea/Textarea.jsx` + `.module.css` | Texto largo con etiqueta y error (motivo de rechazo, suspensión, cancelación o bloqueo). |
 | `client/src/components/ui/Checkbox/Checkbox.jsx` + `.module.css` | Casilla con etiqueta (equipamiento, aceptar condiciones). |
@@ -93,7 +93,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/building/FloorSelector/FloorSelector.jsx` + `.module.css` | Lista de plantas del edificio con sus salas libres, para elegir planta. |
 | `client/src/components/building/Building3D/Building3D.jsx` + `.module.css` | Extra: edificio 3D generado a partir de las plantas guardadas (Three.js). |
 | `client/src/components/building/NearbyMap/NearbyMap.jsx` + `.module.css` | Sección «Qué hay cerca»: mapa ilustrado con puntos de interés (estación de tren, metro, parking…) y tiempos. |
-| `client/src/components/floor-plan/FloorPlan/FloorPlan.jsx` + `.module.css` | Plano SVG de una planta para clientes, generado desde el `mapData` de la planta y coloreado por el estado de cada sala. |
+| `client/src/components/floor-plan/FloorPlan/FloorPlan.jsx` + `.module.css` | Plano SVG de una planta para clientes, generado desde los campos `ancho`, `alto` y `salas` de la planta y coloreado por el estado de cada sala. |
 | `client/src/components/floor-plan/RoomShape/RoomShape.jsx` + `.module.css` | Una sala del plano: rectángulo con código y nombre, clicable y accesible con teclado. |
 | `client/src/components/floor-plan/Legend/Legend.jsx` + `.module.css` | Leyenda de estados del plano (con texto, no solo color). |
 | `client/src/components/map-editor/MapEditor/MapEditor.jsx` + `.module.css` | Lienzo del editor: plano de fondo y salas editables encima. |
@@ -140,7 +140,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/pages/ResetPassword/ResetPassword.jsx` + `.module.css` | Recuperar contraseña: formulario de nueva contraseña desde el enlace. |
 | `client/src/pages/MyBookings/MyBookings.jsx` + `.module.css` | Reservas del cliente: próximas y pasadas, con cancelación. |
 | `client/src/pages/BookingDetailPage/BookingDetailPage.jsx` + `.module.css` | Detalle de una reserva del cliente, con cancelación. |
-| `client/src/pages/PaymentResult/PaymentResult.jsx` + `.module.css` | Vuelta desde Stripe: reserva confirmada, pago cancelado o reserva expirada. |
+| `client/src/pages/PaymentResult/PaymentResult.jsx` + `.module.css` | (extra) Vuelta desde Stripe: reserva confirmada, pago cancelado o reserva expirada. |
 | `client/src/pages/NotFound/NotFound.jsx` + `.module.css` | Página 404. |
 | `client/src/pages/company/CompanyDashboard/CompanyDashboard.jsx` + `.module.css` | Resumen del panel de empresa, con estado vacío en el primer acceso (sin edificios). |
 | `client/src/pages/company/CompanyRegister/CompanyRegister.jsx` + `.module.css` | Solicitud de alta como empresa (queda pendiente de aprobación). |
@@ -183,7 +183,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `server/src/config/config.js` | Configuración del backend y conexión a la base de datos: lee y valida las variables de entorno y conecta con Firebase (Firestore y Auth) mediante `firebase-admin`. |
 | `server/src/config/roles.js` | Roles de usuario (`CLIENT`, `COMPANY`, `ADMIN`) del custom claim `role`, los mismos que en el front. |
 | `server/src/config/swagger.js` | Documentación de la API con Swagger: genera la especificación OpenAPI leyendo los comentarios `@openapi` de las rutas y la sirve en `/api/docs`. |
-| `server/src/config/stripe.js` | Cliente de Stripe (modo test) creado con la clave secreta. |
+| `server/src/config/stripe.js` | (extra) Cliente de Stripe (modo test) creado con la clave secreta. |
 | `server/src/config/ai.js` | Cliente del modelo de IA con visión (Anthropic) que detecta las salas en los planos. |
  
 ### Back: `server/src/routes/`
@@ -198,8 +198,8 @@ Cada archivo define los endpoints de un recurso y los documenta con un comentari
 | `server/src/routes/floors.routes.js` | Ruta pública del mapa de una planta con el estado de cada sala en una fecha. |
 | `server/src/routes/rooms.routes.js` | Rutas públicas de salas: ficha y horas libres. |
 | `server/src/routes/bookings.routes.js` | Rutas de reservas del cliente: crear, listar las propias y cancelar. |
-| `server/src/routes/payments.routes.js` | Rutas de pago del cliente: crea la sesión de Stripe Checkout. El webhook va en `webhook.routes.js`. |
-| `server/src/routes/webhook.routes.js` | Ruta del webhook de Stripe: recibe el body sin parsear para verificar la firma y confirma la reserva pagada. |
+| `server/src/routes/payments.routes.js` | (extra) Rutas de pago del cliente: crea la sesión de Stripe Checkout. El webhook va en `webhook.routes.js`. |
+| `server/src/routes/webhook.routes.js` | (extra) Ruta del webhook de Stripe: recibe el body sin parsear para verificar la firma y confirma la reserva pagada. |
 | `server/src/routes/users.routes.js` | Rutas del perfil del usuario autenticado. |
 | `server/src/routes/company.routes.js` | Rutas del panel de empresa: alta, edificios, plantas, mapas (detección con IA, guardar, publicar), salas, reservas y bloqueos. Cada empresa solo accede a lo suyo. |
 | `server/src/routes/maps.routes.js` | Rutas de mapas de planta de la empresa: `PUT /api/company/floors/:id/map` (guardar) `POST /api/company/floors/:id/publish` (publicar) y `POST /api/company/floors/:id/unpublish` (despublicar). |
@@ -244,7 +244,7 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
 | `server/src/controllers/floorsController.js` | Controlador del mapa público de una planta. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/roomsController.js` | Controlador de fichas y disponibilidad de salas. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/bookingsController.js` | Controlador de reservas del cliente. Lee `req`, llama al service y responde; nunca habla con Firestore. |
-| `server/src/controllers/paymentsController.js` | Controlador de pagos: checkout de Stripe y webhook. Lee `req`, llama al service y responde; nunca habla con Firestore. |
+| `server/src/controllers/paymentsController.js` | (extra) Controlador de pagos: checkout de Stripe y webhook. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/usersController.js` | Controlador del perfil de usuario. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/authController.js` | Controlador del registro de clientes y empresas. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/companyController.js` | Controlador del panel de empresa: alta, edificios, plantas, salas, reservas y bloqueos. Lee `req`, llama al service y responde; nunca habla con Firestore. |
@@ -257,8 +257,8 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
 | --- | --- |
 | `server/src/services/availabilityService.js` | Reglas de disponibilidad: calcula las horas libres de una sala (horario reservable 8–20) a partir de sus reservas `CONFIRMED` y sus `blocks`, el estado de una sala en un día (`FREE`, `OCCUPIED` o `UNAVAILABLE`) y detecta solapes (`nuevoInicio < existenteFin && nuevoFin > existenteInicio`) dentro de una transacción de Firestore. |
 | `server/src/services/bookingsService.js` | Crear, listar y cancelar reservas; calcula en el servidor `price`, `pricePeriod` y `totalAmount` a partir del `price` de la sala. |
-| `server/src/services/paymentsService.js` | Crea sesiones de Stripe Checkout, procesa el webhook (firma verificada) y hace reembolsos. |
-| `server/src/services/mapDetectionService.js` | Envía la imagen del plano a la IA con visión, le pide solo JSON con las salas detectadas (nombre, código, posición y tamaño) y lo valida antes de devolverlo como borrador de `mapData`. |
+| `server/src/services/paymentsService.js` | (extra) Crea sesiones de Stripe Checkout, procesa el webhook (firma verificada) y hace reembolsos. |
+| `server/src/services/mapDetectionService.js` | Envía la imagen del plano a la IA con visión, le pide solo JSON con las salas detectadas (nombre, código, posición y tamaño) y lo valida antes de devolverlo como borrador del mapa (`ancho`, `alto`, `origen`, `salas`). |
 | `server/src/services/futureBookingsService.js` | Cuenta las reservas futuras (`CONFIRMED` o `PENDING_PAYMENT`) de unas salas y redacta el aviso al despublicar o ocultar; no bloquea. |
 | `server/src/services/mapsService.js` | Guarda el mapa de una planta (campos `ancho`, `alto`, `origen` y `salas` en `floors`), sincroniza la colección `rooms` en una transacción (crea las salas nuevas, conserva las existentes y marca como no reservables las que ya no están; `409 ROOM_ID_TAKEN` si el id es de otra planta) publica la planta (`MAP_REQUIRED`, `NO_BOOKABLE_ROOMS`) y la despublica (con aviso si el edificio publicado se queda sin plantas publicadas). |
 | `server/src/services/companyService.js` | Empresa propia (`getMyCompany`) y, para el panel de empresa, listar y crear/editar edificios, crear/editar plantas (409 `FLOOR_EXISTS` si el número ya existe en el edificio) editar los datos comerciales de una sala, publicar y despublicar edificios (`NO_PUBLISHED_FLOORS`), listar las salas con su estado (`publicada`, `sin_precio`, `oculta`) y mostrarlas u ocultarlas (`ROOM_WITHOUT_PRICE`, `ROOM_INACTIVE`). Body y respuestas en español; whitelist de campos y `companyId` siempre del token. |
@@ -278,13 +278,13 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | --- | --- |
 | `server/src/models/baseModel.js` | Funciones comunes de los models (`findById`, `create`, `upsert`, `update`, `remove`, `listBy`): añaden `createdAt` y `updatedAt` con `serverTimestamp()` y aceptan `{ tx }` para transacciones. |
 | `server/src/models/userModel.js` | Acceso a la colección `users` (id = UID de Firebase Auth). Campos: name, surname, email, phone, role (`CLIENT` \| `COMPANY` \| `ADMIN`), createdAt, updatedAt. |
-| `server/src/models/companyModel.js` | Acceso a la colección `companies` y a su subcolección `members` (userId, role `OWNER` \| `MANAGER` \| `EMPLOYEE`, joinedAt). Campos: name, legalName, taxId (CIF normalizado), contactName, description, logoUrl, email, phone, address, ownerUid, status (`PENDING` \| `APPROVED` \| `REJECTED`), verified (status === `APPROVED`), createdAt, updatedAt. `findByTaxId` busca por CIF. |
-| `server/src/models/buildingModel.js` | Acceso a la colección `buildings`. Campos: companyId, name, description, address, city, postalCode, country, latitude, longitude, floorCount, status, createdAt, updatedAt. |
+| `server/src/models/companyModel.js` | Acceso a la colección `companies` y a su subcolección `members` (userId, role `OWNER` \| `MANAGER` \| `EMPLOYEE`, joinedAt). Campos: name, legalName, taxId (CIF normalizado), contactName, description, logoUrl, email, phone, address, ownerUid, status (`PENDING` \| `APPROVED` \| `REJECTED`; `SUSPENDED` previsto), verified (status === `APPROVED`), createdAt, updatedAt. `findByTaxId` busca por CIF. |
+| `server/src/models/buildingModel.js` | Acceso a la colección `buildings`. Campos: companyId, name, description, address, city, postalCode, country, latitude, longitude, floorCount, photos, status (`DRAFT` \| `PUBLISHED`), createdAt, updatedAt. |
 | `server/src/models/floorModel.js` | Acceso a la colección `floors`. Campos: companyId, buildingId, name, level, mapImageUrl, status, createdAt, updatedAt y el mapa en el formato del editor: ancho, alto, origen y `salas` (id, codigo, nombre, tipo, x, y, w, h; el id es el de su documento en `rooms`). |
-| `server/src/models/roomModel.js` | Acceso a la colección `rooms` (las salas; id = id de la sala en `floors.salas`). Campos: companyId, buildingId, floorId, name, code, type, description, surface, capacity, price, pricePeriod (`HOUR`), amenities, bookable, status, openingHours, createdAt, updatedAt. |
+| `server/src/models/roomModel.js` | Acceso a la colección `rooms` (las salas; id = id de la sala en `floors.salas`). Campos: companyId, buildingId, floorId, name, code, type, description, surface, capacity, price, pricePeriod (`HOUR`), amenities, photos, bookable, status (`ACTIVE` \| `INACTIVE`), openingHours, createdAt, updatedAt. |
 | `server/src/models/blockModel.js` | Acceso a la colección `blocks`: horas bloqueadas por la empresa en una sala. Campos: companyId, roomId, startDate, endDate, reason, createdAt, updatedAt. |
 | `server/src/models/occupancyModel.js` | Acceso a la colección `occupancy`: una ficha por sala y hora ocupada con id fijo `roomId_AAAA-MM-DD_HH`, para que dos reservas no puedan coger la misma hora. Campos: companyId, roomId, date, hour, bookingId o blockId, createdAt, updatedAt. |
-| `server/src/models/bookingModel.js` | Acceso a la colección `bookings`. Campos: userId, companyId, roomId, startDate, endDate, price, pricePeriod, totalAmount, status (`PENDING_PAYMENT` \| `CONFIRMED` \| `CANCELLED` \| `EXPIRED` \| `COMPLETED`), paymentId, createdAt, updatedAt. |
+| `server/src/models/bookingModel.js` | Acceso a la colección `bookings`. Campos: userId, companyId, roomId, startDate, endDate, price, pricePeriod, totalAmount, status (`PENDING_PAYMENT` \| `CONFIRMED` \| `CANCELLED` \| `EXPIRED` \| `COMPLETED`), paymentId, cancelledAt, createdAt, updatedAt. La reserva nace `CONFIRMED`; `PENDING_PAYMENT` y `EXPIRED` solo con el extra de Stripe. |
 | `server/src/models/paymentModel.js` | Acceso a la colección `payments`. Campos: bookingId, userId, amount, currency (`EUR`), provider (`STRIPE`), providerPaymentId, status (`PENDING` \| `SUCCEEDED` \| `FAILED` \| `REFUNDED`), createdAt, updatedAt. |
 | `server/src/models/favoriteModel.js` | Acceso a la colección `favorites`: salas guardadas por cada usuario. Estructura por definir; relaciona un usuario con una sala. |
  
@@ -378,6 +378,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 - `client/styles/style.css` queda solo para lo global: variables en `:root`, reset y estilos base. No lleva estilos de componentes.
 - En el CSS: colores, espacios y tipografía siempre con las variables de `:root` (`var(--color-primary)`); mobile first; clases para dar estilo y los `id` reservados para JavaScript; `@media` y `@keyframes` siempre al final de cada archivo.
 - Textos de la interfaz y mensajes de error en español.
+- Body y respuestas de la API en español (`nombre`, `precioHora`, `fecha`, `inicio`, `fin`, `estado`) y Firestore en inglés (`name`, `price`, `startDate`…); equivalencias en el [README](./README.md#9-idioma-de-la-api).
 
 ## Flujo de trabajo (GitHub)
 - Tablero: proyecto 6 de la org TheBridge-FullStackDeveloper.
