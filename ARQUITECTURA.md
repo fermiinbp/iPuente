@@ -166,9 +166,12 @@ ipuente/
 │   │   ├── validators/
 │   │   │   ├── adminValidator.js
 │   │   │   ├── bookingValidator.js
+│   │   │   ├── buildingValidator.js
 │   │   │   ├── commonValidator.js
 │   │   │   ├── companyValidator.js
+│   │   │   ├── floorValidator.js
 │   │   │   ├── mapValidator.js
+│   │   │   ├── roomValidator.js
 │   │   │   └── userValidator.js
 │   │   ├── middlewares/
 │   │   │   ├── auth.js
@@ -190,10 +193,13 @@ ipuente/
 │   │   │   ├── adminService.js
 │   │   │   ├── availabilityService.js
 │   │   │   ├── bookingsService.js
+│   │   │   ├── buildingsService.js
 │   │   │   ├── companyService.js
+│   │   │   ├── floorsService.js
 │   │   │   ├── mapDetectionService.js
 │   │   │   ├── mapsService.js
 │   │   │   ├── paymentsService.js
+│   │   │   ├── roomsService.js
 │   │   │   └── usersService.js
 │   │   ├── models/
 │   │   │   ├── bookingModel.js
@@ -407,6 +413,9 @@ Reglas de `express-validator`: un archivo por recurso y un export por endpoint (
 | `server/src/validators/companyValidator.js` | Validación del panel de empresa: alta, edificios, plantas, datos de sala y bloqueos. |
 | `server/src/validators/mapValidator.js` | Validación de mapas: URL del plano para la IA, JSON del mapa (dimensiones y salas dentro del plano) y publicación. |
 | `server/src/validators/adminValidator.js` | Validación del panel de admin: aprobar o suspender empresas (`verified`) y cambio de rol. |
+| `server/src/validators/buildingValidator.js` | Validación de edificios públicos: id en la URL y fecha opcional del detalle. |
+| `server/src/validators/floorValidator.js` | Validación del mapa público de una planta: id en la URL y fecha opcional. |
+| `server/src/validators/roomValidator.js` | Validación de salas públicas: id en la URL y fecha opcional para la disponibilidad. |
  
 ### Back: `server/src/middlewares/`
  
@@ -438,7 +447,7 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/services/availabilityService.js` | Reglas de disponibilidad: calcula las horas libres de una sala a partir de sus reservas `CONFIRMED` y sus `blocks`, y detecta solapes (`nuevoInicio < existenteFin && nuevoFin > existenteInicio`) dentro de una transacción de Firestore. |
+| `server/src/services/availabilityService.js` | Reglas de disponibilidad: calcula las horas libres de una sala (horario reservable 8–20) a partir de sus reservas `CONFIRMED` y sus `blocks`, el estado de una sala en un día (`FREE`, `OCCUPIED` o `UNAVAILABLE`) y detecta solapes (`nuevoInicio < existenteFin && nuevoFin > existenteInicio`) dentro de una transacción de Firestore. |
 | `server/src/services/bookingsService.js` | Crear, listar y cancelar reservas; calcula en el servidor `price`, `pricePeriod` y `totalAmount` a partir del `price` de la sala. |
 | `server/src/services/paymentsService.js` | Crea sesiones de Stripe Checkout, procesa el webhook (firma verificada) y hace reembolsos. |
 | `server/src/services/mapDetectionService.js` | Envía la imagen del plano a la IA con visión, le pide solo JSON con las salas detectadas (nombre, código, posición y tamaño) y lo valida antes de devolverlo como borrador de `mapData`. |
@@ -446,6 +455,9 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
 | `server/src/services/companyService.js` | Alta de empresas, edificios y plantas; comprueba que cada recurso pertenece a la empresa del usuario. |
 | `server/src/services/usersService.js` | Perfil de usuario y asignación de rol (`CLIENT`, `COMPANY`, `ADMIN`) mediante custom claims (`role`, `companyId`). |
 | `server/src/services/adminService.js` | Aprobación y suspensión de empresas y listados globales. |
+| `server/src/services/buildingsService.js` | Edificios públicos: listado de publicados y detalle con sus plantas y las salas libres de cada una en una fecha. Nunca devuelve quién reservó. |
+| `server/src/services/floorsService.js` | Mapa público de una planta publicada: sus salas con estado (`FREE`, `OCCUPIED`, `UNAVAILABLE`), capacidad y precio en una fecha. |
+| `server/src/services/roomsService.js` | Ficha pública de una sala y sus horas libres de un día (8–20); `404` si la sala, su planta o su edificio no están publicados. |
  
 ### Back: `server/src/models/`
  
@@ -468,7 +480,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | --- | --- |
 | `server/src/utils/httpError.js` | Clase `HttpError(status, code, message)` para lanzar errores con código HTTP desde cualquier capa. |
 | `server/src/utils/asyncHandler.js` | Envuelve controladores `async` para que sus errores lleguen al `errorHandler`. |
-| `server/src/utils/dates.js` | Utilidades de fechas y horas: validar `AAAA-MM-DD`, comparar franjas y calcular caducidades. |
+| `server/src/utils/dates.js` | Utilidades de fechas: validar `AAAA-MM-DD` (fecha real del calendario), `todayString` y `dayRange` (rango de un día en hora local). |
 | `server/src/app.js` | Configura Express sin arrancarlo: CORS, límite de peticiones, webhook de Stripe (body sin parsear), JSON, `/api/health`, documentación Swagger en `/api/docs`, rutas y manejo de errores. Lo usan `server.js`, la Netlify Function y los tests. |
 | `server/src/server.js` | Arranca la API en local con `app.listen`. En producción no se usa: Netlify ejecuta `app.js` como función. |
  
