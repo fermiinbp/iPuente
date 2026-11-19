@@ -4,7 +4,14 @@
 // Las franjas son { inicio, fin } en horas enteras (0-24) del mismo día.
 import * as blockModel from '../models/blockModel.js';
 import * as bookingModel from '../models/bookingModel.js';
+import { dayRange } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
+
+// Horario reservable acordado: de 8:00 a 20:00 (la última hora libre empieza a las 19).
+export const BOOKING_HOURS = { desde: 8, hasta: 20 };
+
+// Estado de una sala en un día (los mismos que el front, client/src/config/constants.js).
+export const ROOM_STATUS = { FREE: 'FREE', OCCUPIED: 'OCCUPIED', UNAVAILABLE: 'UNAVAILABLE' };
 
 // Dos franjas solapan si cada una empieza antes de que acabe la otra (las contiguas no solapan).
 export function overlaps(a, b) {
@@ -48,9 +55,7 @@ export async function assertSlotAvailable(
   tx,
   { bookings = bookingModel, blocks = blockModel } = {},
 ) {
-  const [y, m, d] = fecha.split('-').map(Number);
-  const from = new Date(y, m - 1, d);
-  const to = new Date(y, m - 1, d + 1);
+  const { from, to } = dayRange(fecha);
   const [reservas, bloqueos] = await Promise.all([
     bookings.listByRoom(roomId, { from, to, tx }),
     blocks.listByRoom(roomId, { from, to, tx }),
@@ -62,4 +67,32 @@ export async function assertSlotAvailable(
   if (items.filter(isActive).some((item) => overlaps({ inicio, fin }, item))) {
     throw new HttpError(409, 'SLOT_TAKEN', 'Esa franja ya está ocupada');
   }
+}
+
+// Lee sin transacción las reservas y bloqueos de una sala en un día y los devuelve como franjas.
+export async function getDayItems(
+  roomId,
+  fecha,
+  { bookings = bookingModel, blocks = blockModel } = {},
+) {
+  const { from, to } = dayRange(fecha);
+  const [reservas, bloqueos] = await Promise.all([
+    bookings.listByRoom(roomId, { from, to }),
+    blocks.listByRoom(roomId, { from, to }),
+  ]);
+  return [
+    ...reservas.map((doc) => toSlot(doc, 'reserva')),
+    ...bloqueos.map((doc) => toSlot(doc, 'bloqueo')),
+  ];
+}
+
+// Una sala se puede reservar si existe, es reservable y está activa.
+export function isBookable(room) {
+  return Boolean(room) && room.bookable === true && room.status === 'ACTIVE';
+}
+
+// Estado de una sala un día: UNAVAILABLE si no es reservable, OCCUPIED si hay algo activo, si no FREE.
+export function roomStatus(room, items) {
+  if (!isBookable(room)) return ROOM_STATUS.UNAVAILABLE;
+  return items.some(isActive) ? ROOM_STATUS.OCCUPIED : ROOM_STATUS.FREE;
 }
