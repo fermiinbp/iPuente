@@ -203,6 +203,7 @@ Cada archivo define los endpoints de un recurso y los documenta con un comentari
 | `server/src/routes/users.routes.js` | Rutas del perfil del usuario autenticado. |
 | `server/src/routes/company.routes.js` | Rutas del panel de empresa: alta, edificios, plantas, mapas (detección con IA, guardar, publicar), salas, reservas y bloqueos. Cada empresa solo accede a lo suyo. |
 | `server/src/routes/maps.routes.js` | Rutas de mapas de planta de la empresa: `PUT /api/company/floors/:id/map` (guardar) y `POST /api/company/floors/:id/publish` (publicar). |
+| `server/src/routes/companyBookings.routes.js` | Rutas del panel de empresa para reservas y bloqueos: `GET /api/company/bookings`, `PATCH /api/company/bookings/:id/cancel`, `GET` y `POST /api/company/blocks` y `DELETE /api/company/blocks/:id`. |
 | `server/src/routes/admin.routes.js` | Rutas del panel de admin: empresas, usuarios, reservas, pagos y reembolsos. |
 | `server/src/routes/index.js` | Une todas las rutas bajo `/api` (excepto el webhook y la documentación, que se montan en `app.js`). |
  
@@ -218,6 +219,7 @@ Reglas de `express-validator`: un archivo por recurso y un export por endpoint (
 | `server/src/validators/authValidator.js` | Validación del registro: email, contraseña (mín. 8), nombres, CIF español con dígito de control y teléfono de 9 dígitos. |
 | `server/src/validators/companyValidator.js` | Validación del panel de empresa: alta, edificios, plantas, datos de sala y bloqueos. |
 | `server/src/validators/mapValidator.js` | Validación de mapas: `validateMap` (función pura: dimensiones, origen, salas dentro del plano, tipos `ROOM_TYPES` e ids únicos), `saveMap` y `publishFloor` para las rutas. |
+| `server/src/validators/companyBookingsValidator.js` | Validación de reservas y bloqueos de empresa: filtros `desde`/`hasta` (máx. 366 días) y `roomId`, crear bloqueo (con `motivo` 1–200) y cancelar reserva (`motivo` 1–500). |
 | `server/src/validators/adminValidator.js` | Validación del panel de admin: aprobar o suspender empresas (`verified`) y cambio de rol. |
 | `server/src/validators/buildingValidator.js` | Validación de edificios públicos: id en la URL y fecha opcional del detalle. |
 | `server/src/validators/floorValidator.js` | Validación del mapa público de una planta: id en la URL y fecha opcional. |
@@ -249,6 +251,7 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
 | `server/src/controllers/authController.js` | Controlador del registro de clientes y empresas. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/companyController.js` | Controlador del panel de empresa: alta, edificios, plantas, salas, reservas y bloqueos. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/mapsController.js` | Controlador de mapas: guardar y publicar. Lee `req`, llama al service y responde; nunca habla con Firestore. |
+| `server/src/controllers/companyBookingsController.js` | Controlador de reservas y bloqueos de la empresa. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/adminController.js` | Controlador del panel de admin. Lee `req`, llama al service y responde; nunca habla con Firestore. |
  
 ### Back: `server/src/services/`
@@ -260,6 +263,7 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
 | `server/src/services/paymentsService.js` | Crea sesiones de Stripe Checkout, procesa el webhook (firma verificada) y hace reembolsos. |
 | `server/src/services/mapDetectionService.js` | Envía la imagen del plano a la IA con visión, le pide solo JSON con las salas detectadas (nombre, código, posición y tamaño) y lo valida antes de devolverlo como borrador de `mapData`. |
 | `server/src/services/mapsService.js` | Guarda el mapa de una planta (campos `ancho`, `alto`, `origen` y `salas` en `floors`), sincroniza la colección `rooms` en una transacción (crea las salas nuevas, conserva las existentes y marca como no reservables las que ya no están; `409 ROOM_ID_TAKEN` si el id es de otra planta) y publica la planta (`MAP_REQUIRED`, `NO_BOOKABLE_ROOMS`). |
+| `server/src/services/companyBookingsService.js` | Reservas de la empresa con datos del cliente (nombre y email), bloqueos de horas (crear con occupancy en transacción, listar, quitar) y cancelación de reservas por la empresa con motivo. |
 | `server/src/services/companyService.js` | Empresa propia (`getMyCompany`) y, para el panel de empresa, listar y crear/editar edificios, crear/editar plantas (409 `FLOOR_EXISTS` si el número ya existe en el edificio) y editar los datos comerciales de una sala. Body y respuestas en español; whitelist de campos y `companyId` siempre del token. |
 | `server/src/services/ownershipService.js` | Propiedad de recursos: `assertOwnedBy` (404 si no existe, 403 si es de otra empresa) y `getOwnedBuilding`, `getOwnedFloor` y `getOwnedRoom`. |
 | `server/src/services/usersService.js` | Perfil de usuario y asignación de rol (`CLIENT`, `COMPANY`, `ADMIN`) mediante custom claims (`role`, `companyId`). |
@@ -294,7 +298,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | `server/src/utils/httpError.js` | Clase `HttpError(status, code, message)` para lanzar errores con código HTTP desde cualquier capa. |
 | `server/src/utils/cif.js` | `normalizeCif` (mayúsculas, sin espacios ni guiones) e `isValidCif` (formato y dígito de control del CIF). |
 | `server/src/utils/asyncHandler.js` | Envuelve controladores `async` para que sus errores lleguen al `errorHandler`. |
-| `server/src/utils/dates.js` | Utilidades de fechas: validar `AAAA-MM-DD` (fecha real del calendario), `todayString` y `dayRange` (rango de un día en hora local). |
+| `server/src/utils/dates.js` | Utilidades de fechas: validar `AAAA-MM-DD` (fecha real del calendario), `todayString`, `dayRange` (rango de un día en hora local), `addDays`, `daysBetween` y `resolveRange` (rango por defecto de los listados: hoy − 30 días y +90). |
 | `server/src/app.js` | Configura Express sin arrancarlo: CORS, límite de peticiones, webhook de Stripe (body sin parsear), JSON, `/api/health`, documentación Swagger en `/api/docs`, rutas y manejo de errores. Lo usan `server.js`, la Netlify Function y los tests. |
 | `server/src/server.js` | Arranca la API en local con `app.listen`. En producción no se usa: Netlify ejecuta `app.js` como función. |
  
@@ -309,6 +313,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | `server/tests/integration/floors.test.js` | Test de integración de `GET /api/floors/:id`: estado de cada sala (`FREE`, `OCCUPIED`, `UNAVAILABLE`) en una fecha, 404 y 400. |
 | `server/tests/integration/rooms.test.js` | Test de integración de `GET /api/rooms/:id` y `/rooms/:id/availability`: ficha, horas libres de 8 a 20, 404 y 400; ninguna respuesta incluye datos de clientes. |
 | `server/tests/integration/bookings.test.js` | Test de integración de las reservas del cliente con auth y Firestore sustituidos por dobles: crear (201, 409 `SLOT_TAKEN`, 400, 404, 401), importe y estado no manipulables, occupancy sin datos personales, `GET /bookings/me` y cancelar (200, 403, 400, 404). |
+| `server/tests/integration/companyBookings.test.js` | Test de integración de reservas y bloqueos del panel de empresa: listado propio sin datos privados del cliente y con filtros, bloqueos (201, 409 `SLOT_TAKEN`, 403, 404, 400, occupancy por hora), borrar bloqueo, cancelar reserva (motivo, `BOOKING_NOT_CANCELLABLE`, `BOOKING_STARTED`) y permisos (401, 403, `COMPANY_NOT_APPROVED`). |
 | `server/tests/helpers/publicData.js` | Datos de prueba de los endpoints públicos (edificios, plantas, salas, reservas y un bloqueo) y utilidades para levantar la app y hacer peticiones. |
 | `server/tests/unit/availability.test.js` | Tests unitarios de las reglas de disponibilidad: solapes, bordes de franja, horas libres y `assertSlotAvailable` con models dobles. |
 | `server/tests/unit/mapValidator.test.js` | Tests unitarios de `validateMap`: mapa válido (y `floor-0.json`), salas fuera del plano, coordenadas y tamaños inválidos, tipo, id repetido o con barra, campos que faltan, origen, tipos de dato y más de 300 salas, con el `field` de cada error. |
