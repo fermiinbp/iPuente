@@ -15,9 +15,10 @@ export function listByCompany(companyId) {
 }
 
 // Reservas de una sala que empiezan en [from, to). Si no se pasan fechas, todas.
-export function listByRoom(roomId, { from, to } = {}) {
+// Acepta { tx } para leer dentro de una transacción.
+export function listByRoom(roomId, { from, to, tx } = {}) {
   let query = base.collection().where('roomId', '==', roomId);
   if (from) query = query.where('startDate', '>=', from);
   if (to) query = query.where('startDate', '<', to);
-  return runQuery(query, { orderBy: 'startDate' });
+  return runQuery(query, { orderBy: 'startDate', tx });
 }
