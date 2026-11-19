@@ -195,7 +195,7 @@ Cada archivo define los endpoints de un recurso y los documenta con un comentari
 | --- | --- |
 | `server/src/routes/health.routes.js` | Ruta pública `GET /api/health` para comprobar que la API responde. Es el ejemplo de comentario `@openapi` para el resto de rutas. |
 | `server/src/routes/auth.routes.js` | Rutas públicas de registro: `POST /api/auth/register/client` y `/register/company` (la empresa queda pendiente de aprobación). |
-| `server/src/routes/buildings.routes.js` | Rutas públicas de edificios: listado de edificios publicados y detalle con sus plantas. |
+| `server/src/routes/buildings.routes.js` | Rutas públicas de edificios: buscador `GET /api/buildings` (filtros `ciudad`, `personas`, `equipamiento`, `fecha`, `tipo`, `precioMax`, `orden`, `page`, `limit`) y detalle con sus plantas. |
 | `server/src/routes/floors.routes.js` | Ruta pública del mapa de una planta con el estado de cada sala en una fecha y, con `hora` (8–19), a esa hora. |
 | `server/src/routes/rooms.routes.js` | Rutas públicas de salas: ficha y horas libres. |
 | `server/src/routes/bookings.routes.js` | Rutas de reservas del cliente: crear, listar las propias y cancelar. |
@@ -220,7 +220,7 @@ Reglas de `express-validator`: un archivo por recurso y un export por endpoint (
 | `server/src/validators/companyValidator.js` | Validación del panel de empresa: alta, edificios, plantas, datos de sala y bloqueos. |
 | `server/src/validators/mapValidator.js` | Validación de mapas: `validateMap` (función pura: dimensiones, origen, salas dentro del plano, tipos `ROOM_TYPES` e ids únicos), `saveMap` y `publishFloor` para las rutas. |
 | `server/src/validators/adminValidator.js` | Validación del panel de admin: aprobar o suspender empresas (`verified`) y cambio de rol. |
-| `server/src/validators/buildingValidator.js` | Validación de edificios públicos: id en la URL y fecha opcional del detalle. |
+| `server/src/validators/buildingValidator.js` | Validación de edificios públicos: id en la URL y fecha opcional del detalle (`getById`) y filtros del buscador (`search`: todos opcionales, rechaza arrays y claves con corchetes). |
 | `server/src/validators/floorValidator.js` | Validación del mapa público de una planta: id en la URL y fecha y hora opcionales; rechaza con 400 las claves `hora[]` y `hora[x]`. |
 | `server/src/validators/roomValidator.js` | Validación de salas públicas: id en la URL y fecha opcional para la disponibilidad. |
  
@@ -267,7 +267,7 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
 | `server/src/services/usersService.js` | Perfil de usuario y asignación de rol (`CLIENT`, `COMPANY`, `ADMIN`) mediante custom claims (`role`, `companyId`). |
 | `server/src/services/authService.js` | Registro: crea el usuario en Firebase Auth, su ficha en `users` (y la empresa pendiente) y su rol; si algo falla, deshace lo creado. Traduce `auth/email-already-exists` a `409 EMAIL_EXISTS`. `setAuthClientForTests` sustituye Firebase Auth en tests. |
 | `server/src/services/adminService.js` | Aprobación y suspensión de empresas y listados globales. |
-| `server/src/services/buildingsService.js` | Edificios públicos: listado de publicados y detalle con sus plantas y las salas libres de cada una en una fecha. Nunca devuelve quién reservó. |
+| `server/src/services/buildingsService.js` | Edificios públicos: buscador `searchPublished` (edificios publicados con salas reservables que encajan con los filtros, ordenados y paginados, con `salasDisponibles` y `precioDesde`) y detalle con sus plantas y las salas libres de cada una en una fecha. Nunca devuelve quién reservó. |
 | `server/src/services/floorsService.js` | Mapa público de una planta publicada: sus salas con estado (`FREE`, `OCCUPIED`, `UNAVAILABLE`), capacidad y precio (solo de las salas reservables; si no, `null`) en una fecha o, con `hora`, a esa hora. Lee reservas y bloqueos por lotes. |
 | `server/src/services/roomsService.js` | Ficha pública de una sala y sus horas libres de un día (8–20); `404` si la sala no es reservable (oculta o sin precio) o si ella, su planta o su edificio no están publicados. |
  
@@ -282,7 +282,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | `server/src/models/companyModel.js` | Acceso a la colección `companies` y a su subcolección `members` (userId, role `OWNER` \| `MANAGER` \| `EMPLOYEE`, joinedAt). Campos: name, legalName, taxId (CIF normalizado), contactName, description, logoUrl, email, phone, address, ownerUid, status (`PENDING` \| `APPROVED` \| `REJECTED`; `SUSPENDED` previsto), verified (status === `APPROVED`), createdAt, updatedAt. `findByTaxId` busca por CIF. |
 | `server/src/models/buildingModel.js` | Acceso a la colección `buildings`. Campos: companyId, name, description, address, city, postalCode, country, latitude, longitude, floorCount, photos, status (`DRAFT` \| `PUBLISHED`), createdAt, updatedAt. |
 | `server/src/models/floorModel.js` | Acceso a la colección `floors`. Campos: companyId, buildingId, name, level, mapImageUrl, status, createdAt, updatedAt y el mapa en el formato del editor: ancho, alto, origen y `salas` (id, codigo, nombre, tipo, x, y, w, h; el id es el de su documento en `rooms`). |
-| `server/src/models/roomModel.js` | Acceso a la colección `rooms` (las salas; id = id de la sala en `floors.salas`). Campos: companyId, buildingId, floorId, name, code, type, description, surface, capacity, price, pricePeriod (`HOUR`), amenities, photos, bookable, status (`ACTIVE` \| `INACTIVE`), openingHours, createdAt, updatedAt. |
+| `server/src/models/roomModel.js` | Acceso a la colección `rooms` (las salas; id = id de la sala en `floors.salas`); `listByBuildings` lee las de varios edificios por lotes de 30. Campos: companyId, buildingId, floorId, name, code, type, description, surface, capacity, price, pricePeriod (`HOUR`), amenities, photos, bookable, status (`ACTIVE` \| `INACTIVE`), openingHours, createdAt, updatedAt. |
 | `server/src/models/blockModel.js` | Acceso a la colección `blocks`: horas bloqueadas por la empresa en una sala. Campos: companyId, roomId, startDate, endDate, reason, createdAt, updatedAt. `listByRooms` lee los de varias salas en lotes de 30 (`in`). |
 | `server/src/models/occupancyModel.js` | Acceso a la colección `occupancy`: una ficha por sala y hora ocupada con id fijo `roomId_AAAA-MM-DD_HH`, para que dos reservas no puedan coger la misma hora. Campos: companyId, roomId, date, hour, bookingId o blockId, createdAt, updatedAt. |
 | `server/src/models/bookingModel.js` | Acceso a la colección `bookings`. Campos: userId, companyId, roomId, startDate, endDate, price, pricePeriod, totalAmount, status (`PENDING_PAYMENT` \| `CONFIRMED` \| `CANCELLED` \| `EXPIRED` \| `COMPLETED`), paymentId, cancelledAt, createdAt, updatedAt. La reserva nace `CONFIRMED`; `PENDING_PAYMENT` y `EXPIRED` solo con el extra de Stripe. `listByRooms` lee las de varias salas en lotes de 30 (`in`). |
@@ -296,6 +296,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | `server/src/utils/httpError.js` | Clase `HttpError(status, code, message)` para lanzar errores con código HTTP desde cualquier capa. |
 | `server/src/utils/cif.js` | `normalizeCif` (mayúsculas, sin espacios ni guiones) e `isValidCif` (formato y dígito de control del CIF). |
 | `server/src/utils/asyncHandler.js` | Envuelve controladores `async` para que sus errores lleguen al `errorHandler`. |
+| `server/src/utils/text.js` | `normalizeText`: minúsculas, sin tildes ni espacios de más (tolera `null`); para comparar ciudad y equipamiento. |
 | `server/src/utils/dates.js` | Utilidades de fechas: validar `AAAA-MM-DD` (fecha real del calendario), `todayString` y `dayRange` (rango de un día en hora local). |
 | `server/src/app.js` | Configura Express sin arrancarlo: CORS, límite de peticiones, webhook de Stripe (body sin parsear), JSON, `/api/health`, documentación Swagger en `/api/docs`, rutas y manejo de errores. Lo usan `server.js`, la Netlify Function y los tests. |
 | `server/src/server.js` | Arranca la API en local con `app.listen`. En producción no se usa: Netlify ejecuta `app.js` como función. |
@@ -307,18 +308,19 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | `server/tests/integration/health.test.js` | Test de integración: la API arranca y `GET /api/health` responde `{ ok: true }`. |
 | `server/tests/integration/auth.test.js` | Test de integración: `auth` y `requireRole` con `verifyIdToken` sustituido por un doble (`401 NO_TOKEN`, `401 INVALID_TOKEN`, `403 FORBIDDEN`) y `GET /api/users/me`. |
 | `server/tests/integration/docs.test.js` | Test de integración: la especificación OpenAPI se genera y documenta todas las rutas. |
-| `server/tests/integration/buildings.test.js` | Test de integración de `GET /api/buildings` y `/buildings/:id` con Firestore sustituido por un doble: solo publicados, salas libres por planta, 404 y 400. |
+| `server/tests/integration/buildings.test.js` | Test de integración de `GET /api/buildings` y `/buildings/:id` con Firestore sustituido por un doble: solo publicados, salas libres por planta, 404 y 400, y el buscador (ciudad, personas, equipamiento, tipo, precioMax, fecha, orden, paginación y 400). |
 | `server/tests/integration/floors.test.js` | Test de integración de `GET /api/floors/:id`: estado de cada sala (`FREE`, `OCCUPIED`, `UNAVAILABLE`) en una fecha y a una hora (bordes, bloqueos, sala sin precio), precio y capacidad `null` en salas no reservables, 404 y 400 (incluye `hora[]=10`). |
 | `server/tests/integration/rooms.test.js` | Test de integración de `GET /api/rooms/:id` y `/rooms/:id/availability`: ficha, horas libres de 8 a 20, 404 (también sala oculta o sin precio) y 400; ninguna respuesta incluye datos de clientes. |
 | `server/tests/integration/bookings.test.js` | Test de integración de las reservas del cliente con auth y Firestore sustituidos por dobles: crear (201, 409 `SLOT_TAKEN`, 400, 404, 401), importe y estado no manipulables, occupancy sin datos personales, `GET /bookings/me` y cancelar (200, 403, 400, 404). |
 | `server/tests/integration/publishing.test.js` | Test de integración de publicar edificios y gestionar salas de empresa: publicar/despublicar edificio y planta (`NO_PUBLISHED_FLOORS`, aviso, idempotencia), efecto en la API pública, `GET /company/buildings` con plantas, `GET /company/rooms` con estado y filtros, visibilidad de sala (`ROOM_WITHOUT_PRICE`, `ROOM_INACTIVE`) y permisos. |
-| `server/tests/helpers/publicData.js` | Datos de prueba de los endpoints públicos (edificios, plantas, salas, reservas y un bloqueo) y utilidades para levantar la app y hacer peticiones. |
+| `server/tests/helpers/publicData.js` | Datos de prueba de los endpoints públicos (edificios, plantas, salas, reservas y un bloqueo) y utilidades para levantar la app y hacer peticiones; `seedSearchData` añade un edificio en Málaga y otro sin salas reservables para el buscador. |
 | `server/tests/unit/availability.test.js` | Tests unitarios de las reglas de disponibilidad: solapes, bordes de franja, horas libres, `roomStatusAtHour`, `isBookable` y `assertSlotAvailable` con models dobles. |
 | `server/tests/unit/mapValidator.test.js` | Tests unitarios de `validateMap`: mapa válido (y `floor-0.json`), salas fuera del plano, coordenadas y tamaños inválidos, tipo, id repetido o con barra, campos que faltan, origen, tipos de dato y más de 300 salas, con el `field` de cada error. |
 | `server/tests/unit/ownershipService.test.js` | Tests unitarios de `ownershipService`: 404 si el recurso no existe, 403 si es de otra empresa y devolución del recurso propio (edificio, planta, sala). |
 | `server/tests/integration/company.test.js` | Test de integración de `/api/company/*` (edificios, plantas y salas): permisos (401, 403 `FORBIDDEN`, 403 `COMPANY_NOT_APPROVED`), recurso ajeno sin cambios, 404, 409 `FLOOR_EXISTS`, 400 de validación y campos protegidos ignorados. |
 | `server/tests/integration/maps.test.js` | Test de integración de `PUT /api/company/floors/:id/map` y `POST .../publish`: permisos, guardar y volver a guardar sincronizando `rooms` (crea, conserva, desactiva sin borrar), 409 `ROOM_ID_TAKEN`, 400 de validación, planta ajena o inexistente, `MAP_REQUIRED`, `NO_BOOKABLE_ROOMS`, publicar idempotente y aviso en planta publicada. |
 | `server/tests/integration/register.test.js` | Test de integración del registro (`POST /api/auth/register/client` y `/company`) y `GET /api/companies/me`, con Firebase Auth, token y Firestore sustituidos por dobles: claims y estado fijados por el servidor, `409 EMAIL_EXISTS` y `COMPANY_EXISTS`, rollback si falla Firestore, `400` y permisos. |
+| `server/tests/unit/text.test.js` | Tests unitarios de `normalizeText`: tildes, mayúsculas, espacios y `null`. |
 | `server/tests/unit/cif.test.js` | Tests unitarios de `utils/cif.js`: normalizar y validar el dígito de control del CIF. |
 | `server/tests/unit/requireApprovedCompany.test.js` | Tests unitarios del middleware `requireApprovedCompany`: pasa solo con empresa aprobada (`403 COMPANY_NOT_APPROVED`, `401` sin usuario). |
  
