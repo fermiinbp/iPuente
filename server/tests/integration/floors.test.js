@@ -79,6 +79,18 @@ describe('Mapa público de una planta', () => {
     });
   }
 
+  it('una sala oculta o no reservable no expone precio ni capacidad', async () => {
+    const { body } = await getJson(baseUrl, `/api/floors/f-0?fecha=${FECHA}`);
+    for (const id of ['r-nobook', 'r-inactive']) {
+      const s = body.salas.find((x) => x.id === id);
+      assert.equal(s.precioHora, null);
+      assert.equal(s.capacidad, null);
+    }
+    const busy = body.salas.find((x) => x.id === 'r-busy');
+    assert.equal(busy.precioHora, 25);
+    assert.equal(busy.capacidad, 10);
+  });
+
   describe('con hora', () => {
     const estadoA = async (hora) => {
       const { status, body, text } = await getJson(
@@ -137,6 +149,15 @@ describe('Mapa público de una planta', () => {
       });
     }
 
+    for (const q of ['hora[]=10', 'hora[a]=10']) {
+      it(`rechaza con 400 VALIDATION_ERROR hora[] y hora[x] (claves con corchetes) (${q})`, async () => {
+        const { status, body } = await getJson(baseUrl, `/api/floors/f-0?fecha=${FECHA}&${q}`);
+        assert.equal(status, 400);
+        assert.equal(body.error.code, 'VALIDATION_ERROR');
+        assert.equal(body.error.details[0].field, 'hora');
+      });
+    }
+
     it('responde 400 con la hora repetida (hora=10&hora=11)', async () => {
       for (const q of ['hora=10&hora=11']) {
         const { status, body } = await getJson(baseUrl, `/api/floors/f-0?fecha=${FECHA}&${q}`);
@@ -148,6 +169,13 @@ describe('Mapa público de una planta', () => {
 
   describe('sala reservable sin precio', () => {
     beforeEach(seedRoomWithoutPrice);
+
+    it('no expone precio ni capacidad (null)', async () => {
+      const { body } = await getJson(baseUrl, `/api/floors/f-0?fecha=${FECHA}`);
+      const s = body.salas.find((x) => x.id === 'r-noprice');
+      assert.equal(s.precioHora, null);
+      assert.equal(s.capacidad, null);
+    });
 
     it('figura UNAVAILABLE en el día completo y a una hora', async () => {
       for (const q of ['', '&hora=9']) {

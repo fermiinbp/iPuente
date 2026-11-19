@@ -8,6 +8,7 @@ const COMPARATORS = {
   '>': (a, b) => a > b,
   '<=': (a, b) => a <= b,
   '<': (a, b) => a < b,
+  in: (a, list) => list.includes(a),
 };
 
 // Las fechas se comparan por su valor numérico, igual que los Timestamp de Firestore.
@@ -69,7 +70,10 @@ export function createFakeFirestore() {
           .map(([docPath, data]) => ({ id: docPath.split('/').pop(), data }))
           .filter(({ data }) =>
             filters.every(({ field, op, value }) =>
-              COMPARATORS[op](comparable(data[field]), comparable(value)),
+              COMPARATORS[op](
+                comparable(data[field]),
+                Array.isArray(value) ? value : comparable(value),
+              ),
             ),
           );
         if (order) {

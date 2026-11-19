@@ -22,3 +22,19 @@ export function listByRoom(roomId, { from, to, tx } = {}) {
   if (to) query = query.where('startDate', '<', to);
   return runQuery(query, { orderBy: 'startDate', tx });
 }
+
+// Reservas de varias salas que empiezan en [from, to), en lotes de 30 ids (límite de `in`).
+// Una consulta por lote en lugar de una por sala.
+export async function listByRooms(roomIds, { from, to } = {}) {
+  const chunks = [];
+  for (let i = 0; i < roomIds.length; i += 30) chunks.push(roomIds.slice(i, i + 30));
+  const results = await Promise.all(
+    chunks.map((ids) => {
+      let query = base.collection().where('roomId', 'in', ids);
+      if (from) query = query.where('startDate', '>=', from);
+      if (to) query = query.where('startDate', '<', to);
+      return runQuery(query, { orderBy: 'startDate' });
+    }),
+  );
+  return results.flat();
+}

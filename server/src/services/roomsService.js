@@ -1,11 +1,12 @@
 // Salas públicas: ficha y horas libres de un día. Solo devuelve datos de la sala y horas;
 // nunca quién ha reservado ni datos internos de la empresa.
+import { BOOKING_HOURS } from '../config/bookingHours.js';
 import * as buildingModel from '../models/buildingModel.js';
 import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
-import { BOOKING_HOURS, freeSlots, getDayItems, isBookable } from './availabilityService.js';
+import { freeSlots, getDayItems, isBookable } from './availabilityService.js';
 
 // Devuelve { room, floor, building } si la sala es pública; si no, lanza 404.
 export async function findPublicRoom(id) {

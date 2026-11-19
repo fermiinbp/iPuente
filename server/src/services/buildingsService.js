@@ -5,7 +5,7 @@ import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
-import { getDayItems, isBookable, ROOM_STATUS, roomStatus } from './availabilityService.js';
+import { getDayItemsForRooms, isBookable, ROOM_STATUS, roomStatus } from './availabilityService.js';
 
 const toPublic = (b) => ({
   id: b.id,
@@ -23,9 +23,11 @@ const toPublic = (b) => ({
 // Nº de salas de la planta libres en la fecha. Solo consulta reservas de las salas reservables.
 async function countFreeRooms(floorId, fecha) {
   const rooms = (await roomModel.listByFloor(floorId)).filter(isBookable);
-  const statuses = await Promise.all(
-    rooms.map(async (room) => roomStatus(room, await getDayItems(room.id, fecha))),
+  const itemsById = await getDayItemsForRooms(
+    rooms.map((r) => r.id),
+    fecha,
   );
+  const statuses = rooms.map((room) => roomStatus(room, itemsById.get(room.id)));
   return statuses.filter((s) => s === ROOM_STATUS.FREE).length;
 }
 

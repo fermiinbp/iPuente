@@ -7,9 +7,6 @@ import * as bookingModel from '../models/bookingModel.js';
 import { dayRange } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 
-// Horario reservable acordado: de 8:00 a 20:00 (la última hora libre empieza a las 19).
-export const BOOKING_HOURS = { desde: 8, hasta: 20 };
-
 // Estado de una sala en un día (los mismos que el front, client/src/config/constants.js).
 export const ROOM_STATUS = { FREE: 'FREE', OCCUPIED: 'OCCUPIED', UNAVAILABLE: 'UNAVAILABLE' };
 
@@ -84,6 +81,24 @@ export async function getDayItems(
     ...reservas.map((doc) => toSlot(doc, 'reserva')),
     ...bloqueos.map((doc) => toSlot(doc, 'bloqueo')),
   ];
+}
+
+// Como getDayItems pero para varias salas con una consulta por lote: Map<roomId, franjas>.
+export async function getDayItemsForRooms(
+  roomIds,
+  fecha,
+  { bookings = bookingModel, blocks = blockModel } = {},
+) {
+  const map = new Map(roomIds.map((id) => [id, []]));
+  if (roomIds.length === 0) return map;
+  const { from, to } = dayRange(fecha);
+  const [reservas, bloqueos] = await Promise.all([
+    bookings.listByRooms(roomIds, { from, to }),
+    blocks.listByRooms(roomIds, { from, to }),
+  ]);
+  for (const doc of reservas) map.get(doc.roomId)?.push(toSlot(doc, 'reserva'));
+  for (const doc of bloqueos) map.get(doc.roomId)?.push(toSlot(doc, 'bloqueo'));
+  return map;
 }
 
 // Una sala se puede reservar si existe, es reservable, está activa y tiene precio mayor que 0.

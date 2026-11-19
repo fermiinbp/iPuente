@@ -1,18 +1,13 @@
 // Crear, listar y cancelar reservas del cliente (sin pago online: nacen CONFIRMED). El servidor
 // calcula pricePeriod y totalAmount a partir del price de la sala; occupancy bloquea cada hora.
+import { BOOKING_HOURS } from '../config/bookingHours.js';
 import { now, runTransaction } from '../models/baseModel.js';
 import * as bookingModel from '../models/bookingModel.js';
 import * as occupancyModel from '../models/occupancyModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
-import {
-  BOOKING_HOURS,
-  assertSlotAvailable,
-  isBookable,
-  toDate,
-  toSlot,
-} from './availabilityService.js';
+import { assertSlotAvailable, isBookable, toDate, toSlot } from './availabilityService.js';
 import { findPublicRoom } from './roomsService.js';
 
 // Date local de una fecha AAAA-MM-DD a una hora (24 pasa al día siguiente a las 00:00).
@@ -39,7 +34,7 @@ function toItem(booking) {
 
 // Comprueba que la sala admite reservas y que la franja está dentro del horario.
 function assertBookable(room, inicio, fin) {
-  if (!isBookable(room) || typeof room.price !== 'number' || !(room.price > 0)) {
+  if (!isBookable(room)) {
     throw new HttpError(400, 'ROOM_NOT_BOOKABLE', 'Esta sala no se puede reservar');
   }
   if (inicio < BOOKING_HOURS.desde || fin > BOOKING_HOURS.hasta) {

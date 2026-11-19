@@ -1,7 +1,7 @@
 // Reglas reutilizables: id en la URL, fecha AAAA-MM-DD en la query y franja horaria.
 import { param, query } from 'express-validator';
 
-import { BOOKING_HOURS } from '../services/availabilityService.js';
+import { BOOKING_HOURS } from '../config/bookingHours.js';
 import { isValidDateString } from '../utils/dates.js';
 
 export const idParam = param('id')

@@ -6,7 +6,7 @@ import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 import {
-  getDayItems,
+  getDayItemsForRooms,
   isBookable,
   ROOM_STATUS,
   roomStatus,
@@ -22,10 +22,9 @@ export async function getPublishedMap(id, fecha = todayString(), hora) {
 
   const rooms = await roomModel.listByFloor(id);
   const roomsById = new Map(rooms.map((r) => [r.id, r]));
-  const itemsById = new Map(
-    await Promise.all(
-      rooms.filter(isBookable).map(async (r) => [r.id, await getDayItems(r.id, fecha)]),
-    ),
+  const itemsById = await getDayItemsForRooms(
+    rooms.filter(isBookable).map((r) => r.id),
+    fecha,
   );
 
   const statusOf = (room, items) =>
@@ -33,6 +32,8 @@ export async function getPublishedMap(id, fecha = todayString(), hora) {
 
   const salas = (floor.salas ?? []).map((s) => {
     const room = roomsById.get(s.id);
+    // Precio y capacidad solo de las salas reservables: las ocultas o sin precio no se exponen.
+    const visible = isBookable(room);
     return {
       id: s.id,
       codigo: s.codigo,
@@ -43,8 +44,8 @@ export async function getPublishedMap(id, fecha = todayString(), hora) {
       w: s.w,
       h: s.h,
       estado: room ? statusOf(room, itemsById.get(room.id) ?? []) : ROOM_STATUS.UNAVAILABLE,
-      capacidad: room?.capacity ?? null,
-      precioHora: room?.price ?? null,
+      capacidad: visible ? (room.capacity ?? null) : null,
+      precioHora: visible ? room.price : null,
     };
   });
 
