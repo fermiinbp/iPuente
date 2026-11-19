@@ -1,62 +1,61 @@
-/* Etiquetas HTML del mapa 3D (drei Html). Son decorativas: el contenido accesible es la lista de la sección. */
-.html {
-  pointer-events: none;
-  user-select: none;
+/* Contenedor del mapa MapLibre y sus controles superpuestos. */
+.wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque-profundo);
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  margin: 0;
+  padding: var(--space-5);
+  color: var(--crema-suave);
+  font-size: var(--text-interfaz);
+  text-align: center;
 }
 
 .here {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--radio-chip);
+  background: var(--crema);
+  color: var(--bosque);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
   white-space: nowrap;
 }
 
-.hereTag {
-  padding: 2px 8px;
-  border: 1px solid var(--crema);
+.reset {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--crema-suave);
   border-radius: var(--radio-chip);
-  background: transparent;
+  background: var(--bosque);
   color: var(--crema);
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: var(--text-interfaz);
   font-weight: 600;
+  cursor: pointer;
 }
 
-.hereName {
-  padding: 3px 9px;
-  border-radius: var(--radio-chip);
-  background: var(--crema);
-  color: var(--bosque);
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 600;
+.reset:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
 }
 
-.chip,
-.chipActive {
-  padding: 3px 9px;
-  border-radius: var(--radio-chip);
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.chip {
-  background: var(--crema);
-  color: var(--bosque);
-}
-
-.chipActive {
-  background: var(--lima);
-  color: var(--bosque);
-  font-style: italic;
-}
-
-/* Bajo 600 px la etiqueta muestra solo el tiempo corto; el nombre completo está en la lista. */
-@media (max-width: 599px) {
-  .long {
-    display: none;
+@media (hover: hover) and (pointer: fine) {
+  .reset:hover {
+    border-color: var(--lima);
+    color: var(--lima);
   }
 }

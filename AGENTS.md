@@ -93,7 +93,11 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/building/Building3D/Building3D.jsx` + `.module.css` | Extra: edificio 3D (muro cortina, núcleo, cubierta, plaza) generado a partir de las plantas; la planta seleccionada se abre en vista despiece (Three.js). |
 | `client/src/components/building/Building3D/building3dModel.js` | Medidas en metros y constructores de geometría del edificio 3D (forjados, fachada en instancias, interiores, cubierta, encuadre de cámara). Sin React. |
 | `client/src/components/building/FloorSelector/FloorSelector.jsx` + `.module.css` | Selector compacto de plantas (columna tipo ascensor, tira horizontal en móvil) con indicador deslizante, salas libres por planta y teclado ↑/↓. |
-| `client/src/components/building/NearbyMap/NearbyMap.jsx` + `.module.css` | Sección «Qué hay cerca»: mapa ilustrado con puntos de interés (estación de tren, metro, parking…) y tiempos. |
+| `client/src/components/building/NearbyMap/NearbyMap.jsx` + `.module.css` | Sección «Alrededor»: mapa vectorial (MapLibre + OpenFreeMap, sin API key) con calles, edificios 3D, iPuente en bronce, vuelo de cámara y ruta al elegir un lugar. |
+| `client/src/components/building/NearbyMap/mapStyle.js` | Descarga el estilo positron de OpenFreeMap y lo recolorea con la paleta Bosque leyendo las variables de `:root`. |
+| `client/src/components/building/NearbyMap/PoiMarker/PoiMarker.jsx` + `.module.css` | Pin de un lugar sobre el mapa: número y, si está activo, nombre (lima). Decorativo; la lista es el equivalente accesible. |
+| `client/src/data/poi.json` | Lugares cercanos (`id, nombre, categoria, minPie, minCoche?, descripcion, lat, lng, ruta`). `ruta` son puntos `[lng, lat]` del recorrido desde el edificio. Coordenadas provisionales. |
+| `client/src/config/nearby.js` | Config del mapa «Alrededor»: URL del estilo, coordenadas y huella provisionales de iPuente, y vista (zoom, pitch, bearing). |
 | `client/src/components/floor-plan/FloorPlan/FloorPlan.jsx` + `.module.css` | Plano SVG de una planta para clientes, generado desde el `mapData` de la planta y coloreado por el estado de cada sala. |
 | `client/src/components/floor-plan/RoomShape/RoomShape.jsx` + `.module.css` | Una sala del plano: rectángulo con código y nombre, clicable y accesible con teclado. |
 | `client/src/components/floor-plan/Legend/Legend.jsx` + `.module.css` | Leyenda de estados del plano (con texto, no solo color). |

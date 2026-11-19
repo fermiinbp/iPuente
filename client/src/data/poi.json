@@ -1,0 +1,65 @@
+[
+  {
+    "id": "metro",
+    "nombre": "Metro más cercano",
+    "categoria": "transporte",
+    "minPie": 8,
+    "descripcion": "Parada de la línea 1 a pocos minutos del edificio. Es la forma más cómoda de llegar desde el centro y desde Santa Justa.",
+    "lat": 37.383,
+    "lng": -5.992,
+    "ruta": [
+      [-5.989, 37.3885],
+      [-5.9893, 37.3862],
+      [-5.9905, 37.3851],
+      [-5.9912, 37.3838],
+      [-5.992, 37.383]
+    ]
+  },
+  {
+    "id": "tren",
+    "nombre": "Estación de tren",
+    "categoria": "transporte",
+    "minPie": 16,
+    "minCoche": 5,
+    "descripcion": "Trenes de cercanías y de alta velocidad. Desde la estación se llega en taxi en cinco minutos o en un paseo largo.",
+    "lat": 37.3922,
+    "lng": -5.9755,
+    "ruta": [
+      [-5.989, 37.3885],
+      [-5.985, 37.3891],
+      [-5.981, 37.3903],
+      [-5.9775, 37.3915],
+      [-5.9755, 37.3922]
+    ]
+  },
+  {
+    "id": "aparcamiento",
+    "nombre": "Aparcamiento",
+    "categoria": "aparcamiento",
+    "minPie": 3,
+    "descripcion": "Aparcamiento público cubierto, abierto las 24 horas, con plazas para tus invitados.",
+    "lat": 37.3873,
+    "lng": -5.9871,
+    "ruta": [
+      [-5.989, 37.3885],
+      [-5.9882, 37.3878],
+      [-5.9871, 37.3873]
+    ]
+  },
+  {
+    "id": "aeropuerto",
+    "nombre": "Aeropuerto",
+    "categoria": "transporte",
+    "minCoche": 25,
+    "descripcion": "A media hora de los vuelos nacionales e internacionales, con taxi y autobús directo al centro.",
+    "lat": 37.418,
+    "lng": -5.8931,
+    "ruta": [
+      [-5.989, 37.3885],
+      [-5.96, 37.398],
+      [-5.93, 37.402],
+      [-5.9, 37.412],
+      [-5.8931, 37.418]
+    ]
+  }
+]

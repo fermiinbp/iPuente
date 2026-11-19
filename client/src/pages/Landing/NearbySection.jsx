@@ -1,32 +1,42 @@
-// Sección «Alrededor del edificio»: mapa 3D con los puntos cercanos y lista accesible con sus tiempos.
-// Sin WebGL, la lista y el detalle bastan. Three.js se carga en diferido.
-import { lazy, Suspense, useState } from 'react';
+// Sección «Alrededor del edificio»: mapa vectorial con los lugares cercanos y lista accesible con sus tiempos.
+// Sin mapa (sin WebGL o sin red), la lista y el detalle bastan. MapLibre se carga en diferido.
+import { lazy, Suspense, useCallback, useState } from 'react';
 import ErrorBoundary from '@/components/three/ErrorBoundary/ErrorBoundary.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
-import { NEARBY_BUILDING, NEARBY_PLACES } from './nearbyData.js';
+import pois from '@/data/poi.json';
 import styles from './NearbySection.module.css';
 
-// LazyCanvas importa @react-three/fiber: se carga en diferido para que Three.js no entre en la carga inicial.
-const LazyCanvas = lazy(() => import('@/components/three/LazyCanvas/LazyCanvas.jsx'));
 const NearbyMap = lazy(() => import('@/components/building/NearbyMap/NearbyMap.jsx'));
 
-const CAMERA = { position: [0, 0, 24], fov: 30 };
+function tiempos(poi) {
+  const partes = [];
+  if (poi.minPie) partes.push(`${poi.minPie} min a pie`);
+  if (poi.minCoche) partes.push(`${poi.minCoche} min en coche`);
+  return partes.join(' · ');
+}
 
 export default function NearbySection() {
-  const [activeId, setActiveId] = useState(NEARBY_PLACES[0].id);
+  const [activeId, setActiveId] = useState(null); // elegido con clic o Enter: mueve la cámara
+  const [hoverId, setHoverId] = useState(null); // ratón o foco: solo resalta
   const [announcement, setAnnouncement] = useState('');
-  const active = NEARBY_PLACES.find((place) => place.id === activeId) ?? NEARBY_PLACES[0];
+  const [mapaFallido, setMapaFallido] = useState(false);
+  const active = pois.find((poi) => poi.id === activeId) ?? null;
 
-  const choose = (place) => {
-    setActiveId(place.id);
-    setAnnouncement(`${place.name}: ${place.time}. ${place.detail}`);
+  const choose = (poi) => {
+    setActiveId(poi.id);
+    setAnnouncement(`${poi.nombre}: ${tiempos(poi)}. ${poi.descripcion}`);
   };
+  const reset = () => {
+    setActiveId(null);
+    setAnnouncement('Mapa centrado en el edificio.');
+  };
+  const onUnavailable = useCallback(() => setMapaFallido(true), []);
 
   const sinMapa = (
     <p className={styles.note} role="note">
-      No se puede mostrar el mapa en 3D en este dispositivo. Tienes la lista de lugares cercanos y
-      sus tiempos justo al lado.
+      No se puede mostrar el mapa en este dispositivo. Tienes la lista de lugares cercanos y sus
+      tiempos justo al lado.
     </p>
   );
 
@@ -39,21 +49,23 @@ export default function NearbySection() {
       innerClassName={styles.inner}
     >
       <div className={styles.mapBox}>
-        <ErrorBoundary fallback={sinMapa}>
-          <Suspense fallback={<p className={styles.note}>Cargando el mapa…</p>}>
-            <LazyCanvas
-              lazy
-              label={`Mapa en 3D de ${NEARBY_BUILDING.name} y los lugares cercanos`}
-              camera={CAMERA}
-              className={styles.map}
-              fallback={sinMapa}
-            >
-              <Suspense fallback={null}>
-                <NearbyMap building={NEARBY_BUILDING} places={NEARBY_PLACES} activeId={active.id} />
-              </Suspense>
-            </LazyCanvas>
-          </Suspense>
-        </ErrorBoundary>
+        {mapaFallido ? (
+          sinMapa
+        ) : (
+          <ErrorBoundary fallback={sinMapa}>
+            <Suspense fallback={<p className={styles.note}>Cargando el mapa…</p>}>
+              <NearbyMap
+                pois={pois}
+                activeId={activeId}
+                hoverId={hoverId}
+                onSelect={choose}
+                onHover={setHoverId}
+                onReset={reset}
+                onUnavailable={onUnavailable}
+              />
+            </Suspense>
+          </ErrorBoundary>
+        )}
       </div>
 
       <div className={styles.info}>
@@ -63,22 +75,29 @@ export default function NearbySection() {
         </p>
 
         <div className={styles.list} role="group" aria-label="Lugares cercanos">
-          {NEARBY_PLACES.map((place) => {
-            const pressed = place.id === active.id;
+          {pois.map((poi, i) => {
+            const pressed = poi.id === activeId;
+            const resaltado = !pressed && poi.id === hoverId;
             return (
               <button
-                key={place.id}
+                key={poi.id}
                 type="button"
-                className={pressed ? styles.itemActive : styles.item}
+                className={pressed ? styles.itemActive : resaltado ? styles.itemHover : styles.item}
                 aria-pressed={pressed}
-                onClick={() => choose(place)}
+                onClick={() => choose(poi)}
+                onFocus={() => setHoverId(poi.id)}
+                onBlur={() => setHoverId(null)}
                 onPointerEnter={(event) => {
-                  // Solo con ratón: en táctil el hover emulado no debe cambiar la selección.
-                  if (event.pointerType === 'mouse') setActiveId(place.id);
+                  // Solo con ratón: en táctil el hover emulado no debe resaltar nada.
+                  if (event.pointerType === 'mouse') setHoverId(poi.id);
                 }}
+                onPointerLeave={() => setHoverId(null)}
               >
-                <span className={styles.name}>{place.name}</span>
-                <span className={styles.time}>{place.time}</span>
+                <span className={styles.number} aria-hidden="true">
+                  {i + 1}
+                </span>
+                <span className={styles.name}>{poi.nombre}</span>
+                <span className={styles.time}>{tiempos(poi)}</span>
               </button>
             );
           })}
@@ -89,10 +108,18 @@ export default function NearbySection() {
           {announcement}
         </p>
         <div className={styles.detail}>
-          <p className={styles.detailTitle}>{active.name}</p>
-          <p className={styles.detailText}>
-            {active.time}. {active.detail}
-          </p>
+          {active ? (
+            <>
+              <p className={styles.detailTitle}>{active.nombre}</p>
+              <p className={styles.detailText}>
+                {tiempos(active)}. {active.descripcion}
+              </p>
+            </>
+          ) : (
+            <p className={styles.detailText}>
+              Elige un lugar de la lista para ver el recorrido desde el edificio.
+            </p>
+          )}
         </div>
       </div>
     </Section>
