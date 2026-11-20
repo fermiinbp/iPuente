@@ -3,7 +3,7 @@
 // Sin `links` no hay menú lateral y el logo pasa a la barra (estado de la solicitud de alta, wireframe 10b).
 // Por debajo de 900 px el menú lateral se abre con «Menú» como panel deslizante: página inerte y sin scroll, foco
 // atrapado (useModalFocus) y cierre con ×, Escape, al elegir una opción o al pasar a escritorio.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import UserMenu from '@/components/layout/UserMenu/UserMenu.jsx';
@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth.js';
 import { useModalFocus } from '@/hooks/useModalFocus.js';
 import { getMyCompany } from '@/services/companyService.js';
 import logo from '@/assets/images/ipuente-logo-sobre-oscuro.svg';
+import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import styles from './DashboardLayout.module.css';
 
 const ROLE_BADGES = { [ROLES.COMPANY]: 'Empresa', [ROLES.ADMIN]: 'Admin' };
@@ -164,7 +165,9 @@ export default function DashboardLayout({ title, links = [] }) {
         </header>
 
         <main className={styles.content}>
-          <Outlet />
+          <Suspense fallback={<Spinner label="Cargando…" />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
 
