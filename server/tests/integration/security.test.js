@@ -91,14 +91,53 @@ describe('Seguridad de la API: rate limit y CORS', () => {
   describe('IP real y store de Firestore', () => {
     const health = (headers) => fetch(`${baseUrl}/api/health`, { headers });
 
-    it('con x-nf-client-connection-ip, distintas X-Forwarded-For cuentan juntas', async () => {
+    // Fija una variable de entorno durante el test y la restaura al terminar.
+    const withEnv = (name, value, fn) => async () => {
+      const previous = process.env[name];
+      process.env[name] = value;
+      try {
+        await fn();
+      } finally {
+        if (previous === undefined) delete process.env[name];
+        else process.env[name] = previous;
+      }
+    };
+
+    it(
+      'con VERCEL y x-vercel-forwarded-for, distintas X-Forwarded-For cuentan juntas',
+      withEnv('VERCEL', '1', async () => {
+        setRateLimitForTests({ general: { limit: 2, windowMs: 60_000 } });
+        const nf = { 'x-vercel-forwarded-for': '9.9.9.9' };
+        assert.equal((await health({ ...nf, 'x-forwarded-for': '1.1.1.1' })).status, 200);
+        assert.equal((await health({ ...nf, 'x-forwarded-for': '2.2.2.2' })).status, 200);
+        assert.equal((await health({ ...nf, 'x-forwarded-for': '3.3.3.3' })).status, 429);
+        // Otra IP de Vercel cuenta aparte.
+        assert.equal((await health({ 'x-vercel-forwarded-for': '8.8.8.8' })).status, 200);
+      }),
+    );
+
+    it('sin VERCEL se ignora x-vercel-forwarded-for (no se puede falsear para esquivar el límite)', async () => {
+      assert.equal(process.env.VERCEL, undefined);
       setRateLimitForTests({ general: { limit: 2, windowMs: 60_000 } });
-      const nf = { 'x-nf-client-connection-ip': '9.9.9.9' };
-      assert.equal((await health({ ...nf, 'x-forwarded-for': '1.1.1.1' })).status, 200);
-      assert.equal((await health({ ...nf, 'x-forwarded-for': '2.2.2.2' })).status, 200);
-      assert.equal((await health({ ...nf, 'x-forwarded-for': '3.3.3.3' })).status, 429);
-      // Otra IP de Netlify cuenta aparte.
-      assert.equal((await health({ 'x-nf-client-connection-ip': '8.8.8.8' })).status, 200);
+      assert.equal((await health({ 'x-vercel-forwarded-for': '1.1.1.1' })).status, 200);
+      assert.equal((await health({ 'x-vercel-forwarded-for': '2.2.2.2' })).status, 200);
+      assert.equal((await health({ 'x-vercel-forwarded-for': '3.3.3.3' })).status, 429);
+    });
+
+    it(
+      'con VERCEL_ENV definido los límites no se saltan aunque NODE_ENV sea test',
+      withEnv('VERCEL_ENV', 'preview', async () => {
+        assert.equal(process.env.NODE_ENV, 'test');
+        const res = await health();
+        assert.ok(res.headers.get('ratelimit'), 'debe llevar la cabecera RateLimit');
+        assert.throws(() => setRateLimitForTests({}), /solo se puede usar en tests/);
+        assert.throws(() => setTokenVerifier(null), /solo se puede usar en tests/);
+      }),
+    );
+
+    it('sin VERCEL_ENV y con NODE_ENV=test los límites se saltan', async () => {
+      assert.equal(process.env.VERCEL_ENV, undefined);
+      assert.equal((await health()).headers.get('ratelimit'), null);
     });
 
     it('el contador del registro se guarda en rateLimits con expiresAt', async () => {

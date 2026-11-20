@@ -31,10 +31,10 @@ async function loadRooms(ids) {
 const MAX_FUTURE = 500;
 
 // Datos mínimos de una sala para las respuestas.
-const toSala = (room) => (room ? { nombre: room.name, codigo: room.code } : null);
+export const toSala = (room) => (room ? { nombre: room.name, codigo: room.code } : null);
 
 // Nombre y email del cliente (sin id ni más datos personales).
-const toCliente = (user) =>
+export const toCliente = (user) =>
   user ? { nombre: user.name ?? null, email: user.email ?? null } : null;
 
 // Rango [from, to) en Date para la consulta, a partir de desde y hasta (inclusive) con sus

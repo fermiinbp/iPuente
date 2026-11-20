@@ -33,6 +33,13 @@ export function daysBetween(desde, hasta) {
   return Math.round((ms(hasta) - ms(desde)) / (24 * 60 * 60 * 1000));
 }
 
+// Mes natural de una fecha (hora local, Europe/Madrid): rango [from, to) y `mes` como AAAA-MM.
+export function monthRange(now = new Date()) {
+  const from = new Date(now.getFullYear(), now.getMonth(), 1);
+  const to = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return { from, to, mes: `${from.getFullYear()}-${pad(from.getMonth() + 1)}` };
+}
+
 // Rango de un listado con valores por defecto: desde = hoy - 30 días y hasta = desde + 90 días.
 export function resolveRange({ desde, hasta } = {}, today = todayString()) {
   const from = desde ?? addDays(today, -30);

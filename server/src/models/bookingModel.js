@@ -69,3 +69,29 @@ export function listInRange({ from, to, companyId, status, limit = 500 }) {
   query = query.where('startDate', '>=', from).where('startDate', '<', to);
   return runQuery(query, { orderBy: 'startDate', direction: 'desc', limit });
 }
+
+// Cuenta las reservas de una empresa con alguno de los estados que empiezan en [from, to) y suma su
+// totalAmount, con una agregación de Firestore (no lee los documentos ni tiene tope).
+// Índice companyId + status + startDate. Devuelve { count, total }.
+export function summarizeByCompany(companyId, { statuses, from, to }) {
+  return base.aggregateWhere(
+    [
+      ['companyId', '==', companyId],
+      ['status', 'in', statuses],
+      ['startDate', '>=', from],
+      ['startDate', '<', to],
+    ],
+    'totalAmount',
+  );
+}
+
+// Próximas reservas de una empresa con alguno de los estados dados que empiezan desde `from`, la más
+// cercana primero y como mucho `limit` (índice companyId + status + startDate ASC).
+export function listUpcomingByCompany(companyId, { statuses, from, limit }) {
+  const query = base
+    .collection()
+    .where('companyId', '==', companyId)
+    .where('status', 'in', statuses)
+    .where('startDate', '>=', from);
+  return runQuery(query, { orderBy: 'startDate', direction: 'asc', limit });
+}

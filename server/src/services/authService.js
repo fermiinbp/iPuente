@@ -1,5 +1,5 @@
 // Registro de clientes y empresas: crea el usuario en Firebase Auth, su ficha en Firestore y su rol (custom claim).
-import { adminAuth } from '../config/config.js';
+import { adminAuth, isProductionEnv } from '../config/config.js';
 import { ROLES } from '../config/roles.js';
 import { runTransaction } from '../models/baseModel.js';
 import * as companyModel from '../models/companyModel.js';
@@ -13,7 +13,7 @@ let testAuth = null;
 
 // Solo para tests: sustituye Firebase Auth por un doble. Con null se restaura el real.
 export function setAuthClientForTests(fake) {
-  if (process.env.NODE_ENV === 'production') {
+  if (isProductionEnv()) {
     throw new Error('setAuthClientForTests solo se puede usar en tests');
   }
   testAuth = fake ?? null;

@@ -1,6 +1,7 @@
 // Validación del panel de empresa: alta, edificios, plantas, datos de sala y bloqueos.
 import { body, query } from 'express-validator';
 
+import { sinCorchetes } from './buildingValidator.js';
 import { idParam, normalizeStorageUrl, storageImageUrl } from './commonValidator.js';
 
 // Exige un valor escalar (no array ni objeto) para que express-validator no valide por elemento.
@@ -171,6 +172,16 @@ export const listRooms = [
     .bail()
     .isIn(['publicada', 'sin_precio', 'oculta'])
     .withMessage('estado debe ser publicada, sin_precio u oculta'),
+];
+
+// Resumen del panel: no admite parámetros (ni con corchetes ni desconocidos) para no ignorarlos en silencio.
+export const summary = [
+  sinCorchetes,
+  query().custom((value, { req }) => {
+    const clave = Object.keys(req.query)[0];
+    if (clave === undefined) return true;
+    throw new Error(`${clave} no es un parámetro válido: el resumen no admite filtros`);
+  }),
 ];
 
 export const setRoomVisibility = [
