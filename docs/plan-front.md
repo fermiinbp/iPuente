@@ -11,7 +11,7 @@ Tamaños orientativos: **S** ≈ medio día · **M** ≈ 1–2 días · **L** �
 
 Todas las páginas se maquetan con **datos de prueba** (UI015) servidos por `src/services/` y se conectarán a la API en una épica futura (`INT`). Los endpoints públicos de edificios, plantas y salas ya existen (DAT011, #97), así que esos services pueden conectarse antes si el equipo lo decide.
 
-Estado en el tablero: la épica `UI` (#72) y sus 18 issues, la épica `CLI` (#101) y sus 16 issues, y la épica `EMP` (#124) y sus 16 issues están creadas. La épica `ADM` está pendiente de crear.
+Estado en el tablero: la épica `UI` (#72) y sus 18 issues, la épica `CLI` (#101) y sus 16 issues, y la épica `EMP` (#124) y sus 16 issues están creadas. La épica `ADM` (#204) está creada; sus issues se crean a medida que se cogen (ADM002, #205, la primera).
 
 ## Épica 1 · `UI` Base común (la coge cualquiera de los dos) · #72
 
@@ -142,7 +142,7 @@ Sigue la regla de `AGENTS.md`: ningún componente obtiene datos directamente, si
 
 **Back necesario para terminarla:** las pantallas de empresa se maquetan con datos de prueba. Lo que tiene que dar la API para cada issue (lo que ya cubren DAT013–DAT018 y lo que falta, repartido en DAT019–DAT038) está en [`docs/back-pendiente-emp.md`](./back-pendiente-emp.md).
 
-## Épica 4 · `ADM` Admin (persona A, después de cliente)
+## Épica 4 · `ADM` Admin (persona A, después de cliente) · #204
 
 Es la épica más ligera porque casi todo reutiliza piezas comunes (`DataTable`, `FilterBar`, `ConfirmModal`, `BookingDetail`, `StatCard`).
 
