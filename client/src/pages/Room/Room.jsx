@@ -1,6 +1,7 @@
 // Ficha de sala con galería, equipamiento, disponibilidad y reserva.
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
+import Breadcrumbs from '@/components/ui/Breadcrumbs/Breadcrumbs.jsx';
 import BookingForm from '@/components/booking/BookingForm/BookingForm.jsx';
 import AmenitiesList from '@/components/room/AmenitiesList/AmenitiesList.jsx';
 import RoomGallery from '@/components/room/RoomGallery/RoomGallery.jsx';
@@ -24,8 +25,17 @@ export default function Room() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const fecha = searchParams.get('date') || todayString();
+  const people = searchParams.get('people') ?? '';
 
-  const [selection, setSelection] = useState(null);
+  // La franja viaja en la URL (start y end) para que siga elegida tras pasar por el login.
+  const [selection, setSelection] = useState(() => {
+    const inicio = Number(searchParams.get('start'));
+    const fin = Number(searchParams.get('end'));
+    return Number.isInteger(inicio) && Number.isInteger(fin) && inicio > 0 && fin > inicio
+      ? { inicio, fin }
+      : null;
+  });
+  const [attendees, setAttendees] = useState(people);
   const [submitting, setSubmitting] = useState(false);
   const [bookingError, setBookingError] = useState('');
 
@@ -41,22 +51,51 @@ export default function Room() {
   const freeHours = demo ? DEMO_FREE_HOURS : (hours.data?.horasLibres ?? []);
   usePageTitle(room?.nombre ?? 'Sala');
 
+  // Si las horas elegidas ya no están libres (otra fecha, otra reserva), la selección se descarta.
+  const hoursReady = demo || (!hours.loading && !hours.error);
+  const selectionFree =
+    !selection ||
+    !hoursReady ||
+    Array.from({ length: selection.fin - selection.inicio }, (_, i) => selection.inicio + i).every(
+      (hour) => freeHours.includes(hour),
+    );
+  const activeSelection = selectionFree ? selection : null;
+
+  function keepParams(extra = {}) {
+    const params = new URLSearchParams();
+    params.set('date', extra.date ?? fecha);
+    if (people) params.set('people', people);
+    return params;
+  }
+
   function handleDateChange(next) {
     setSelection(null);
     setBookingError('');
-    setSearchParams(next ? { date: next } : {}, { replace: true });
+    const params = keepParams();
+    if (next) params.set('date', next);
+    else params.delete('date');
+    setSearchParams(params, { replace: true });
   }
 
   async function handleSubmit() {
+    if (submitting || !activeSelection) return;
     if (!user) {
-      navigate('/login', { state: { from: `${location.pathname}${location.search}` } });
+      const params = keepParams();
+      params.set('start', String(activeSelection.inicio));
+      params.set('end', String(activeSelection.fin));
+      navigate('/login', { state: { from: `${location.pathname}?${params.toString()}` } });
       return;
     }
     setSubmitting(true);
     setBookingError('');
     try {
-      await createBooking({ roomId, fecha, inicio: selection.inicio, fin: selection.fin });
-      navigate('/my-bookings');
+      const booking = await createBooking({
+        roomId,
+        fecha,
+        inicio: activeSelection.inicio,
+        fin: activeSelection.fin,
+      });
+      navigate(`/my-bookings/${booking.id}`, { state: { created: true } });
     } catch (error) {
       setBookingError(error.message);
       if (error.code === 'SLOT_TAKEN') {
@@ -96,9 +135,17 @@ export default function Room() {
   }
 
   const where = [room.edificio?.nombre, room.planta?.nombre].filter(Boolean).join(' · ');
-  const backTo = room.planta
-    ? `/buildings/${room.edificio.id}/floors/${room.planta.id}?date=${encodeURIComponent(fecha)}`
-    : `/buildings/${room.edificio.id}?date=${encodeURIComponent(fecha)}`;
+  const keep = keepParams().toString();
+  const buildingTo = `/buildings/${room.edificio.id}?${keep}`;
+  const floorTo = room.planta
+    ? `/buildings/${room.edificio.id}/floors/${room.planta.id}?${keep}`
+    : null;
+  const backTo = floorTo ?? buildingTo;
+  const crumbs = [
+    { label: room.edificio.nombre ?? 'Edificio', to: buildingTo },
+    ...(room.planta ? [{ label: room.planta.nombre, to: floorTo }] : []),
+    { label: room.nombre },
+  ];
 
   return (
     <div className={styles.page}>
@@ -112,6 +159,7 @@ export default function Room() {
           <Link className={styles.back} to={backTo}>
             <span aria-hidden="true">←</span> Volver al plano
           </Link>
+          <Breadcrumbs items={crumbs} />
           {where && <p className={styles.eyebrow}>{where}</p>}
           <h1 className={styles.title}>{room.nombre}</h1>
 
@@ -155,8 +203,11 @@ export default function Room() {
             freeHours={freeHours}
             loadingHours={!demo && hours.loading}
             hoursError={!demo && hours.error ? hours.error.message : ''}
-            selection={selection}
+            selection={activeSelection}
             onSelectionChange={setSelection}
+            attendees={attendees}
+            onAttendeesChange={setAttendees}
+            capacity={room.capacidad ?? null}
             pricePerHour={room.precioHora ?? 0}
             bookable={room.reservable}
             loggedIn={Boolean(user)}

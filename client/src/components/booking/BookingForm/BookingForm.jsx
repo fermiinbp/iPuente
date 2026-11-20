@@ -17,6 +17,9 @@ export default function BookingForm({
   hoursError,
   selection,
   onSelectionChange,
+  attendees = '',
+  onAttendeesChange,
+  capacity = null,
   pricePerHour,
   bookable,
   loggedIn,
@@ -28,9 +31,18 @@ export default function BookingForm({
     return <Alert type="info">Esta sala no se puede reservar online.</Alert>;
   }
 
+  // Asistentes: opcional, pero si se escribe debe ser 1 o más y no pasar de la capacidad de la sala.
+  const count = attendees === '' ? null : Number(attendees);
+  let attendeesError = '';
+  if (count !== null && !(Number.isInteger(count) && count >= 1)) {
+    attendeesError = 'Indica al menos 1 asistente.';
+  } else if (count !== null && capacity && count > capacity) {
+    attendeesError = `La sala admite como máximo ${capacity} personas.`;
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
-    if (selection) onSubmit();
+    if (selection && !attendeesError && !submitting) onSubmit();
   }
 
   return (
@@ -60,11 +72,26 @@ export default function BookingForm({
         />
       )}
 
+      <Input
+        label="Asistentes"
+        type="number"
+        name="attendees"
+        variant="boxed"
+        min="1"
+        max={capacity ?? undefined}
+        step="1"
+        inputMode="numeric"
+        placeholder={capacity ? `Hasta ${capacity}` : undefined}
+        value={attendees}
+        onChange={(event) => onAttendeesChange?.(event.target.value)}
+        error={attendeesError}
+      />
+
       <BookingSummary fecha={fecha} selection={selection} pricePerHour={pricePerHour} />
 
       {error && <Alert type="error">{error}</Alert>}
 
-      <Button type="submit" loading={submitting} disabled={!selection}>
+      <Button type="submit" loading={submitting} disabled={!selection || Boolean(attendeesError)}>
         {loggedIn ? 'Reservar' : 'Inicia sesión para reservar'}
       </Button>
     </form>
