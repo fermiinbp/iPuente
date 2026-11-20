@@ -38,7 +38,7 @@ Lo único cercano a cerrar es DAT009, que es solo front y no necesita código nu
 - Pendiente sin commitear en el árbol de trabajo: `client/.env.example` modificado, `coral.txt` borrado y `docs/prototipo/` sin seguimiento.
 
 ### Notas
-- `npm run build -w server` no existe: `server/package.json` no tiene script `build` (la API se ejecuta tal cual; en producción la empaqueta Netlify). El criterio «build pasa en server» no se puede cumplir sin añadir ese script.
+- `npm run build -w server` no existe: `server/package.json` no tiene script `build` (la API se ejecuta tal cual; en producción la despliega Vercel). El criterio «build pasa en server» no se puede cumplir sin añadir ese script.
 - Convención de rama: la skill `flujo-issue` y `AGENTS.md` usan `ID-slug` (`DAT009-authprovider-y-guardas-de-ruta`); este encargo pide `feat/3-<slug>`. Hay que elegir una.
 
 ## #3 · Plan de refactor estructural (sin cambios visuales ni de comportamiento)

@@ -35,11 +35,13 @@ const instances = {};
 // valor, incluido uno ausente o 'production', los deja activos (fallar cerrado).
 const isTestRun = () => process.env.NODE_ENV === 'test';
 
-// IP del cliente: en Netlify x-nf-client-connection-ip la pone la plataforma y el cliente no puede
-// falsearla; si no existe se usa req.ip (con trust proxy = 1).
+// IP del cliente: en Vercel x-vercel-forwarded-for la sobrescribe siempre la plataforma (el cliente
+// no puede falsearla); puede traer varias IP separadas por comas y se usa la primera. Si no existe
+// (local, tests) se usa req.ip (con trust proxy = 1).
 export function clientIp(req) {
-  const header = req.headers?.['x-nf-client-connection-ip'];
-  const ip = (Array.isArray(header) ? header[0] : header) || req.ip || '';
+  const header = req.headers?.['x-vercel-forwarded-for'];
+  const first = (Array.isArray(header) ? header[0] : header)?.split(',')[0].trim();
+  const ip = first || req.ip || '';
   return ipKeyGenerator(ip);
 }
 
@@ -74,6 +76,9 @@ function build(name) {
     store: storeFor(name),
     keyGenerator: (req) => (name === 'ai' && req.user?.uid) || clientIp(req),
     handler: (req, res, next) => next(new HttpError(429, 'RATE_LIMITED', message)),
+    // Se crea en la primera petición (para poder cambiarlo en tests) y se reutiliza: el aviso
+    // ERR_ERL_CREATED_IN_REQUEST_HANDLER no aplica aquí y solo ensuciaría los logs.
+    validate: { creationStack: false },
   });
 }
 

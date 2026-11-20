@@ -25,7 +25,7 @@ if (process.env.NODE_ENV === 'production' && missing.includes('APP_URL')) {
   throw new Error('Falta APP_URL en producción: es el único origen que permite CORS.');
 }
 
-// Netlify (y muchos .env) guardan la clave con "\n" literales: los convertimos en saltos reales.
+// Vercel (y muchos .env) guardan la clave con "\n" literales: los convertimos en saltos reales.
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
 export const config = {
@@ -49,7 +49,7 @@ export function setStorageBucketForTests(bucket) {
   config.storageBucket = bucket;
 }
 
-// Inicializa firebase-admin una sola vez (Netlify reutiliza el proceso entre peticiones).
+// Inicializa firebase-admin una sola vez (Vercel reutiliza el proceso entre peticiones).
 function getFirebaseApp() {
   if (getApps().length > 0) return getApps()[0];
 

@@ -91,14 +91,14 @@ describe('Seguridad de la API: rate limit y CORS', () => {
   describe('IP real y store de Firestore', () => {
     const health = (headers) => fetch(`${baseUrl}/api/health`, { headers });
 
-    it('con x-nf-client-connection-ip, distintas X-Forwarded-For cuentan juntas', async () => {
+    it('con x-vercel-forwarded-for, distintas X-Forwarded-For cuentan juntas', async () => {
       setRateLimitForTests({ general: { limit: 2, windowMs: 60_000 } });
-      const nf = { 'x-nf-client-connection-ip': '9.9.9.9' };
+      const nf = { 'x-vercel-forwarded-for': '9.9.9.9' };
       assert.equal((await health({ ...nf, 'x-forwarded-for': '1.1.1.1' })).status, 200);
       assert.equal((await health({ ...nf, 'x-forwarded-for': '2.2.2.2' })).status, 200);
       assert.equal((await health({ ...nf, 'x-forwarded-for': '3.3.3.3' })).status, 429);
-      // Otra IP de Netlify cuenta aparte.
-      assert.equal((await health({ 'x-nf-client-connection-ip': '8.8.8.8' })).status, 200);
+      // Otra IP de Vercel cuenta aparte.
+      assert.equal((await health({ 'x-vercel-forwarded-for': '8.8.8.8' })).status, 200);
     });
 
     it('el contador del registro se guarda en rateLimits con expiresAt', async () => {

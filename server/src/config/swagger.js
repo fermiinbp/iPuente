@@ -6,12 +6,15 @@ import { fileURLToPath } from 'node:url';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
-// Carpeta de las rutas. Desde este archivo funciona en local y en los tests; empaquetado en Netlify
-// import.meta.url ya no apunta aquí, así que se usa la copia que añade included_files en la raíz de la función.
-const sourceRoutesDir = fileURLToPath(new URL('../routes', import.meta.url));
-const routesDir = existsSync(sourceRoutesDir)
-  ? sourceRoutesDir
-  : path.join(process.cwd(), 'server/src/routes');
+// Carpeta de las rutas. Desde este archivo funciona en local, en los tests y en Vercel (función ESM);
+// si import.meta.url no apuntara aquí, se usa la copia que añade includeFiles (vercel.json) desde la raíz.
+const sourceRoutesDir = import.meta.url
+  ? fileURLToPath(new URL('../routes', import.meta.url))
+  : null;
+const routesDir =
+  sourceRoutesDir && existsSync(sourceRoutesDir)
+    ? sourceRoutesDir
+    : path.join(process.cwd(), 'server/src/routes');
 const routesGlob = path.join(routesDir, '*.js').replace(/\\/g, '/');
 
 const errorResponse = (description) => ({

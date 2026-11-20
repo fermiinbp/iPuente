@@ -51,7 +51,7 @@ iPuente une las dos partes en un mismo sitio. La empresa convierte su plano en u
 - **Disponibilidad siempre al día.** El servidor calcula los huecos libres de cada sala en el momento de consultarla, a partir de su horario, sus reservas y sus bloqueos, así que el plano muestra siempre la ocupación real sin guardar los horarios libres por separado.
 - **Archivos en el mismo sitio.** Firebase Storage guarda los planos y las fotos de las salas, y Firestore solo conserva su URL y su ruta.
 - **Seguridad por rol en la propia base de datos.** Con las reglas de Firestore, los edificios y planos publicados son de lectura pública, cada empresa solo puede ver lo suyo, y reservas, pagos y roles solo se escriben desde nuestras funciones del servidor.
-- **Sin servidor que mantener.** El plan gratuito cubre el proyecto, y Firebase se integra con Netlify Functions mediante `firebase-admin` para la lógica protegida: reservas, pagos con Stripe (extra) y análisis de planos con IA, cuyas claves nunca llegan al navegador.
+- **Sin servidor que mantener.** El plan gratuito cubre el proyecto, y Firebase se integra con las funciones de Vercel mediante `firebase-admin` para la lógica protegida: reservas, pagos con Stripe (extra) y análisis de planos con IA, cuyas claves nunca llegan al navegador.
 **Frente a Supabase (PostgreSQL):** Supabase sería mejor opción con un modelo muy relacional o con informes complejos en SQL. Para un proyecto de pocas semanas y un modelo sencillo, Firebase nos da autenticación, base de datos y almacenamiento de archivos con menos configuración.
  
 **Limitaciones que asumimos:** Firestore no impide por sí solo que dos reservas se solapen, así que lo comprobamos con una transacción en una función del servidor. Las estadísticas de los paneles también se calculan en funciones, porque Firestore no tiene consultas de agregación tan potentes como SQL.
@@ -413,7 +413,7 @@ companies/{companyId}/rooms/{roomId}/photos/{uuid}.{ext}
 - `companyApproved` lo fija la API: `false` al registrar la empresa, `true` al aprobarla o reactivarla y `false` (más revocación de tokens) al rechazarla o suspenderla. Tras aprobar, el front debe refrescar el token (`getIdToken(true)`) para poder subir. Las empresas ya aprobadas antes de este cambio necesitan que el admin las suspenda y reactive o ejecutar `npm run sync-company-claims -w server` (idempotente: pone `companyApproved: true` al dueño de cada empresa `APPROVED` y `false` al resto). El seed sí crea sus usuarios demo en Auth y les fija el claim (ver «Cuentas de demo»).
 - La API refuerza esto: `fotos` (edificio y sala) y `mapImageUrl` (guardar mapa) solo aceptan URLs de descarga de ese bucket dentro de `companies/{companyId}/` de la empresa del token.
 
-**Variable de entorno:** `FIREBASE_STORAGE_BUCKET` en el `.env` de `server/` (y en Netlify), con el mismo valor que `VITE_FIREBASE_STORAGE_BUCKET` del front (`<proyecto>.firebasestorage.app` o `<proyecto>.appspot.com`). Sin ella, la API rechaza cualquier URL de foto o plano con `400`.
+**Variable de entorno:** `FIREBASE_STORAGE_BUCKET` en el `.env` de `server/` (y en Vercel), con el mismo valor que `VITE_FIREBASE_STORAGE_BUCKET` del front (`<proyecto>.firebasestorage.app` o `<proyecto>.appspot.com`). Sin ella, la API rechaza cualquier URL de foto o plano con `400`.
 
 **Desplegar las reglas** (hace falta Storage activado en la consola de Firebase):
 
@@ -615,7 +615,7 @@ La API se conecta a Firestore y a Firebase Auth con `firebase-admin`, usando la 
 | `FIREBASE_CLIENT_EMAIL` | `client_email` |
 | `FIREBASE_PRIVATE_KEY` | `private_key`, entre comillas dobles y con los `\n` tal cual |
 | `FIREBASE_STORAGE_BUCKET` | Bucket de Storage (no está en el JSON; es el de `VITE_FIREBASE_STORAGE_BUCKET`) |
-| `APP_URL` | URL de la web (p. ej. `https://ipuente.netlify.app`): es el único origen que permite CORS. En desarrollo, si falta, se usa `http://localhost:5173`; en producción no hay valor por defecto. |
+| `APP_URL` | URL de la web (p. ej. `https://ipuente.vercel.app`, sin barra final): es el único origen que permite CORS (los Preview Deployments de Vercel tienen otra URL y no lo pasan).  En desarrollo, si falta, se usa `http://localhost:5173`; en producción no hay valor por defecto. |
 
 4. Comprueba la conexión (escribe, lee y borra un documento en `_ping`):
 
@@ -624,11 +624,11 @@ cd server
 node --env-file=.env scripts/pingDb.js
 ```
 
-En **Netlify**, las mismas variables van en *Site configuration → Environment variables*. `config.js` convierte los `\n` literales de la clave en saltos de línea reales.
+En **Vercel**, las mismas variables van en *Settings → Environment Variables*. `config.js` convierte los `\n` literales de la clave en saltos de línea reales.
 
-**Límites y proxy:** la API limita las peticiones por IP (general 300 cada 15 min, registro 10 por hora, detección con IA 10 por hora) y responde `429 RATE_LIMITED`. Como en Netlify hay un proxy delante, `app.js` usa `trust proxy = 1` para leer la IP real del cliente; si se despliega sin proxy, hay que quitarlo o cualquiera podría falsear su IP con `X-Forwarded-For`. El límite general cuenta en la memoria de cada instancia (orientativo, para no escribir en Firestore en cada petición); el de registro y el de IA usan un contador compartido en Firestore (colección `rateLimits`, documento por clave con `count` y `expiresAt`). Conviene activar en Firebase la política TTL de Firestore sobre `rateLimits.expiresAt` para que los contadores caducados se borren solos.
+**Límites y proxy:** la API limita las peticiones por IP (general 300 cada 15 min, registro 10 por hora, detección con IA 10 por hora) y responde `429 RATE_LIMITED`. Como en Vercel hay un proxy delante, `app.js` usa `trust proxy = 1` para leer la IP real del cliente; si se despliega sin proxy, hay que quitarlo o cualquiera podría falsear su IP con `X-Forwarded-For`. El límite general cuenta en la memoria de cada instancia (orientativo, para no escribir en Firestore en cada petición); el de registro y el de IA usan un contador compartido en Firestore (colección `rateLimits`, documento por clave con `count` y `expiresAt`). Conviene activar en Firebase la política TTL de Firestore sobre `rateLimits.expiresAt` para que los contadores caducados se borren solos.
 
-**IP real en Netlify:** el límite usa la cabecera `x-nf-client-connection-ip` (la pone Netlify y el cliente no puede falsearla); si no existe, `req.ip`. `trust proxy` sigue en 1.
+**IP real en Vercel:** el límite usa la cabecera `x-vercel-forwarded-for` (Vercel la sobrescribe en cada petición, así que el cliente no puede falsearla; si trae varias IP, se usa la primera); si no existe (local, tests), `req.ip`. No se usa `x-real-ip` ni `x-forwarded-for` directamente. `trust proxy` sigue en 1.
 
 **Orden de middlewares en `app.js`:** cors → (hueco para el webhook de Stripe, sin parsear y fuera del límite) → límite general en `/api` → `express.json()` → `/api/docs` → rutas. `/api/docs` queda dentro del límite general.
 
@@ -636,18 +636,22 @@ En **Netlify**, las mismas variables van en *Site configuration → Environment 
 
 **CIF huérfano:** `companyTaxIds/<cif>` se reserva en una transacción; si el documento no tiene `companyId` y tiene más de 10 minutos, o su `companyId` apunta a una empresa que no existe, se sobrescribe. Rechazar o suspender una empresa NO libera su CIF.
 
-## Despliegue en Netlify
+## Despliegue en Vercel
 
-La web (`client/`) y la API (Express como Netlify Function) se despliegan juntas desde `netlify.toml`. Requiere Node 22 (`.nvmrc`).
+La web (`client/`) y la API (Express como función de Vercel, `api/index.js`) se despliegan juntas desde `vercel.json`. Requiere Node 22 (`.nvmrc`; `engines` pide `22.x`, así Vercel usa la última 22.x, que admite `require()` de módulos ESM como pide `jwks-rsa` en `firebase-admin`).
 
-1. En Netlify: **Add new site → Import an existing project**, elige el repositorio de GitHub y la rama `main`. Netlify lee `netlify.toml` (comando `npm run build`, carpeta `client/dist`, funciones en `netlify/functions`).
-2. En *Site configuration → Environment variables* crea estas variables, cada una en su ámbito:
-   - **Builds** (las lee Vite al construir; no son secretas): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID` y `NODE_VERSION=22`.
-   - **Functions** (las lee la API en ejecución): `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (márcala como **Contains secret values** y con scope solo **Functions**), `FIREBASE_STORAGE_BUCKET`, `APP_URL` (obligatoria en producción: la URL pública del sitio, p. ej. `https://ipuente.netlify.app`) y `NODE_ENV=production`.
-   - **Nunca** definas `FIREBASE_PRIVATE_KEY`, `FIREBASE_CLIENT_EMAIL` ni ningún secreto con prefijo `VITE_` ni en el ámbito Builds: todo lo que lleva `VITE_` acaba dentro del JavaScript público de la web.
-   - **Aviso:** `NODE_ENV=production` NO va en el ámbito Builds: haría que `npm ci` omitiera las dependencias de desarrollo (Vite) y fallaría el build.
-3. En Firebase, una sola vez: `npx firebase-tools deploy --only firestore,storage` (reglas e índices); añade el dominio de Netlify en *Authentication → Settings → Authorized domains*; activa la política TTL de Firestore sobre `rateLimits.expiresAt`.
-4. Si ya había empresas aprobadas antes del claim `companyApproved`: `npm run sync-company-claims -w server`.
+`vercel.json` no admite comentarios, así que se explica aquí: `installCommand` es `npm ci --include=dev` para que el build tenga Vite (devDependency) aunque `NODE_ENV=production`; `outputDirectory` es `client/dist`; `regions` es `fra1` (Fráncfort, cerca de España); la función `api/index.js` tiene `maxDuration` de 60 s e `includeFiles` copia `server/src/routes/**` porque Swagger lee los `@openapi` en ejecución; los `rewrites` mandan `/api/*` a la función (Vercel conserva la URL original) y el resto a `index.html` (React Router). Los archivos estáticos se sirven antes que los rewrites.
+
+1. En Vercel: **Add New → Project**, importa el repositorio de GitHub y la rama `main`. **Root Directory = la raíz del repositorio** (no `client`); Vercel lee `vercel.json` (si no lo detecta, *Framework Preset = Other*). Si el repositorio es de una organización, un owner debe aprobar la app de Vercel en GitHub. Alternativa sin GitHub: `npx vercel link` y `npx vercel` (vista previa) o `npx vercel --prod` desde la raíz.
+2. En *Settings → Environment Variables* crea, para **Production** (y Preview si quieres probar ramas):
+   - Del front (las lee Vite al construir; no son secretas): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID` y `VITE_FIREBASE_APP_ID`.
+   - De la API (se leen en ejecución): `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (márcala como **Sensitive**; pega el valor sin comillas y con los `
+` literales), `FIREBASE_STORAGE_BUCKET` y `APP_URL` (obligatoria en producción: la URL pública, p. ej. `https://<proyecto>.vercel.app`, sin barra final).
+   - `NODE_ENV`: no hace falta definirlo, Vercel ya lo pone en `production` en el build y en las funciones. Si lo defines, no pasa nada: `npm ci --include=dev` evita que se omitan las dependencias de desarrollo.
+   - **Nunca** pongas secretos con prefijo `VITE_`: todo lo que lleva `VITE_` acaba dentro del JavaScript público de la web.
+   - **CORS:** solo la URL de `APP_URL` pasa CORS; los Preview Deployments (otra URL) no podrán llamar a la API desde el navegador.
+3. En Firebase, una sola vez: `npx firebase-tools deploy --only firestore,storage` (reglas e índices); añade el dominio `*.vercel.app` del proyecto en *Authentication → Settings → Authorized domains*; activa la política TTL de Firestore sobre `rateLimits.expiresAt`.
+4. Si ya había empresas aprobadas antes del claim `companyApproved`: `npm run sync-company-claims -w server`. Para cargar datos de demo: `npm run seed -w server`.
 5. Despliega y comprueba `/api/health` (debe responder `{ "ok": true }`) y `/api/docs` (Swagger). La zona horaria de la API se fija en `Europe/Madrid` (`server/src/config/timezone.js`).
 
 El CI de GitHub Actions (`.github/workflows/ci.yml`) ejecuta lint, tests y build en cada Pull Request.

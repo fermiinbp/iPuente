@@ -7,7 +7,7 @@
 | Archivo | Para qué sirve |
 | --- | --- |
 | `package.json` | Raíz del monorepo: declara los workspaces `client` y `server` y los scripts globales (`dev`, `build`, `start`, `lint`, `test`, `format`). |
-| `netlify.toml` | Configuración de Netlify: `npm run build` (con `NODE_VERSION = "22"`), publica `client/dist`, despliega `netlify/functions` con esbuild (`firebase-admin` y Swagger como externos; `included_files` copia `server/src/routes/` para que swagger-jsdoc lea los `@openapi`) y redirige `/api/*` a la función (status 200) y el resto a `index.html` (React Router). |
+| `vercel.json` | Configuración de Vercel: `npm ci --include=dev` (así el build tiene Vite aunque `NODE_ENV=production`), `npm run build`, publica `client/dist`, región `fra1`, la función `api/index.js` (`maxDuration` 60 s; `includeFiles` copia `server/src/routes/` para que swagger-jsdoc lea los `@openapi`) y reescribe `/api/*` a la función y el resto a `index.html` (React Router). |
 | `.gitignore` | Lo que nunca se sube a Git: dependencias, builds, `.env`, claves de Firebase, logs y ajustes personales de editores y de Claude Code. |
 | `.editorconfig` | Mismo formato básico en cualquier editor: UTF-8, 2 espacios, saltos de línea LF. |
 | `.prettierrc` | Reglas de Prettier (comillas simples, punto y coma, 100 caracteres) para que los 4 escribamos igual. |
@@ -16,8 +16,8 @@
 | `storage.rules` | Reglas de Firebase Storage: lectura pública bajo `companies/{companyId}/…`; lectura solo con `get` (sin listar); solo escribe un usuario `COMPANY` con ese mismo `companyId` y `companyApproved == true` en el token (tras aprobar, el front refresca el token con `getIdToken(true)`), solo PNG, JPEG, WebP o GIF (sin SVG) de 1 byte a 5 MB. Todo lo demás, denegado. |
 | `firestore.rules` | Reglas de seguridad de Firestore: el navegador no lee ni escribe directamente (todo pasa por la API, que usa `firebase-admin`). Si el front necesita leer algo, se abre solo esa lectura. |
 | `firestore.indexes.json` | Índices compuestos de Firestore que necesitan las consultas de reservas y plantas. Incluye `bookings` por `status` + `startDate` y por `companyId` + `status` + `startDate` (listado de admin), y `users` por `role` + `createdAt` DESC (listado de usuarios por rol). |
-| `netlify/functions/api.js` | Única Netlify Function: `handler = serverless(app)` con `serverless-http` sobre la app de Express (`server/src/app.js`); importa antes `timezone.js` y quita el prefijo `/.netlify/functions/api` si llegara. |
-| `.nvmrc` | Versión de Node del proyecto (22): la usan `nvm`, Netlify y el CI. Los `engines` piden `>=22` (`--env-file-if-exists` y ESLint 10). |
+| `api/index.js` | Única función de Vercel: exporta por defecto la app de Express (`server/src/app.js`), que ya es un handler `(req, res)`; importa antes `timezone.js`. |
+| `.nvmrc` | Versión de Node del proyecto (22): la usan `nvm` y el CI. Los `engines` piden `22.x` (Vercel usa la última 22.x; `--env-file-if-exists` y ESLint 10 exigen 22.9+). |
 | `.github/workflows/ci.yml` | CI de GitHub Actions en cada Pull Request y push a `main`: `npm ci`, `npm run lint`, `npm test -w server` y `npm run build` (con variables `VITE_FIREBASE_*` ficticias). Sin secretos y con permisos `contents: read`. |
 | `CLAUDE.md` | Instrucciones que Claude Code lee al empezar: qué es el proyecto, qué agente usar y las reglas clave. |
  
@@ -209,8 +209,8 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `server/src/config/config.js` | Configuración del backend y conexión a la base de datos: lee y valida las variables de entorno y conecta con Firebase (Firestore y Auth) mediante `firebase-admin`. En producción exige las variables `FIREBASE_*` y `APP_URL` (`PORT` es opcional). Expone `config.appUrl` (de `APP_URL`; origen CORS permitido, por defecto `http://localhost:5173` solo fuera de producción), `config.storageBucket` (de `FIREBASE_STORAGE_BUCKET`, opcional) y `setStorageBucketForTests`. |
 | `server/src/config/bookingHours.js` | `BOOKING_HOURS`: horario reservable (8–20) que comparten los services y los validators. |
 | `server/src/config/roles.js` | Roles de usuario (`CLIENT`, `COMPANY`, `ADMIN`) del custom claim `role`, los mismos que en el front. |
-| `server/src/config/timezone.js` | Fija `process.env.TZ = 'Europe/Madrid'` (efecto lateral); se importa el primero desde `app.js`, la Netlify Function, el seed y `tests/setup.js` para que las fechas sean iguales en local, Netlify y tests. |
-| `server/src/config/swagger.js` | Documentación de la API con Swagger: genera la especificación OpenAPI leyendo los comentarios `@openapi` de las rutas y la sirve en `/api/docs` (`persistAuthorization` solo fuera de producción; si `routes/` no está junto al archivo, como en el bundle de Netlify, usa `server/src/routes` desde `process.cwd()`). |
+| `server/src/config/timezone.js` | Fija `process.env.TZ = 'Europe/Madrid'` (efecto lateral); se importa el primero desde `app.js`, la función de Vercel, el seed y `tests/setup.js` para que las fechas sean iguales en local, Vercel y tests. |
+| `server/src/config/swagger.js` | Documentación de la API con Swagger: genera la especificación OpenAPI leyendo los comentarios `@openapi` de las rutas y la sirve en `/api/docs` (`persistAuthorization` solo fuera de producción; si `routes/` no está junto al archivo, como en la función de Vercel si `import.meta.url` no apunta aquí, usa `server/src/routes` desde `process.cwd()`). |
 | `server/src/config/stripe.js` | (extra) Cliente de Stripe (modo test) creado con la clave secreta. |
 | `server/src/config/ai.js` | Cliente del modelo de IA con visión (Anthropic) que detecta las salas en los planos. |
  
@@ -262,7 +262,7 @@ Reglas de `express-validator`: un archivo por recurso y un export por endpoint (
 | `server/src/middlewares/requireApprovedCompany.js` | Tras `auth` y `requireRole`: corta con `403 COMPANY_NOT_APPROVED` si la empresa no está aprobada (mensaje según su estado: pendiente, rechazada o suspendida) y la deja en `req.company`. |
 | `server/src/middlewares/validate.js` | Recoge el resultado de los validators de `express-validator` y, si hay errores, responde `400 VALIDATION_ERROR` con el detalle por campo. |
 | `server/src/middlewares/errorHandler.js` | Respuesta de error única `{ error: { code, message, details } }` y 404 para rutas que no existen. Oculta el detalle de los 500. |
-| `server/src/middlewares/rateLimit.js` | Límites de peticiones con `express-rate-limit`: `generalLimiter` (300 cada 15 min por IP, en `/api`, en memoria: orientativo), `registerLimiter` (10 por hora) y `aiDetectLimiter` (10 por hora por uid, debe ir después de `auth`) que usan el store de Firestore. La IP sale de `x-nf-client-connection-ip` (Netlify) o `req.ip`. Responden `429 RATE_LIMITED`. Solo se saltan con `NODE_ENV=test` (fijado por `tests/setup.js`); nunca en producción. Orden en `app.js`: cors → límite general → json → docs → rutas. |
+| `server/src/middlewares/rateLimit.js` | Límites de peticiones con `express-rate-limit`: `generalLimiter` (300 cada 15 min por IP, en `/api`, en memoria: orientativo), `registerLimiter` (10 por hora) y `aiDetectLimiter` (10 por hora por uid, debe ir después de `auth`) que usan el store de Firestore. La IP sale de `x-vercel-forwarded-for` (Vercel la sobrescribe siempre; se usa la primera IP) o `req.ip`. Responden `429 RATE_LIMITED`. Solo se saltan con `NODE_ENV=test` (fijado por `tests/setup.js`); nunca en producción. Orden en `app.js`: cors → límite general → json → docs → rutas. |
 | `server/src/middlewares/firestoreRateLimitStore.js` | Store de `express-rate-limit` sobre Firestore (`init`, `increment`, `decrement`, `resetKey`). Si Firestore falla: registro deja pasar y la IA responde `503 RATE_LIMIT_UNAVAILABLE` (fallar cerrado). |
  
 ### Back: `server/src/controllers/`
@@ -337,8 +337,8 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | `server/src/utils/softDelete.js` | `isDeleted(doc)` y `notDeleted(doc)`: miran `deletedAt` (borrado lógico de edificios, plantas y salas con historial de reservas) para filtrar listados y propiedad. |
 | `server/src/utils/text.js` | `normalizeText`: minúsculas, sin tildes ni espacios de más (tolera `null`); para comparar ciudad y equipamiento. |
 | `server/src/utils/dates.js` | Utilidades de fechas: validar `AAAA-MM-DD` (fecha real del calendario), `todayString`, `dayRange` (rango de un día en hora local), `addDays`, `daysBetween` y `resolveRange` (rango por defecto de los listados: hoy − 30 días y +90). |
-| `server/src/app.js` | Configura Express sin arrancarlo: `trust proxy` 1 (Netlify), CORS restringido a `config.appUrl` (sin `Origin` se permite; otro origen no recibe cabeceras CORS), límite general de peticiones, webhook de Stripe (body sin parsear), JSON, `/api/health`, documentación Swagger en `/api/docs`, rutas y manejo de errores. Lo usan `server.js`, la Netlify Function y los tests. |
-| `server/src/server.js` | Arranca la API en local con `app.listen`. En producción no se usa: Netlify ejecuta `app.js` como función. |
+| `server/src/app.js` | Configura Express sin arrancarlo: `trust proxy` 1 (Vercel), CORS restringido a `config.appUrl` (sin `Origin` se permite; otro origen no recibe cabeceras CORS), límite general de peticiones, webhook de Stripe (body sin parsear), JSON, `/api/health`, documentación Swagger en `/api/docs`, rutas y manejo de errores. Lo usan `server.js`, la función de Vercel (`api/index.js`) y los tests. |
+| `server/src/server.js` | Arranca la API en local con `app.listen`. En producción no se usa: Vercel ejecuta `app.js` como función (`api/index.js`). |
  
 ### Tests: `server/tests/`
  
