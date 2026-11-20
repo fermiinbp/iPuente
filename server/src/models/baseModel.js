@@ -45,12 +45,14 @@ export function createModel(collectionName) {
 
   // Crea o actualiza un documento con id fijo (set con merge). Conserva createdAt si ya existía.
   // Pensado para el seed y para datos con id conocido (p. ej. users, cuyo id es el UID).
-  async function upsert(id, data) {
+  // Con { tx } lee y escribe dentro de la transacción.
+  async function upsert(id, data, { tx } = {}) {
     const ref = docRef(id);
-    const snap = await ref.get();
+    const snap = tx ? await tx.get(ref) : await ref.get();
     const doc = { ...data, updatedAt: now() };
     if (!snap.exists) doc.createdAt = now();
-    await ref.set(doc, { merge: true });
+    if (tx) tx.set(ref, doc, { merge: true });
+    else await ref.set(doc, { merge: true });
     return id;
   }
 
