@@ -394,25 +394,37 @@ Aunque Firestore es una base de datos NoSQL y no utiliza claves foráneas como u
 
 Las imágenes y los archivos binarios se almacenan en Firebase Storage. Firestore conserva sus URL y rutas de almacenamiento.
 
-Estructura orientativa:
+Estructura de rutas (todo cuelga de la carpeta de la empresa):
 
 ```text
-companies/
-  {companyId}/
-    logo.png
-
-buildings/
-  {buildingId}/
-    floors/
-      {floorId}/
-        floor-plan.png
-
-rooms/
-  {roomId}/
-    images/
-      image_01.jpg
-      image_02.jpg
+companies/{companyId}/buildings/{buildingId}/photos/{uuid}.{ext}
+companies/{companyId}/floors/{floorId}/plan.{ext}
+companies/{companyId}/rooms/{roomId}/photos/{uuid}.{ext}
 ```
+
+**Reglas** (`storage.rules`):
+
+- Lectura pública de fotos y planos (se muestran a clientes sin sesión).
+- Solo escribe (crear, actualizar y borrar) un usuario con `role == 'COMPANY'` y el mismo `companyId` en su token que el de la carpeta. Nadie más escribe; lo que no está bajo `companies/` queda denegado.
+- Solo imágenes (`image/*`) de menos de 5 MB.
+- La API refuerza esto: `fotos` (edificio y sala) y `mapImageUrl` (guardar mapa) solo aceptan URLs de descarga de ese bucket dentro de `companies/{companyId}/` de la empresa del token.
+
+**Variable de entorno:** `FIREBASE_STORAGE_BUCKET` en el `.env` de `server/` (y en Netlify), con el mismo valor que `VITE_FIREBASE_STORAGE_BUCKET` del front (`<proyecto>.firebasestorage.app` o `<proyecto>.appspot.com`). Sin ella, la API rechaza cualquier URL de foto o plano con `400`.
+
+**Desplegar las reglas** (hace falta Storage activado en la consola de Firebase):
+
+```bash
+npx firebase-tools deploy --only storage
+```
+
+**Probarlas a mano** (desde el front con una empresa aprobada, o con el SDK o la API REST de Storage usando su ID token):
+
+1. Empresa propia: sube una imagen pequeña (PNG o JPG) a `companies/{su companyId}/rooms/{roomId}/photos/prueba.png`. Debe funcionar.
+2. Empresa ajena: con ese mismo usuario, sube a `companies/{otro companyId}/…`. Debe fallar con `403 storage/unauthorized`.
+3. Archivo no imagen o grande: sube un PDF o una imagen de más de 5 MB a la carpeta propia. Debe fallar con `403 storage/unauthorized`.
+4. Sin sesión o con un cliente (`CLIENT`): cualquier subida falla; abrir en el navegador la URL de la imagen del paso 1 sí funciona (lectura pública).
+
+Nota para el front: `uploadService` debe subir a estas rutas y enviar a la API la URL de descarga (`getDownloadURL`) tal cual.
 
 ## 5. Seguridad y reglas de acceso
 
@@ -595,6 +607,7 @@ La API se conecta a Firestore y a Firebase Auth con `firebase-admin`, usando la 
 | `FIREBASE_PROJECT_ID` | `project_id` |
 | `FIREBASE_CLIENT_EMAIL` | `client_email` |
 | `FIREBASE_PRIVATE_KEY` | `private_key`, entre comillas dobles y con los `\n` tal cual |
+| `FIREBASE_STORAGE_BUCKET` | Bucket de Storage (no está en el JSON; es el de `VITE_FIREBASE_STORAGE_BUCKET`) |
 
 4. Comprueba la conexión (escribe, lee y borra un documento en `_ping`):
 
