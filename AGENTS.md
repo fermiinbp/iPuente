@@ -50,6 +50,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/context/AuthProvider.jsx` | Escucha la sesión de Firebase y expone a toda la app el usuario, su rol (`CLIENT`, `COMPANY`, `ADMIN`) y su `companyId`. |
 | `client/src/hooks/useAuth.js` | Hook para leer el usuario y su rol desde cualquier componente. |
 | `client/src/hooks/useMapEditor.js` | Estado y acciones del editor de mapas: salas, selección, dibujar, mover, redimensionar, borrar, deshacer y cargar el borrador de la IA. |
+| `client/src/hooks/useModalFocus.js` | Comportamiento común de lo que se abre encima de la página (`Modal`, `MobileMenu` y el menú móvil de `DashboardLayout`): página inerte y sin scroll, foco dentro, Tab que no sale, Escape y foco devuelto al cerrar. |
 | `client/src/hooks/useFetch.js` | Hook genérico para llamar a un service y gestionar `data`, `loading` y `error` en las pantallas. |
 | `client/src/services/apiClient.js` | Cliente HTTP único: añade el token de Firebase a cada petición y convierte los errores de la API (`{ error: { code, message } }`) en excepciones. |
 | `client/src/services/healthService.js` | Lectura de comprobación: llama a `/api/health` a través de `apiClient`. |
@@ -65,7 +66,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/ui/IconButton/IconButton.jsx` + `.module.css` | Botón solo con icono y `aria-label` obligatorio (barra del editor, cerrar paneles y modales, menú móvil). |
 | `client/src/components/ui/BackLink/BackLink.jsx` + `.module.css` | Enlace «← Volver a…» con la flecha decorativa (`aria-hidden`). |
 | `client/src/components/ui/Input/Input.jsx` + `.module.css` | Campo de formulario con etiqueta, ayuda y mensaje de error. |
-| `client/src/components/ui/Modal/Modal.jsx` + `.module.css` | Ventana modal accesible (cierre con Escape y foco atrapado). |
+| `client/src/components/ui/Modal/Modal.jsx` + `.module.css` | Ventana modal accesible: portal fuera de `#root`, cierre con Escape y con el fondo, foco atrapado y devuelto al cerrar (con `useModalFocus`), título obligatorio, pie de botones y tamaños `md` y `lg`. |
 | `client/src/components/ui/Spinner/Spinner.jsx` + `.module.css` | Indicador de carga. |
 | `client/src/components/ui/StatusBadge/StatusBadge.jsx` + `.module.css` | Etiqueta de estado: de una sala (libre, ocupada, no reservable; en el panel de empresa: publicada, sin precio, oculta), de una reserva (`CONFIRMED`, `CANCELLED`…; `PENDING_PAYMENT` solo con el extra de Stripe), de un pago o de una empresa (verificada, pendiente, rechazada o suspendida). |
 | `client/src/components/ui/Select/Select.jsx` + `.module.css` | Desplegable con etiqueta, ayuda y mensaje de error (buscador, filtros, cambio de rol). |
@@ -79,7 +80,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/ui/Alert/Alert.jsx` + `.module.css` | Mensaje de error, aviso o éxito dentro de una pantalla. |
 | `client/src/components/ui/EmptyState/EmptyState.jsx` + `.module.css` | Estado vacío con título, texto y acciones (sin resultados, sin edificios, sin reservas). |
 | `client/src/components/ui/StatCard/StatCard.jsx` + `.module.css` | Cifra destacada con título para los resúmenes de empresa y admin. |
-| `client/src/components/ui/ConfirmModal/ConfirmModal.jsx` + `.module.css` | Modal de confirmación sobre `Modal`: título, texto, motivo opcional y acción (cancelar reserva, rechazar o suspender empresa, reembolsar, eliminar sala). |
+| `client/src/components/ui/ConfirmModal/ConfirmModal.jsx` + `.module.css` | Modal de confirmación sobre `Modal`: título, texto, contenido libre (avisos, campos, casillas, opciones o tablas), acción principal que se puede desactivar y con estado de carga, cancelar y una acción secundaria opcional (cancelar reserva, rechazar o suspender empresa, reembolsar, eliminar sala o edificio, salir sin guardar). |
 | `client/src/components/ui/DataTable/DataTable.jsx` + `.module.css` | Tabla de los paneles: columnas, acciones por fila y estado vacío; en móvil pasa a tarjetas. |
 | `client/src/components/ui/FilterBar/FilterBar.jsx` + `.module.css` | Fila de filtros (edificio, planta, estado, fechas) encima de las tablas. |
 | `client/src/components/ui/FileDropzone/FileDropzone.jsx` + `.module.css` | Zona para arrastrar o seleccionar archivos; la usan `PlanUploader` y las fotos de sala. |
