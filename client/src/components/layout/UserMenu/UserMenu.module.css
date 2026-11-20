@@ -1,0 +1,153 @@
+/* Estilos de UserMenu (CSS Module). Panel flotante sobre la cabecera, alineado a la derecha del botón. */
+.userMenu {
+  position: relative;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--campo-alto);
+  padding: 0 var(--space-2) 0 0;
+  border: 0;
+  border-radius: var(--radio-pildora);
+  background: transparent;
+  color: var(--crema);
+  font-family: inherit;
+  font-size: var(--text-menu);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.trigger:active {
+  transform: scale(0.97);
+}
+
+.trigger[aria-expanded='true'] {
+  color: var(--lima);
+}
+
+.avatar {
+  display: inline-flex;
+}
+
+.caret {
+  font-size: var(--text-etiqueta);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.panel {
+  position: absolute;
+  z-index: var(--z-menu);
+  top: calc(100% + var(--space-3));
+  right: 0;
+  min-width: 260px;
+  padding: var(--space-2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque-elevado);
+  box-shadow: var(--sombra-flotante);
+  transform-origin: top right;
+  animation: abrirPanel var(--dur-fast) var(--ease-out);
+}
+
+.identity {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--linea);
+}
+
+.name {
+  margin: 0;
+  font-size: var(--text-interfaz);
+  font-weight: 600;
+}
+
+.email {
+  margin: 0;
+  color: var(--crema-suave);
+  font-size: var(--text-menu);
+  overflow-wrap: anywhere;
+}
+
+.list {
+  margin: 0;
+  padding: var(--space-1) 0 0;
+  list-style: none;
+}
+
+.separated {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--linea);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--campo-alto);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radio-plano);
+  background: transparent;
+  color: var(--crema);
+  font-family: inherit;
+  font-size: var(--text-menu);
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .trigger:hover {
+    color: var(--crema-suave);
+  }
+
+  .trigger[aria-expanded='true']:hover {
+    color: var(--lima);
+  }
+
+  .item:hover {
+    background: var(--bosque);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+
+  .trigger,
+  .item {
+    transition: none;
+  }
+
+  .trigger:active {
+    transform: none;
+  }
+}
+
+@keyframes abrirPanel {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
