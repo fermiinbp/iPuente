@@ -5,7 +5,7 @@ import * as companyModel from '../models/companyModel.js';
 import { now, runTransaction } from '../models/baseModel.js';
 import * as roomModel from '../models/roomModel.js';
 import * as userModel from '../models/userModel.js';
-import { addDays, resolveRange } from '../utils/dates.js';
+import { addDays, monthRange, resolveRange } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 import { notDeleted } from '../utils/softDelete.js';
 import { normalizeText } from '../utils/text.js';
@@ -359,10 +359,8 @@ const USER_ROLES = ['CLIENT', 'COMPANY', 'ADMIN'];
 // servidor). Las empresas «pendientes» son el total menos las demás, de modo que las que no tienen
 // `status` (anteriores a ese campo) cuentan como pendientes.
 export async function getSummary() {
-  const today = new Date();
-  const from = new Date(today.getFullYear(), today.getMonth(), 1);
-  const to = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-  const monthRange = [
+  const { from, to, mes } = monthRange();
+  const monthFilters = [
     ['startDate', '>=', from],
     ['startDate', '<', to],
   ];
@@ -373,7 +371,9 @@ export async function getSummary() {
     companyModel.countWhere([['status', '==', SUSPENDED]]),
     Promise.all(USER_ROLES.map((r) => userModel.countWhere([['role', '==', r]]))),
     Promise.all(
-      BOOKING_STATUSES.map((st) => bookingModel.countWhere([['status', '==', st], ...monthRange])),
+      BOOKING_STATUSES.map((st) =>
+        bookingModel.countWhere([['status', '==', st], ...monthFilters]),
+      ),
     ),
   ]);
   const empresas = {
@@ -385,6 +385,5 @@ export async function getSummary() {
   const usuarios = Object.fromEntries(USER_ROLES.map((r, i) => [r, roles[i]]));
   const porEstado = Object.fromEntries(BOOKING_STATUSES.map((st, i) => [st, estados[i]]));
   const total = estados.reduce((a, b) => a + b, 0);
-  const mes = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}`;
   return { empresas, usuarios, reservasMes: { total, porEstado, mes } };
 }

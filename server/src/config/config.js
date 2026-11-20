@@ -10,6 +10,14 @@ const REQUIRED_VARS = [
   'APP_URL',
 ];
 
+// ¿Es producción? NODE_ENV=production o cualquier entorno de Vercel (VERCEL_ENV: production,
+// preview o development): así un NODE_ENV mal puesto en Vercel no deja abierta la configuración.
+export function isProductionEnv(env = process.env) {
+  return env.NODE_ENV === 'production' || Boolean(env.VERCEL_ENV);
+}
+
+export const isProduction = isProductionEnv();
+
 const missing = REQUIRED_VARS.filter((name) => !process.env[name]);
 if (missing.length > 0) {
   console.warn(`Faltan variables de entorno: ${missing.join(', ')}. Revisa server/.env.`);
@@ -17,23 +25,21 @@ if (missing.length > 0) {
 
 // En producción no arrancamos sin credenciales de Firebase: mejor fallar al desplegar que en la primera petición.
 const missingFirebase = missing.filter((name) => name.startsWith('FIREBASE_'));
-if (process.env.NODE_ENV === 'production' && missingFirebase.length > 0) {
+if (isProduction && missingFirebase.length > 0) {
   throw new Error(`Faltan variables de Firebase en producción: ${missingFirebase.join(', ')}.`);
 }
 // APP_URL es el único origen que permite CORS: en producción tampoco hay valor por defecto.
-if (process.env.NODE_ENV === 'production' && missing.includes('APP_URL')) {
+if (isProduction && missing.includes('APP_URL')) {
   throw new Error('Falta APP_URL en producción: es el único origen que permite CORS.');
 }
 
-// Netlify (y muchos .env) guardan la clave con "\n" literales: los convertimos en saltos reales.
+// Vercel (y muchos .env) guardan la clave con "\n" literales: los convertimos en saltos reales.
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
 
 export const config = {
   port: Number(process.env.PORT) || 3000,
   // En producción no hay valor por defecto: así localhost nunca acaba en el CORS desplegado.
-  appUrl:
-    process.env.APP_URL ||
-    (process.env.NODE_ENV === 'production' ? undefined : 'http://localhost:5173'),
+  appUrl: process.env.APP_URL || (isProduction ? undefined : 'http://localhost:5173'),
   firebase: {
     projectId: process.env.FIREBASE_PROJECT_ID,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
@@ -49,7 +55,7 @@ export function setStorageBucketForTests(bucket) {
   config.storageBucket = bucket;
 }
 
-// Inicializa firebase-admin una sola vez (Netlify reutiliza el proceso entre peticiones).
+// Inicializa firebase-admin una sola vez (Vercel reutiliza el proceso entre peticiones).
 function getFirebaseApp() {
   if (getApps().length > 0) return getApps()[0];
 

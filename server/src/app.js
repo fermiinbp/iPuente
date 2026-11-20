@@ -1,4 +1,4 @@
-// Configura Express sin arrancarlo: CORS, límite de peticiones, webhook de Stripe (body sin parsear), JSON, /api/health, documentación Swagger en /api/docs, rutas y manejo de errores. Lo usan server.js, la Netlify Function y los tests.
+// Configura Express sin arrancarlo: CORS, límite de peticiones, webhook de Stripe (body sin parsear), JSON, /api/health, documentación Swagger en /api/docs, rutas y manejo de errores. Lo usan server.js, la función de Vercel (api/index.js) y los tests.
 import './config/timezone.js';
 
 import cors from 'cors';
@@ -12,7 +12,7 @@ import routes from './routes/index.js';
 
 const app = express();
 
-// Detrás de Netlify llega un proxy: así req.ip es la IP real del cliente (para el rate limit).
+// Detrás de Vercel llega un proxy: así req.ip es la IP real del cliente (para el rate limit).
 app.set('trust proxy', 1);
 
 // Origen permitido: sin Origin (curl, servidor a servidor, Swagger del mismo origen) se permite;

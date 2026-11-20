@@ -1,6 +1,6 @@
 // Funciones comunes a todos los models: leer, crear, actualizar y listar documentos de una colección.
 // Solo acceso a datos: las reglas de negocio (solapes, precios, permisos) van en services/.
-import { FieldValue } from 'firebase-admin/firestore';
+import { AggregateField, FieldValue } from 'firebase-admin/firestore';
 
 import { db } from '../config/config.js';
 
@@ -83,7 +83,30 @@ export function createModel(collectionName) {
     return snap.data().count;
   }
 
-  return { collection, docRef, findById, create, upsert, update, remove, listBy, countWhere };
+  // Cuenta y suma `sumField` de los documentos que cumplen los filtros con una agregación de
+  // Firestore (no lee los documentos). Devuelve { count, total } (total 0 si no hay ninguno).
+  async function aggregateWhere(filters = [], sumField) {
+    let query = collection();
+    for (const [field, op, value] of filters) query = query.where(field, op, value);
+    const snap = await query
+      .aggregate({ count: AggregateField.count(), total: AggregateField.sum(sumField) })
+      .get();
+    const { count, total } = snap.data();
+    return { count, total: total ?? 0 };
+  }
+
+  return {
+    collection,
+    docRef,
+    findById,
+    create,
+    upsert,
+    update,
+    remove,
+    listBy,
+    countWhere,
+    aggregateWhere,
+  };
 }
 
 // Ejecuta fn dentro de una transacción de Firestore; los models reciben su tx con { tx }.

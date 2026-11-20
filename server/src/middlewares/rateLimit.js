@@ -3,6 +3,7 @@
 // El de registro y el de IA usan un contador compartido en Firestore (FirestoreRateLimitStore).
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
+import { isProductionEnv } from '../config/config.js';
 import { HttpError } from '../utils/httpError.js';
 
 import { FirestoreRateLimitStore } from './firestoreRateLimitStore.js';
@@ -31,22 +32,24 @@ const DEFAULTS = {
 let overrides = null;
 const instances = {};
 
-// Los límites solo se saltan con NODE_ENV === 'test' exacto (lo fija tests/setup.js): cualquier otro
-// valor, incluido uno ausente o 'production', los deja activos (fallar cerrado).
-const isTestRun = () => process.env.NODE_ENV === 'test';
+// Los límites solo se saltan con NODE_ENV === 'test' exacto (lo fija tests/setup.js) y nunca en
+// Vercel (VERCEL_ENV definido): cualquier otro caso los deja activos (fallar cerrado).
+const isTestRun = () => process.env.NODE_ENV === 'test' && !process.env.VERCEL_ENV;
 
-// IP del cliente: en Netlify x-nf-client-connection-ip la pone la plataforma y el cliente no puede
-// falsearla; si no existe se usa req.ip (con trust proxy = 1).
+// IP del cliente: solo en Vercel (process.env.VERCEL definido) se lee x-vercel-forwarded-for, que la
+// plataforma sobrescribe siempre (el cliente no puede falsearla); puede traer varias IP separadas
+// por comas y se usa la primera. Fuera de Vercel la cabecera se ignora y se usa req.ip.
 export function clientIp(req) {
-  const header = req.headers?.['x-nf-client-connection-ip'];
-  const ip = (Array.isArray(header) ? header[0] : header) || req.ip || '';
+  const header = process.env.VERCEL ? req.headers?.['x-vercel-forwarded-for'] : undefined;
+  const first = (Array.isArray(header) ? header[0] : header)?.split(',')[0].trim();
+  const ip = first || req.ip || '';
   return ipKeyGenerator(ip);
 }
 
 // Solo para tests: fija { general, register, ai } con { limit, windowMs } y los activa.
 // Con null se restauran los valores por defecto (desactivados en tests).
 export function setRateLimitForTests(options) {
-  if (process.env.NODE_ENV === 'production') {
+  if (isProductionEnv()) {
     throw new Error('setRateLimitForTests solo se puede usar en tests');
   }
   overrides = options ?? null;
@@ -74,6 +77,9 @@ function build(name) {
     store: storeFor(name),
     keyGenerator: (req) => (name === 'ai' && req.user?.uid) || clientIp(req),
     handler: (req, res, next) => next(new HttpError(429, 'RATE_LIMITED', message)),
+    // Se crea en la primera petición (para poder cambiarlo en tests) y se reutiliza: el aviso
+    // ERR_ERL_CREATED_IN_REQUEST_HANDLER no aplica aquí y solo ensuciaría los logs.
+    validate: { creationStack: false },
   });
 }
 

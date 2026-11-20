@@ -1,4 +1,4 @@
-// Store de express-rate-limit sobre Firestore: contador compartido entre instancias (Netlify Functions). Solo para límites de poco volumen; el general sigue en memoria para no escribir en cada petición.
+// Store de express-rate-limit sobre Firestore: contador compartido entre instancias (funciones de Vercel). Solo para límites de poco volumen; el general sigue en memoria para no escribir en cada petición.
 import { createHash } from 'node:crypto';
 
 import * as rateLimitModel from '../models/rateLimitModel.js';

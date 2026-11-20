@@ -60,6 +60,156 @@ router.get('/companies/me', auth, requireRole(ROLES.COMPANY), asyncHandler(ctrl.
 
 /**
  * @openapi
+ * /company/summary:
+ *   get:
+ *     tags: [Empresa]
+ *     summary: Resumen del panel de la empresa
+ *     description: 'Cifras, próximas reservas y tareas pendientes de la empresa. `primerAcceso` es true si no tiene edificios (bienvenida). `cifras`: edificios, salas publicadas (activas, con precio y reservables) y reservas e ingresos del mes natural (solo CONFIRMED y COMPLETED, por fecha de inicio; zona Europe/Madrid). `proximasReservas`: las 5 próximas reservas vivas (CONFIRMED o PENDING_PAYMENT) a partir de ahora, con sala y cliente (nombre y email). `tareas`: plantas sin publicar (`sinMapa` indica si no tienen salas dibujadas), salas sin precio y salas sin fotos, con sus ids para «Resolver»; cada lista llega recortada a 50 y `totales` da el recuento real. Lo eliminado no cuenta. Se leen como mucho 1000 edificios, plantas y salas; si hay más, la respuesta lleva `truncado: true`. Respuesta con `Cache-Control: private, max-age=30`. No admite parámetros. Solo para empresas aprobadas.'
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Resumen de la empresa.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 primerAcceso:
+ *                   type: boolean
+ *                 truncado:
+ *                   type: boolean
+ *                   description: Solo aparece (true) si la empresa tiene más de 1000 edificios, plantas o salas.
+ *                 mes:
+ *                   type: string
+ *                   example: '2026-11'
+ *                 cifras:
+ *                   type: object
+ *                   properties:
+ *                     edificios:
+ *                       type: integer
+ *                     salasPublicadas:
+ *                       type: integer
+ *                     reservasMes:
+ *                       type: integer
+ *                     ingresosMes:
+ *                       type: number
+ *                       example: 150.5
+ *                 proximasReservas:
+ *                   type: array
+ *                   maxItems: 5
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       codigo:
+ *                         type: string
+ *                         example: 'IP-1000'
+ *                       fecha:
+ *                         type: string
+ *                         example: '2026-11-25'
+ *                       inicio:
+ *                         type: integer
+ *                       fin:
+ *                         type: integer
+ *                       importe:
+ *                         type: number
+ *                       estado:
+ *                         type: string
+ *                         enum: [CONFIRMED, PENDING_PAYMENT]
+ *                       sala:
+ *                         type: object
+ *                         properties:
+ *                           nombre:
+ *                             type: string
+ *                           codigo:
+ *                             type: string
+ *                       cliente:
+ *                         type: object
+ *                         properties:
+ *                           nombre:
+ *                             type: string
+ *                           email:
+ *                             type: string
+ *                 tareas:
+ *                   type: object
+ *                   properties:
+ *                     plantasSinPublicar:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           nombre:
+ *                             type: string
+ *                           numero:
+ *                             type: integer
+ *                           buildingId:
+ *                             type: string
+ *                           edificio:
+ *                             type: string
+ *                           sinMapa:
+ *                             type: boolean
+ *                     salasSinPrecio:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           nombre:
+ *                             type: string
+ *                           codigo:
+ *                             type: string
+ *                           floorId:
+ *                             type: string
+ *                           buildingId:
+ *                             type: string
+ *                     salasSinFotos:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                           nombre:
+ *                             type: string
+ *                           codigo:
+ *                             type: string
+ *                           floorId:
+ *                             type: string
+ *                           buildingId:
+ *                             type: string
+ *                     totales:
+ *                       type: object
+ *                       properties:
+ *                         plantasSinPublicar:
+ *                           type: integer
+ *                         salasSinPrecio:
+ *                           type: integer
+ *                         salasSinFotos:
+ *                           type: integer
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
+router.get(
+  '/company/summary',
+  auth,
+  requireRole(ROLES.COMPANY),
+  requireApprovedCompany,
+  ...companyValidator.summary,
+  validate,
+  asyncHandler(ctrl.getSummary),
+);
+
+/**
+ * @openapi
  * /company/buildings:
  *   get:
  *     tags: [Empresa]
