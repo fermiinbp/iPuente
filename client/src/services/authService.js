@@ -83,13 +83,12 @@ export function hasPasswordLogin(user) {
   return Boolean(user?.providerData?.some((provider) => provider.providerId === 'password'));
 }
 
-// Cambia el nombre que se enseña en la cuenta.
-export async function updateDisplayName(name) {
+// Vuelve a leer el usuario de Firebase (la API ya cambió su displayName) y lo devuelve.
+// AuthProvider.refreshUser lo usa para que la cabecera enseñe el nombre nuevo.
+export async function reloadUser() {
   if (!auth.currentUser) throw new Error('No hay sesión iniciada.');
-  await updateProfile(auth.currentUser, { displayName: name });
   await auth.currentUser.reload();
-  // Renovar el token hace que onIdTokenChanged avise a la app y la cabecera enseñe el nombre nuevo.
-  await auth.currentUser.getIdToken(true);
+  return auth.currentUser;
 }
 
 // Cambia la contraseña. Firebase pide confirmar antes la actual (reautenticar).
