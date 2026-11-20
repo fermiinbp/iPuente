@@ -69,6 +69,9 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/ui/Select/Select.jsx` + `.module.css` | Desplegable con etiqueta, ayuda y mensaje de error (buscador, filtros, cambio de rol). |
 | `client/src/components/ui/Textarea/Textarea.jsx` + `.module.css` | Texto largo con etiqueta y error (motivo de rechazo, suspensión, cancelación o bloqueo). |
 | `client/src/components/ui/Checkbox/Checkbox.jsx` + `.module.css` | Casilla con etiqueta (equipamiento, aceptar condiciones). |
+| `client/src/components/ui/Radio/Radio.jsx` + `.module.css` | Grupo de botones de opción con título, ayuda y error, que se maneja con las flechas (reembolso total o parcial, lugar principal). |
+| `client/src/components/ui/SegmentedControl/SegmentedControl.jsx` + `.module.css` | Elección de una opción entre pocas con aspecto de botones unidos (tipo de sala en el editor). |
+| `client/src/components/ui/Stepper/Stepper.jsx` + `.module.css` | Pasos numerados con el actual destacado y `aria-current="step"` (los 4 pasos del alta de empresa). |
 | `client/src/components/ui/Chip/Chip.jsx` + `.module.css` | Píldora pequeña: filtro seleccionable por tipo de sala o etiqueta informativa (`Black Room I · 25 €/h`). |
 | `client/src/components/ui/Avatar/Avatar.jsx` + `.module.css` | Círculo con la foto o las iniciales del usuario. |
 | `client/src/components/ui/Alert/Alert.jsx` + `.module.css` | Mensaje de error, aviso o éxito dentro de una pantalla. |
