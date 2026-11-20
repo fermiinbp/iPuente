@@ -28,6 +28,13 @@
   color: var(--crema-suave);
 }
 
+/* Rechazos, suspensiones y cancelaciones: --error (--ocupada es solo estado de sala). */
+.danger {
+  border: 1px solid var(--error);
+  background: transparent;
+  color: var(--error);
+}
+
 .off {
   background: repeating-linear-gradient(
     45deg,
