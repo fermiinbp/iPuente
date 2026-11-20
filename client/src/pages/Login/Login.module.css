@@ -6,6 +6,9 @@
 
 .forgot {
   justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--campo-alto); /* objetivo táctil de 44 px */
   font-size: var(--text-pequeno);
   color: var(--crema-suave);
   text-underline-offset: 3px;

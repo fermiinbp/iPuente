@@ -100,6 +100,9 @@
 }
 
 .footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--campo-alto);
   color: var(--crema);
   text-underline-offset: 3px;
 }
