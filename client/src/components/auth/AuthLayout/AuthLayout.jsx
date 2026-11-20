@@ -7,7 +7,7 @@ import styles from './AuthLayout.module.css';
 
 export default function AuthLayout({ title, lead, footer, children }) {
   return (
-    <div className={styles.page}>
+    <main className={styles.page}>
       <div className={styles.visual} aria-hidden="true">
         <img className={styles.symbol} src={symbol} alt="" />
         <p className={styles.claim}>Elige tu sala en el plano y resérvala por horas.</p>
@@ -27,6 +27,6 @@ export default function AuthLayout({ title, lead, footer, children }) {
           {footer && <p className={styles.footer}>{footer}</p>}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

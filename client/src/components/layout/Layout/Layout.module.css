@@ -9,3 +9,27 @@
   flex: 1;
   width: 100%;
 }
+
+.main:focus {
+  outline: none;
+}
+
+/* Oculto fuera de pantalla hasta que recibe el foco con el teclado. */
+.skip {
+  position: absolute;
+  top: calc(var(--space-9, 64px) * -1);
+  left: var(--space-4);
+  z-index: 100;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radio-pildora);
+  background: var(--crema);
+  color: var(--bosque);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skip:focus {
+  top: var(--space-3);
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+}
