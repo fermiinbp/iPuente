@@ -125,24 +125,10 @@
   animation-duration: 900ms;
 }
 
+/* El aspecto del buscador (campos, bordes, botón) está en SearchBar; aquí solo su sitio en el hero. */
 .search {
   grid-area: buscador;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
   margin-top: 0;
-  padding: var(--space-2);
-  border: 1px solid var(--borde-control);
-  border-radius: var(--radio-buscador);
-  background: var(--bosque-elevado);
-}
-
-.field {
-  min-width: 0;
-}
-
-.field + .field {
-  border-top: 1px solid var(--borde-control);
 }
 
 .roomsHead {
@@ -169,34 +155,6 @@
 
 .empty {
   margin: var(--space-5) 0 0;
-}
-
-@media (min-width: 600px) {
-  .search {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .field {
-    flex: 1 1 140px;
-  }
-
-  .fieldCity {
-    flex-grow: 2;
-    flex-basis: 160px;
-  }
-
-  .field + .field {
-    border-top: 0;
-    border-left: 1px solid var(--borde-control);
-  }
-
-  .search > button,
-  .search > a {
-    flex: 1 1 130px;
-    min-height: 56px;
-  }
 }
 
 @media (min-width: 960px) {

@@ -37,6 +37,7 @@ export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
   const city = searchParams.get('city') ?? '';
   const date = searchParams.get('date') ?? '';
+  const people = searchParams.get('people') ?? '';
   const { data, error, loading, reload } = useFetch((signal) => getBuildings({ signal }), 'all');
 
   const isDemo = Boolean(error);
@@ -51,6 +52,7 @@ export default function Search() {
     const params = {};
     if (next.city) params.city = next.city;
     if (next.date) params.date = next.date;
+    if (next.people) params.people = next.people;
     setSearchParams(params);
   }
 
@@ -94,7 +96,7 @@ export default function Search() {
     <div className={styles.page}>
       <div className={styles.inner}>
         <h1 className={styles.title}>Encuentra tu sala</h1>
-        <SearchBar city={city} date={date} onSearch={handleSearch} />
+        <SearchBar city={city} date={date} people={people} onSearch={handleSearch} />
         {isDemo && (
           <p className={styles.demoNote} role="note">
             Estás viendo datos de ejemplo: la API no está disponible.

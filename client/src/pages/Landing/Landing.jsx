@@ -3,9 +3,8 @@ import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import RoomCard from '@/components/room/RoomCard/RoomCard.jsx';
-import Button from '@/components/ui/Button/Button.jsx';
+import SearchBar from '@/components/search/SearchBar/SearchBar.jsx';
 import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
-import Input from '@/components/ui/Input/Input.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
 import CompaniesCta from './CompaniesCta/CompaniesCta.jsx';
@@ -41,13 +40,10 @@ export default function Landing() {
   const featuredLayout = rooms.length >= 3;
 
   // La búsqueda lleva a /search con la ciudad, la fecha y las personas elegidas.
-  function handleSearch(event) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
+  function handleSearch(values) {
     const params = new URLSearchParams();
     ['city', 'date', 'people'].forEach((key) => {
-      const value = String(data.get(key) ?? '').trim();
-      if (value) params.set(key, value);
+      if (values[key]) params.set(key, values[key]);
     });
     const query = params.toString();
     navigate(`/search${query ? `?${query}` : ''}`);
@@ -81,18 +77,12 @@ export default function Landing() {
             <HeroStory buildingId={BUILDING.id} buildingName={BUILDING.name} />
           </div>
 
-          <form className={styles.search} aria-label="Buscar salas" onSubmit={handleSearch}>
-            <div className={`${styles.field} ${styles.fieldCity}`}>
-              <Input label="Ciudad" name="city" type="text" placeholder="Sevilla" />
-            </div>
-            <div className={styles.field}>
-              <Input label="Fecha" name="date" type="date" />
-            </div>
-            <div className={styles.field}>
-              <Input label="Personas" name="people" type="number" min="1" placeholder="10" />
-            </div>
-            <Button type="submit">Buscar salas</Button>
-          </form>
+          <SearchBar
+            variant="hero"
+            className={styles.search}
+            submitLabel="Buscar salas"
+            onSearch={handleSearch}
+          />
         </div>
       </section>
 
