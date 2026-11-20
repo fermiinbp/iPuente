@@ -107,6 +107,24 @@ describe('Seguridad de la API: rate limit y CORS', () => {
     assert.equal(await run({ user: { uid: 'b' } }), 'pasa');
   });
 
+  describe('PATCH /companies/me', () => {
+    it('429 RATE_LIMITED al pasar el límite por uid, sin afectar a otro uid', async () => {
+      setRateLimitForTests({ companyEdit: { limit: 1, windowMs: 60_000 } });
+      setTokenVerifier(async (t) => ({ uid: t, role: 'COMPANY', companyId: 'c-no-existe' }));
+      const patch = async (token) =>
+        (
+          await fetch(`${baseUrl}/api/companies/me`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ ciudad: 'Sevilla' }),
+          })
+        ).status;
+      assert.equal(await patch('u1'), 404);
+      assert.equal(await patch('u1'), 429);
+      assert.equal(await patch('u2'), 404);
+    });
+  });
+
   describe('IP real y store de Firestore', () => {
     const health = (headers) => fetch(`${baseUrl}/api/health`, { headers });
 

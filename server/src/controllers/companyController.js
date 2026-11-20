@@ -8,6 +8,11 @@ export async function getMyCompany(req, res) {
   res.json(await companyService.getMyCompany(req.user.companyId));
 }
 
+// PATCH /api/companies/me: edita los datos de la solicitud de la empresa propia.
+export async function updateMyCompany(req, res) {
+  res.json(await companyService.updateMyCompany(req.user.companyId, req.body));
+}
+
 // GET /api/company/buildings: edificios de la empresa.
 export async function listBuildings(req, res) {
   res.json(await companyService.listBuildings(req.user.companyId));

@@ -13,12 +13,14 @@ export async function getCompany(req, res) {
 
 // POST /api/admin/companies/:id/approve: aprueba una empresa pendiente.
 export async function approveCompany(req, res) {
-  res.json(await service.approveCompany(req.params.id, req.user.uid));
+  res.json(await service.approveCompany(req.params.id, req.user.uid, req.body?.version));
 }
 
 // POST /api/admin/companies/:id/reject: rechaza una empresa pendiente con motivo.
 export async function rejectCompany(req, res) {
-  res.json(await service.rejectCompany(req.params.id, req.user.uid, req.body.motivo));
+  res.json(
+    await service.rejectCompany(req.params.id, req.user.uid, req.body.motivo, req.body.version),
+  );
 }
 
 // POST /api/admin/companies/:id/suspend: suspende una empresa aprobada con motivo.

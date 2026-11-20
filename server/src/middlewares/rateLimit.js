@@ -1,6 +1,6 @@
-// Límites de peticiones: uno general para la API, uno estricto para el registro, otro para la detección con IA (cuesta dinero) y otro para editar el perfil. Al superarlos responden 429 RATE_LIMITED con el formato de error común.
+// Límites de peticiones: uno general para la API, uno estricto para el registro, otro para la detección con IA (cuesta dinero), otro para editar la empresa propia y otro para editar el perfil. Al superarlos responden 429 RATE_LIMITED con el formato de error común.
 // El general cuenta en memoria de cada instancia (orientativo: no añade una escritura por petición).
-// El de registro, el de IA y el del perfil (30 por hora por uid, falla abierto) usan un contador compartido en Firestore (FirestoreRateLimitStore).
+// El de registro, el de IA, el de edición de la empresa propia (`companyEditLimiter`: 20 por hora por uid) y el del perfil (`profileEditLimiter`: 30 por hora por uid) usan un contador compartido en Firestore (FirestoreRateLimitStore). Los dos de edición fallan abierto y van después de `auth`.
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 import { isProductionEnv } from '../config/config.js';
@@ -31,6 +31,11 @@ const DEFAULTS = {
     limit: 30,
     windowMs: HOUR,
     message: 'Has editado tu perfil demasiadas veces. Inténtalo de nuevo más tarde.',
+  },
+  companyEdit: {
+    limit: 20,
+    windowMs: HOUR,
+    message: 'Has editado la solicitud demasiadas veces. Inténtalo de nuevo más tarde.',
   },
 };
 
@@ -66,6 +71,7 @@ export function setRateLimitForTests(options) {
 function storeFor(name) {
   if (name === 'register') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'profile') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
+  if (name === 'companyEdit') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'ai') return new FirestoreRateLimitStore({ prefix: name, failOpen: false });
   return undefined; // general: memoria por defecto
 }
@@ -82,7 +88,8 @@ function build(name) {
     legacyHeaders: false,
     store: storeFor(name),
     keyGenerator: (req) =>
-      ((name === 'ai' || name === 'profile') && req.user?.uid) || clientIp(req),
+      ((name === 'ai' || name === 'companyEdit' || name === 'profile') && req.user?.uid) ||
+      clientIp(req),
     handler: (req, res, next) => next(new HttpError(429, 'RATE_LIMITED', message)),
     // Se crea en la primera petición (para poder cambiarlo en tests) y se reutiliza: el aviso
     // ERR_ERL_CREATED_IN_REQUEST_HANDLER no aplica aquí y solo ensuciaría los logs.
@@ -103,3 +110,4 @@ export const generalLimiter = limiter('general');
 export const registerLimiter = limiter('register');
 export const aiDetectLimiter = limiter('ai');
 export const profileEditLimiter = limiter('profile');
+export const companyEditLimiter = limiter('companyEdit');

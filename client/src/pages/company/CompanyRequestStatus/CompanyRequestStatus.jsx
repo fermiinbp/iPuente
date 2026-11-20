@@ -1,7 +1,7 @@
 // Estado de la solicitud de alta (wireframe 10b), con la cabecera del panel sin menú lateral (DashboardLayout).
 // Lee GET /companies/me y muestra una tarjeta según `estado`: pendiente («Editar datos de la solicitud»), rechazada
 // (motivo, «Corregir y reenviar» y «Contactar con iPuente») o suspendida. «Editar» y «Corregir» abren aquí mismo el
-// formulario con los datos de la empresa (CompanyDataFields), que se guarda con PATCH /companies/me (DAT030).
+// formulario con los datos de la empresa (CompanyDataFields), que se guarda con PATCH /companies/me.
 // Aprobada: solo se llega aquí con el token antiguo (claim companyApproved sin renovar; CompanyStatusRoute manda
 // aquí). Se renueva el token una vez al cargar y CompanyStatusRoute lleva al panel; «Ir a tu panel» lo reintenta.
 import { useEffect, useRef, useState } from 'react';
@@ -18,6 +18,7 @@ import { getMyCompany, updateMyCompany } from '@/services/companyService.js';
 import {
   COMPANY_STEPS,
   apiErrorsToFields,
+  codeErrorToFields,
   companyPayload,
   companyToForm,
   validateCompany,
@@ -38,15 +39,8 @@ function describeSaveError(err) {
     const fields = apiErrorsToFields(err.details);
     if (Object.keys(fields).length) return { fields };
   }
-  if (err?.code === 'COMPANY_EXISTS') {
-    return { fields: { cif: 'Ya hay una empresa registrada con este CIF.' } };
-  }
-  // TODO(DAT030): mientras no exista PATCH /api/companies/me la API responde 404.
-  if (err?.status === 404) {
-    return {
-      message: 'Todavía no se pueden guardar cambios en la solicitud. Inténtalo más adelante.',
-    };
-  }
+  const byCode = codeErrorToFields(err?.code);
+  if (byCode) return { fields: byCode };
   return { message: err?.message || 'No hemos podido guardar los cambios. Inténtalo de nuevo.' };
 }
 
@@ -134,6 +128,8 @@ export default function CompanyRequestStatus() {
         cif: data.cif,
         contacto: data.personaContacto,
         telefono: data.telefono,
+        emailContacto: data.emailContacto,
+        ciudad: data.ciudad,
       });
       setEditing(false);
       setReloadKey((key) => key + 1);
@@ -161,8 +157,8 @@ export default function CompanyRequestStatus() {
             <p className={styles.label}>En revisión</p>
             <h2 className={styles.cardTitle}>Estamos revisando tu solicitud</h2>
             <p className={styles.text}>
-              {company.name}
-              {company.createdAt && ` · enviada el ${formatDate(company.createdAt)}`}
+              {company.nombreEmpresa}
+              {company.fechaSolicitud && ` · enviada el ${formatDate(company.fechaSolicitud)}`}
               <br />
               Te avisaremos por email cuando la aprobemos.
             </p>

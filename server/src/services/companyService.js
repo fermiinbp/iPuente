@@ -1,12 +1,14 @@
 // Reglas de empresas: estado (PENDING, APPROVED, REJECTED, SUSPENDED) y su nombre en español, y consulta de la empresa propia.
 import * as buildingModel from '../models/buildingModel.js';
 import * as companyModel from '../models/companyModel.js';
-import { runTransaction } from '../models/baseModel.js';
+import { now, runTransaction } from '../models/baseModel.js';
+import * as companyTaxIdModel from '../models/companyTaxIdModel.js';
 import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { HttpError } from '../utils/httpError.js';
 import { notDeleted } from '../utils/softDelete.js';
 import { countFutureBookings, futureBookingsNotice } from './futureBookingsService.js';
+import { isOrphanTaxId } from './authService.js';
 import { assertOwnedBy, getOwnedBuilding, getOwnedFloor } from './ownershipService.js';
 
 export const COMPANY_STATUS = Object.freeze({
@@ -328,19 +330,107 @@ export async function updateRoom(companyId, id, body) {
   return roomView({ ...room, ...data });
 }
 
+// Respuesta en español de la empresa propia (la misma en GET y PATCH /companies/me).
+function myCompanyView(company) {
+  return {
+    id: company.id,
+    nombreEmpresa: company.name,
+    cif: company.taxId,
+    contacto: company.contactName ?? null,
+    telefono: company.phone ?? null,
+    emailContacto: company.email ?? null,
+    ciudad: company.city ?? null,
+    estado: companyEstado(company),
+    motivo: companyMotivo(company),
+    fechaSolicitud: toIso(company.resubmittedAt ?? company.createdAt) ?? null,
+  };
+}
+
 // Empresa del usuario autenticado, solo con los campos públicos para su dueño.
 export async function getMyCompany(companyId) {
   const company = companyId ? await companyModel.findById(companyId) : null;
   if (!company) throw new HttpError(404, 'NOT_FOUND', 'No se encontró tu empresa');
-  return {
-    id: company.id,
-    name: company.name,
-    taxId: company.taxId,
-    contactName: company.contactName ?? null,
-    phone: company.phone ?? null,
-    email: company.email ?? null,
-    estado: companyEstado(company),
-    motivo: companyMotivo(company),
-    createdAt: toIso(company.createdAt),
-  };
+  return myCompanyView(company);
+}
+
+const MY_COMPANY_MAP = {
+  nombreEmpresa: 'name',
+  cif: 'taxId',
+  contacto: 'contactName',
+  telefono: 'phone',
+  emailContacto: 'email',
+  ciudad: 'city',
+};
+// Campos que una empresa aprobada o suspendida sí puede cambiar.
+const LIVE_EDITABLE = ['contacto', 'telefono', 'emailContacto'];
+
+// Lanza 400 si una empresa aprobada o suspendida intenta cambiar campos protegidos.
+// Un campo protegido con el mismo valor que el actual se ignora (se quita de `body`); solo da
+// error si cambia. Devuelve el body sin esos campos.
+function assertEditableFields(status, body, company) {
+  if (status !== COMPANY_STATUS.APPROVED && status !== COMPANY_STATUS.SUSPENDED) return body;
+  const rest = { ...body };
+  const blocked = [];
+  for (const [key, field] of Object.entries(MY_COMPANY_MAP)) {
+    if (rest[key] === undefined || LIVE_EDITABLE.includes(key)) continue;
+    if (rest[key] === company[field]) delete rest[key];
+    else blocked.push(key);
+  }
+  if (blocked.length) {
+    throw new HttpError(
+      400,
+      'FIELD_NOT_EDITABLE',
+      'Con la empresa aprobada o suspendida solo puedes cambiar contacto, teléfono y email de contacto',
+      { campos: blocked },
+    );
+  }
+  return rest;
+}
+
+// Cambia el CIF dentro de la transacción: reserva el nuevo (409 si es de otra empresa) y libera el viejo.
+async function moveTaxId(company, newCif, tx) {
+  // Todas las lecturas antes de escribir.
+  const entry = await companyTaxIdModel.findById(newCif, { tx });
+  const old = company.taxId ? await companyTaxIdModel.findById(company.taxId, { tx }) : null;
+  const claimable = entry && entry.companyId !== company.id && (await isOrphanTaxId(entry, tx));
+  if (entry && entry.companyId !== company.id && !claimable) {
+    throw new HttpError(409, 'COMPANY_EXISTS', 'Ya existe una empresa con ese CIF');
+  }
+  const doc = { taxId: newCif, companyId: company.id };
+  if (claimable) await companyTaxIdModel.overwrite(newCif, doc, { tx });
+  else if (!entry) await companyTaxIdModel.create(doc, { id: newCif, tx });
+  // Solo se libera el CIF viejo si el índice era de esta empresa.
+  if (old?.companyId === company.id) await companyTaxIdModel.remove(company.taxId, { tx });
+}
+
+// Edita la solicitud de la empresa propia. Pendiente o rechazada: todo (rechazada vuelve a
+// pendiente); aprobada o suspendida: solo contacto, teléfono y email de contacto.
+export async function updateMyCompany(companyId, body) {
+  if (!companyId) throw new HttpError(404, 'NOT_FOUND', 'No se encontró tu empresa');
+  try {
+    await runTransaction(async (tx) => {
+      const company = await companyModel.findById(companyId, { tx });
+      if (!company) throw new HttpError(404, 'NOT_FOUND', 'No se encontró tu empresa');
+      const status = companyStatus(company);
+      const data = pick(assertEditableFields(status, body, company), MY_COMPANY_MAP);
+      if (data.taxId !== undefined && data.taxId === company.taxId) delete data.taxId;
+      if (data.taxId !== undefined) await moveTaxId(company, data.taxId, tx);
+      if (status === COMPANY_STATUS.REJECTED) {
+        Object.assign(data, {
+          status: COMPANY_STATUS.PENDING,
+          verified: false,
+          lastRejectionReason: company.rejectionReason ?? null,
+          rejectionReason: null,
+          resubmittedAt: now(),
+        });
+      }
+      await companyModel.update(companyId, data, { tx });
+    });
+  } catch (err) {
+    if (companyTaxIdModel.isAlreadyExists(err)) {
+      throw new HttpError(409, 'COMPANY_EXISTS', 'Ya existe una empresa con ese CIF');
+    }
+    throw err;
+  }
+  return getMyCompany(companyId);
 }

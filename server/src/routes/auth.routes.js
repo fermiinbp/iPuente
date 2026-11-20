@@ -78,7 +78,7 @@ router.post(
  *         application/json:
  *           schema:
  *             type: object
- *             required: [email, password, nombre, nombreEmpresa, cif, contacto, telefono]
+ *             required: [email, password, nombre, nombreEmpresa, cif, contacto, telefono, emailContacto, ciudad, aceptaCondiciones]
  *             properties:
  *               email:
  *                 type: string
@@ -104,6 +104,17 @@ router.post(
  *                 type: string
  *                 description: 9 dígitos, empieza por 6, 7, 8 o 9.
  *                 example: '954123456'
+ *               emailContacto:
+ *                 type: string
+ *                 format: email
+ *                 example: 'contacto@ejemplo.com'
+ *               ciudad:
+ *                 type: string
+ *                 description: De 2 a 100 caracteres.
+ *                 example: 'Sevilla'
+ *               aceptaCondiciones:
+ *                 type: boolean
+ *                 description: Debe ser exactamente `true`.
  *     responses:
  *       201:
  *         description: Empresa creada, pendiente de aprobación.

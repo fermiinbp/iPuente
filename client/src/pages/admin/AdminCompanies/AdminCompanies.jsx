@@ -67,7 +67,7 @@ const ACTIONS = {
     title: (nombre) => `¿Aprobar ${nombre}?`,
     text: 'Podrá entrar en su panel y publicar sus edificios.',
     confirmLabel: 'Aprobar',
-    call: (company) => approveCompany(company.id),
+    call: (company) => approveCompany(company.id, { version: company.version }),
     done: (nombre) => `${nombre} está aprobada.`,
   },
   reject: {
@@ -76,7 +76,7 @@ const ACTIONS = {
     text: 'La solicitud queda rechazada. La empresa podrá corregir sus datos y volver a enviarla.',
     confirmLabel: 'Rechazar',
     needsMotivo: true,
-    call: (company, motivo) => rejectCompany(company.id, motivo),
+    call: (company, motivo) => rejectCompany(company.id, motivo, { version: company.version }),
     done: (nombre) => `${nombre} está rechazada.`,
   },
   suspend: {
@@ -201,8 +201,15 @@ export default function AdminCompanies() {
       setPending(null);
       reload();
     } catch (err) {
-      setActionError(err);
-      if (err?.code === 'INVALID_TRANSITION') reload();
+      if (err?.code === 'STALE_DATA') {
+        // La empresa cambió sus datos: se cierra el modal (su `version` ya no vale) y se recarga para revisarlos.
+        setNotice({ type: 'warning', text: errorMessage(err) });
+        setPending(null);
+        reload();
+      } else {
+        setActionError(err);
+        if (err?.code === 'INVALID_TRANSITION') reload();
+      }
     } finally {
       setSending(false);
     }

@@ -30,9 +30,22 @@ const motivo = body('motivo')
   .isLength({ min: 3, max: 500 })
   .withMessage('motivo debe tener entre 3 y 500 caracteres');
 
-export const reject = [idParam, motivo];
+// Versión opcional (ISO de updatedAt) para detectar que la empresa cambió desde que se abrió.
+const version = body('version')
+  .optional()
+  .custom((v) => typeof v === 'string' && !Number.isNaN(Date.parse(v)))
+  .withMessage('version debe ser una fecha ISO');
+
+// En aprobar solo se acepta `version` en el body.
+const onlyVersion = body().custom((value) => {
+  const extra = Object.keys(value ?? {}).filter((k) => k !== 'version');
+  if (extra.length) throw new Error(`Campos no permitidos: ${extra.join(', ')}`);
+  return true;
+});
+
+export const reject = [idParam, motivo, version];
 export const suspend = [idParam, motivo];
-export const approve = [idParam];
+export const approve = [idParam, onlyVersion, version];
 export const reactivate = [idParam];
 
 const isText = (v) => typeof v === 'string';

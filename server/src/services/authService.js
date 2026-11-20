@@ -1,7 +1,7 @@
 // Registro de clientes y empresas: crea el usuario en Firebase Auth, su ficha en Firestore y su rol (custom claim).
 import { adminAuth, isProductionEnv } from '../config/config.js';
 import { ROLES } from '../config/roles.js';
-import { runTransaction } from '../models/baseModel.js';
+import { now, runTransaction } from '../models/baseModel.js';
 import * as companyModel from '../models/companyModel.js';
 import * as companyTaxIdModel from '../models/companyTaxIdModel.js';
 import * as userModel from '../models/userModel.js';
@@ -111,7 +111,7 @@ const toMillis = (value) =>
 
 // Dice si la reserva de un CIF quedó huérfana: sin companyId y de hace más de 10 minutos, o con un
 // companyId que apunta a una empresa que ya no existe.
-async function isOrphanTaxId(entry, tx) {
+export async function isOrphanTaxId(entry, tx) {
   if (!entry.companyId) return Date.now() - toMillis(entry.createdAt) > ORPHAN_TAX_ID_MS;
   return !(await companyModel.findById(entry.companyId, { tx }));
 }
@@ -154,6 +154,7 @@ async function releaseTaxId(cif) {
 // Registra una empresa (queda pendiente de aprobación). Devuelve { uid, companyId, estado }.
 export async function registerCompany(data) {
   const { email, password, nombre, nombreEmpresa, cif, contacto, telefono } = data;
+  const { emailContacto, ciudad } = data;
   // Comprobaciones previas amigables; la unicidad real del CIF la garantiza reserveTaxId.
   if (await companyModel.findByTaxId(cif)) {
     throw new HttpError(409, 'COMPANY_EXISTS', 'Ya existe una empresa con ese CIF');
@@ -175,7 +176,9 @@ export async function registerCompany(data) {
       taxId: cif,
       contactName: contacto,
       phone: telefono,
-      email,
+      email: emailContacto,
+      city: ciudad,
+      termsAcceptedAt: now(),
       ownerUid: uid,
       status: COMPANY_STATUS.PENDING,
       verified: false,

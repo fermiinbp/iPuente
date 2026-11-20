@@ -34,7 +34,20 @@ const FIELD_MESSAGES = {
   nombreEmpresa: 'Escribe el nombre de la empresa.',
   cif: 'El CIF no es válido.',
   telefono: 'El teléfono debe tener 9 dígitos y empezar por 6, 7, 8 o 9.',
+  emailContacto: 'Escribe un email de contacto válido.',
+  ciudad: 'Escribe la ciudad.',
 };
+
+// Errores de la API con un código propio que se pintan en el campo CIF (PATCH /companies/me).
+// FIELD_NOT_EDITABLE (empresa aprobada entre medias) no es de un campo: se muestra el mensaje de la API.
+const CODE_FIELD_ERRORS = {
+  COMPANY_EXISTS: 'Ya hay una empresa registrada con este CIF.',
+};
+
+// { cif: mensaje } si el código de error de la API es uno de CODE_FIELD_ERRORS; si no, null.
+export function codeErrorToFields(code) {
+  return CODE_FIELD_ERRORS[code] ? { cif: CODE_FIELD_ERRORS[code] } : null;
+}
 
 // Campo de la API → campo del formulario. `nombre` y `contacto` salen los dos de «Persona de contacto».
 const API_FIELDS = {
@@ -45,6 +58,8 @@ const API_FIELDS = {
   nombreEmpresa: 'nombreEmpresa',
   cif: 'cif',
   telefono: 'telefono',
+  emailContacto: 'emailContacto',
+  ciudad: 'ciudad',
 };
 
 const isEmail = (value) => EMAIL.test(value.trim());
@@ -111,14 +126,15 @@ export function companyPayload(values) {
   };
 }
 
-// Respuesta de GET /companies/me → valores del formulario. El email de contacto y la ciudad todavía no los guarda
-// la API (DAT030), así que llegan vacíos.
+// Respuesta de GET /companies/me → valores del formulario.
 export function companyToForm(company) {
   return {
     ...EMPTY_COMPANY,
-    nombreEmpresa: company?.name ?? '',
-    cif: company?.taxId ?? '',
-    telefono: company?.phone ?? '',
-    personaContacto: company?.contactName ?? '',
+    nombreEmpresa: company?.nombreEmpresa ?? '',
+    cif: company?.cif ?? '',
+    telefono: company?.telefono ?? '',
+    personaContacto: company?.contacto ?? '',
+    emailContacto: company?.emailContacto ?? '',
+    ciudad: company?.ciudad ?? '',
   };
 }
