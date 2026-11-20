@@ -121,9 +121,13 @@ async function seedBookings(rooms, floors, companyId, today) {
   for (const [index, room] of bookableByFloor.entries()) {
     const [startHour, endHour] = DEMO_SLOTS[index % DEMO_SLOTS.length];
     const bookingId = `demo-booking-${index + 1}`;
+    // Código fijo por debajo de 1000: el contador `counters/bookings` no se toca y las reservas
+    // reales siguen desde IP-1000 sin repetirlo.
+    const code = `IP-${900 + index}`;
     const hours = endHour - startHour;
 
     await bookingModel.upsert(bookingId, {
+      code,
       userId: DEMO_CLIENT_ID,
       companyId,
       roomId: room.id,

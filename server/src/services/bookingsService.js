@@ -3,6 +3,9 @@
 import { BOOKING_HOURS } from '../config/bookingHours.js';
 import { now, runTransaction } from '../models/baseModel.js';
 import * as bookingModel from '../models/bookingModel.js';
+import * as buildingModel from '../models/buildingModel.js';
+import * as counterModel from '../models/counterModel.js';
+import * as floorModel from '../models/floorModel.js';
 import * as occupancyModel from '../models/occupancyModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
@@ -21,6 +24,7 @@ export function toItem(booking) {
   const { inicio, fin } = toSlot(booking, 'reserva');
   return {
     id: booking.id,
+    codigo: booking.code ?? null,
     roomId: booking.roomId,
     fecha: todayString(toDate(booking.startDate)),
     inicio,
@@ -29,6 +33,48 @@ export function toItem(booking) {
     precioHora: booking.price,
     importe: booking.totalAmount,
     estado: booking.status,
+  };
+}
+
+// Código legible secuencial de las reservas: IP-1000, IP-1001... (el contador guarda el último).
+const CODE_PREFIX = 'IP-';
+const FIRST_CODE_NUMBER = 1000;
+
+// Quién canceló, en español, a partir del valor guardado en la reserva.
+const CANCELLED_BY = { CLIENT: 'cliente', COMPANY: 'empresa' };
+
+// Datos de cancelación de una reserva (motivo y quién); vacío si no está cancelada.
+export function toCancellation(booking) {
+  if (booking.status !== 'CANCELLED') return {};
+  return {
+    motivoCancelacion: booking.cancelReason ?? null,
+    canceladaPor: CANCELLED_BY[booking.cancelledBy] ?? null,
+  };
+}
+
+// Detalle de una reserva con su sala, planta y edificio (lo que falte o se haya borrado es null).
+// Nunca incluye userId ni companyId.
+export async function buildBookingDetail(booking) {
+  const room = await roomModel.findById(booking.roomId);
+  const floorId = room?.floorId;
+  const buildingId = room?.buildingId;
+  const [floor, building] = await Promise.all([
+    floorId ? floorModel.findById(floorId) : null,
+    buildingId ? buildingModel.findById(buildingId) : null,
+  ]);
+  return {
+    ...toItem(booking),
+    sala: room ? { id: room.id, codigo: room.code ?? null, nombre: room.name ?? null } : null,
+    planta: floor ? { id: floor.id, nombre: floor.name ?? null, nivel: floor.level ?? null } : null,
+    edificio: building
+      ? {
+          id: building.id,
+          nombre: building.name ?? null,
+          direccion: building.address ?? null,
+          ciudad: building.city ?? null,
+        }
+      : null,
+    ...toCancellation(booking),
   };
 }
 
@@ -61,7 +107,9 @@ export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
   const horas = fin - inicio;
   let room;
   let importe;
+  let codigo;
   try {
+    let number;
     const id = await runTransaction(async (tx) => {
       // Se vuelve a leer la sala dentro de la transacción: si la empresa cambia el precio
       // o la oculta mientras tanto, la reserva usa los datos del momento del commit.
@@ -72,8 +120,13 @@ export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
       assertBookable(room, inicio, fin);
       importe = room.price * horas;
       await assertSlotAvailable(roomId, fecha, inicio, fin, tx);
+      // Todas las lecturas van antes que las escrituras: el contador se lee aquí.
+      const last = await counterModel.getValue('bookings', { tx });
+      number = Math.max(last, FIRST_CODE_NUMBER - 1) + 1;
+      codigo = `${CODE_PREFIX}${number}`;
       const bookingId = await bookingModel.create(
         {
+          code: codigo,
           userId: uid,
           companyId: room.companyId,
           roomId,
@@ -87,6 +140,7 @@ export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
         },
         { tx },
       );
+      await counterModel.setValue('bookings', number, { tx });
       for (let hour = inicio; hour < fin; hour++) {
         await occupancyModel.create(
           { companyId: room.companyId, roomId, date: fecha, hour, bookingId },
@@ -96,7 +150,18 @@ export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
       return bookingId;
     });
     const estado = 'CONFIRMED';
-    return { id, roomId, fecha, inicio, fin, horas, precioHora: room.price, importe, estado };
+    return {
+      id,
+      codigo,
+      roomId,
+      fecha,
+      inicio,
+      fin,
+      horas,
+      precioHora: room.price,
+      importe,
+      estado,
+    };
   } catch (err) {
     throw translateConflict(err);
   }
@@ -151,10 +216,24 @@ export async function cancelBooking(uid, id) {
     assertCancellable(booking, uid);
     const fecha = todayString(toDate(booking.startDate));
     const { inicio, fin } = toSlot(booking, 'reserva');
-    await bookingModel.update(id, { status: 'CANCELLED', cancelledAt: now() }, { tx });
+    await bookingModel.update(
+      id,
+      { status: 'CANCELLED', cancelledAt: now(), cancelledBy: 'CLIENT' },
+      { tx },
+    );
     for (let hour = inicio; hour < fin; hour++) {
       await occupancyModel.remove(occupancyModel.slotId(booking.roomId, fecha, hour), { tx });
     }
   });
   return { id, estado: 'CANCELLED' };
+}
+
+// Detalle de una reserva propia: 404 si no existe y 403 si es de otro usuario.
+export async function getMyBooking(uid, id) {
+  const booking = await bookingModel.findById(id);
+  if (!booking) throw new HttpError(404, 'NOT_FOUND', 'La reserva no existe');
+  if (booking.userId !== uid) {
+    throw new HttpError(403, 'FORBIDDEN', 'No puedes ver una reserva de otro usuario');
+  }
+  return buildBookingDetail(booking);
 }

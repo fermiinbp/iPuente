@@ -1,8 +1,15 @@
-// Rutas de reservas del cliente: crear, listar las propias y cancelar. Todas exigen token.
+// Rutas de reservas del cliente: crear, listar las propias, ver el detalle y cancelar. Todas exigen token.
 import { Router } from 'express';
 
-import { cancelBooking, createBooking, listMyBookings } from '../controllers/bookingsController.js';
+import { ROLES } from '../config/roles.js';
+import {
+  cancelBooking,
+  createBooking,
+  getMyBooking,
+  listMyBookings,
+} from '../controllers/bookingsController.js';
 import { auth } from '../middlewares/auth.js';
+import { requireRole } from '../middlewares/requireRole.js';
 import { validate } from '../middlewares/validate.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import * as bookingValidator from '../validators/bookingValidator.js';
@@ -72,8 +79,12 @@ const router = Router();
  *                 estado:
  *                   type: string
  *                   example: CONFIRMED
+ *                 codigo:
+ *                   type: string
+ *                   example: IP-1000
  *             example:
  *               id: Qw3rTy9
+ *               codigo: IP-1000
  *               roomId: p0-s01
  *               fecha: '2026-12-15'
  *               inicio: 10
@@ -141,6 +152,84 @@ router.post('/bookings', auth, ...bookingValidator.create, validate, asyncHandle
  *         $ref: '#/components/responses/Unauthorized'
  */
 router.get('/bookings/me', auth, asyncHandler(listMyBookings));
+
+/**
+ * @openapi
+ * /bookings/{id}:
+ *   get:
+ *     tags: [Cliente]
+ *     summary: Detalle de una reserva propia
+ *     description: 'Solo el cliente dueño (rol CLIENT). Incluye código legible, sala, planta, edificio y, si está cancelada, motivo y quién la canceló. Nunca devuelve userId ni companyId. Si la sala, planta o edificio ya no existen, esos bloques son null.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: Qw3rTy9
+ *     responses:
+ *       200:
+ *         description: Detalle de la reserva.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id: {type: string}
+ *                 codigo: {type: string, nullable: true, example: IP-1000}
+ *                 roomId: {type: string}
+ *                 sala:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     id: {type: string}
+ *                     codigo: {type: string, nullable: true}
+ *                     nombre: {type: string, nullable: true}
+ *                 planta:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     id: {type: string}
+ *                     nombre: {type: string, nullable: true}
+ *                     nivel: {type: integer, nullable: true}
+ *                 edificio:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     id: {type: string}
+ *                     nombre: {type: string, nullable: true}
+ *                     direccion: {type: string, nullable: true}
+ *                     ciudad: {type: string, nullable: true}
+ *                 fecha: {type: string, format: date, example: '2030-03-12'}
+ *                 inicio: {type: integer}
+ *                 fin: {type: integer}
+ *                 horas: {type: integer}
+ *                 precioHora: {type: number}
+ *                 importe: {type: number}
+ *                 estado:
+ *                   type: string
+ *                   enum: [PENDING_PAYMENT, CONFIRMED, CANCELLED, EXPIRED, COMPLETED]
+ *                 motivoCancelacion: {type: string, nullable: true, description: Solo si está cancelada}
+ *                 canceladaPor: {type: string, enum: [cliente, empresa], nullable: true, description: Solo si está cancelada}
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.get(
+  '/bookings/:id',
+  auth,
+  requireRole(ROLES.CLIENT),
+  ...bookingValidator.detail,
+  validate,
+  asyncHandler(getMyBooking),
+);
 
 /**
  * @openapi

@@ -10,7 +10,13 @@ import { addDays, resolveRange, todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 import { BOOKING_HOURS } from '../config/bookingHours.js';
 import { assertSlotAvailable, toDate, toSlot } from './availabilityService.js';
-import { atHour, toItem, translateConflict } from './bookingsService.js';
+import {
+  atHour,
+  buildBookingDetail,
+  toCancellation,
+  toItem,
+  translateConflict,
+} from './bookingsService.js';
 import { assertOwnedBy, getOwnedRoom } from './ownershipService.js';
 
 // Lee las salas indicadas una sola vez cada una y devuelve un Map id -> sala.
@@ -22,6 +28,10 @@ async function loadRooms(ids) {
 
 // Datos mínimos de una sala para las respuestas.
 const toSala = (room) => (room ? { nombre: room.name, codigo: room.code } : null);
+
+// Nombre y email del cliente (sin id ni más datos personales).
+const toCliente = (user) =>
+  user ? { nombre: user.name ?? null, email: user.email ?? null } : null;
 
 // Rango [from, to) en Date para la consulta, a partir de desde y hasta (inclusive) con sus
 // valores por defecto (desde = hoy - 30 días, hasta = desde + 90 días).
@@ -56,16 +66,24 @@ export async function listBookings(companyId, { desde, hasta, roomId } = {}) {
   return items
     .map(({ booking, item }) => {
       const user = usersById.get(booking.userId);
-      const result = {
+      return {
         ...item,
         sala: toSala(rooms.get(booking.roomId)),
-        cliente: user ? { nombre: user.name ?? null, email: user.email ?? null } : null,
+        cliente: toCliente(user),
+        ...toCancellation(booking),
       };
-      if (booking.cancelReason) result.motivoCancelacion = booking.cancelReason;
-      if (booking.cancelledBy) result.canceladaPor = booking.cancelledBy;
-      return result;
     })
     .sort(byDate);
+}
+
+// Detalle de una reserva de la empresa: 404 si no existe y 403 si es de otra empresa (la reserva
+// o su sala). Incluye nombre y email del cliente, nunca su id.
+export async function getBooking(companyId, id) {
+  const booking = assertOwnedBy(await bookingModel.findById(id), companyId);
+  const room = await roomModel.findById(booking.roomId);
+  if (room) assertOwnedBy(room, companyId);
+  const user = booking.userId ? await userModel.findById(booking.userId) : null;
+  return { ...(await buildBookingDetail(booking)), cliente: toCliente(user) };
 }
 
 // Formato público de un bloqueo.

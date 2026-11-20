@@ -46,5 +46,6 @@ const motivo = (max) =>
 
 export const list = [dateQuery('desde'), dateQuery('hasta'), rangeQuery, roomIdQuery];
 export const createBlock = [roomIdBody, fechaBody, inicioBody, finBody, motivo(200)];
+export const detail = [idParam];
 export const removeBlock = [idParam];
 export const cancelBooking = [idParam, motivo(500)];

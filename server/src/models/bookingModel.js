@@ -1,5 +1,6 @@
-// Acceso a la colección bookings. Campos: userId, companyId, roomId, startDate, endDate, price, pricePeriod, totalAmount,
-// status (PENDING_PAYMENT | CONFIRMED | CANCELLED | EXPIRED | COMPLETED), paymentId, createdAt, updatedAt.
+// Acceso a la colección bookings. Campos: code (IP-1000...), userId, companyId, roomId, startDate, endDate, price, pricePeriod,
+// totalAmount, status (PENDING_PAYMENT | CONFIRMED | CANCELLED | EXPIRED | COMPLETED), paymentId, cancelledAt,
+// cancelledBy (CLIENT | COMPANY), cancelReason, createdAt, updatedAt.
 import { createModel, runQuery } from './baseModel.js';
 
 const base = createModel('bookings');
