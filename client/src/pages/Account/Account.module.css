@@ -46,3 +46,9 @@
   display: grid;
   gap: var(--space-4);
 }
+
+/* El correo se enseña pero no se cambia desde aquí: se ve apagado y no admite foco de escritura. */
+.card input[readonly] {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
