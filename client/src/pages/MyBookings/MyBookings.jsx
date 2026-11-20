@@ -58,8 +58,8 @@ export default function MyBookings() {
   } else if (upcoming.length === 0 && past.length === 0) {
     content = (
       <EmptyState
-        title="Todavía no tienes reservas"
-        action={<Button to="/">Buscar una sala</Button>}
+        title="Aún no tienes reservas"
+        action={<Button to="/search">Buscar salas</Button>}
       >
         Elige un edificio, una planta y una sala, y reserva las horas que necesites.
       </EmptyState>

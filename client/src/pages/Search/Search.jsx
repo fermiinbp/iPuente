@@ -18,6 +18,7 @@ import { usePageTitle } from '@/hooks/usePageTitle.js';
 import { BUILDING } from '@/pages/Landing/data.js';
 import { getBuildings } from '@/services/buildingsService.js';
 import { hasWebGL } from '@/utils/webgl.js';
+import { formatLongDate } from '@/utils/dates.js';
 import styles from './Search.module.css';
 
 // El mapa (MapLibre) solo se descarga cuando hay resultados con posición.
@@ -178,6 +179,16 @@ export default function Search() {
           {total} {total === 1 ? 'edificio' : 'edificios'} con salas libres
           {city ? ` en ${city}` : ''}
         </h2>
+        {(date || people) && (
+          <p className={styles.summary}>
+            {[
+              date && formatLongDate(date),
+              people && `${people} ${Number(people) === 1 ? 'persona' : 'personas'}`,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+        )}
         <ul className={styles.grid} aria-busy={loading}>
           {buildings.map((building) => (
             <li

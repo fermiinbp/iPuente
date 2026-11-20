@@ -106,6 +106,7 @@ export default function BookingDetail({ booking, onCancel }) {
             Cancelar reserva
           </Button>
         )}
+        {booking.estado === 'CANCELLED' && <Button to="/search">Buscar otra sala</Button>}
         {booking.sala?.id && (
           <Button variant="ghost" to={`/rooms/${booking.sala.id}`}>
             Ver la sala

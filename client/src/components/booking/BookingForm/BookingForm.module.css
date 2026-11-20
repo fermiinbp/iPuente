@@ -3,3 +3,14 @@
   display: grid;
   gap: var(--space-5);
 }
+
+.legend,
+.loginHint {
+  margin: 0;
+  font-size: var(--text-pequeno);
+  color: var(--crema-suave);
+}
+
+.loginHint {
+  text-align: center;
+}

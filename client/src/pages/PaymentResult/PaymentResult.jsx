@@ -37,7 +37,7 @@ export default function PaymentResult() {
     title =
       error.status === 404 ? 'No encontramos esta reserva' : 'No hemos podido comprobar el pago';
   else if (confirmed) title = 'Reserva confirmada';
-  else if (pending) title = 'Pago no completado';
+  else if (pending) title = 'El pago no se ha completado';
   usePageTitle(title);
 
   // El título se anuncia y recibe el foco cuando ya se sabe el resultado.

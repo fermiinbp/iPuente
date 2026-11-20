@@ -195,6 +195,7 @@ export default function BookingCheckout() {
             Ir a pagar
           </Button>
         </div>
+        <p className={styles.secure}>Pago seguro con Stripe</p>
       </div>
     </div>
   );

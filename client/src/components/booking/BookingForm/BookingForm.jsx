@@ -87,6 +87,10 @@ export default function BookingForm({
         error={attendeesError}
       />
 
+      {freeHours.length > 0 && !loadingHours && !hoursError && (
+        <p className={styles.legend}>Gris = ocupada. Se seleccionan horas seguidas.</p>
+      )}
+
       <BookingSummary fecha={fecha} selection={selection} pricePerHour={pricePerHour} />
 
       {error && <Alert type="error">{error}</Alert>}
@@ -94,6 +98,7 @@ export default function BookingForm({
       <Button type="submit" loading={submitting} disabled={!selection || Boolean(attendeesError)}>
         {loggedIn ? 'Reservar' : 'Inicia sesión para reservar'}
       </Button>
+      {!loggedIn && <p className={styles.loginHint}>Necesitas iniciar sesión para reservar</p>}
     </form>
   );
 }

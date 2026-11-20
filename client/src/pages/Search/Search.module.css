@@ -99,6 +99,12 @@
   transform: translateY(-4px);
 }
 
+.summary {
+  margin: 0;
+  font-size: var(--text-interfaz);
+  color: var(--crema-suave);
+}
+
 @media (min-width: 720px) {
   .filters {
     grid-template-columns: 1fr auto;
