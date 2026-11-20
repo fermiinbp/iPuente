@@ -255,7 +255,7 @@ router.post(
  *   get:
  *     tags: [Admin]
  *     summary: Lista los usuarios con búsqueda y paginación
- *     description: 'Devuelve `{ usuarios: [{ id, nombre, email, rol, empresa, fechaAlta }], total, page, limit, truncado }`, del alta más reciente al más antiguo, 20 por página. `q` busca por nombre o email sin tildes ni mayúsculas. Solo admin.'
+ *     description: 'Devuelve `{ usuarios: [{ id, nombre, email, rol, empresa, fechaAlta }], total, page, limit, truncado }`, del alta más reciente al más antiguo, 20 por página (hasta 1000 usuarios leídos, página máxima 50; si `truncado` es true, `total` es «al menos» ese valor). `q` busca por nombre o email sin tildes ni mayúsculas. Solo admin.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -274,7 +274,7 @@ router.post(
  *         schema:
  *           type: integer
  *           minimum: 1
- *           maximum: 1000
+ *           maximum: 50
  *     responses:
  *       200:
  *         description: Página de usuarios.
@@ -300,7 +300,7 @@ router.get(
  *   get:
  *     tags: [Admin]
  *     summary: Lista las reservas de todas las empresas
- *     description: 'Devuelve `{ reservas: [{ id, codigo, fecha, inicio, fin, importe, estado, sala, edificio, empresa, cliente }], total, page, limit, desde, hasta, truncado }`. Rango por defecto: hoy - 30 días hasta +90 días (máximo 366 días y 500 resultados), 20 por página. Solo admin.'
+ *     description: 'Devuelve `{ reservas: [{ id, codigo, fecha, inicio, fin, importe, estado, sala, edificio, empresa, cliente }], total, page, limit, desde, hasta, truncado, desdeEfectivo }`. Rango por defecto: hoy - 30 días hasta +90 días (máximo 366 días y 500 resultados), 20 por página (página máxima 25). Si `truncado` es true, `total` es «al menos» ese valor y `desdeEfectivo` (AAAA-MM-DD) es la fecha de la reserva más antigua leída. Solo admin.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -328,7 +328,7 @@ router.get(
  *         schema:
  *           type: integer
  *           minimum: 1
- *           maximum: 1000
+ *           maximum: 25
  *     responses:
  *       200:
  *         description: Página de reservas.

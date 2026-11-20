@@ -10,6 +10,7 @@ import * as buildingModel from '../../src/models/buildingModel.js';
 import * as companyModel from '../../src/models/companyModel.js';
 import * as roomModel from '../../src/models/roomModel.js';
 import * as userModel from '../../src/models/userModel.js';
+import * as adminService from '../../src/services/adminService.js';
 import { addDays, todayString } from '../../src/utils/dates.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
 import { listen } from '../helpers/publicData.js';
@@ -208,9 +209,38 @@ describe('Panel de admin: usuarios, reservas y resumen', () => {
       const ids = new Set([...p1.body.usuarios, ...p2.body.usuarios].map((u) => u.id));
       assert.equal(ids.size, 27);
       assert.equal((await get('/api/admin/users?page=3')).body.usuarios.length, 0);
-      for (const page of ['0', '1001', 'abc', '1.5']) {
+      for (const page of ['0', '51', '1001', 'abc', '1.5']) {
         assert.equal((await get(`/api/admin/users?page=${page}`)).status, 400, page);
       }
+    });
+  });
+
+  describe('orden y tope de usuarios', () => {
+    it('ordena por alta desc en la consulta y el tope conserva los más recientes', async () => {
+      const res = await adminService.listUsers({ readLimit: 3 });
+      assert.deepEqual(
+        res.usuarios.map((u) => u.id),
+        ['owner-2', 'owner-1', 'u2'],
+      );
+      assert.equal(res.truncado, true);
+      const clientes = await adminService.listUsers({ rol: 'CLIENT', readLimit: 1 });
+      assert.deepEqual(
+        clientes.usuarios.map((u) => u.id),
+        ['u2'],
+      );
+    });
+
+    it('busca la empresa por ownerUid solo de los usuarios COMPANY sin companyId', async () => {
+      await mkUser(
+        'owner-3',
+        { name: 'Tres', email: 't@x.com', role: 'COMPANY' },
+        '2026-04-01T00:00:00Z',
+      );
+      const { body } = await get('/api/admin/users?rol=COMPANY');
+      const byId = Object.fromEntries(body.usuarios.map((u) => [u.id, u.empresa]));
+      assert.deepEqual(byId['owner-1'], { id: 'c1', nombre: 'Empresa Uno' });
+      assert.deepEqual(byId['owner-2'], { id: 'c2', nombre: 'Empresa Dos' });
+      assert.equal(byId['owner-3'], null);
     });
   });
 
@@ -237,7 +267,7 @@ describe('Panel de admin: usuarios, reservas y resumen', () => {
       assert.deepEqual(b3.sala, { id: 'r2', nombre: 'Sala Dos' });
       assert.deepEqual(b3.edificio, { id: 'b-2', nombre: 'Torre Dos', ciudad: 'Madrid' });
       assert.deepEqual(b3.empresa, { id: 'c2', nombre: 'Empresa Dos' });
-      assert.deepEqual(b3.cliente, { nombre: 'Ángela', email: 'angela@x.com' });
+      assert.deepEqual(b3.cliente, { nombre: 'Ángela Núñez', email: 'angela@x.com' });
       assert.equal(body.reservas[1].motivoCancelacion, 'Cambio de planes');
       assert.ok(!text.includes('600111222'));
       assert.ok(!text.includes('userId'));
@@ -307,7 +337,24 @@ describe('Panel de admin: usuarios, reservas y resumen', () => {
       assert.equal(p2.body.total, 25);
       assert.equal(p2.body.page, 2);
       assert.equal(p2.body.reservas[0].sala.nombre, 'Sala Uno');
-      assert.equal((await get('/api/admin/bookings?page=0')).status, 400);
+      for (const page of ['0', '26', 'abc']) {
+        assert.equal((await get(`/api/admin/bookings?page=${page}`)).status, 400, page);
+      }
+      assert.equal((await get('/api/admin/bookings?page=25')).status, 200);
+    });
+
+    it('con la lectura cortada marca truncado y devuelve desdeEfectivo', async () => {
+      for (let i = 0; i < 4; i++) {
+        await mkBooking(`t${i}`, 'r1', 'c1', addDays(hoy, 20 + i), 'CONFIRMED');
+      }
+      const res = await adminService.listBookings({ readLimit: 3 });
+      assert.equal(res.truncado, true);
+      assert.equal(res.total, 3);
+      // Las más recientes primero: se leen +23, +22 y +21; la más antigua leída es +21.
+      assert.equal(res.desdeEfectivo, addDays(hoy, 21));
+      const completo = await adminService.listBookings({});
+      assert.equal(completo.truncado, false);
+      assert.equal('desdeEfectivo' in completo, false);
     });
   });
 
@@ -317,7 +364,7 @@ describe('Panel de admin: usuarios, reservas y resumen', () => {
       assert.equal(status, 200);
       assert.equal(body.codigo, 'IP-b3');
       assert.deepEqual(body.empresa, { id: 'c2', nombre: 'Empresa Dos' });
-      assert.deepEqual(body.cliente, { nombre: 'Ángela', email: 'angela@x.com' });
+      assert.deepEqual(body.cliente, { nombre: 'Ángela Núñez', email: 'angela@x.com' });
       assert.equal(body.sala.nombre, 'Sala Dos');
       assert.equal(body.edificio.nombre, 'Torre Dos');
       assert.ok(!text.includes('600111222'));
@@ -333,22 +380,42 @@ describe('Panel de admin: usuarios, reservas y resumen', () => {
   });
 
   describe('GET /api/admin/summary', () => {
-    it('cuenta empresas por estado, usuarios por rol y reservas del mes', async () => {
+    it('cuenta con count() empresas por estado, usuarios por rol y reservas del mes', async () => {
       const hoyDate = new Date();
       const mes = `${hoyDate.getFullYear()}-${String(hoyDate.getMonth() + 1).padStart(2, '0')}`;
       await mkBooking('mes1', 'r1', 'c1', `${mes}-15`, 'CONFIRMED');
       await mkBooking('mes2', 'r1', 'c1', `${mes}-16`, 'CANCELLED');
       await mkBooking('mes3', 'r2', 'c2', `${mes}-17`, 'CONFIRMED');
+      // Las reservas de beforeEach que caen en este mes (b1, b2 y b3 son hoy +1, +2 y +3).
+      const esperado = { CONFIRMED: 2, CANCELLED: 1 };
+      for (const [dias, estado] of [
+        [1, 'CONFIRMED'],
+        [2, 'CANCELLED'],
+        [3, 'CONFIRMED'],
+      ]) {
+        if (addDays(hoy, dias).startsWith(mes)) esperado[estado] += 1;
+      }
       const { status, body } = await get('/api/admin/summary');
       assert.equal(status, 200);
       assert.deepEqual(body.empresas, { pendiente: 1, aprobada: 1, rechazada: 1, suspendida: 1 });
       assert.deepEqual(body.usuarios, { CLIENT: 2, COMPANY: 2, ADMIN: 1 });
       assert.equal(body.reservasMes.mes, mes);
-      assert.equal(body.reservasMes.porEstado.CONFIRMED >= 2, true);
-      assert.equal(body.reservasMes.porEstado.CANCELLED >= 1, true);
-      const suma = Object.values(body.reservasMes.porEstado).reduce((a, b) => a + b, 0);
-      assert.equal(suma, body.reservasMes.total);
-      assert.ok(body.reservasMes.total >= 3);
+      assert.deepEqual(body.reservasMes.porEstado, {
+        PENDING_PAYMENT: 0,
+        CONFIRMED: esperado.CONFIRMED,
+        CANCELLED: esperado.CANCELLED,
+        EXPIRED: 0,
+        COMPLETED: 0,
+      });
+      assert.equal(body.reservasMes.total, esperado.CONFIRMED + esperado.CANCELLED);
+      assert.equal('truncado' in body, false);
+      assert.equal('truncado' in body.reservasMes, false);
+    });
+
+    it('cuenta como pendientes las empresas sin status', async () => {
+      await companyModel.upsert('c5', { name: 'Antigua' });
+      const { body } = await get('/api/admin/summary');
+      assert.equal(body.empresas.pendiente, 2);
     });
   });
 });

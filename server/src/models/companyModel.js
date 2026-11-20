@@ -5,7 +5,7 @@ import { createModel, now, runQuery, toObject } from './baseModel.js';
 
 const base = createModel('companies');
 
-export const { findById, create, upsert, update, remove } = base;
+export const { findById, create, upsert, update, remove, countWhere } = base;
 
 // Todas las empresas (el panel de admin filtra y ordena en memoria).
 export function listAll() {
@@ -20,6 +20,17 @@ export async function findByIds(ids) {
   for (let i = 0; i < unique.length; i += 30) chunks.push(unique.slice(i, i + 30));
   const results = await Promise.all(
     chunks.map((chunk) => runQuery(base.collection().where(FieldPath.documentId(), 'in', chunk))),
+  );
+  return results.flat();
+}
+
+// Empresas cuyo ownerUid está en la lista, en lotes de 30 (límite de `in`).
+export async function findByOwnerUids(uids) {
+  const unique = [...new Set(uids)].filter(Boolean);
+  const chunks = [];
+  for (let i = 0; i < unique.length; i += 30) chunks.push(unique.slice(i, i + 30));
+  const results = await Promise.all(
+    chunks.map((chunk) => runQuery(base.collection().where('ownerUid', 'in', chunk))),
   );
   return results.flat();
 }

@@ -5,7 +5,7 @@ import { createModel, runQuery } from './baseModel.js';
 
 const base = createModel('bookings');
 
-export const { findById, create, upsert, update, remove } = base;
+export const { findById, create, upsert, update, remove, countWhere } = base;
 
 export function listByUser(userId) {
   return base.listBy('userId', userId, { orderBy: 'startDate', direction: 'desc' });

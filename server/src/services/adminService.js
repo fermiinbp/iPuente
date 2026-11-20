@@ -182,7 +182,6 @@ export async function suspendCompany(id, adminUid, motivo) {
 export const PAGE_SIZE = 20;
 const USERS_READ_LIMIT = 1000;
 const BOOKINGS_READ_LIMIT = 500;
-const SUMMARY_READ_LIMIT = 5000;
 
 // Página `page` (desde 1) de una lista ya ordenada.
 const paginate = (items, page) => items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -196,19 +195,19 @@ async function companiesOfUsers(users) {
   const ids = users.map((u) => u.companyId).filter(Boolean);
   for (const c of await companyModel.findByIds(ids)) byId.set(c.id, c);
   const byOwner = new Map();
-  if (users.some((u) => !u.companyId && u.role === 'COMPANY')) {
-    for (const c of await companyModel.listAll()) if (c.ownerUid) byOwner.set(c.ownerUid, c);
-  }
+  const ownerUids = users.filter((u) => !u.companyId && u.role === 'COMPANY').map((u) => u.id);
+  for (const c of await companyModel.findByOwnerUids(ownerUids)) byOwner.set(c.ownerUid, c);
   return (user) => {
     const c = user.companyId ? byId.get(user.companyId) : byOwner.get(user.id);
     return c ? { id: c.id, nombre: c.name ?? null } : null;
   };
 }
 
-// Usuarios, del alta más reciente al más antiguo, con filtro por rol (en inglés), búsqueda por
+// Usuarios, del alta más reciente al más antiguo (orden de la consulta: el tope conserva los
+// recientes), con filtro por rol (en inglés), búsqueda por
 // nombre o email (sin tildes ni mayúsculas) y paginación. Sin teléfono.
-export async function listUsers({ rol, q, page = 1 } = {}) {
-  const all = await userModel.listAll({ role: rol, limit: USERS_READ_LIMIT });
+export async function listUsers({ rol, q, page = 1, readLimit = USERS_READ_LIMIT } = {}) {
+  const all = await userModel.listAll({ role: rol, limit: readLimit });
   const needle = normalizeText(q);
   const found = all
     .filter(
@@ -217,8 +216,7 @@ export async function listUsers({ rol, q, page = 1 } = {}) {
         normalizeText(fullName(u)).includes(needle) ||
         normalizeText(u.email).includes(needle),
     )
-    .map((user) => ({ user, fechaAlta: toIso(user.createdAt) ?? null }))
-    .sort((a, b) => (b.fechaAlta ?? '').localeCompare(a.fechaAlta ?? ''));
+    .map((user) => ({ user, fechaAlta: toIso(user.createdAt) ?? null }));
   const pageItems = paginate(found, page);
   const empresaDe = await companiesOfUsers(pageItems.map((i) => i.user));
   return {
@@ -233,7 +231,7 @@ export async function listUsers({ rol, q, page = 1 } = {}) {
     total: found.length,
     page,
     limit: PAGE_SIZE,
-    truncado: all.length >= USERS_READ_LIMIT,
+    truncado: all.length >= readLimit,
   };
 }
 
@@ -250,14 +248,21 @@ function cached(read) {
 // Reservas de todas las empresas en el rango (por defecto hoy - 30 días y 90 días desde ahí; máximo
 // 366 días y 500 resultados), de la más reciente a la más antigua. Pagina primero y solo resuelve
 // sala, edificio, empresa y cliente de la página.
-export async function listBookings({ estado, desde, hasta, companyId, page = 1 } = {}) {
+export async function listBookings({
+  estado,
+  desde,
+  hasta,
+  companyId,
+  page = 1,
+  readLimit = BOOKINGS_READ_LIMIT,
+} = {}) {
   const range = resolveRange({ desde, hasta });
   const bookings = await bookingModel.listInRange({
     from: atHour(range.desde, 0),
     to: atHour(addDays(range.hasta, 1), 0),
     companyId,
     status: estado,
-    limit: BOOKINGS_READ_LIMIT,
+    limit: readLimit,
   });
   const pageItems = paginate(bookings, page);
   const room = cached((id) => roomModel.findById(id));
@@ -285,11 +290,16 @@ export async function listBookings({ estado, desde, hasta, companyId, page = 1 }
           ? { id: edificio.id, nombre: edificio.name ?? null, ciudad: edificio.city ?? null }
           : null,
         empresa: empresa ? { id: empresa.id, nombre: empresa.name ?? null } : null,
-        cliente: cliente ? { nombre: cliente.name ?? null, email: cliente.email ?? null } : null,
+        cliente: cliente
+          ? { nombre: fullName(cliente) || null, email: cliente.email ?? null }
+          : null,
         ...toCancellation(b),
       };
     }),
   );
+  const truncado = bookings.length >= readLimit;
+  // Si se cortó la lectura, las reservas más antiguas del rango pueden faltar: `desdeEfectivo` es la
+  // fecha de la más antigua leída (desde ahí el listado es completo).
   return {
     reservas,
     total: bookings.length,
@@ -297,7 +307,8 @@ export async function listBookings({ estado, desde, hasta, companyId, page = 1 }
     limit: PAGE_SIZE,
     desde: range.desde,
     hasta: range.hasta,
-    truncado: bookings.length >= BOOKINGS_READ_LIMIT,
+    truncado,
+    ...(truncado && { desdeEfectivo: toItem(bookings[bookings.length - 1]).fecha }),
   };
 }
 
@@ -313,27 +324,44 @@ export async function getBooking(id) {
   return {
     ...detail,
     empresa: company ? { id: company.id, nombre: company.name ?? null } : null,
-    cliente: client ? { nombre: client.name ?? null, email: client.email ?? null } : null,
+    cliente: client ? { nombre: fullName(client) || null, email: client.email ?? null } : null,
   };
 }
 
-// Resumen del panel: empresas por estado, usuarios por rol y reservas del mes actual (por fecha de
-// inicio y en la zona horaria del servidor).
+const BOOKING_STATUSES = ['PENDING_PAYMENT', 'CONFIRMED', 'CANCELLED', 'EXPIRED', 'COMPLETED'];
+const USER_ROLES = ['CLIENT', 'COMPANY', 'ADMIN'];
+
+// Resumen del panel con agregaciones count() de Firestore (no lee documentos): empresas por
+// estado, usuarios por rol y reservas del mes actual (por fecha de inicio y en la zona horaria del
+// servidor). Las empresas «pendientes» son el total menos las demás, de modo que las que no tienen
+// `status` (anteriores a ese campo) cuentan como pendientes.
 export async function getSummary() {
   const today = new Date();
   const from = new Date(today.getFullYear(), today.getMonth(), 1);
   const to = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-  const [companies, users, bookings] = await Promise.all([
-    companyModel.listAll(),
-    userModel.listAll({ limit: SUMMARY_READ_LIMIT }),
-    bookingModel.listInRange({ from, to, limit: SUMMARY_READ_LIMIT }),
+  const monthRange = [
+    ['startDate', '>=', from],
+    ['startDate', '<', to],
+  ];
+  const [totalEmpresas, aprobada, rechazada, suspendida, roles, estados] = await Promise.all([
+    companyModel.countWhere(),
+    companyModel.countWhere([['status', '==', APPROVED]]),
+    companyModel.countWhere([['status', '==', REJECTED]]),
+    companyModel.countWhere([['status', '==', SUSPENDED]]),
+    Promise.all(USER_ROLES.map((r) => userModel.countWhere([['role', '==', r]]))),
+    Promise.all(
+      BOOKING_STATUSES.map((st) => bookingModel.countWhere([['status', '==', st], ...monthRange])),
+    ),
   ]);
-  const empresas = { pendiente: 0, aprobada: 0, rechazada: 0, suspendida: 0 };
-  for (const c of companies) if (companyEstado(c) in empresas) empresas[companyEstado(c)] += 1;
-  const usuarios = { CLIENT: 0, COMPANY: 0, ADMIN: 0 };
-  for (const u of users) if (u.role in usuarios) usuarios[u.role] += 1;
-  const porEstado = {};
-  for (const b of bookings) porEstado[b.status] = (porEstado[b.status] ?? 0) + 1;
+  const empresas = {
+    pendiente: Math.max(0, totalEmpresas - aprobada - rechazada - suspendida),
+    aprobada,
+    rechazada,
+    suspendida,
+  };
+  const usuarios = Object.fromEntries(USER_ROLES.map((r, i) => [r, roles[i]]));
+  const porEstado = Object.fromEntries(BOOKING_STATUSES.map((st, i) => [st, estados[i]]));
+  const total = estados.reduce((a, b) => a + b, 0);
   const mes = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}`;
-  return { empresas, usuarios, reservasMes: { total: bookings.length, porEstado, mes } };
+  return { empresas, usuarios, reservasMes: { total, porEstado, mes } };
 }

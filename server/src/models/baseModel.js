@@ -74,7 +74,16 @@ export function createModel(collectionName) {
     return runQuery(collection().where(field, '==', value), options);
   }
 
-  return { collection, docRef, findById, create, upsert, update, remove, listBy };
+  // Cuenta los documentos que cumplen los filtros [[campo, operador, valor], ...] con una
+  // agregación count() de Firestore (no lee los documentos).
+  async function countWhere(filters = []) {
+    let query = collection();
+    for (const [field, op, value] of filters) query = query.where(field, op, value);
+    const snap = await query.count().get();
+    return snap.data().count;
+  }
+
+  return { collection, docRef, findById, create, upsert, update, remove, listBy, countWhere };
 }
 
 // Ejecuta fn dentro de una transacción de Firestore; los models reciben su tx con { tx }.

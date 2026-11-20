@@ -1,5 +1,5 @@
 // Doble de Firestore en memoria para los tests unitarios de los models.
-// Implementa solo lo que usan los models: doc, collection, where, orderBy, limit, get, set, create, update, delete y runTransaction.
+// Implementa solo lo que usan los models: doc, collection, where, orderBy, limit, get, count, set, create, update, delete y runTransaction.
 // Uso: setDbForTests(createFakeFirestore()) antes de llamar a un model.
 import { FieldPath } from 'firebase-admin/firestore';
 
@@ -58,7 +58,7 @@ export function createFakeFirestore() {
   }
 
   function query(path, filters = [], order = null, max = null) {
-    return {
+    const self = {
       where: (field, op, value) => query(path, [...filters, { field, op, value }], order, max),
       orderBy: (field, direction = 'asc') => query(path, filters, { field, direction }, max),
       limit: (n) => query(path, filters, order, n),
@@ -89,7 +89,15 @@ export function createFakeFirestore() {
         const snaps = docs.map(({ id, data }) => makeSnap(id, data));
         return { docs: snaps, size: snaps.length, empty: snaps.length === 0 };
       },
+      // Agregación count(): ignora orderBy y limit, como Firestore.
+      count: () => ({
+        async get() {
+          const { size } = await query(path, filters).get();
+          return { data: () => ({ count: size }) };
+        },
+      }),
     };
+    return self;
   }
 
   function collectionRef(path) {

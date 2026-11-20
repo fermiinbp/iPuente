@@ -37,13 +37,14 @@ export const reactivate = [idParam];
 
 const isText = (v) => typeof v === 'string';
 
-// Página opcional: entero entre 1 y 1000.
-const pageQuery = query('page')
-  .optional()
-  .custom(isText)
-  .bail()
-  .isInt({ min: 1, max: 1000, allow_leading_zeroes: false })
-  .withMessage('page debe ser un entero entre 1 y 1000');
+// Página opcional: entero entre 1 y `max` (tope de lectura del listado / 20 por página).
+const pageQuery = (max) =>
+  query('page')
+    .optional()
+    .custom(isText)
+    .bail()
+    .isInt({ min: 1, max, allow_leading_zeroes: false })
+    .withMessage(`page debe ser un entero entre 1 y ${max}`);
 
 // Listado de usuarios: rol (en inglés), búsqueda de hasta 100 caracteres y página.
 export const listUsers = [
@@ -61,7 +62,7 @@ export const listUsers = [
     .bail()
     .isLength({ max: 100 })
     .withMessage('q admite hasta 100 caracteres'),
-  pageQuery,
+  pageQuery(50),
 ];
 
 // Listado de reservas: estado (en inglés), rango de fechas, empresa y página.
@@ -83,7 +84,7 @@ export const listBookings = [
     .isLength({ min: 1, max: 128 })
     .matches(/^[A-Za-z0-9_-]+$/)
     .withMessage('companyId no es válido'),
-  pageQuery,
+  pageQuery(25),
 ];
 
 export const getBooking = [idParam];
