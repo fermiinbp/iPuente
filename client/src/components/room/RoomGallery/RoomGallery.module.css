@@ -41,6 +41,10 @@
   color: var(--crema-suave);
 }
 
+.thumbsBox {
+  min-width: 0;
+}
+
 .thumbs {
   display: flex;
   gap: var(--space-2);
@@ -48,9 +52,16 @@
   padding: 0;
   list-style: none;
   overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+
+.thumbItem {
+  flex: none;
+  scroll-snap-align: start;
 }
 
 .thumb {
+  display: block;
   width: 84px;
   aspect-ratio: 4 / 3;
   padding: 0;
@@ -62,6 +73,7 @@
 }
 
 .thumb img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -74,4 +86,37 @@
 
 .thumbActive {
   border-color: var(--lima);
+}
+
+@media (min-width: 720px) {
+  .gallery {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+
+  .thumbsBox {
+    position: relative;
+  }
+
+  /* Las miniaturas ocupan el alto de la foto principal: tres a la vista y el resto se desliza. */
+  .thumbs {
+    position: absolute;
+    inset: 0;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scroll-snap-type: y proximity;
+    scrollbar-width: thin;
+    scrollbar-color: var(--linea) transparent;
+  }
+
+  .thumbItem {
+    flex: 0 0 calc((100% - 2 * var(--space-2)) / 3);
+  }
+
+  .thumb {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
+  }
 }
