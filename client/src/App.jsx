@@ -8,6 +8,7 @@ import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { ROLES } from '@/config/constants.js';
 import Landing from '@/pages/Landing/Landing.jsx';
 import NotFound from '@/pages/NotFound/NotFound.jsx';
+import CompanyStatusRoute from '@/router/CompanyStatusRoute.jsx';
 import PrivateRoute from '@/router/PrivateRoute.jsx';
 import RoleRoute from '@/router/RoleRoute.jsx';
 
@@ -100,23 +101,26 @@ export default function App() {
         {/* Paneles: con su propia cabecera (DashboardLayout), sin la cabecera ni el pie públicos */}
         <Route element={<PrivateRoute />}>
           <Route element={<RoleRoute role={ROLES.COMPANY} />}>
-            {/* Estado de la solicitud de alta: cabecera del panel sin menú lateral (wireframe 10b) */}
-            <Route element={<DashboardLayout title="Panel de empresa" />}>
-              <Route path="company/request" element={<CompanyRequestStatus />} />
-            </Route>
+            {/* Sin aprobar, todo /company/* lleva al estado de la solicitud; aprobada, la solicitud lleva al panel */}
+            <Route element={<CompanyStatusRoute />}>
+              {/* Estado de la solicitud de alta: cabecera del panel sin menú lateral (wireframe 10b) */}
+              <Route element={<DashboardLayout title="Panel de empresa" />}>
+                <Route path="company/request" element={<CompanyRequestStatus />} />
+              </Route>
 
-            <Route
-              path="company"
-              element={<DashboardLayout title="Panel de empresa" links={COMPANY_LINKS} />}
-            >
-              <Route index element={<CompanyDashboard />} />
-              <Route path="buildings" element={<CompanyBuildings />} />
-              <Route path="floors/:floorId/editor" element={<MapEditorPage />} />
-              <Route path="rooms" element={<CompanyRooms />} />
-              {/* El detalle es un panel lateral sobre la lista (EMP014) */}
-              <Route path="bookings" element={<CompanyBookings />} />
-              <Route path="bookings/:bookingId" element={<CompanyBookings />} />
-              <Route path="settings" element={<CompanySettings />} />
+              <Route
+                path="company"
+                element={<DashboardLayout title="Panel de empresa" links={COMPANY_LINKS} />}
+              >
+                <Route index element={<CompanyDashboard />} />
+                <Route path="buildings" element={<CompanyBuildings />} />
+                <Route path="floors/:floorId/editor" element={<MapEditorPage />} />
+                <Route path="rooms" element={<CompanyRooms />} />
+                {/* El detalle es un panel lateral sobre la lista (EMP014) */}
+                <Route path="bookings" element={<CompanyBookings />} />
+                <Route path="bookings/:bookingId" element={<CompanyBookings />} />
+                <Route path="settings" element={<CompanySettings />} />
+              </Route>
             </Route>
           </Route>
 
