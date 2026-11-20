@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button/Button.jsx';
 import ConfirmModal from '@/components/ui/ConfirmModal/ConfirmModal.jsx';
 import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
+import SegmentedControl from '@/components/ui/SegmentedControl/SegmentedControl.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { useFetch } from '@/hooks/useFetch.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
@@ -20,6 +21,7 @@ export default function MyBookings() {
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState('');
   const [notice, setNotice] = useState('');
+  const [tab, setTab] = useState('proximas');
 
   function closeModal() {
     setToCancel(null);
@@ -65,17 +67,27 @@ export default function MyBookings() {
       </EmptyState>
     );
   } else {
+    const shown = tab === 'pasadas' ? past : upcoming;
     content = (
       <>
-        <section aria-labelledby="proximas-titulo">
-          <h2 className={styles.subtitle} id="proximas-titulo">
-            Próximas ({upcoming.length})
-          </h2>
-          {upcoming.length === 0 ? (
-            <p className={styles.none}>No tienes reservas próximas.</p>
+        <SegmentedControl
+          label="Mostrar reservas"
+          name="mis-reservas-tab"
+          value={tab}
+          onChange={(event) => setTab(event.target.value)}
+          options={[
+            { value: 'proximas', label: `Próximas (${upcoming.length})` },
+            { value: 'pasadas', label: `Pasadas (${past.length})` },
+          ]}
+        />
+        <section aria-label={tab === 'pasadas' ? 'Reservas pasadas' : 'Reservas próximas'}>
+          {shown.length === 0 ? (
+            <p className={styles.none}>
+              {tab === 'pasadas' ? 'No tienes reservas pasadas.' : 'No tienes reservas próximas.'}
+            </p>
           ) : (
             <ul className={styles.list}>
-              {upcoming.map((booking) => (
+              {shown.map((booking) => (
                 <li key={booking.id}>
                   <BookingCard booking={booking} onCancel={setToCancel} />
                 </li>
@@ -83,21 +95,6 @@ export default function MyBookings() {
             </ul>
           )}
         </section>
-
-        {past.length > 0 && (
-          <section aria-labelledby="pasadas-titulo">
-            <h2 className={styles.subtitle} id="pasadas-titulo">
-              Pasadas ({past.length})
-            </h2>
-            <ul className={styles.list}>
-              {past.map((booking) => (
-                <li key={booking.id}>
-                  <BookingCard booking={booking} onCancel={setToCancel} />
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
       </>
     );
   }
