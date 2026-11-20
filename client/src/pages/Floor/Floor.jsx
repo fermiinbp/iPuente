@@ -121,7 +121,18 @@ export default function Floor() {
   }
 
   // Plantas del edificio de la más alta a la más baja, con la forma que usa el selector.
-  const siblingFloors = [...(building?.plantas ?? [])]
+  // Sin API se usan las plantas de ejemplo (las que no se alquilan, como la planta baja, no se ofrecen).
+  const siblingSource =
+    building?.plantas ??
+    (demo
+      ? FLOORS_HERO.filter((floor) => !floor.off).map((floor) => ({
+          id: floor.id,
+          nombre: floor.name,
+          nivel: floor.number,
+          salasLibres: floor.free,
+        }))
+      : []);
+  const siblingFloors = [...siblingSource]
     .sort((a, b) => b.nivel - a.nivel)
     .map((planta) => ({
       id: planta.id,

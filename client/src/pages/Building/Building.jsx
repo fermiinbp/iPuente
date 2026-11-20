@@ -65,7 +65,7 @@ export default function Building() {
           name: planta.nombre,
           number: planta.nivel,
           free: planta.salasLibres,
-          total: planta.totalSalas ?? planta.salasLibres,
+          total: planta.totalSalas,
           rooms: [
             ...Array(planta.salasLibres).fill('free'),
             ...Array(

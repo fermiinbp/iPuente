@@ -6,6 +6,9 @@ import styles from './FloorSelector.module.css';
 const KEYS_PREV = ['ArrowUp', 'ArrowLeft'];
 const KEYS_NEXT = ['ArrowDown', 'ArrowRight'];
 
+// La API real solo devuelve las salas libres de cada planta; el total solo existe en los datos de ejemplo.
+const hasTotal = (floor) => Number.isFinite(floor.total);
+
 function shortName(floor) {
   return floor.number === 0 ? 'PB' : String(floor.number);
 }
@@ -75,7 +78,9 @@ export default function FloorSelector({
                 aria-label={
                   floor.off
                     ? `${floor.name}, no se alquila`
-                    : `${floor.name}, ${floor.free} de ${floor.total} salas libres`
+                    : hasTotal(floor)
+                      ? `${floor.name}, ${floor.free} de ${floor.total} salas libres`
+                      : `${floor.name}, ${floor.free} salas libres`
                 }
                 tabIndex={isActive ? 0 : -1}
                 onClick={() => onSelect(floor.id)}
@@ -84,7 +89,7 @@ export default function FloorSelector({
                   {shortName(floor)}
                 </span>
                 <span className={styles.free} aria-hidden="true">
-                  {floor.off ? '—' : `${floor.free}/${floor.total}`}
+                  {floor.off ? '—' : hasTotal(floor) ? `${floor.free}/${floor.total}` : floor.free}
                 </span>
               </button>
             </li>
