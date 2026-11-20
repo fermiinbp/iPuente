@@ -1,9 +1,10 @@
 // Plantilla común de las páginas: cabecera, contenido (<Outlet />) y pie. Gestiona el desplazamiento a anclas.
 // El primer elemento al tabular es «Saltar al contenido», que lleva directo a <main> sin recorrer la cabecera.
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router';
 import Footer from '@/components/layout/Footer/Footer.jsx';
 import Header from '@/components/layout/Header/Header.jsx';
+import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import styles from './Layout.module.css';
 
 export default function Layout() {
@@ -29,7 +30,9 @@ export default function Layout() {
       </a>
       <Header />
       <main className={styles.main} id="contenido" tabIndex={-1}>
-        <Outlet />
+        <Suspense fallback={<Spinner label="Cargando…" />}>
+          <Outlet />
+        </Suspense>
       </main>
       <Footer />
     </div>

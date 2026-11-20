@@ -1,6 +1,7 @@
 // Sección «Alrededor del edificio»: mapa vectorial con los lugares cercanos y lista accesible con sus tiempos.
 // Sin mapa (sin WebGL o sin red), la lista y el detalle bastan. MapLibre se carga en diferido.
 import { lazy, Suspense, useCallback, useState } from 'react';
+import { useNearViewport } from '@/hooks/useNearViewport.js';
 import ErrorBoundary from '@/components/three/ErrorBoundary/ErrorBoundary.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
@@ -20,6 +21,8 @@ export default function NearbySection() {
   const [activeId, setActiveId] = useState(null); // elegido con clic o Enter: mueve la cámara
   const [hoverId, setHoverId] = useState(null); // ratón o foco: solo resalta
   const [announcement, setAnnouncement] = useState('');
+  // El mapa (MapLibre, unos 300 kB) solo se descarga cuando la sección se acerca a la pantalla.
+  const [mapRef, mapNear] = useNearViewport();
   const [mapaFallido, setMapaFallido] = useState(false);
   const active = pois.find((poi) => poi.id === activeId) ?? null;
 
@@ -48,21 +51,25 @@ export default function NearbySection() {
       spacious
       innerClassName={styles.inner}
     >
-      <div className={styles.mapBox}>
+      <div className={styles.mapBox} ref={mapRef}>
         {mapaFallido ? (
           sinMapa
         ) : (
           <ErrorBoundary fallback={sinMapa}>
             <Suspense fallback={<p className={styles.note}>Cargando el mapa…</p>}>
-              <NearbyMap
-                pois={pois}
-                activeId={activeId}
-                hoverId={hoverId}
-                onSelect={choose}
-                onHover={setHoverId}
-                onReset={reset}
-                onUnavailable={onUnavailable}
-              />
+              {mapNear ? (
+                <NearbyMap
+                  pois={pois}
+                  activeId={activeId}
+                  hoverId={hoverId}
+                  onSelect={choose}
+                  onHover={setHoverId}
+                  onReset={reset}
+                  onUnavailable={onUnavailable}
+                />
+              ) : (
+                <p className={styles.note}>Cargando el mapa…</p>
+              )}
             </Suspense>
           </ErrorBoundary>
         )}

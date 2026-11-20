@@ -14,6 +14,7 @@ import Input from '@/components/ui/Input/Input.jsx';
 import Select from '@/components/ui/Select/Select.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { useFetch } from '@/hooks/useFetch.js';
+import { useMediaQuery } from '@/hooks/useMediaQuery.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import { BUILDING } from '@/pages/Landing/data.js';
 import { getBuildings } from '@/services/buildingsService.js';
@@ -66,6 +67,8 @@ export default function Search() {
   // Edificio resaltado (tarjeta y pin se iluminan a la vez) y, en móvil, si se ve el mapa en lugar de la lista.
   const [activeId, setActiveId] = useState(null);
   const [showMap, setShowMap] = useState(false);
+  // El mapa pesa mucho: en móvil, donde empieza oculto, solo se descarga al pulsar «Ver mapa».
+  const wide = useMediaQuery('(min-width: 1040px)');
   const [mapFailed, setMapFailed] = useState(false);
   const handleMapUnavailable = useCallback(() => setMapFailed(true), []);
   const city = searchParams.get('city') ?? '';
@@ -286,16 +289,18 @@ export default function Search() {
           <div className={showMap ? styles.listHidden : styles.list}>{results}</div>
           {mapAvailable && (
             <div className={`${styles.mapPane} ${showMap ? styles.mapPaneOpen : ''}`}>
-              <ErrorBoundary fallback={null}>
-                <Suspense fallback={<p className={styles.mapNote}>Cargando el mapa…</p>}>
-                  <SearchMap
-                    buildings={buildings}
-                    activeId={activeId}
-                    onActivate={setActiveId}
-                    onUnavailable={handleMapUnavailable}
-                  />
-                </Suspense>
-              </ErrorBoundary>
+              {(wide || showMap) && (
+                <ErrorBoundary fallback={null}>
+                  <Suspense fallback={<p className={styles.mapNote}>Cargando el mapa…</p>}>
+                    <SearchMap
+                      buildings={buildings}
+                      activeId={activeId}
+                      onActivate={setActiveId}
+                      onUnavailable={handleMapUnavailable}
+                    />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
             </div>
           )}
         </div>
