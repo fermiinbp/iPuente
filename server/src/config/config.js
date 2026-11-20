@@ -7,7 +7,6 @@ const REQUIRED_VARS = [
   'FIREBASE_PROJECT_ID',
   'FIREBASE_CLIENT_EMAIL',
   'FIREBASE_PRIVATE_KEY',
-  'PORT',
   'APP_URL',
 ];
 
@@ -20,6 +19,10 @@ if (missing.length > 0) {
 const missingFirebase = missing.filter((name) => name.startsWith('FIREBASE_'));
 if (process.env.NODE_ENV === 'production' && missingFirebase.length > 0) {
   throw new Error(`Faltan variables de Firebase en producción: ${missingFirebase.join(', ')}.`);
+}
+// APP_URL es el único origen que permite CORS: en producción tampoco hay valor por defecto.
+if (process.env.NODE_ENV === 'production' && missing.includes('APP_URL')) {
+  throw new Error('Falta APP_URL en producción: es el único origen que permite CORS.');
 }
 
 // Netlify (y muchos .env) guardan la clave con "\n" literales: los convertimos en saltos reales.
