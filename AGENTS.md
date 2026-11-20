@@ -32,7 +32,7 @@
 | `client/public/favicon.svg` | Icono de la pestaña del navegador (provisional hasta tener logo). |
 | `client/public/images/` | Imágenes estáticas servidas tal cual (p. ej. `edificio-hero.png`, la imagen del edificio de la landing). |
 | `client/public/demo-plans/` | Planos de ejemplo para probar el editor y la detección con IA en la demo. |
-| `client/vite.config.js` | Configuración de Vite: plugin de React y alias `@/` que apunta a `client/src`. |
+| `client/vite.config.js` | Configuración de Vite: plugin de React y alias `@/` que apunta a `client/src` y proxy de `/api` a la API local (puerto 3000, o `API_PROXY_TARGET`). |
 | `client/eslint.config.js` | Reglas de ESLint para React y hooks. |
 | `client/.env.example` | Plantilla de variables del front (Firebase web, incluido el bucket de Storage, y URL de la API). Se copia a `.env`. Ninguna es secreta. |
  

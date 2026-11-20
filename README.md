@@ -636,6 +636,26 @@ En **Vercel**, las mismas variables van en *Settings → Environment Variables*.
 
 **CIF huérfano:** `companyTaxIds/<cif>` se reserva en una transacción; si el documento no tiene `companyId` y tiene más de 10 minutos, o su `companyId` apunta a una empresa que no existe, se sobrescribe. Rechazar o suspender una empresa NO libera su CIF.
 
+## Desarrollo en local
+
+Se necesitan dos terminales desde la raíz del repositorio:
+
+```bash
+npm run dev -w server   # la API en http://localhost:3000 (necesita server/.env)
+npm run dev             # la web en http://localhost:5173; Vite redirige /api a la API
+```
+
+Comprueba que la API es la tuya: `http://localhost:3000/api/health` debe responder `{ "ok": true }`.
+
+**Si el puerto 3000 lo usa otra aplicación** (por ejemplo un softphone o un servidor de otro proyecto), todo `/api/...` responde `404` en HTML y la web lo nota así: «Mis reservas» muestra «No se ha podido contactar con el servidor» y el resto de pantallas enseñan datos de ejemplo con el aviso «la API no está disponible». Arranca la API en otro puerto y dile a Vite dónde está:
+
+```bash
+# en server/.env:  PORT=3001
+API_PROXY_TARGET=http://localhost:3001 npm run dev
+```
+
+En desarrollo, un error de la API sin el JSON esperado deja un aviso en la consola del navegador (`[api] … HTTP 404 sin JSON de error`).
+
 ## Despliegue en Vercel
 
 La web (`client/`) y la API (Express como función de Vercel, `api/index.js`) se despliegan juntas desde `vercel.json`. Requiere Node 22 (`.nvmrc`; `engines` pide `22.x`, así Vercel usa la última 22.x, que admite `require()` de módulos ESM como pide `jwks-rsa` en `firebase-admin`).

@@ -51,10 +51,22 @@ export async function apiClient(path, { method = 'GET', body, headers = {}, sign
 
   if (!response.ok) {
     const apiError = data?.error;
+    // Un error sin { error: { message } } no lo ha dado nuestra API: otra aplicación en el puerto, la API caída o un
+    // fallo de la plataforma. En desarrollo se avisa en la consola para saber dónde mirar.
+    if (!apiError && import.meta.env.DEV) {
+      console.warn(
+        `[api] ${options.method} ${API_URL}${path} → HTTP ${response.status} sin JSON de error. ¿Está arrancada la API? ` +
+          'En local /api/health debe responder {"ok":true} en el destino del proxy (client/vite.config.js).',
+      );
+    }
+    const unavailable = response.status === 404 || response.status >= 500;
     throw new ApiError(
       response.status,
       apiError?.code ?? 'UNKNOWN_ERROR',
-      apiError?.message ?? 'Ha ocurrido un error inesperado. Inténtalo de nuevo.',
+      apiError?.message ??
+        (unavailable
+          ? 'No se ha podido contactar con el servidor. Inténtalo de nuevo en unos minutos.'
+          : 'Ha ocurrido un error inesperado. Inténtalo de nuevo.'),
       apiError?.details ?? null,
     );
   }
