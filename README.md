@@ -612,6 +612,7 @@ La API se conecta a Firestore y a Firebase Auth con `firebase-admin`, usando la 
 | `FIREBASE_CLIENT_EMAIL` | `client_email` |
 | `FIREBASE_PRIVATE_KEY` | `private_key`, entre comillas dobles y con los `\n` tal cual |
 | `FIREBASE_STORAGE_BUCKET` | Bucket de Storage (no está en el JSON; es el de `VITE_FIREBASE_STORAGE_BUCKET`) |
+| `APP_URL` | URL de la web (p. ej. `https://ipuente.netlify.app`): es el único origen que permite CORS. En desarrollo, si falta, se usa `http://localhost:5173`; en producción no hay valor por defecto. |
 
 4. Comprueba la conexión (escribe, lee y borra un documento en `_ping`):
 
@@ -621,6 +622,8 @@ node --env-file=.env scripts/pingDb.js
 ```
 
 En **Netlify**, las mismas variables van en *Site configuration → Environment variables*. `config.js` convierte los `\n` literales de la clave en saltos de línea reales.
+
+**Límites y proxy:** la API limita las peticiones por IP (general 300 cada 15 min, registro 10 por hora, detección con IA 10 por hora) y responde `429 RATE_LIMITED`. Como en Netlify hay un proxy delante, `app.js` usa `trust proxy = 1` para leer la IP real del cliente; si se despliega sin proxy, hay que quitarlo o cualquiera podría falsear su IP con `X-Forwarded-For`. En Netlify Functions el contador vive en la memoria de cada instancia, así que el límite es orientativo, no exacto.
 
 ## ESLint y Prettier
 
