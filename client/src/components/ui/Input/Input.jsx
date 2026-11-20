@@ -39,7 +39,7 @@ export default function Input({
         </p>
       )}
       {error && (
-        <p className={styles.error} id={errorId} role="alert">
+        <p className={styles.error} id={errorId}>
           {error}
         </p>
       )}

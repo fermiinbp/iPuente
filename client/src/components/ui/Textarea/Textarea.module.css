@@ -1,0 +1,66 @@
+/* Mismo aspecto que Input en su variante de formulario (boxed). */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: var(--text-pequeno);
+  color: var(--crema-suave);
+}
+
+.label {
+  line-height: 1.2;
+}
+
+.textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: calc(var(--campo-alto) * 2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--campo-borde);
+  border-radius: var(--radio-plano);
+  background: var(--campo-fondo);
+  color: var(--crema);
+  font-family: var(--font-body);
+  font-size: var(--text-cuerpo);
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.textarea::placeholder {
+  color: var(--campo-placeholder);
+  opacity: 1;
+}
+
+.textarea:focus-visible {
+  border-color: var(--campo-borde-foco);
+}
+
+.textarea:disabled {
+  background: var(--campo-desactivado-fondo);
+  color: var(--campo-desactivado-texto);
+  cursor: not-allowed;
+}
+
+/* Después del foco: el borde de error se mantiene; el foco lo marca el contorno. */
+.textarea.invalid {
+  border-color: var(--error);
+}
+
+.hint,
+.error {
+  margin: 0;
+  font-size: var(--text-pequeno);
+  line-height: 1.4;
+}
+
+.hint {
+  color: var(--crema-suave);
+}
+
+.error {
+  color: var(--error);
+  border-left: 3px solid var(--error);
+  padding-left: var(--space-2);
+}
