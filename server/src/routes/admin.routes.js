@@ -1,4 +1,4 @@
-// Rutas del panel de admin: empresas (listar, detalle, aprobar, rechazar, suspender y reactivar), usuarios, reservas, pagos y reembolsos.
+// Rutas del panel de admin: empresas (listar, detalle, aprobar, rechazar, suspender y reactivar), usuarios, reservas y resumen.
 import { Router } from 'express';
 
 import { ROLES } from '../config/roles.js';
@@ -247,6 +247,167 @@ router.post(
   adminValidator.reactivate,
   validate,
   asyncHandler(ctrl.reactivateCompany),
+);
+
+/**
+ * @openapi
+ * /admin/users:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Lista los usuarios con búsqueda y paginación
+ *     description: 'Devuelve `{ usuarios: [{ id, nombre, email, rol, empresa, fechaAlta }], total, page, limit, truncado }`, del alta más reciente al más antiguo, 20 por página. `q` busca por nombre o email sin tildes ni mayúsculas. Solo admin.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: rol
+ *         schema:
+ *           type: string
+ *           enum: [CLIENT, COMPANY, ADMIN]
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *           maxLength: 100
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 1000
+ *     responses:
+ *       200:
+ *         description: Página de usuarios.
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
+router.get(
+  '/admin/users',
+  authStrict,
+  requireRole(ROLES.ADMIN),
+  adminValidator.listUsers,
+  validate,
+  asyncHandler(ctrl.listUsers),
+);
+
+/**
+ * @openapi
+ * /admin/bookings:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Lista las reservas de todas las empresas
+ *     description: 'Devuelve `{ reservas: [{ id, codigo, fecha, inicio, fin, importe, estado, sala, edificio, empresa, cliente }], total, page, limit, desde, hasta, truncado }`. Rango por defecto: hoy - 30 días hasta +90 días (máximo 366 días y 500 resultados), 20 por página. Solo admin.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: estado
+ *         schema:
+ *           type: string
+ *           enum: [PENDING_PAYMENT, CONFIRMED, CANCELLED, EXPIRED, COMPLETED]
+ *       - in: query
+ *         name: desde
+ *         schema:
+ *           type: string
+ *           example: '2026-06-01'
+ *       - in: query
+ *         name: hasta
+ *         schema:
+ *           type: string
+ *           example: '2026-06-30'
+ *       - in: query
+ *         name: companyId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 1000
+ *     responses:
+ *       200:
+ *         description: Página de reservas.
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
+router.get(
+  '/admin/bookings',
+  authStrict,
+  requireRole(ROLES.ADMIN),
+  adminValidator.listBookings,
+  validate,
+  asyncHandler(ctrl.listBookings),
+);
+
+/**
+ * @openapi
+ * /admin/bookings/{id}:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Detalle de una reserva
+ *     description: 'Reserva con sala, planta, edificio, `empresa { id, nombre }` y `cliente { nombre, email }`. Solo admin.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Detalle de la reserva.
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.get(
+  '/admin/bookings/:id',
+  authStrict,
+  requireRole(ROLES.ADMIN),
+  adminValidator.getBooking,
+  validate,
+  asyncHandler(ctrl.getBooking),
+);
+
+/**
+ * @openapi
+ * /admin/summary:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Resumen del panel
+ *     description: 'Devuelve `{ empresas, usuarios, reservasMes }`: empresas por estado, usuarios por rol y reservas del mes actual por estado. Solo admin.'
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Resumen.
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
+router.get(
+  '/admin/summary',
+  authStrict,
+  requireRole(ROLES.ADMIN),
+  adminValidator.summary,
+  validate,
+  asyncHandler(ctrl.getSummary),
 );
 
 export default router;

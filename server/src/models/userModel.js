@@ -13,3 +13,9 @@ export async function findByEmail(email) {
 export function listByRole(role) {
   return base.listBy('role', role);
 }
+
+// Usuarios (hasta `limit`), con filtro opcional por rol. El panel de admin ordena y busca en memoria.
+export function listAll({ role, limit = 1000 } = {}) {
+  const query = role ? base.collection().where('role', '==', role) : base.collection();
+  return runQuery(query, { limit });
+}

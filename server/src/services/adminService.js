@@ -1,10 +1,14 @@
-// Aprobación, rechazo y suspensión de empresas y listados globales del panel de admin.
+// Aprobación, rechazo y suspensión de empresas y consultas globales (usuarios, reservas y resumen).
+import * as bookingModel from '../models/bookingModel.js';
 import * as buildingModel from '../models/buildingModel.js';
 import * as companyModel from '../models/companyModel.js';
 import { now, runTransaction } from '../models/baseModel.js';
 import * as roomModel from '../models/roomModel.js';
 import * as userModel from '../models/userModel.js';
+import { addDays, resolveRange } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
+import { normalizeText } from '../utils/text.js';
+import { atHour, buildBookingDetail, toCancellation, toItem } from './bookingsService.js';
 import {
   COMPANY_STATUS,
   companyEstado,
@@ -172,4 +176,164 @@ export async function suspendCompany(id, adminUid, motivo) {
     console.error('No se pudo calcular el aviso de reservas futuras al suspender', err?.code);
     return view;
   }
+}
+
+// Tamaño fijo de página y topes de lectura de los listados.
+export const PAGE_SIZE = 20;
+const USERS_READ_LIMIT = 1000;
+const BOOKINGS_READ_LIMIT = 500;
+const SUMMARY_READ_LIMIT = 5000;
+
+// Página `page` (desde 1) de una lista ya ordenada.
+const paginate = (items, page) => items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+// Nombre completo de un usuario.
+const fullName = (u) => [u.name, u.surname].filter(Boolean).join(' ');
+
+// Empresa de cada usuario de la página: por users.companyId o, si no hay, por companies.ownerUid.
+async function companiesOfUsers(users) {
+  const byId = new Map();
+  const ids = users.map((u) => u.companyId).filter(Boolean);
+  for (const c of await companyModel.findByIds(ids)) byId.set(c.id, c);
+  const byOwner = new Map();
+  if (users.some((u) => !u.companyId && u.role === 'COMPANY')) {
+    for (const c of await companyModel.listAll()) if (c.ownerUid) byOwner.set(c.ownerUid, c);
+  }
+  return (user) => {
+    const c = user.companyId ? byId.get(user.companyId) : byOwner.get(user.id);
+    return c ? { id: c.id, nombre: c.name ?? null } : null;
+  };
+}
+
+// Usuarios, del alta más reciente al más antiguo, con filtro por rol (en inglés), búsqueda por
+// nombre o email (sin tildes ni mayúsculas) y paginación. Sin teléfono.
+export async function listUsers({ rol, q, page = 1 } = {}) {
+  const all = await userModel.listAll({ role: rol, limit: USERS_READ_LIMIT });
+  const needle = normalizeText(q);
+  const found = all
+    .filter(
+      (u) =>
+        !needle ||
+        normalizeText(fullName(u)).includes(needle) ||
+        normalizeText(u.email).includes(needle),
+    )
+    .map((user) => ({ user, fechaAlta: toIso(user.createdAt) ?? null }))
+    .sort((a, b) => (b.fechaAlta ?? '').localeCompare(a.fechaAlta ?? ''));
+  const pageItems = paginate(found, page);
+  const empresaDe = await companiesOfUsers(pageItems.map((i) => i.user));
+  return {
+    usuarios: pageItems.map(({ user, fechaAlta }) => ({
+      id: user.id,
+      nombre: fullName(user) || null,
+      email: user.email ?? null,
+      rol: user.role ?? null,
+      empresa: empresaDe(user),
+      fechaAlta,
+    })),
+    total: found.length,
+    page,
+    limit: PAGE_SIZE,
+    truncado: all.length >= USERS_READ_LIMIT,
+  };
+}
+
+// Caché por id para no leer dos veces el mismo documento dentro de una petición.
+function cached(read) {
+  const map = new Map();
+  return (id) => {
+    if (!id) return Promise.resolve(null);
+    if (!map.has(id)) map.set(id, read(id));
+    return map.get(id);
+  };
+}
+
+// Reservas de todas las empresas en el rango (por defecto hoy - 30 días y 90 días desde ahí; máximo
+// 366 días y 500 resultados), de la más reciente a la más antigua. Pagina primero y solo resuelve
+// sala, edificio, empresa y cliente de la página.
+export async function listBookings({ estado, desde, hasta, companyId, page = 1 } = {}) {
+  const range = resolveRange({ desde, hasta });
+  const bookings = await bookingModel.listInRange({
+    from: atHour(range.desde, 0),
+    to: atHour(addDays(range.hasta, 1), 0),
+    companyId,
+    status: estado,
+    limit: BOOKINGS_READ_LIMIT,
+  });
+  const pageItems = paginate(bookings, page);
+  const room = cached((id) => roomModel.findById(id));
+  const building = cached((id) => buildingModel.findById(id));
+  const user = cached((id) => userModel.findById(id));
+  const companies = new Map(
+    (await companyModel.findByIds(pageItems.map((b) => b.companyId))).map((c) => [c.id, c]),
+  );
+  const reservas = await Promise.all(
+    pageItems.map(async (b) => {
+      const r = await room(b.roomId);
+      const [edificio, cliente] = await Promise.all([building(r?.buildingId), user(b.userId)]);
+      const empresa = companies.get(b.companyId);
+      const { id, codigo, fecha, inicio, fin, importe, estado: status } = toItem(b);
+      return {
+        id,
+        codigo,
+        fecha,
+        inicio,
+        fin,
+        importe,
+        estado: status,
+        sala: r ? { id: r.id, nombre: r.name ?? null } : null,
+        edificio: edificio
+          ? { id: edificio.id, nombre: edificio.name ?? null, ciudad: edificio.city ?? null }
+          : null,
+        empresa: empresa ? { id: empresa.id, nombre: empresa.name ?? null } : null,
+        cliente: cliente ? { nombre: cliente.name ?? null, email: cliente.email ?? null } : null,
+        ...toCancellation(b),
+      };
+    }),
+  );
+  return {
+    reservas,
+    total: bookings.length,
+    page,
+    limit: PAGE_SIZE,
+    desde: range.desde,
+    hasta: range.hasta,
+    truncado: bookings.length >= BOOKINGS_READ_LIMIT,
+  };
+}
+
+// Detalle de cualquier reserva con su empresa y el nombre y email del cliente (sin teléfono ni uid).
+export async function getBooking(id) {
+  const booking = await bookingModel.findById(id);
+  if (!booking) throw new HttpError(404, 'NOT_FOUND', 'La reserva no existe');
+  const [detail, company, client] = await Promise.all([
+    buildBookingDetail(booking),
+    booking.companyId ? companyModel.findById(booking.companyId) : null,
+    booking.userId ? userModel.findById(booking.userId) : null,
+  ]);
+  return {
+    ...detail,
+    empresa: company ? { id: company.id, nombre: company.name ?? null } : null,
+    cliente: client ? { nombre: client.name ?? null, email: client.email ?? null } : null,
+  };
+}
+
+// Resumen del panel: empresas por estado, usuarios por rol y reservas del mes actual (por fecha de
+// inicio y en la zona horaria del servidor).
+export async function getSummary() {
+  const today = new Date();
+  const from = new Date(today.getFullYear(), today.getMonth(), 1);
+  const to = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const [companies, users, bookings] = await Promise.all([
+    companyModel.listAll(),
+    userModel.listAll({ limit: SUMMARY_READ_LIMIT }),
+    bookingModel.listInRange({ from, to, limit: SUMMARY_READ_LIMIT }),
+  ]);
+  const empresas = { pendiente: 0, aprobada: 0, rechazada: 0, suspendida: 0 };
+  for (const c of companies) if (companyEstado(c) in empresas) empresas[companyEstado(c)] += 1;
+  const usuarios = { CLIENT: 0, COMPANY: 0, ADMIN: 0 };
+  for (const u of users) if (u.role in usuarios) usuarios[u.role] += 1;
+  const porEstado = {};
+  for (const b of bookings) porEstado[b.status] = (porEstado[b.status] ?? 0) + 1;
+  const mes = `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}`;
+  return { empresas, usuarios, reservasMes: { total: bookings.length, porEstado, mes } };
 }

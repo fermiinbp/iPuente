@@ -8,7 +8,7 @@ import { idParam } from './commonValidator.js';
 const MAX_RANGE_DAYS = 366;
 
 // Fecha opcional AAAA-MM-DD en la query.
-const dateQuery = (name) =>
+export const dateQuery = (name) =>
   query(name)
     .optional()
     .custom((value) => isValidDateString(value))
@@ -16,7 +16,7 @@ const dateQuery = (name) =>
 
 // Con los valores por defecto aplicados (desde = hoy - 30 días, hasta = desde + 90), desde <= hasta
 // y rango máximo de 366 días (ambos inclusive). Se aplica también con un solo extremo.
-const rangeQuery = query('hasta')
+export const rangeQuery = query('hasta')
   .custom((_hasta, { req }) => {
     const { desde, hasta } = req.query;
     if ((desde && !isValidDateString(desde)) || (hasta && !isValidDateString(hasta))) return true;

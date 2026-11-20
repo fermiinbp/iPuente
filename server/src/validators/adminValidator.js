@@ -3,6 +3,7 @@ import { body, query } from 'express-validator';
 
 import { sinCorchetes } from './buildingValidator.js';
 import { idParam } from './commonValidator.js';
+import { dateQuery, rangeQuery } from './companyBookingsValidator.js';
 
 const ESTADOS = ['pendiente', 'aprobada', 'rechazada', 'suspendida'];
 
@@ -33,3 +34,57 @@ export const reject = [idParam, motivo];
 export const suspend = [idParam, motivo];
 export const approve = [idParam];
 export const reactivate = [idParam];
+
+const isText = (v) => typeof v === 'string';
+
+// Página opcional: entero entre 1 y 1000.
+const pageQuery = query('page')
+  .optional()
+  .custom(isText)
+  .bail()
+  .isInt({ min: 1, max: 1000, allow_leading_zeroes: false })
+  .withMessage('page debe ser un entero entre 1 y 1000');
+
+// Listado de usuarios: rol (en inglés), búsqueda de hasta 100 caracteres y página.
+export const listUsers = [
+  sinCorchetes,
+  query('rol')
+    .optional()
+    .custom(isText)
+    .bail()
+    .isIn(['CLIENT', 'COMPANY', 'ADMIN'])
+    .withMessage('rol debe ser CLIENT, COMPANY o ADMIN'),
+  query('q')
+    .optional()
+    .custom(isText)
+    .withMessage('q debe ser texto')
+    .bail()
+    .isLength({ max: 100 })
+    .withMessage('q admite hasta 100 caracteres'),
+  pageQuery,
+];
+
+// Listado de reservas: estado (en inglés), rango de fechas, empresa y página.
+export const listBookings = [
+  sinCorchetes,
+  query('estado')
+    .optional()
+    .custom(isText)
+    .bail()
+    .isIn(['PENDING_PAYMENT', 'CONFIRMED', 'CANCELLED', 'EXPIRED', 'COMPLETED'])
+    .withMessage('estado no es válido'),
+  dateQuery('desde'),
+  dateQuery('hasta'),
+  rangeQuery,
+  query('companyId')
+    .optional()
+    .custom(isText)
+    .bail()
+    .isLength({ min: 1, max: 128 })
+    .matches(/^[A-Za-z0-9_-]+$/)
+    .withMessage('companyId no es válido'),
+  pageQuery,
+];
+
+export const getBooking = [idParam];
+export const summary = [sinCorchetes];

@@ -50,3 +50,14 @@ export function listByCompanyInRange(companyId, { from, to, limit = 500 }) {
     .where('startDate', '<', to);
   return runQuery(query, { orderBy: 'startDate', direction: 'desc', limit });
 }
+
+// Reservas de todas las empresas que empiezan en [from, to), las más recientes primero, con filtros
+// opcionales por empresa y estado (índices status + startDate y companyId + status + startDate).
+// Máximo `limit` resultados.
+export function listInRange({ from, to, companyId, status, limit = 500 }) {
+  let query = base.collection();
+  if (companyId) query = query.where('companyId', '==', companyId);
+  if (status) query = query.where('status', '==', status);
+  query = query.where('startDate', '>=', from).where('startDate', '<', to);
+  return runQuery(query, { orderBy: 'startDate', direction: 'desc', limit });
+}

@@ -30,3 +30,26 @@ export async function suspendCompany(req, res) {
 export async function reactivateCompany(req, res) {
   res.json(await service.reactivateCompany(req.params.id, req.user.uid));
 }
+
+// GET /api/admin/users?rol=&q=&page=: usuarios con búsqueda y paginación.
+export async function listUsers(req, res) {
+  const { rol, q, page } = req.query;
+  res.json(await service.listUsers({ rol, q, page: page ? Number(page) : 1 }));
+}
+
+// GET /api/admin/bookings?estado=&desde=&hasta=&companyId=&page=: reservas de todas las empresas.
+export async function listBookings(req, res) {
+  const { estado, desde, hasta, companyId, page } = req.query;
+  const filters = { estado, desde, hasta, companyId, page: page ? Number(page) : 1 };
+  res.json(await service.listBookings(filters));
+}
+
+// GET /api/admin/bookings/:id: detalle de una reserva.
+export async function getBooking(req, res) {
+  res.json(await service.getBooking(req.params.id));
+}
+
+// GET /api/admin/summary: empresas por estado, usuarios por rol y reservas del mes.
+export async function getSummary(req, res) {
+  res.json(await service.getSummary());
+}
