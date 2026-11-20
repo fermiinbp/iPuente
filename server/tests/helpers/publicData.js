@@ -1,5 +1,6 @@
 // Datos de prueba para los endpoints públicos: siembra el Firestore falso con edificios, plantas, salas, reservas y un bloqueo.
 import app from '../../src/app.js';
+import { setStorageBucketForTests } from '../../src/config/config.js';
 import * as blockModel from '../../src/models/blockModel.js';
 import * as bookingModel from '../../src/models/bookingModel.js';
 import * as buildingModel from '../../src/models/buildingModel.js';
@@ -10,7 +11,15 @@ import * as roomModel from '../../src/models/roomModel.js';
 export const FECHA = '2026-06-15';
 export const PRIVATE_WORDS = ['cliente-secreto', 'userId', 'email', 'bookingId'];
 
+export const TEST_BUCKET = 'ipuente-test.firebasestorage.app';
+
+// URL de descarga de Firebase Storage de un archivo de prueba (path sin codificar).
+export function storageUrl(path, bucket = TEST_BUCKET) {
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media&token=t`;
+}
+
 export async function listen() {
+  setStorageBucketForTests(TEST_BUCKET);
   const server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
   return { server, baseUrl: `http://127.0.0.1:${server.address().port}` };
