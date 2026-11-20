@@ -1,6 +1,10 @@
 // Página de un edificio: cabecera con la fecha, plantas con sus salas libres y «Qué hay cerca».
-import { useSearchParams, useParams } from 'react-router';
+import { useMemo, useState } from 'react';
+import { Link, useSearchParams, useParams } from 'react-router';
+import BuildingHero from '@/components/building/BuildingHero/BuildingHero.jsx';
 import FloorList from '@/components/building/FloorList/FloorList.jsx';
+import FloorSelector from '@/components/building/FloorSelector/FloorSelector.jsx';
+import Breadcrumbs from '@/components/ui/Breadcrumbs/Breadcrumbs.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
@@ -41,6 +45,8 @@ export default function Building() {
   const { buildingId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const fecha = searchParams.get('date') || todayString();
+  const people = searchParams.get('people') ?? '';
+  const [activeId, setActiveId] = useState('');
   const { data, error, loading, reload } = useFetch(
     (signal) => getBuilding(buildingId, { fecha, signal }),
     `${buildingId}|${fecha}`,
@@ -49,6 +55,27 @@ export default function Building() {
   const isDemo = Boolean(error) && buildingId === BUILDING.id;
   const building = isDemo ? demoBuilding() : data;
   usePageTitle(building?.nombre ?? 'Edificio');
+
+  // Plantas de la más alta a la más baja, con la forma que usan el edificio 3D y el selector.
+  const heroFloors = useMemo(
+    () =>
+      [...(building?.plantas ?? [])]
+        .sort((a, b) => b.nivel - a.nivel)
+        .map((planta) => ({
+          id: planta.id,
+          name: planta.nombre,
+          number: planta.nivel,
+          free: planta.salasLibres,
+          total: planta.totalSalas ?? planta.salasLibres,
+          rooms: [
+            ...Array(planta.salasLibres).fill('free'),
+            ...Array(
+              Math.max(0, (planta.totalSalas ?? planta.salasLibres) - planta.salasLibres),
+            ).fill('busy'),
+          ],
+        })),
+    [building],
+  );
 
   function handleDateChange(event) {
     const next = event.target.value;
@@ -81,6 +108,15 @@ export default function Building() {
   }
 
   const where = [building.direccion, building.ciudad].filter(Boolean).join(', ');
+  const crumbs = [
+    { label: 'Inicio', to: '/' },
+    ...(building.ciudad
+      ? [{ label: building.ciudad, to: `/search?city=${encodeURIComponent(building.ciudad)}` }]
+      : []),
+    { label: building.nombre },
+  ];
+  const activeFloor = heroFloors.find((floor) => floor.id === activeId) ?? heroFloors[0];
+  const planQuery = new URLSearchParams({ date: fecha, ...(people ? { people } : {}) }).toString();
 
   return (
     <div className={styles.page}>
@@ -91,6 +127,7 @@ export default function Building() {
           <span className={styles.blobC} />
         </div>
         <div className={styles.heroInner}>
+          <Breadcrumbs items={crumbs} />
           <p className={styles.eyebrow}>{building.ciudad || 'Edificio'}</p>
           <h1 className={styles.title} id="edificio-titulo">
             {building.nombre}
@@ -133,7 +170,49 @@ export default function Building() {
         <p className={styles.sectionLead}>
           Entra en una planta para ver su plano y las salas libres del {formatLongDate(fecha)}.
         </p>
-        <FloorList buildingId={building.id} floors={building.plantas} fecha={fecha} />
+        {heroFloors.length > 0 && (
+          <div className={styles.explorer}>
+            <BuildingHero
+              buildingId={building.id}
+              buildingName={building.nombre}
+              floors={heroFloors}
+              activeFloorId={activeFloor.id}
+              onSelectFloor={setActiveId}
+              showInfo={false}
+              showFloorList={false}
+            />
+            <div className={styles.picker}>
+              <FloorSelector
+                floors={heroFloors}
+                activeFloorId={activeFloor.id}
+                onSelect={setActiveId}
+                label={`Plantas del ${building.nombre}`}
+                orientation="vertical"
+              />
+              <div className={styles.summary} aria-live="polite">
+                <p className={styles.summaryTitle}>{activeFloor.name}</p>
+                <p className={styles.summaryText}>
+                  {activeFloor.free === 0
+                    ? 'Sin salas libres este día.'
+                    : `${activeFloor.free} ${activeFloor.free === 1 ? 'sala libre' : 'salas libres'} el ${formatLongDate(fecha)}.`}
+                </p>
+                <Link
+                  className={styles.summaryLink}
+                  to={`/buildings/${building.id}/floors/${activeFloor.id}?${planQuery}`}
+                >
+                  Ver plano
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+        <h3 className={styles.listTitle}>Todas las plantas</h3>
+        <FloorList
+          buildingId={building.id}
+          floors={building.plantas}
+          fecha={fecha}
+          people={people}
+        />
       </Section>
 
       <NearbySection />

@@ -8,9 +8,12 @@ function freeLabel(count) {
   return count === 1 ? '1 sala libre' : `${count} salas libres`;
 }
 
-export default function FloorList({ buildingId, floors, fecha }) {
+export default function FloorList({ buildingId, floors, fecha, people = '' }) {
   const ordered = [...floors].sort((a, b) => b.nivel - a.nivel);
-  const query = fecha ? `?date=${encodeURIComponent(fecha)}` : '';
+  const params = new URLSearchParams();
+  if (fecha) params.set('date', fecha);
+  if (people) params.set('people', people);
+  const query = params.toString() ? `?${params.toString()}` : '';
 
   if (ordered.length === 0) {
     return <p className={styles.empty}>Este edificio todavía no tiene plantas publicadas.</p>;
