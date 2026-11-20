@@ -226,7 +226,7 @@ ipuente/
 │   │       └── mapValidator.test.js
 │   ├── scripts/
 │   │   ├── data/
-│   │   │   └── demo-floor.json
+│   │   │   └── users.json
 │   │   ├── makeAdmin.js
 │   │   └── seed.js
 │   ├── .env.example
@@ -372,8 +372,8 @@ Todo el código de React. `config/` conecta con Firebase; `router/` define las U
 | `server/eslint.config.js` | Reglas de ESLint para Node. |
 | `server/.env.example` | Plantilla de variables secretas de la API (Firebase Admin, Stripe, IA, URL de la web, puerto). Se copia a `.env` y nunca se sube. |
 | `server/scripts/makeAdmin.js` | Script para convertir en admin a un usuario ya registrado (`npm run make-admin -w server -- correo@ejemplo.com`). |
-| `server/scripts/seed.js` | Carga datos de demo en Firestore (empresa, edificio, plantas y salas) a partir de `scripts/data/`. |
-| `server/scripts/data/demo-floor.json` | Ejemplo de mapa de planta en el formato que usan el editor, el plano y la API. Sirve para el seed y para probar el front sin backend. |
+| `server/scripts/seed.js` | Carga datos de demo (usuarios en Auth, empresas, edificio, plantas, salas, reservas y bloqueo) a partir de `scripts/data/`. Necesita `SEED_DEMO_PASSWORD`. |
+| `server/scripts/data/users.json` | Usuarios demo del seed (uid fijo, email `@ipuente.test`, nombre, rol y `companyId`). |
  
 ### Back: `server/src/config/`
  

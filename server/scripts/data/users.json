@@ -1,0 +1,36 @@
+[
+  {
+    "uid": "demo-admin",
+    "email": "admin.demo@ipuente.test",
+    "nombre": "Admin",
+    "apellidos": "Demo",
+    "telefono": null,
+    "rol": "ADMIN"
+  },
+  {
+    "uid": "demo-client",
+    "email": "cliente.demo@ipuente.test",
+    "nombre": "Cliente",
+    "apellidos": "Demo",
+    "telefono": null,
+    "rol": "CLIENT"
+  },
+  {
+    "uid": "demo-company-owner",
+    "email": "empresa.demo@ipuente.test",
+    "nombre": "Empresa",
+    "apellidos": "Demo",
+    "telefono": "+34 000 000 000",
+    "rol": "COMPANY",
+    "companyId": "demo-company"
+  },
+  {
+    "uid": "demo-pending-owner",
+    "email": "pendiente.demo@ipuente.test",
+    "nombre": "Pendiente",
+    "apellidos": "Demo",
+    "telefono": null,
+    "rol": "COMPANY",
+    "companyId": "demo-pending-company"
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "id": "demo-pending-company",
+  "demo": true,
+  "nombre": "Oficinas Pendientes Demo",
+  "razonSocial": "Oficinas Pendientes Demo S.L. (ficticia)",
+  "cif": "B00000018",
+  "descripcion": "Empresa ficticia pendiente de aprobación, para probar el panel de admin.",
+  "email": "pendiente.demo@ipuente.test",
+  "telefono": "+34 000 000 001",
+  "direccion": "Calle Ficticia 2, 41001 Sevilla",
+  "estado": "pendiente"
+}
