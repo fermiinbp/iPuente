@@ -11,6 +11,7 @@ export async function registerClient(req, res) {
 // POST /api/auth/register/company: crea una empresa pendiente de aprobación.
 export async function registerCompany(req, res) {
   const { email, password, nombre, nombreEmpresa, cif, contacto, telefono } = req.body;
+  const { emailContacto, ciudad } = req.body;
   const result = await authService.registerCompany({
     email,
     password,
@@ -19,6 +20,8 @@ export async function registerCompany(req, res) {
     cif,
     contacto,
     telefono,
+    emailContacto,
+    ciudad,
   });
   res.status(201).json(result);
 }
