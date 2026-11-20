@@ -22,7 +22,7 @@ const router = Router();
  *   post:
  *     tags: [Cliente]
  *     summary: Crea una reserva
- *     description: 'Reserva una franja de horas enteras (8-20) de una sala. Sin pago online: la reserva nace CONFIRMED. El importe lo calcula el servidor. Si otra reserva o un bloqueo ocupa la franja, responde 409 SLOT_TAKEN.'
+ *     description: 'Solo rol CLIENT. Reserva una franja de horas enteras (8-20) de una sala. Sin pago online: la reserva nace CONFIRMED. El importe lo calcula el servidor. Si otra reserva o un bloqueo ocupa la franja, responde 409 SLOT_TAKEN.'
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -97,6 +97,8 @@ const router = Router();
  *         $ref: '#/components/responses/BadRequest'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  *       404:
  *         $ref: '#/components/responses/NotFound'
  *       409:
@@ -108,7 +110,14 @@ const router = Router();
  *                 code: SLOT_TAKEN
  *                 message: Esa franja ya está ocupada
  */
-router.post('/bookings', auth, ...bookingValidator.create, validate, asyncHandler(createBooking));
+router.post(
+  '/bookings',
+  auth,
+  requireRole(ROLES.CLIENT),
+  ...bookingValidator.create,
+  validate,
+  asyncHandler(createBooking),
+);
 
 /**
  * @openapi
@@ -150,8 +159,10 @@ router.post('/bookings', auth, ...bookingValidator.create, validate, asyncHandle
  *               pasadas: []
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
  */
-router.get('/bookings/me', auth, asyncHandler(listMyBookings));
+router.get('/bookings/me', auth, requireRole(ROLES.CLIENT), asyncHandler(listMyBookings));
 
 /**
  * @openapi
@@ -159,7 +170,7 @@ router.get('/bookings/me', auth, asyncHandler(listMyBookings));
  *   get:
  *     tags: [Cliente]
  *     summary: Detalle de una reserva propia
- *     description: 'Solo el cliente dueño (rol CLIENT). Incluye código legible, sala, planta, edificio y, si está cancelada, motivo y quién la canceló. Nunca devuelve userId ni companyId. Si la sala, planta o edificio ya no existen, esos bloques son null.'
+ *     description: 'Solo el cliente dueño (rol CLIENT); una reserva ajena responde 404 como una inexistente. Incluye código legible, sala, planta, edificio y, si está cancelada, motivo y quién la canceló. Nunca devuelve userId ni companyId. Si la sala, planta o edificio ya no existen, esos bloques son null.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -237,7 +248,7 @@ router.get(
  *   patch:
  *     tags: [Cliente]
  *     summary: Cancela una reserva propia
- *     description: 'Solo el dueño puede cancelar una reserva CONFIRMED que no haya empezado. Libera las horas de la sala.'
+ *     description: 'Solo el cliente dueño (rol CLIENT) puede cancelar una reserva CONFIRMED que no haya empezado. Libera las horas de la sala. Una reserva de otro usuario responde 404 como una inexistente.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -275,6 +286,7 @@ router.get(
 router.patch(
   '/bookings/:id/cancel',
   auth,
+  requireRole(ROLES.CLIENT),
   ...bookingValidator.cancel,
   validate,
   asyncHandler(cancelBooking),

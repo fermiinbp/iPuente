@@ -1,5 +1,7 @@
 // Acceso a la colección counters: un documento por contador (p. ej. `bookings`) con el campo
 // `value` (último número usado), updatedAt. Solo acceso a datos: quién calcula el siguiente es el service.
+// IMPORTANTE: el documento `counters/bookings` no se debe borrar ni bajar su `value`: si se
+// reinicia, se repetirían los códigos IP-n de reservas ya existentes.
 import { createModel, now } from './baseModel.js';
 
 const base = createModel('counters');

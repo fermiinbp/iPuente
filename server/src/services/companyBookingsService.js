@@ -17,7 +17,7 @@ import {
   toItem,
   translateConflict,
 } from './bookingsService.js';
-import { assertOwnedBy, getOwnedRoom } from './ownershipService.js';
+import { assertBookingOwned, assertOwnedBy, getOwnedRoom } from './ownershipService.js';
 
 // Lee las salas indicadas una sola vez cada una y devuelve un Map id -> sala.
 async function loadRooms(ids) {
@@ -76,14 +76,14 @@ export async function listBookings(companyId, { desde, hasta, roomId } = {}) {
     .sort(byDate);
 }
 
-// Detalle de una reserva de la empresa: 404 si no existe y 403 si es de otra empresa (la reserva
-// o su sala). Incluye nombre y email del cliente, nunca su id.
+// Detalle de una reserva de la empresa: 404 NOT_FOUND si no existe o es de otra empresa (la reserva
+// o su sala), sin distinguir los casos. Incluye nombre y email del cliente, nunca su id.
 export async function getBooking(companyId, id) {
-  const booking = assertOwnedBy(await bookingModel.findById(id), companyId);
+  const booking = assertBookingOwned(await bookingModel.findById(id), companyId);
   const room = await roomModel.findById(booking.roomId);
-  if (room) assertOwnedBy(room, companyId);
+  if (room) assertBookingOwned(room, companyId);
   const user = booking.userId ? await userModel.findById(booking.userId) : null;
-  return { ...(await buildBookingDetail(booking)), cliente: toCliente(user) };
+  return { ...(await buildBookingDetail(booking, { room })), cliente: toCliente(user) };
 }
 
 // Formato público de un bloqueo.
@@ -185,9 +185,9 @@ export async function removeBlock(companyId, id) {
 // sus horas. No gestiona reembolsos: todavía no hay pago online.
 export async function cancelBooking(companyId, id, motivo) {
   await runTransaction(async (tx) => {
-    const booking = assertOwnedBy(await bookingModel.findById(id, { tx }), companyId);
+    const booking = assertBookingOwned(await bookingModel.findById(id, { tx }), companyId);
     // Defensa en profundidad: la sala de la reserva también debe ser de la empresa.
-    assertOwnedBy(await roomModel.findById(booking.roomId, { tx }), companyId);
+    assertBookingOwned(await roomModel.findById(booking.roomId, { tx }), companyId);
     if (booking.status !== 'CONFIRMED') {
       throw new HttpError(
         400,

@@ -48,6 +48,7 @@ describe('Reservas del cliente', () => {
   });
 
   beforeEach(async () => {
+    setTokenVerifier(async (token) => ({ uid: token }));
     setDbForTests(createFakeFirestore());
     await seedPublicData();
   });
@@ -191,6 +192,21 @@ describe('Reservas del cliente', () => {
     });
   });
 
+  describe('solo clientes: crear y listar', () => {
+    it('responde 403 FORBIDDEN a empresa y admin al crear y al listar, sin crear nada', async () => {
+      setTokenVerifier(async (token) => ({ uid: 'u1', role: token }));
+      for (const role of ['COMPANY', 'ADMIN']) {
+        const crear = await reservar(franja(10, 12), role);
+        assert.equal(crear.status, 403);
+        assert.equal(crear.body.error.code, 'FORBIDDEN');
+        const listar = await request('GET', '/api/bookings/me', { token: role });
+        assert.equal(listar.status, 403);
+        assert.equal(listar.body.error.code, 'FORBIDDEN');
+      }
+      assert.deepEqual(await occupancyModel.listByRoomAndDate('r-free', FUTURA), []);
+    });
+  });
+
   describe('GET /api/bookings/me', () => {
     it('separa próximas y pasadas y solo devuelve las del usuario', async () => {
       // Preparar
@@ -277,14 +293,14 @@ describe('Reservas del cliente', () => {
       }
     });
 
-    it('responde 403 FORBIDDEN con una reserva ajena y 404 con una inexistente', async () => {
+    it('responde 404 NOT_FOUND igual con una reserva ajena y con una inexistente', async () => {
       const { body: creada } = await reservar(franja(10, 12));
       const ajena = await detalle(creada.id, 'u2');
-      assert.equal(ajena.status, 403);
-      assert.equal(ajena.body.error.code, 'FORBIDDEN');
       const falta = await detalle('no-existe');
+      assert.equal(ajena.status, 404);
+      assert.equal(ajena.body.error.code, 'NOT_FOUND');
+      assert.deepEqual(ajena.body, falta.body);
       assert.equal(falta.status, 404);
-      assert.equal(falta.body.error.code, 'NOT_FOUND');
     });
 
     it('responde 403 a empresa y admin, 401 sin token y 400 con un id inválido', async () => {
@@ -352,13 +368,28 @@ describe('Reservas del cliente', () => {
       assert.equal(otra.status, 201);
     });
 
-    it('responde 403 FORBIDDEN si la reserva es de otro usuario', async () => {
+    it('responde 404 NOT_FOUND (como una inexistente) si la reserva es de otro usuario', async () => {
       const { body: creada } = await reservar(franja(10, 12));
       const { status, body } = await request('PATCH', `/api/bookings/${creada.id}/cancel`, {
         token: 'u2',
       });
-      assert.equal(status, 403);
-      assert.equal(body.error.code, 'FORBIDDEN');
+      const falta = await request('PATCH', '/api/bookings/no-existe/cancel');
+      assert.equal(status, 404);
+      assert.equal(body.error.code, 'NOT_FOUND');
+      assert.deepEqual(body, falta.body);
+      assert.equal((await bookingModel.findById(creada.id)).status, 'CONFIRMED');
+    });
+
+    it('responde 403 FORBIDDEN a empresa y admin al cancelar', async () => {
+      const { body: creada } = await reservar(franja(10, 12));
+      setTokenVerifier(async (token) => ({ uid: 'u1', role: token }));
+      for (const role of ['COMPANY', 'ADMIN']) {
+        const { status, body } = await request('PATCH', `/api/bookings/${creada.id}/cancel`, {
+          token: role,
+        });
+        assert.equal(status, 403);
+        assert.equal(body.error.code, 'FORBIDDEN');
+      }
       assert.equal((await bookingModel.findById(creada.id)).status, 'CONFIRMED');
     });
 

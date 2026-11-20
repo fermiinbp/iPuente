@@ -119,7 +119,7 @@ router.get(
  *   get:
  *     tags: [Empresa]
  *     summary: Detalle de una reserva de una sala de la empresa
- *     description: 'Solo reservas de salas de la empresa del token (ajena 403, inexistente 404). Igual que el detalle del cliente más nombre y email del cliente; nunca su id ni más datos personales.'
+ *     description: 'Solo reservas de salas de la empresa del token (una reserva ajena responde 404 NOT_FOUND como una inexistente). Igual que el detalle del cliente más nombre y email del cliente; nunca su id ni más datos personales.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -201,7 +201,7 @@ router.get(
  *   patch:
  *     tags: [Empresa]
  *     summary: Cancela una reserva de una sala de la empresa
- *     description: 'Solo reservas CONFIRMED que no hayan empezado. Libera las horas y guarda el motivo. No gestiona reembolsos: todavía no hay pago online.'
+ *     description: 'Solo reservas CONFIRMED que no hayan empezado. Una reserva de otra empresa responde 404 como una inexistente. Libera las horas y guarda el motivo. No gestiona reembolsos: todavía no hay pago online.'
  *     security:
  *       - bearerAuth: []
  *     parameters:

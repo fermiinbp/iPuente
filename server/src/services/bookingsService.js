@@ -53,9 +53,10 @@ export function toCancellation(booking) {
 }
 
 // Detalle de una reserva con su sala, planta y edificio (lo que falte o se haya borrado es null).
-// Nunca incluye userId ni companyId.
-export async function buildBookingDetail(booking) {
-  const room = await roomModel.findById(booking.roomId);
+// Nunca incluye userId ni companyId. Si el llamador ya leyó la sala, la pasa en `room` (null si no
+// existe) y no se vuelve a leer.
+export async function buildBookingDetail(booking, { room: knownRoom } = {}) {
+  const room = knownRoom === undefined ? await roomModel.findById(booking.roomId) : knownRoom;
   const floorId = room?.floorId;
   const buildingId = room?.buildingId;
   const [floor, building] = await Promise.all([
@@ -92,11 +93,18 @@ function assertBookable(room, inicio, fin) {
   }
 }
 
-// Traduce el error de Firestore «el documento ya existe» a 409 SLOT_TAKEN.
+// Traduce errores de Firestore: «el documento ya existe» a 409 SLOT_TAKEN y la contención de la
+// transacción (ABORTED, code 10) a 409 BUSY.
 export function translateConflict(err) {
+  const message = err?.message ?? '';
   const exists =
-    err?.code === 6 || err?.code === 'already-exists' || /ALREADY_EXISTS/.test(err?.message ?? '');
-  return exists ? new HttpError(409, 'SLOT_TAKEN', 'Esa franja ya está ocupada') : err;
+    err?.code === 6 || err?.code === 'already-exists' || /ALREADY_EXISTS/.test(message);
+  if (exists) return new HttpError(409, 'SLOT_TAKEN', 'Esa franja ya está ocupada');
+  const aborted = err?.code === 10 || err?.code === 'aborted' || /ABORTED/.test(message);
+  if (aborted) {
+    return new HttpError(409, 'BUSY', 'Hay mucha demanda en este momento; inténtalo de nuevo');
+  }
+  return err;
 }
 
 // Crea una reserva CONFIRMED y bloquea cada hora, todo en una transacción.
@@ -187,12 +195,16 @@ export async function listMyBookings(uid) {
   return { proximas: proximas.map((i) => i.item), pasadas: pasadas.map((i) => i.item) };
 }
 
+// 404 NOT_FOUND si la reserva no existe o es de otro usuario (mismo error, para no revelarla).
+function assertBookingOfUser(booking, uid) {
+  if (!booking || booking.userId !== uid) {
+    throw new HttpError(404, 'NOT_FOUND', 'La reserva no existe');
+  }
+}
+
 // Comprueba existencia, propietario, estado y que no haya empezado; lanza el error que toque.
 function assertCancellable(booking, uid) {
-  if (!booking) throw new HttpError(404, 'NOT_FOUND', 'La reserva no existe');
-  if (booking.userId !== uid) {
-    throw new HttpError(403, 'FORBIDDEN', 'No puedes cancelar una reserva de otro usuario');
-  }
+  assertBookingOfUser(booking, uid);
   if (booking.status !== 'CONFIRMED') {
     throw new HttpError(
       400,
@@ -228,12 +240,9 @@ export async function cancelBooking(uid, id) {
   return { id, estado: 'CANCELLED' };
 }
 
-// Detalle de una reserva propia: 404 si no existe y 403 si es de otro usuario.
+// Detalle de una reserva propia: 404 si no existe o es de otro usuario.
 export async function getMyBooking(uid, id) {
   const booking = await bookingModel.findById(id);
-  if (!booking) throw new HttpError(404, 'NOT_FOUND', 'La reserva no existe');
-  if (booking.userId !== uid) {
-    throw new HttpError(403, 'FORBIDDEN', 'No puedes ver una reserva de otro usuario');
-  }
+  assertBookingOfUser(booking, uid);
   return buildBookingDetail(booking);
 }

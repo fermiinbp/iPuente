@@ -398,11 +398,13 @@ describe('Panel de empresa: reservas y bloqueos', () => {
       assert.ok(!text.includes('companyId'));
     });
 
-    it('responde 403 si la reserva es de otra empresa', async () => {
+    it('responde 404 NOT_FOUND (como una inexistente) si la reserva es de otra empresa', async () => {
       await seedBooking('bk-b', { roomId: 'r-b', companyId: 'c-b' });
       const { status, body } = await detalle('bk-b');
-      assert.equal(status, 403);
-      assert.equal(body.error.code, 'FORBIDDEN');
+      const falta = await detalle('no-existe');
+      assert.equal(status, 404);
+      assert.equal(body.error.code, 'NOT_FOUND');
+      assert.deepEqual(body, falta.body);
     });
 
     it('responde 404 si no existe y 400 si el id no es válido', async () => {
@@ -482,10 +484,12 @@ describe('Panel de empresa: reservas y bloqueos', () => {
       );
     });
 
-    it('responde 403 con una reserva de otra empresa sin cambiarla', async () => {
+    it('responde 404 NOT_FOUND con una reserva de otra empresa sin cambiarla', async () => {
       await seedBooking('bk-b', { roomId: 'r-b', companyId: 'c-b' });
-      const { status } = await cancelar('bk-b', { motivo: 'x' });
-      assert.equal(status, 403);
+      const { status, body } = await cancelar('bk-b', { motivo: 'x' });
+      const falta = await cancelar('no-existe', { motivo: 'x' });
+      assert.equal(status, 404);
+      assert.deepEqual(body, falta.body);
       assert.equal((await bookingModel.findById('bk-b')).status, 'CONFIRMED');
       assert.equal((await occupancyModel.listByRoomAndDate('r-b', FECHA)).length, 2);
     });
