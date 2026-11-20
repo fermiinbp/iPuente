@@ -66,7 +66,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/services/paymentsService.js` | Pide a la API la URL de Stripe Checkout de una reserva pendiente (`createCheckout`). La API aún no tiene endpoint de pago: hasta entonces la llamada falla y la pantalla lo avisa. |
 | `client/src/services/companyService.js` | Panel de empresa: empresa propia (`getMyCompany`, y `updateMyCompany` para editar la solicitud, que espera a DAT030), alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos. |
 | `client/src/services/authService.js` | Sesión con Firebase Auth: entrar con correo o Google, registro de cliente, cerrar sesión, recuperar y cambiar la contraseña, nombre y rol de la cuenta, `refreshSession` (renueva el token para leer los claims actuales) y `registerCompany` (alta de empresa en la API e inicio de sesión). |
-| `client/src/services/adminService.js` | Panel de admin: empresas, usuarios, reservas, pagos y reembolsos. |
+| `client/src/services/adminService.js` | Panel de admin: empresas (`listCompanies(estado)`, `approveCompany`, `rejectCompany(id, motivo)`, `suspendCompany(id, motivo)` y `reactivateCompany`); usuarios, reservas, pagos y reembolsos irán aquí. |
 | `client/src/services/uploadService.js` | Sube planos y fotos directamente a Firebase Storage y devuelve su URL y su ruta. |
 | `client/src/services/mapStyleService.js` | Descarga una sola vez el estilo base del mapa (OpenFreeMap) y devuelve una copia. Es un servidor externo, no nuestra API, así que no pasa por `apiClient`. |
 | `client/src/components/ui/Button/Button.jsx` + `.module.css` | Botón reutilizable con variantes primario, secundario y fantasma, tamaños `md` (44 px) y `lg` (52 px), `loading` y `disabled`; con `to` funciona como enlace. |
@@ -178,7 +178,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/pages/company/CompanyBookings/CompanyBookings.jsx` + `.module.css` | Reservas de las salas de la empresa y bloqueo de horas; con `/company/bookings/:bookingId` abre el detalle en un panel lateral sobre la lista, con cancelación. |
 | `client/src/pages/company/CompanySettings/CompanySettings.jsx` + `.module.css` | Ajustes de la empresa: cobros con Stripe Connect. |
 | `client/src/pages/admin/AdminDashboard/AdminDashboard.jsx` + `.module.css` | Resumen del panel de admin. |
-| `client/src/pages/admin/AdminCompanies/AdminCompanies.jsx` + `.module.css` | Aprobar, rechazar o suspender empresas. |
+| `client/src/pages/admin/AdminCompanies/AdminCompanies.jsx` + `.module.css` | Empresas del panel de admin (`/admin/companies`): filtro de estado en la URL (`?estado=pendiente`), tabla y acciones según el estado (aprobar o rechazar, suspender, reactivar) con `ConfirmModal`; rechazar y suspender piden motivo (3–500). Tras suspender muestra el `aviso` de reservas futuras de la API (no se cancelan). «Ver» lleva al detalle. |
 | `client/src/pages/admin/AdminCompanyDetail/AdminCompanyDetail.jsx` + `.module.css` | Detalle de una empresa: datos, edificios y acciones de aprobar, rechazar o suspender. |
 | `client/src/pages/admin/AdminUsers/AdminUsers.jsx` + `.module.css` | Usuarios y cambio de rol. |
 | `client/src/pages/admin/AdminBookings/AdminBookings.jsx` + `.module.css` | Todas las reservas; con `/admin/bookings/:bookingId` abre el detalle de cualquier reserva en un panel lateral sobre la lista. |

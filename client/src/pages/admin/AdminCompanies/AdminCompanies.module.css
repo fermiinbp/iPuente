@@ -1,1 +1,52 @@
-/* Estilos de AdminCompanies (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de AdminCompanies (CSS Module). Mobile first: la tabla pasa a tarjetas en móvil (DataTable). */
+.title {
+  margin-bottom: var(--space-5);
+  font-size: var(--text-titulo-paso);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.company {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.companyName {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.companyEmail {
+  color: var(--crema-suave);
+  font-size: var(--text-pequeno);
+  overflow-wrap: anywhere;
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.noticeAlert {
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .notice {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .noticeAlert {
+    flex: 1;
+    width: auto;
+  }
+}
