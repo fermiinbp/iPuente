@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { after, afterEach, before, describe, it } from 'node:test';
 
-import { config, setDbForTests } from '../../src/config/config.js';
+import { config, db, setDbForTests } from '../../src/config/config.js';
 import { setTokenVerifier } from '../../src/middlewares/auth.js';
 import { aiDetectLimiter, setRateLimitForTests } from '../../src/middlewares/rateLimit.js';
 import { setAuthClientForTests } from '../../src/services/authService.js';
@@ -21,6 +21,7 @@ describe('Seguridad de la API: rate limit y CORS', () => {
 
   afterEach(() => {
     setRateLimitForTests(null);
+    setDbForTests(createFakeFirestore());
     config.appUrl = originalAppUrl;
   });
 
@@ -84,6 +85,60 @@ describe('Seguridad de la API: rate limit y CORS', () => {
       assert.equal(await run({ user: { uid: 'b' } }), 'pasa');
       assert.equal(await run({}), 'pasa');
       assert.equal(await run({}), 'RATE_LIMITED');
+    });
+  });
+
+  describe('IP real y store de Firestore', () => {
+    const health = (headers) => fetch(`${baseUrl}/api/health`, { headers });
+
+    it('con x-nf-client-connection-ip, distintas X-Forwarded-For cuentan juntas', async () => {
+      setRateLimitForTests({ general: { limit: 2, windowMs: 60_000 } });
+      const nf = { 'x-nf-client-connection-ip': '9.9.9.9' };
+      assert.equal((await health({ ...nf, 'x-forwarded-for': '1.1.1.1' })).status, 200);
+      assert.equal((await health({ ...nf, 'x-forwarded-for': '2.2.2.2' })).status, 200);
+      assert.equal((await health({ ...nf, 'x-forwarded-for': '3.3.3.3' })).status, 429);
+      // Otra IP de Netlify cuenta aparte.
+      assert.equal((await health({ 'x-nf-client-connection-ip': '8.8.8.8' })).status, 200);
+    });
+
+    it('el contador del registro se guarda en rateLimits con expiresAt', async () => {
+      setRateLimitForTests({ register: { limit: 5, windowMs: 60_000 } });
+      await fetch(`${baseUrl}/api/auth/register/client`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      const docs = await db().collection('rateLimits').get();
+      assert.equal(docs.size, 1);
+      const data = docs.docs[0].data();
+      assert.equal(data.count, 1);
+      assert.ok(data.expiresAt.getTime() > Date.now());
+    });
+
+    const runAi = () =>
+      new Promise((resolve) => {
+        aiDetectLimiter(
+          { ip: '1.2.3.4', app: { get: () => false }, headers: {}, user: { uid: 'a' } },
+          { setHeader() {}, getHeader() {}, set() {}, append() {}, headersSent: false },
+          (err) => resolve(err ? err.code : 'pasa'),
+        );
+      });
+
+    it('si Firestore falla, la IA falla cerrado (RATE_LIMIT_UNAVAILABLE)', async () => {
+      setRateLimitForTests({ ai: { limit: 5, windowMs: 60_000 } });
+      setDbForTests({
+        runTransaction: async () => {
+          throw new Error('Firestore caído');
+        },
+        collection: () => ({ doc: () => ({}) }),
+      });
+      const log = console.error;
+      console.error = () => {};
+      try {
+        assert.equal(await runAi(), 'RATE_LIMIT_UNAVAILABLE');
+      } finally {
+        console.error = log;
+      }
     });
   });
 

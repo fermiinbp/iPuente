@@ -1,6 +1,7 @@
 // Registro de clientes y empresas: crea el usuario en Firebase Auth, su ficha en Firestore y su rol (custom claim).
 import { adminAuth } from '../config/config.js';
 import { ROLES } from '../config/roles.js';
+import { runTransaction } from '../models/baseModel.js';
 import * as companyModel from '../models/companyModel.js';
 import * as companyTaxIdModel from '../models/companyTaxIdModel.js';
 import * as userModel from '../models/userModel.js';
@@ -101,10 +102,32 @@ async function assertEmailNotClient(email) {
   }
 }
 
-// Reserva el CIF creando su documento índice (falla si ya existe: 409 COMPANY_EXISTS).
+// Un CIF reservado sin companyId más viejo que esto se considera huérfano (registro caído a medias).
+const ORPHAN_TAX_ID_MS = 10 * 60 * 1000;
+
+// Milisegundos de una fecha que puede ser Date o Timestamp de Firestore (0 si falta).
+const toMillis = (value) =>
+  typeof value?.toMillis === 'function' ? value.toMillis() : +value || 0;
+
+// Dice si la reserva de un CIF quedó huérfana: sin companyId y de hace más de 10 minutos, o con un
+// companyId que apunta a una empresa que ya no existe.
+async function isOrphanTaxId(entry, tx) {
+  if (!entry.companyId) return Date.now() - toMillis(entry.createdAt) > ORPHAN_TAX_ID_MS;
+  return !(await companyModel.findById(entry.companyId, { tx }));
+}
+
+// Reserva el CIF en una transacción. Si ya existe y no es huérfano: 409 COMPANY_EXISTS; si es
+// huérfano lo sobrescribe y continúa. Dos registros simultáneos no pueden quedarse ambos con él.
 async function reserveTaxId(cif) {
   try {
-    await companyTaxIdModel.create({ taxId: cif }, { id: cif });
+    await runTransaction(async (tx) => {
+      const entry = await companyTaxIdModel.findById(cif, { tx });
+      if (!entry) return companyTaxIdModel.create({ taxId: cif }, { id: cif, tx });
+      if (await isOrphanTaxId(entry, tx)) {
+        return companyTaxIdModel.overwrite(cif, { taxId: cif }, { tx });
+      }
+      throw new HttpError(409, 'COMPANY_EXISTS', 'Ya existe una empresa con ese CIF');
+    });
   } catch (err) {
     if (companyTaxIdModel.isAlreadyExists(err)) {
       throw new HttpError(409, 'COMPANY_EXISTS', 'Ya existe una empresa con ese CIF');
@@ -113,12 +136,18 @@ async function reserveTaxId(cif) {
   }
 }
 
-// Libera el CIF reservado; si falla solo se registra para limpiar a mano.
+// Libera el CIF reservado (reintenta una vez); si falla solo se registra para limpiar a mano.
+// Decisión: rechazar o suspender una empresa NO libera su CIF; solo se libera si el registro falla.
 async function releaseTaxId(cif) {
-  try {
-    await companyTaxIdModel.remove(cif);
-  } catch {
-    console.error(`Rollback del registro: no se pudo borrar companyTaxIds/${cif}`);
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      await companyTaxIdModel.remove(cif);
+      return;
+    } catch {
+      if (attempt === 2) {
+        console.error(`Rollback del registro: no se pudo borrar companyTaxIds/${cif}`);
+      }
+    }
   }
 }
 

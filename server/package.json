@@ -8,7 +8,7 @@
     "start": "node --env-file-if-exists=.env src/server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "node --test",
+    "test": "node --import ./tests/setup.js --test",
     "seed": "node --env-file=.env scripts/seed.js",
     "make-admin": "node --env-file=.env scripts/makeAdmin.js",
     "sync-company-claims": "node --env-file=.env scripts/syncCompanyClaims.js",

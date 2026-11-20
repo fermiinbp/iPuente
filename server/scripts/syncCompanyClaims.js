@@ -23,7 +23,17 @@ async function main() {
     const approved = c.status === 'APPROVED';
     try {
       // Rellena el índice de CIF únicos de las empresas anteriores a companyTaxIds (idempotente).
-      if (c.taxId) await companyTaxIdModel.upsert(c.taxId, { taxId: c.taxId, companyId: c.id });
+      // Si el CIF ya apunta a otra empresa no se sobrescribe: se avisa para revisarlo a mano.
+      if (c.taxId) {
+        const entry = await companyTaxIdModel.findById(c.taxId);
+        if (entry?.companyId && entry.companyId !== c.id) {
+          console.warn(
+            `${c.id}: AVISO companyTaxIds/${c.taxId} ya apunta a ${entry.companyId}; no se sobrescribe`,
+          );
+        } else {
+          await companyTaxIdModel.upsert(c.taxId, { taxId: c.taxId, companyId: c.id });
+        }
+      }
       const result = await syncOwner(c.ownerUid, approved);
       counts[result] += 1;
       console.log(`${c.id}: companyApproved=${approved} (${result})`);

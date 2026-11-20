@@ -20,13 +20,16 @@ export function corsOrigin(origin, callback) {
   callback(null, !origin || origin === allowed);
 }
 
+// Orden: cors → (aquí irá el webhook de Stripe, sin parsear y fuera del límite, cuando se haga)
+// → límite general → JSON → documentación → rutas.
 app.use(cors({ origin: corsOrigin }));
+app.use('/api', generalLimiter);
 app.use(express.json());
 
-// Documentación de la API (Swagger UI).
+// Documentación de la API (Swagger UI); queda dentro del límite general.
 app.use('/api/docs', swaggerServe, swaggerSetup);
 
-app.use('/api', generalLimiter, routes);
+app.use('/api', routes);
 
 // Siempre al final: 404 y manejo de errores.
 app.use(notFound);

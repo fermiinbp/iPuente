@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 
-import { setDbForTests } from '../../src/config/config.js';
+import { db, setDbForTests } from '../../src/config/config.js';
 import { setTokenVerifier } from '../../src/middlewares/auth.js';
 import * as companyModel from '../../src/models/companyModel.js';
 import * as companyTaxIdModel from '../../src/models/companyTaxIdModel.js';
@@ -245,6 +245,31 @@ describe('Registro de clientes y empresas', () => {
       assert.equal(perdedor.body.error.code, 'COMPANY_EXISTS');
       assert.equal(fakeAuth.created.length, 1);
       assert.equal((await companyModel.listByVerified(false)).length, 1);
+    });
+
+    it('CIF huérfano sin companyId y de hace más de 10 minutos: se sobrescribe y registra', async () => {
+      const old = new Date(Date.now() - 11 * 60 * 1000);
+      await db()
+        .collection('companyTaxIds')
+        .doc('B12345674')
+        .set({ taxId: 'B12345674', createdAt: old });
+      const { status, body } = await registrarEmpresa(EMPRESA);
+      assert.equal(status, 201);
+      assert.equal((await companyTaxIdModel.findById('B12345674')).companyId, body.companyId);
+    });
+
+    it('CIF reservado hace menos de 10 minutos sin companyId: 409 COMPANY_EXISTS', async () => {
+      await companyTaxIdModel.overwrite('B12345674', { taxId: 'B12345674' });
+      const { status, body } = await registrarEmpresa(EMPRESA);
+      assert.equal(status, 409);
+      assert.equal(body.error.code, 'COMPANY_EXISTS');
+    });
+
+    it('CIF cuyo companyId apunta a una empresa inexistente: se sobrescribe y registra', async () => {
+      await companyTaxIdModel.overwrite('B12345674', { taxId: 'B12345674', companyId: 'fantasma' });
+      const { status, body } = await registrarEmpresa(EMPRESA);
+      assert.equal(status, 201);
+      assert.equal((await companyTaxIdModel.findById('B12345674')).companyId, body.companyId);
     });
 
     it('409 EMAIL_IS_CLIENT si el email es de un cliente (claim) y no crea nada', async () => {

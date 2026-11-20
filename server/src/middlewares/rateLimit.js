@@ -1,7 +1,11 @@
 // Límites de peticiones: uno general para la API, uno estricto para el registro y otro para la detección con IA (cuesta dinero). Al superarlos responden 429 RATE_LIMITED con el formato de error común.
+// El general cuenta en memoria de cada instancia (orientativo: no añade una escritura por petición).
+// El de registro y el de IA usan un contador compartido en Firestore (FirestoreRateLimitStore).
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 import { HttpError } from '../utils/httpError.js';
+
+import { FirestoreRateLimitStore } from './firestoreRateLimitStore.js';
 
 const HOUR = 60 * 60 * 1000;
 
@@ -27,8 +31,17 @@ const DEFAULTS = {
 let overrides = null;
 const instances = {};
 
-// Dentro de `node --test` los límites están desactivados salvo que un test los active.
-const isTestRun = () => process.env.NODE_ENV === 'test' || Boolean(process.env.NODE_TEST_CONTEXT);
+// Los límites solo se saltan con NODE_ENV === 'test' exacto (lo fija tests/setup.js): cualquier otro
+// valor, incluido uno ausente o 'production', los deja activos (fallar cerrado).
+const isTestRun = () => process.env.NODE_ENV === 'test';
+
+// IP del cliente: en Netlify x-nf-client-connection-ip la pone la plataforma y el cliente no puede
+// falsearla; si no existe se usa req.ip (con trust proxy = 1).
+export function clientIp(req) {
+  const header = req.headers?.['x-nf-client-connection-ip'];
+  const ip = (Array.isArray(header) ? header[0] : header) || req.ip || '';
+  return ipKeyGenerator(ip);
+}
 
 // Solo para tests: fija { general, register, ai } con { limit, windowMs } y los activa.
 // Con null se restauran los valores por defecto (desactivados en tests).
@@ -40,7 +53,17 @@ export function setRateLimitForTests(options) {
   for (const name of Object.keys(instances)) delete instances[name];
 }
 
+// Store de cada límite. Registro: falla abierto (si Firestore cae, el registro tampoco puede
+// escribir, así que no se pierde protección). IA: falla cerrado (503), porque cuesta dinero.
+function storeFor(name) {
+  if (name === 'register') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
+  if (name === 'ai') return new FirestoreRateLimitStore({ prefix: name, failOpen: false });
+  return undefined; // general: memoria por defecto
+}
+
 // Crea el limitador de express-rate-limit de un nombre.
+// aiDetectLimiter debe ir DESPUÉS de `auth` en la ruta: la clave es el uid (req.user.uid) y, si
+// se pusiera antes, todos contarían por IP.
 function build(name) {
   const { limit, windowMs, message } = { ...DEFAULTS[name], ...overrides?.[name] };
   return rateLimit({
@@ -48,9 +71,8 @@ function build(name) {
     windowMs,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    ...(name === 'ai' && {
-      keyGenerator: (req) => req.user?.uid ?? ipKeyGenerator(req.ip ?? ''),
-    }),
+    store: storeFor(name),
+    keyGenerator: (req) => (name === 'ai' && req.user?.uid) || clientIp(req),
     handler: (req, res, next) => next(new HttpError(429, 'RATE_LIMITED', message)),
   });
 }

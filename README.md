@@ -623,7 +623,19 @@ node --env-file=.env scripts/pingDb.js
 
 En **Netlify**, las mismas variables van en *Site configuration → Environment variables*. `config.js` convierte los `\n` literales de la clave en saltos de línea reales.
 
-**Límites y proxy:** la API limita las peticiones por IP (general 300 cada 15 min, registro 10 por hora, detección con IA 10 por hora) y responde `429 RATE_LIMITED`. Como en Netlify hay un proxy delante, `app.js` usa `trust proxy = 1` para leer la IP real del cliente; si se despliega sin proxy, hay que quitarlo o cualquiera podría falsear su IP con `X-Forwarded-For`. En Netlify Functions el contador vive en la memoria de cada instancia, así que el límite es orientativo, no exacto.
+**Límites y proxy:** la API limita las peticiones por IP (general 300 cada 15 min, registro 10 por hora, detección con IA 10 por hora) y responde `429 RATE_LIMITED`. Como en Netlify hay un proxy delante, `app.js` usa `trust proxy = 1` para leer la IP real del cliente; si se despliega sin proxy, hay que quitarlo o cualquiera podría falsear su IP con `X-Forwarded-For`. El límite general cuenta en la memoria de cada instancia (orientativo, para no escribir en Firestore en cada petición); el de registro y el de IA usan un contador compartido en Firestore (colección `rateLimits`, documento por clave con `count` y `expiresAt`). Conviene activar en Firebase la política TTL de Firestore sobre `rateLimits.expiresAt` para que los contadores caducados se borren solos.
+
+**IP real en Netlify:** el límite usa la cabecera `x-nf-client-connection-ip` (la pone Netlify y el cliente no puede falsearla); si no existe, `req.ip`. `trust proxy` sigue en 1.
+
+**Orden de middlewares en `app.js`:** cors → (hueco para el webhook de Stripe, sin parsear y fuera del límite) → límite general en `/api` → `express.json()` → `/api/docs` → rutas. `/api/docs` queda dentro del límite general.
+
+**Fallar cerrado:** los límites solo se saltan con `NODE_ENV=test` exacto (lo fija `server/tests/setup.js` en `npm test`); con cualquier otro valor, también en producción, están activos. Si Firestore falla, el registro deja pasar (sin Firestore tampoco puede registrar) y la detección con IA responde `503 RATE_LIMIT_UNAVAILABLE`, porque cuesta dinero.
+
+**CIF huérfano:** `companyTaxIds/<cif>` se reserva en una transacción; si el documento no tiene `companyId` y tiene más de 10 minutos, o su `companyId` apunta a una empresa que no existe, se sobrescribe. Rechazar o suspender una empresa NO libera su CIF.
+
+### Pendiente para el despliegue (DAT027)
+
+`netlify/functions/api.js` hoy solo tiene un comentario: debe exportar el handler con `serverless-http` (dependencia que se instalará en DAT027, avisando antes).
 
 ## ESLint y Prettier
 
