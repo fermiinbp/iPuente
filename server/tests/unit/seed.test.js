@@ -20,7 +20,11 @@ const COLLECTIONS = [
   'blocks',
   'occupancy',
 ];
-const PASSWORD = 'clave-de-prueba-1';
+// Contraseñas generadas: no son secretos y así los escáneres no las confunden con claves reales.
+const PASSWORD = 'x'.repeat(16);
+const SHORT_PASSWORD = 'x'.repeat(5);
+const ELEVEN_CHARS = 'x'.repeat(11);
+const OTHER_PASSWORD = 'y'.repeat(16);
 
 // Doble mínimo de Firebase Auth: guarda los usuarios en memoria y cuenta las creaciones.
 function createFakeAuth(initial = []) {
@@ -75,7 +79,7 @@ describe('seed', () => {
       /SEED_DEMO_PASSWORD/,
     );
     await assert.rejects(
-      () => seed({ today: wednesday(), password: 'corta' }),
+      () => seed({ today: wednesday(), password: SHORT_PASSWORD }),
       /SEED_DEMO_PASSWORD/,
     );
     assert.equal(auth.calls.createUser, 0);
@@ -209,7 +213,7 @@ describe('seed', () => {
     const createdBefore = auth.calls.createUser;
     const second = await seed({
       today: wednesday(),
-      password: 'otra-clave-distinta',
+      password: OTHER_PASSWORD,
       confirm: true,
       withAdmin: true,
     });
@@ -310,7 +314,7 @@ describe('seed', () => {
     it('rechaza una contraseña de menos de 12 caracteres', async () => {
       setup();
       await assert.rejects(
-        () => seed({ today: wednesday(), password: '12345678901', confirm: true }),
+        () => seed({ today: wednesday(), password: ELEVEN_CHARS, confirm: true }),
         /SEED_DEMO_PASSWORD/,
       );
       assert.equal(fakeAuth.calls.createUser, 0);
