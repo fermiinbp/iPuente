@@ -5,8 +5,9 @@ import { runTransaction } from '../models/baseModel.js';
 import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { HttpError } from '../utils/httpError.js';
+import { notDeleted } from '../utils/softDelete.js';
 import { countFutureBookings, futureBookingsNotice } from './futureBookingsService.js';
-import { getOwnedBuilding, getOwnedFloor, getOwnedRoom } from './ownershipService.js';
+import { assertOwnedBy, getOwnedBuilding, getOwnedFloor } from './ownershipService.js';
 
 export const COMPANY_STATUS = Object.freeze({
   PENDING: 'PENDING',
@@ -117,11 +118,11 @@ const ROOM_MAP = {
   fotos: 'photos',
 };
 
-// Lanza 409 si otra planta del edificio ya tiene ese número.
+// Lanza 409 si otra planta del edificio ya tiene ese número (una eliminada no ocupa su número).
 // Se lee dentro de la transacción recibida para evitar carreras.
 async function assertLevelFree(buildingId, level, exceptFloorId, tx) {
   const floors = await floorModel.listByBuilding(buildingId, { tx });
-  if (floors.some((f) => f.level === level && f.id !== exceptFloorId)) {
+  if (floors.some((f) => notDeleted(f) && f.level === level && f.id !== exceptFloorId)) {
     throw new HttpError(409, 'FLOOR_EXISTS', 'Ya existe una planta con ese número en el edificio');
   }
 }
@@ -146,11 +147,14 @@ function roomWithEstado(room) {
 
 // Edificios de la empresa, cada uno con sus plantas (ordenadas por número) y nº de salas activas.
 export async function listBuildings(companyId) {
-  const [buildings, floors, rooms] = await Promise.all([
+  const [allBuildings, allFloors, allRooms] = await Promise.all([
     buildingModel.listByCompany(companyId),
     floorModel.listByCompany(companyId),
     roomModel.listByCompany(companyId),
   ]);
+  const buildings = allBuildings.filter(notDeleted);
+  const floors = allFloors.filter(notDeleted);
+  const rooms = allRooms.filter(notDeleted);
   const roomCount = new Map();
   for (const r of rooms) {
     if (r.status === 'ACTIVE') roomCount.set(r.floorId, (roomCount.get(r.floorId) ?? 0) + 1);
@@ -172,31 +176,38 @@ export async function listBuildings(companyId) {
   }));
 }
 
-// Publica un edificio propio si tiene al menos una planta publicada (idempotente).
+// Publica un edificio propio si tiene al menos una planta publicada (idempotente). El edificio
+// se lee y comprueba dentro de la transacción: si se elimina a la vez, da 404.
 export async function publishBuilding(companyId, id) {
-  const building = await getOwnedBuilding(id, companyId);
-  await runTransaction(async (tx) => {
+  const building = await runTransaction(async (tx) => {
+    const current = assertOwnedBy(await buildingModel.findById(id, { tx }), companyId);
     const floors = await floorModel.listByBuilding(id, { tx });
-    if (!floors.some((f) => f.companyId === companyId && f.status === 'PUBLISHED')) {
+    if (
+      !floors.some((f) => notDeleted(f) && f.companyId === companyId && f.status === 'PUBLISHED')
+    ) {
       throw new HttpError(
         400,
         'NO_PUBLISHED_FLOORS',
         'Publica al menos una planta antes de publicar el edificio',
       );
     }
-    if (building.status !== 'PUBLISHED') {
+    if (current.status !== 'PUBLISHED') {
       await buildingModel.update(id, { status: 'PUBLISHED' }, { tx });
     }
+    return current;
   });
   return buildingView({ ...building, status: 'PUBLISHED' });
 }
 
 // Vuelve un edificio propio a borrador (idempotente). Avisa de las reservas futuras, sin bloquear.
 export async function unpublishBuilding(companyId, id) {
-  const building = await getOwnedBuilding(id, companyId);
-  if (building.status !== 'DRAFT') await buildingModel.update(id, { status: 'DRAFT' });
+  const building = await runTransaction(async (tx) => {
+    const current = assertOwnedBy(await buildingModel.findById(id, { tx }), companyId);
+    if (current.status !== 'DRAFT') await buildingModel.update(id, { status: 'DRAFT' }, { tx });
+    return current;
+  });
   const rooms = await roomModel.listByBuilding(id);
-  const reservasFuturas = await countFutureBookings(rooms.map((r) => r.id));
+  const reservasFuturas = await countFutureBookings(rooms.filter(notDeleted).map((r) => r.id));
   const aviso = futureBookingsNotice(reservasFuturas, 'este edificio');
   return {
     ...buildingView({ ...building, status: 'DRAFT' }),
@@ -210,11 +221,14 @@ export async function unpublishBuilding(companyId, id) {
 export async function listRooms(companyId, { buildingId, floorId, estado } = {}) {
   if (buildingId) await getOwnedBuilding(buildingId, companyId);
   if (floorId) await getOwnedFloor(floorId, companyId);
-  const [buildings, floors, rooms] = await Promise.all([
+  const [allBuildings, allFloors, allRooms] = await Promise.all([
     buildingModel.listByCompany(companyId),
     floorModel.listByCompany(companyId),
     roomModel.listByCompany(companyId),
   ]);
+  const buildings = allBuildings.filter(notDeleted);
+  const floors = allFloors.filter(notDeleted);
+  const rooms = allRooms.filter(notDeleted);
   const buildingName = new Map(buildings.map((b) => [b.id, b.name ?? '']));
   const level = new Map(floors.map((f) => [f.id, f.level ?? 0]));
   return rooms
@@ -233,15 +247,19 @@ export async function listRooms(companyId, { buildingId, floorId, estado } = {})
     );
 }
 
-// Muestra (reservable) u oculta una sala propia; sin precio no se puede mostrar.
+// Muestra (reservable) u oculta una sala propia; sin precio no se puede mostrar. Se lee y escribe
+// en la misma transacción: una sala eliminada a la vez da 404 y nunca queda reservable.
 export async function setRoomVisibility(companyId, id, visible) {
-  const room = await getOwnedRoom(id, companyId);
-  if (room.status === 'INACTIVE') {
-    throw new HttpError(400, 'ROOM_INACTIVE', 'La sala ya no está en el mapa');
-  }
-  const updated = { ...room, bookable: visible };
-  if (visible) assertPriceIfBookable(updated);
-  await roomModel.update(id, { bookable: visible });
+  const updated = await runTransaction(async (tx) => {
+    const room = assertOwnedBy(await roomModel.findById(id, { tx }), companyId);
+    if (room.status === 'INACTIVE') {
+      throw new HttpError(400, 'ROOM_INACTIVE', 'La sala ya no está en el mapa');
+    }
+    const next = { ...room, bookable: visible };
+    if (visible) assertPriceIfBookable(next);
+    await roomModel.update(id, { bookable: visible }, { tx });
+    return next;
+  });
   const result = roomWithEstado(updated);
   if (visible) return result;
   result.reservasFuturas = await countFutureBookings([id]);
@@ -260,17 +278,21 @@ export async function createBuilding(companyId, body) {
 
 // Edita un edificio propio.
 export async function updateBuilding(companyId, id, body) {
-  const building = await getOwnedBuilding(id, companyId);
   const data = pick(body, BUILDING_MAP);
-  await buildingModel.update(id, data);
+  const building = await runTransaction(async (tx) => {
+    const current = assertOwnedBy(await buildingModel.findById(id, { tx }), companyId);
+    await buildingModel.update(id, data, { tx });
+    return current;
+  });
   return buildingView({ ...building, ...data });
 }
 
 // Crea una planta en un edificio propio.
 export async function createFloor(companyId, buildingId, body) {
-  await getOwnedBuilding(buildingId, companyId);
   const data = { ...pick(body, FLOOR_MAP), companyId, buildingId, status: 'DRAFT', salas: [] };
   const id = await runTransaction(async (tx) => {
+    // El edificio se lee en la transacción: si se elimina a la vez no se crea una planta huérfana.
+    assertOwnedBy(await buildingModel.findById(buildingId, { tx }), companyId);
     await assertLevelFree(buildingId, data.level, undefined, tx);
     return floorModel.create(data, { tx });
   });
@@ -279,25 +301,30 @@ export async function createFloor(companyId, buildingId, body) {
 
 // Edita una planta propia.
 export async function updateFloor(companyId, id, body) {
-  const floor = await getOwnedFloor(id, companyId);
   const data = pick(body, FLOOR_MAP);
-  await runTransaction(async (tx) => {
-    if (data.level !== undefined) await assertLevelFree(floor.buildingId, data.level, id, tx);
+  const floor = await runTransaction(async (tx) => {
+    const current = assertOwnedBy(await floorModel.findById(id, { tx }), companyId);
+    if (data.level !== undefined) await assertLevelFree(current.buildingId, data.level, id, tx);
     await floorModel.update(id, data, { tx });
+    return current;
   });
   return floorView({ ...floor, ...data });
 }
 
 // Edita los datos comerciales de una sala propia (el periodo de precio sigue siendo por hora).
+// Se lee y escribe en la misma transacción: una sala eliminada a la vez da 404.
 export async function updateRoom(companyId, id, body) {
-  const room = await getOwnedRoom(id, companyId);
-  if (room.status === 'INACTIVE') {
-    throw new HttpError(400, 'ROOM_INACTIVE', 'La sala ya no está en el mapa');
-  }
   const data = pick(body, ROOM_MAP);
   if (data.price !== undefined) data.pricePeriod = 'HOUR';
-  assertPriceIfBookable({ ...room, ...data });
-  await roomModel.update(id, data);
+  const room = await runTransaction(async (tx) => {
+    const current = assertOwnedBy(await roomModel.findById(id, { tx }), companyId);
+    if (current.status === 'INACTIVE') {
+      throw new HttpError(400, 'ROOM_INACTIVE', 'La sala ya no está en el mapa');
+    }
+    assertPriceIfBookable({ ...current, ...data });
+    await roomModel.update(id, data, { tx });
+    return current;
+  });
   return roomView({ ...room, ...data });
 }
 

@@ -21,7 +21,9 @@ export function listByRoom(roomId, { from, to, tx } = {}) {
 
 // Bloqueos de varias salas que empiezan en [from, to), en lotes de 30 ids (límite de `in`).
 // Una consulta por lote en lugar de una por sala.
-export async function listByRooms(roomIds, { from, to } = {}) {
+// Con { tx } lee dentro de una transacción.
+// Con { limit } cada consulta (lote) devuelve como mucho ese número de bloqueos.
+export async function listByRooms(roomIds, { from, to, tx, limit } = {}) {
   const chunks = [];
   for (let i = 0; i < roomIds.length; i += 30) chunks.push(roomIds.slice(i, i + 30));
   const results = await Promise.all(
@@ -29,7 +31,7 @@ export async function listByRooms(roomIds, { from, to } = {}) {
       let query = base.collection().where('roomId', 'in', ids);
       if (from) query = query.where('startDate', '>=', from);
       if (to) query = query.where('startDate', '<', to);
-      return runQuery(query, { orderBy: 'startDate' });
+      return runQuery(query, { orderBy: 'startDate', tx, limit });
     }),
   );
   return results.flat();

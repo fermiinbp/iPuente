@@ -430,4 +430,202 @@ router.patch(
   asyncHandler(ctrl.setRoomVisibility),
 );
 
+/**
+ * @openapi
+ * /company/buildings/{id}:
+ *   delete:
+ *     tags: [Empresa]
+ *     summary: Elimina un edificio propio con sus plantas y salas
+ *     description: 'Elimina el edificio con todas sus plantas y salas. Si alguna sala afectada tiene reservas futuras (CONFIRMED o PENDING_PAYMENT) responde 409 `HAS_FUTURE_BOOKINGS` con `details.reservasFuturas` y no cancela nada. Sin reservas futuras: lo que nunca tuvo reservas se borra del todo (también sus bloqueos y su occupancy) y lo que tiene historial de reservas se elimina de forma lógica (`borradoLogico: true`): deja de verse en el panel, en la API pública y en el mapa, pero sus reservas pasadas siguen mostrando su sala, planta y edificio. No toca Storage. Solo para empresas aprobadas; ajeno 403, inexistente o ya eliminado 404.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 'Eliminado: `{ id, eliminado: true, borradoLogico, plantasEliminadas, salasEliminadas, salasDesactivadas, bloqueosEliminados, aviso? }`.'
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id: {type: string}
+ *                 eliminado: {type: boolean, example: true}
+ *                 borradoLogico: {type: boolean}
+ *                 plantasEliminadas: {type: integer}
+ *                 salasEliminadas: {type: integer}
+ *                 salasDesactivadas: {type: integer}
+ *                 bloqueosEliminados: {type: integer}
+ *                 aviso: {type: string}
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       409:
+ *         description: 'Hay reservas futuras (`HAS_FUTURE_BOOKINGS`, con `details.reservasFuturas`).'
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code: {type: string, example: HAS_FUTURE_BOOKINGS}
+ *                     message: {type: string}
+ *                     details:
+ *                       type: object
+ *                       properties:
+ *                         reservasFuturas: {type: integer}
+ */
+router.delete(
+  '/company/buildings/:id',
+  auth,
+  requireRole(ROLES.COMPANY),
+  requireApprovedCompany,
+  ...companyValidator.deleteResource,
+  validate,
+  asyncHandler(ctrl.deleteBuilding),
+);
+
+/**
+ * @openapi
+ * /company/floors/{id}:
+ *   delete:
+ *     tags: [Empresa]
+ *     summary: Elimina una planta propio con sus salas
+ *     description: 'Elimina la planta con todas sus salas. Si alguna sala afectada tiene reservas futuras (CONFIRMED o PENDING_PAYMENT) responde 409 `HAS_FUTURE_BOOKINGS` con `details.reservasFuturas` y no cancela nada. Sin reservas futuras: lo que nunca tuvo reservas se borra del todo (también sus bloqueos y su occupancy) y lo que tiene historial de reservas se elimina de forma lógica (`borradoLogico: true`): deja de verse en el panel, en la API pública y en el mapa, pero sus reservas pasadas siguen mostrando su sala, planta y edificio. No toca Storage. Solo para empresas aprobadas; ajeno 403, inexistente o ya eliminado 404.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 'Eliminado: `{ id, eliminado: true, borradoLogico, plantasEliminadas, salasEliminadas, salasDesactivadas, bloqueosEliminados, aviso? }`.'
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id: {type: string}
+ *                 eliminado: {type: boolean, example: true}
+ *                 borradoLogico: {type: boolean}
+ *                 plantasEliminadas: {type: integer}
+ *                 salasEliminadas: {type: integer}
+ *                 salasDesactivadas: {type: integer}
+ *                 bloqueosEliminados: {type: integer}
+ *                 aviso: {type: string}
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       409:
+ *         description: 'Hay reservas futuras (`HAS_FUTURE_BOOKINGS`, con `details.reservasFuturas`).'
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code: {type: string, example: HAS_FUTURE_BOOKINGS}
+ *                     message: {type: string}
+ *                     details:
+ *                       type: object
+ *                       properties:
+ *                         reservasFuturas: {type: integer}
+ */
+router.delete(
+  '/company/floors/:id',
+  auth,
+  requireRole(ROLES.COMPANY),
+  requireApprovedCompany,
+  ...companyValidator.deleteResource,
+  validate,
+  asyncHandler(ctrl.deleteFloor),
+);
+
+/**
+ * @openapi
+ * /company/rooms/{id}:
+ *   delete:
+ *     tags: [Empresa]
+ *     summary: Elimina una sala propio
+ *     description: 'Elimina la sala y la quita del mapa de su planta. Si alguna sala afectada tiene reservas futuras (CONFIRMED o PENDING_PAYMENT) responde 409 `HAS_FUTURE_BOOKINGS` con `details.reservasFuturas` y no cancela nada. Sin reservas futuras: lo que nunca tuvo reservas se borra del todo (también sus bloqueos y su occupancy) y lo que tiene historial de reservas se elimina de forma lógica (`borradoLogico: true`): deja de verse en el panel, en la API pública y en el mapa, pero sus reservas pasadas siguen mostrando su sala, planta y edificio. No toca Storage. Solo para empresas aprobadas; ajeno 403, inexistente o ya eliminado 404.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 'Eliminado: `{ id, eliminado: true, borradoLogico, plantasEliminadas, salasEliminadas, salasDesactivadas, bloqueosEliminados, aviso? }`.'
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id: {type: string}
+ *                 eliminado: {type: boolean, example: true}
+ *                 borradoLogico: {type: boolean}
+ *                 plantasEliminadas: {type: integer}
+ *                 salasEliminadas: {type: integer}
+ *                 salasDesactivadas: {type: integer}
+ *                 bloqueosEliminados: {type: integer}
+ *                 aviso: {type: string}
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       409:
+ *         description: 'Hay reservas futuras (`HAS_FUTURE_BOOKINGS`, con `details.reservasFuturas`).'
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: object
+ *                   properties:
+ *                     code: {type: string, example: HAS_FUTURE_BOOKINGS}
+ *                     message: {type: string}
+ *                     details:
+ *                       type: object
+ *                       properties:
+ *                         reservasFuturas: {type: integer}
+ */
+router.delete(
+  '/company/rooms/:id',
+  auth,
+  requireRole(ROLES.COMPANY),
+  requireApprovedCompany,
+  ...companyValidator.deleteResource,
+  validate,
+  asyncHandler(ctrl.deleteRoom),
+);
+
 export default router;

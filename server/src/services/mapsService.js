@@ -4,6 +4,7 @@ import { runTransaction } from '../models/baseModel.js';
 import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { HttpError } from '../utils/httpError.js';
+import { isDeleted } from '../utils/softDelete.js';
 import { countFutureBookings, futureBookingsNotice, joinNotices } from './futureBookingsService.js';
 import { getOwnedFloor } from './ownershipService.js';
 
@@ -80,6 +81,14 @@ function planRooms(salas, roomsById) {
       plan.creates.push(sala);
       continue;
     }
+    // Una sala eliminada lógicamente conserva su historial de reservas: su id no se reutiliza.
+    if (isDeleted(room)) {
+      throw new HttpError(
+        409,
+        'ROOM_ID_TAKEN',
+        'Una sala con ese id fue eliminada y no se puede reutilizar',
+      );
+    }
     const data = {};
     if (room.name !== sala.nombre) data.name = sala.nombre;
     if (room.code !== sala.codigo) data.code = sala.codigo;
@@ -116,7 +125,8 @@ export async function saveMap(companyId, floorId, map) {
   return runTransaction(async (tx) => {
     // Todas las lecturas antes de las escrituras.
     const floor = await floorModel.findById(floorId, { tx });
-    if (!floor) throw new HttpError(404, 'NOT_FOUND', 'No se encontró el recurso');
+    if (!floor || isDeleted(floor))
+      throw new HttpError(404, 'NOT_FOUND', 'No se encontró el recurso');
     const roomsById = await readRooms(floor, salas, tx);
 
     const plan = planRooms(salas, roomsById);
@@ -153,7 +163,8 @@ export async function publishFloor(companyId, floorId) {
   await getOwnedFloor(floorId, companyId);
   return runTransaction(async (tx) => {
     const floor = await floorModel.findById(floorId, { tx });
-    if (!floor) throw new HttpError(404, 'NOT_FOUND', 'No se encontró el recurso');
+    if (!floor || isDeleted(floor))
+      throw new HttpError(404, 'NOT_FOUND', 'No se encontró el recurso');
     if (!Array.isArray(floor.salas) || floor.salas.length === 0) {
       throw new HttpError(400, 'MAP_REQUIRED', 'La planta no tiene mapa');
     }
@@ -179,7 +190,8 @@ export async function unpublishFloor(companyId, floorId) {
   await getOwnedFloor(floorId, companyId);
   const { result, lastFloorNotice, roomIds } = await runTransaction(async (tx) => {
     const floor = await floorModel.findById(floorId, { tx });
-    if (!floor) throw new HttpError(404, 'NOT_FOUND', 'No se encontró el recurso');
+    if (!floor || isDeleted(floor))
+      throw new HttpError(404, 'NOT_FOUND', 'No se encontró el recurso');
     const floors = await floorModel.listByBuilding(floor.buildingId, { tx });
     const building = await buildingModel.findById(floor.buildingId, { tx });
     const rooms = await roomModel.listByFloor(floorId, { tx });

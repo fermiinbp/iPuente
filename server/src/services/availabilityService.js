@@ -107,6 +107,7 @@ export function isBookable(room) {
     Boolean(room) &&
     room.bookable === true &&
     room.status === 'ACTIVE' &&
+    !room.deletedAt &&
     typeof room.price === 'number' &&
     room.price > 0
   );

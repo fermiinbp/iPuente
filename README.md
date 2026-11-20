@@ -237,6 +237,7 @@ Almacena los edificios publicados por las empresas.
 | `floorCount` | Número de plantas. |
 | `photos` | Lista de URLs de fotos del edificio. |
 | `status` | Estado del edificio: `DRAFT` (borrador) o `PUBLISHED` (publicado). |
+| `deletedAt` | Borrado lógico: solo si alguna de sus salas tuvo reservas; deja de verse en todas partes salvo en el historial de reservas. Sin ese campo, el edificio existe. |
 | `createdAt` | Fecha de creación. |
 | `updatedAt` | Última actualización. |
 
@@ -256,6 +257,7 @@ Contiene la información de las plantas y los datos necesarios para representar 
 | `origen` | Cómo se creó el mapa: `manual` o `ia`. |
 | `salas` | Lista de salas del mapa: `{ id, codigo, nombre, tipo, x, y, w, h }`. El `id` es el id de su documento en `rooms`. |
 | `status` | Estado de la planta: `DRAFT` (borrador) o `PUBLISHED` (publicada). |
+| `deletedAt` | Borrado lógico: solo si alguna de sus salas tuvo reservas (conserva su mapa para el historial, pero no se muestra ni cuenta su número). |
 | `createdAt` | Fecha de creación. |
 | `updatedAt` | Última actualización. |
 
@@ -283,6 +285,7 @@ Almacena la información de cada sala o espacio que puede alquilarse. El id de c
 | `bookable` | Indica si la empresa la ofrece para reservar. |
 | `status` | `ACTIVE` o `INACTIVE` (la sala ya no está en el mapa de su planta; no se borra para conservar sus reservas). |
 | `openingHours` | Horario habitual en el que se puede alquilar (de momento `null`: se usa el horario reservable de 8 a 20). |
+| `deletedAt` | Borrado lógico al eliminar la sala: solo si tuvo reservas (pasa a `INACTIVE` y no reservable; su id no se reutiliza en el mapa). |
 | `createdAt` | Fecha de creación. |
 | `updatedAt` | Última actualización. |
 

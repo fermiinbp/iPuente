@@ -1,4 +1,4 @@
-// Acceso a la colección buildings. Campos: companyId, name, description, address, city, postalCode, country, latitude, longitude, floorCount, status (DRAFT | PUBLISHED), createdAt, updatedAt.
+// Acceso a la colección buildings. Campos: companyId, name, description, address, city, postalCode, country, latitude, longitude, floorCount, status (DRAFT | PUBLISHED), deletedAt (borrado lógico: solo si tenía reservas), createdAt, updatedAt.
 import { createModel } from './baseModel.js';
 
 const base = createModel('buildings');

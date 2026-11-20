@@ -152,6 +152,7 @@ export const updateRoom = [
 ];
 
 export const buildingIdOnly = [idParam];
+export const deleteResource = [idParam];
 
 const idQuery = (field) =>
   query(field)

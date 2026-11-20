@@ -1,5 +1,6 @@
 // Controlador del panel de empresa. Lee req, llama al service y responde; nunca habla con Firestore.
 import * as companyService from '../services/companyService.js';
+import * as deletionService from '../services/deletionService.js';
 
 // GET /api/companies/me: empresa del usuario autenticado.
 export async function getMyCompany(req, res) {
@@ -58,4 +59,19 @@ export async function setRoomVisibility(req, res) {
   res.json(
     await companyService.setRoomVisibility(req.user.companyId, req.params.id, req.body.visible),
   );
+}
+
+// DELETE /api/company/buildings/:id: elimina un edificio propio con sus plantas y salas.
+export async function deleteBuilding(req, res) {
+  res.json(await deletionService.deleteBuilding(req.user.companyId, req.params.id));
+}
+
+// DELETE /api/company/floors/:id: elimina una planta propia con sus salas.
+export async function deleteFloor(req, res) {
+  res.json(await deletionService.deleteFloor(req.user.companyId, req.params.id));
+}
+
+// DELETE /api/company/rooms/:id: elimina una sala propia.
+export async function deleteRoom(req, res) {
+  res.json(await deletionService.deleteRoom(req.user.companyId, req.params.id));
 }

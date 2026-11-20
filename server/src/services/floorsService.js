@@ -5,6 +5,7 @@ import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
+import { isDeleted } from '../utils/softDelete.js';
 import {
   getDayItemsForRooms,
   isBookable,
@@ -17,7 +18,7 @@ import { isBuildingPublic } from './publicCatalogService.js';
 export async function getPublishedMap(id, fecha = todayString(), hora) {
   const notFound = () => new HttpError(404, 'NOT_FOUND', 'La planta no existe');
   const floor = await floorModel.findById(id);
-  if (!floor || floor.status !== 'PUBLISHED') throw notFound();
+  if (!floor || floor.status !== 'PUBLISHED' || isDeleted(floor)) throw notFound();
   const building = await buildingModel.findById(floor.buildingId);
   if (!(await isBuildingPublic(building))) throw notFound();
 
