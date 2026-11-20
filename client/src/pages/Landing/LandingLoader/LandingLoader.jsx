@@ -10,7 +10,7 @@ import {
   markLoaderSeen as markSeen,
   OPEN_MS,
   shouldShowLoader,
-} from './loaderSession.js';
+} from '../loaderSession.js';
 import styles from './LandingLoader.module.css';
 
 const SAFETY_MS = 4000;

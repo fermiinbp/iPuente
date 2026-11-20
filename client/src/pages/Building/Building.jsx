@@ -9,7 +9,7 @@ import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { useFetch } from '@/hooks/useFetch.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
-import NearbySection from '@/pages/Landing/NearbySection.jsx';
+import NearbySection from '@/pages/Landing/NearbySection/NearbySection.jsx';
 import { BUILDING } from '@/pages/Landing/data.js';
 import { FLOORS_HERO } from '@/pages/Landing/heroBuildingData.js';
 import { getBuilding } from '@/services/buildingsService.js';
