@@ -11,6 +11,7 @@ import AdminCompanyDetail from '@/pages/admin/AdminCompanyDetail/AdminCompanyDet
 import AdminDashboard from '@/pages/admin/AdminDashboard/AdminDashboard.jsx';
 import AdminPayments from '@/pages/admin/AdminPayments/AdminPayments.jsx';
 import AdminUsers from '@/pages/admin/AdminUsers/AdminUsers.jsx';
+import BookingCheckout from '@/pages/BookingCheckout/BookingCheckout.jsx';
 import BookingDetailPage from '@/pages/BookingDetailPage/BookingDetailPage.jsx';
 import Building from '@/pages/Building/Building.jsx';
 import CompanyBookings from '@/pages/company/CompanyBookings/CompanyBookings.jsx';
@@ -73,6 +74,7 @@ export default function App() {
         <Route element={<PrivateRoute />}>
           <Route path="my-bookings" element={<MyBookings />} />
           <Route path="my-bookings/:bookingId" element={<BookingDetailPage />} />
+          <Route path="checkout/:bookingId" element={<BookingCheckout />} />
           <Route path="payment/result" element={<PaymentResult />} />
           <Route path="account" element={<Account />} />
         </Route>

@@ -30,6 +30,9 @@ export default function BookingCard({ booking, onCancel }) {
         <Link className={styles.detail} to={`/my-bookings/${booking.id}`}>
           Ver detalle<span className={styles.srOnly}> de la reserva de {name}</span>
         </Link>
+        {booking.estado === 'PENDING_PAYMENT' && (
+          <Button to={`/checkout/${booking.id}`}>Pagar ahora</Button>
+        )}
         {canCancel && (
           <Button variant="ghost" onClick={() => onCancel(booking)}>
             Cancelar

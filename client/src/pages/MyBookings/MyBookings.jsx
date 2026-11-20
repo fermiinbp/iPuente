@@ -41,6 +41,11 @@ export default function MyBookings() {
     }
   }
 
+  // Las reservas pendientes de pago que ya han caducado no se enseñan.
+  const visible = (list) => list.filter((booking) => booking.estado !== 'EXPIRED');
+  const upcoming = data ? visible(data.proximas) : [];
+  const past = data ? visible(data.pasadas) : [];
+
   let content;
   if (loading) {
     content = <Spinner label="Cargando tus reservas…" />;
@@ -50,7 +55,7 @@ export default function MyBookings() {
         {error.message}
       </ErrorState>
     );
-  } else if (data.proximas.length === 0 && data.pasadas.length === 0) {
+  } else if (upcoming.length === 0 && past.length === 0) {
     content = (
       <EmptyState
         title="Todavía no tienes reservas"
@@ -64,13 +69,13 @@ export default function MyBookings() {
       <>
         <section aria-labelledby="proximas-titulo">
           <h2 className={styles.subtitle} id="proximas-titulo">
-            Próximas ({data.proximas.length})
+            Próximas ({upcoming.length})
           </h2>
-          {data.proximas.length === 0 ? (
+          {upcoming.length === 0 ? (
             <p className={styles.none}>No tienes reservas próximas.</p>
           ) : (
             <ul className={styles.list}>
-              {data.proximas.map((booking) => (
+              {upcoming.map((booking) => (
                 <li key={booking.id}>
                   <BookingCard booking={booking} onCancel={setToCancel} />
                 </li>
@@ -79,13 +84,13 @@ export default function MyBookings() {
           )}
         </section>
 
-        {data.pasadas.length > 0 && (
+        {past.length > 0 && (
           <section aria-labelledby="pasadas-titulo">
             <h2 className={styles.subtitle} id="pasadas-titulo">
-              Pasadas ({data.pasadas.length})
+              Pasadas ({past.length})
             </h2>
             <ul className={styles.list}>
-              {data.pasadas.map((booking) => (
+              {past.map((booking) => (
                 <li key={booking.id}>
                   <BookingCard booking={booking} onCancel={setToCancel} />
                 </li>

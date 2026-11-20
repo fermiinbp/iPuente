@@ -1,5 +1,5 @@
 // Ficha de sala con galería, equipamiento, disponibilidad y reserva.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import Breadcrumbs from '@/components/ui/Breadcrumbs/Breadcrumbs.jsx';
 import BookingForm from '@/components/booking/BookingForm/BookingForm.jsx';
@@ -36,6 +36,8 @@ export default function Room() {
   });
   const [attendees, setAttendees] = useState(people);
   const [submitting, setSubmitting] = useState(false);
+  // Cerrojo inmediato contra el doble clic en «Reservar».
+  const submitLock = useRef(false);
   const [bookingError, setBookingError] = useState('');
 
   const roomFetch = useFetch((signal) => getRoom(roomId, { signal }), roomId);
@@ -77,7 +79,7 @@ export default function Room() {
   }
 
   async function handleSubmit() {
-    if (submitting || !activeSelection) return;
+    if (submitLock.current || !activeSelection) return;
     if (!user) {
       const params = keepParams();
       params.set('start', String(activeSelection.inicio));
@@ -85,6 +87,7 @@ export default function Room() {
       navigate('/login', { state: { from: `${location.pathname}?${params.toString()}` } });
       return;
     }
+    submitLock.current = true;
     setSubmitting(true);
     setBookingError('');
     try {
@@ -102,6 +105,7 @@ export default function Room() {
         hours.reload();
       }
     } finally {
+      submitLock.current = false;
       setSubmitting(false);
     }
   }

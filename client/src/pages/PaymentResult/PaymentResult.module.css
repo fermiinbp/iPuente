@@ -7,3 +7,58 @@
   background: var(--bosque);
   color: var(--crema);
 }
+
+.inner {
+  display: grid;
+  gap: var(--space-5);
+  justify-items: center;
+  width: 100%;
+  max-width: 560px;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-seccion);
+  font-weight: 400;
+  line-height: var(--leading-declaracion);
+}
+
+.title:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 4px;
+}
+
+.text {
+  margin: 0;
+  color: var(--crema-suave);
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  margin: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque-elevado);
+  text-align: left;
+}
+
+.facts dt {
+  font-size: var(--text-interfaz);
+  color: var(--crema-suave);
+}
+
+.facts dd {
+  margin: var(--space-1) 0 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}
