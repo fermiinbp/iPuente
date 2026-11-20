@@ -8,6 +8,16 @@ export function getMyCompany(options) {
   return get('/companies/me', options);
 }
 
+// Resumen del panel (GET /company/summary, solo empresa aprobada; si no, 403 COMPANY_NOT_APPROVED):
+// { primerAcceso, truncado?, mes, cifras: { edificios, salasPublicadas, reservasMes, ingresosMes },
+//   proximasReservas: [{ id, codigo, fecha, inicio, fin, importe, estado, sala: { nombre, codigo },
+//   cliente: { nombre, email } }] (hasta 5), tareas: { plantasSinPublicar: [{ id, nombre, numero, buildingId,
+//   edificio, sinMapa }], salasSinPrecio y salasSinFotos: [{ id, nombre, codigo, floorId, buildingId }],
+//   totales: { plantasSinPublicar, salasSinPrecio, salasSinFotos } } }. Las listas de tareas llegan recortadas a 50.
+export function getSummary(options) {
+  return get('/company/summary', options);
+}
+
 // Edita los datos de la solicitud («Editar datos» si está pendiente; «Corregir y reenviar» si está rechazada, que la
 // devuelve a pendiente). `datos`: { nombreEmpresa, cif, contacto, telefono }, con los nombres del alta.
 // TODO(DAT030): PATCH /api/companies/me todavía no existe (lo crea DAT030, #160); hasta entonces la API responde
