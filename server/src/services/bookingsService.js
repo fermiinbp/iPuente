@@ -11,13 +11,13 @@ import { assertSlotAvailable, isBookable, toDate, toSlot } from './availabilityS
 import { findPublicRoom } from './roomsService.js';
 
 // Date local de una fecha AAAA-MM-DD a una hora (24 pasa al día siguiente a las 00:00).
-function atHour(fecha, hour) {
+export function atHour(fecha, hour) {
   const [y, m, d] = fecha.split('-').map(Number);
   return new Date(y, m - 1, d, hour);
 }
 
 // Datos públicos de una reserva a partir de su documento.
-function toItem(booking) {
+export function toItem(booking) {
   const { inicio, fin } = toSlot(booking, 'reserva');
   return {
     id: booking.id,
@@ -47,7 +47,7 @@ function assertBookable(room, inicio, fin) {
 }
 
 // Traduce el error de Firestore «el documento ya existe» a 409 SLOT_TAKEN.
-function translateConflict(err) {
+export function translateConflict(err) {
   const exists =
     err?.code === 6 || err?.code === 'already-exists' || /ALREADY_EXISTS/.test(err?.message ?? '');
   return exists ? new HttpError(409, 'SLOT_TAKEN', 'Esa franja ya está ocupada') : err;
