@@ -1,0 +1,150 @@
+/* Estilos de MobileMenu (CSS Module). Ocupa toda la pantalla por encima de la cabecera; desde 900 px no se muestra. */
+.mobileMenu {
+  position: fixed;
+  z-index: var(--z-menu);
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bosque);
+  color: var(--crema);
+  font-family: var(--font-body);
+  animation: abrirMenu var(--dur-media) var(--ease-out);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  min-height: 80px;
+  padding-inline: var(--gutter);
+  border-bottom: 1px solid var(--linea);
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--campo-alto);
+  text-decoration: none;
+}
+
+.logo img {
+  display: block;
+  height: 32px;
+  width: auto;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-3) var(--gutter) var(--space-7);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navItem {
+  border-bottom: 1px solid var(--linea);
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 56px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--crema);
+  font-family: inherit;
+  font-size: var(--text-lead);
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+}
+
+.link:active {
+  transform: scale(0.97);
+  transform-origin: left center;
+}
+
+.active {
+  color: var(--lima);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.account {
+  margin-top: var(--space-5);
+}
+
+.identity {
+  margin-bottom: var(--space-2);
+}
+
+.name {
+  margin: 0;
+  font-size: var(--text-interfaz);
+  font-weight: 600;
+}
+
+.email {
+  margin: 0;
+  color: var(--crema-suave);
+  font-size: var(--text-menu);
+  overflow-wrap: anywhere;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    color: var(--crema-suave);
+  }
+
+  .active:hover {
+    color: var(--lima);
+  }
+}
+
+@media (min-width: 900px) {
+  .mobileMenu {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobileMenu {
+    animation: none;
+  }
+
+  .link {
+    transition: none;
+  }
+
+  .link:active {
+    transform: none;
+  }
+}
+
+@keyframes abrirMenu {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

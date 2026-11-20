@@ -80,6 +80,7 @@ const definition = {
       Unauthorized: errorResponse('Falta el token o no es válido.'),
       Forbidden: errorResponse('El usuario no tiene permiso para este recurso.'),
       NotFound: errorResponse('El recurso no existe.'),
+      TooManyRequests: errorResponse('Demasiadas peticiones (RATE_LIMITED). Espera y reintenta.'),
     },
   },
 };

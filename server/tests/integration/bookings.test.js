@@ -48,6 +48,7 @@ describe('Reservas del cliente', () => {
   });
 
   beforeEach(async () => {
+    setTokenVerifier(async (token) => ({ uid: token }));
     setDbForTests(createFakeFirestore());
     await seedPublicData();
   });
@@ -191,6 +192,21 @@ describe('Reservas del cliente', () => {
     });
   });
 
+  describe('solo clientes: crear y listar', () => {
+    it('responde 403 FORBIDDEN a empresa y admin al crear y al listar, sin crear nada', async () => {
+      setTokenVerifier(async (token) => ({ uid: 'u1', role: token }));
+      for (const role of ['COMPANY', 'ADMIN']) {
+        const crear = await reservar(franja(10, 12), role);
+        assert.equal(crear.status, 403);
+        assert.equal(crear.body.error.code, 'FORBIDDEN');
+        const listar = await request('GET', '/api/bookings/me', { token: role });
+        assert.equal(listar.status, 403);
+        assert.equal(listar.body.error.code, 'FORBIDDEN');
+      }
+      assert.deepEqual(await occupancyModel.listByRoomAndDate('r-free', FUTURA), []);
+    });
+  });
+
   describe('GET /api/bookings/me', () => {
     it('separa próximas y pasadas y solo devuelve las del usuario', async () => {
       // Preparar
@@ -232,6 +248,111 @@ describe('Reservas del cliente', () => {
     });
   });
 
+  describe('código legible y GET /api/bookings/:id', () => {
+    const detalle = (id, token) => request('GET', `/api/bookings/${id}`, { token });
+
+    it('crea códigos IP-n secuenciales desde 1000 y los guarda', async () => {
+      const a = await reservar(franja(10, 12));
+      const b = await reservar(franja(14, 15), 'u2');
+      assert.match(a.body.codigo, /^IP-\d{4,}$/);
+      assert.equal(a.body.codigo, 'IP-1000');
+      assert.equal(b.body.codigo, 'IP-1001');
+      assert.equal((await bookingModel.findById(a.body.id)).code, 'IP-1000');
+    });
+
+    it('no gasta código si la reserva falla por franja ocupada', async () => {
+      await reservar(franja(10, 12));
+      assert.equal((await reservar(franja(11, 13), 'u2')).status, 409);
+      assert.equal((await reservar(franja(14, 15), 'u2')).body.codigo, 'IP-1001');
+    });
+
+    it('devuelve el detalle de la reserva propia sin datos privados', async () => {
+      const { body: creada } = await reservar(franja(10, 13));
+      const { status, body } = await request('GET', `/api/bookings/${creada.id}`);
+      const text = JSON.stringify(body);
+      assert.equal(status, 200);
+      assert.equal(body.id, creada.id);
+      assert.equal(body.codigo, 'IP-1000');
+      assert.equal(body.fecha, FUTURA);
+      assert.equal(body.inicio, 10);
+      assert.equal(body.fin, 13);
+      assert.equal(body.horas, 3);
+      assert.equal(body.importe, 75);
+      assert.equal(body.estado, 'CONFIRMED');
+      assert.deepEqual(body.sala, { id: 'r-free', codigo: 'R-FREE', nombre: 'Sala r-free' });
+      assert.deepEqual(body.planta, { id: 'f-0', nombre: 'Planta baja', nivel: 0 });
+      assert.deepEqual(body.edificio, {
+        id: 'b-pub',
+        nombre: 'Edificio publicado',
+        direccion: 'Calle Ficticia 1',
+        ciudad: 'Sevilla',
+      });
+      assert.equal(body.canceladaPor, undefined);
+      for (const word of ['userId', 'companyId', 'u1', 'c1', 'email']) {
+        assert.ok(!text.includes(word), `no debe incluir ${word}`);
+      }
+    });
+
+    it('responde 404 NOT_FOUND igual con una reserva ajena y con una inexistente', async () => {
+      const { body: creada } = await reservar(franja(10, 12));
+      const ajena = await detalle(creada.id, 'u2');
+      const falta = await detalle('no-existe');
+      assert.equal(ajena.status, 404);
+      assert.equal(ajena.body.error.code, 'NOT_FOUND');
+      assert.deepEqual(ajena.body, falta.body);
+      assert.equal(falta.status, 404);
+    });
+
+    it('responde 403 a empresa y admin, 401 sin token y 400 con un id inválido', async () => {
+      const { body: creada } = await reservar(franja(10, 12));
+      setTokenVerifier(async (token) => ({ uid: 'u1', role: token }));
+      assert.equal((await detalle(creada.id, 'COMPANY')).status, 403);
+      assert.equal((await detalle(creada.id, 'ADMIN')).status, 403);
+      assert.equal((await detalle(creada.id, 'CLIENT')).status, 200);
+      setTokenVerifier(async (token) => ({ uid: token }));
+      const sin = await detalle(creada.id, null);
+      assert.equal(sin.status, 401);
+      assert.equal(sin.body.error.code, 'NO_TOKEN');
+      assert.equal((await detalle('a.b')).status, 400);
+    });
+
+    it('/bookings/me no lo captura /:id', async () => {
+      const { status, body } = await request('GET', '/api/bookings/me');
+      assert.equal(status, 200);
+      assert.deepEqual(body, { proximas: [], pasadas: [] });
+    });
+
+    it('la cancelada por el cliente indica canceladaPor cliente', async () => {
+      const { body: creada } = await reservar(franja(10, 12));
+      await request('PATCH', `/api/bookings/${creada.id}/cancel`);
+      const { body } = await detalle(creada.id);
+      assert.equal(body.estado, 'CANCELLED');
+      assert.equal(body.canceladaPor, 'cliente');
+      assert.equal(body.motivoCancelacion, null);
+      assert.equal((await bookingModel.findById(creada.id)).cancelledBy, 'CLIENT');
+    });
+
+    it('sigue viéndose si la sala ya no existe', async () => {
+      await bookingModel.upsert('bk-huerfana', {
+        userId: 'u1',
+        companyId: 'c1',
+        roomId: 'borrada',
+        startDate: new Date(2030, 0, 10, 9),
+        endDate: new Date(2030, 0, 10, 11),
+        price: 25,
+        pricePeriod: 'HOUR',
+        totalAmount: 50,
+        status: 'CONFIRMED',
+      });
+      const { status, body } = await detalle('bk-huerfana');
+      assert.equal(status, 200);
+      assert.equal(body.sala, null);
+      assert.equal(body.planta, null);
+      assert.equal(body.edificio, null);
+      assert.equal(body.codigo, null);
+    });
+  });
+
   describe('PATCH /api/bookings/:id/cancel', () => {
     it('cancela la reserva propia y libera la franja', async () => {
       // Preparar
@@ -247,13 +368,28 @@ describe('Reservas del cliente', () => {
       assert.equal(otra.status, 201);
     });
 
-    it('responde 403 FORBIDDEN si la reserva es de otro usuario', async () => {
+    it('responde 404 NOT_FOUND (como una inexistente) si la reserva es de otro usuario', async () => {
       const { body: creada } = await reservar(franja(10, 12));
       const { status, body } = await request('PATCH', `/api/bookings/${creada.id}/cancel`, {
         token: 'u2',
       });
-      assert.equal(status, 403);
-      assert.equal(body.error.code, 'FORBIDDEN');
+      const falta = await request('PATCH', '/api/bookings/no-existe/cancel');
+      assert.equal(status, 404);
+      assert.equal(body.error.code, 'NOT_FOUND');
+      assert.deepEqual(body, falta.body);
+      assert.equal((await bookingModel.findById(creada.id)).status, 'CONFIRMED');
+    });
+
+    it('responde 403 FORBIDDEN a empresa y admin al cancelar', async () => {
+      const { body: creada } = await reservar(franja(10, 12));
+      setTokenVerifier(async (token) => ({ uid: 'u1', role: token }));
+      for (const role of ['COMPANY', 'ADMIN']) {
+        const { status, body } = await request('PATCH', `/api/bookings/${creada.id}/cancel`, {
+          token: role,
+        });
+        assert.equal(status, 403);
+        assert.equal(body.error.code, 'FORBIDDEN');
+      }
       assert.equal((await bookingModel.findById(creada.id)).status, 'CONFIRMED');
     });
 

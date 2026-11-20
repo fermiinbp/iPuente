@@ -16,3 +16,8 @@ export function listByBuilding(buildingId, { tx } = {}) {
 export function listByCompany(companyId) {
   return base.listBy('companyId', companyId);
 }
+
+// Plantas con un estado (DRAFT | PUBLISHED) de todas las empresas.
+export function listByStatus(status) {
+  return base.listBy('status', status);
+}

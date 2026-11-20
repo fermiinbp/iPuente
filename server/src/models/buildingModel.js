@@ -5,8 +5,8 @@ const base = createModel('buildings');
 
 export const { findById, create, upsert, update, remove } = base;
 
-export function listByCompany(companyId) {
-  return base.listBy('companyId', companyId);
+export function listByCompany(companyId, { tx } = {}) {
+  return base.listBy('companyId', companyId, { tx });
 }
 
 export function listByStatus(status) {

@@ -1,4 +1,5 @@
-/* Estilos de Header (CSS Module). Mobile first: la navegación y el CTA aparecen desde 900 px. */
+/* Estilos de Header (CSS Module). Mobile first: la navegación, el acceso y el menú de usuario aparecen desde 900 px;
+   por debajo, el botón «Menú» abre MobileMenu. */
 .header {
   position: sticky;
   top: 0;
@@ -48,8 +49,7 @@
   list-style: none;
 }
 
-.navLink,
-.panelLink {
+.navLink {
   display: inline-flex;
   align-items: center;
   min-height: var(--campo-alto);
@@ -62,30 +62,7 @@
     transform var(--dur-fast) var(--ease-out);
 }
 
-.navLink {
-  position: relative;
-}
-
-/* Subrayado que se dibuja al pasar el ratón; el enlace activo lo lleva siempre. */
-.navLink::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 8px;
-  height: 1px;
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform var(--dur-media) var(--ease-out);
-}
-
-.active::after {
-  transform: scaleX(1);
-}
-
 .navLink:active,
-.panelLink:active,
 .menuButton:active {
   transform: scale(0.97);
 }
@@ -101,19 +78,9 @@
   margin-left: auto;
 }
 
-.login,
-.cta {
+/* Con .actions delante para ganar a la clase propia del componente (p. ej. Button). */
+.actions .desktopOnly {
   display: none;
-}
-
-/* «Cerrar sesión» es un <button> con el aspecto de un enlace de la cabecera. */
-.logout {
-  padding-block: 0;
-  padding-inline: 0;
-  border: 0;
-  background: none;
-  font-family: inherit;
-  cursor: pointer;
 }
 
 .menuButton {
@@ -134,44 +101,9 @@
     border-color var(--dur-fast) var(--ease-out);
 }
 
-.panel {
-  position: absolute;
-  z-index: var(--z-menu);
-  top: 72px;
-  right: var(--gutter);
-  display: flex;
-  flex-direction: column;
-  min-width: 240px;
-  padding: var(--space-2);
-  border: 1px solid var(--linea);
-  border-radius: var(--radio-tarjeta);
-  background: var(--bosque-elevado);
-  transform-origin: top right;
-  animation: abrirPanel var(--dur-fast) var(--ease-out);
-}
-
-.panelItem {
-  display: flex;
-}
-
-.panelLink {
-  display: flex;
-  width: 100%;
-  padding: 0 var(--space-3);
-}
-
-.panelCta {
-  font-weight: 600;
-}
-
 @media (hover: hover) and (pointer: fine) {
-  .navLink:hover,
-  .panelLink:hover {
+  .navLink:hover {
     color: var(--crema-suave);
-  }
-
-  .navLink:hover::after {
-    transform: scaleX(1);
   }
 
   .active:hover {
@@ -188,37 +120,17 @@
     display: flex;
   }
 
-  .login,
-  .cta {
+  .actions .desktopOnly {
     display: inline-flex;
   }
 
-  .menuButton,
-  .panel {
+  .menuButton {
     display: none;
   }
 }
 
-@keyframes abrirPanel {
-  from {
-    opacity: 0;
-    transform: scale(0.97);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .panel {
-    animation: none;
-  }
-
   .navLink,
-  .navLink::after,
-  .panelLink,
   .menuButton {
     transition: none;
   }

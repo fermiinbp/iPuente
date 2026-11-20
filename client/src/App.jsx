@@ -73,45 +73,49 @@ export default function App() {
           <Route path="my-bookings" element={<MyBookings />} />
           <Route path="my-bookings/:bookingId" element={<BookingDetailPage />} />
           <Route path="payment/result" element={<PaymentResult />} />
-
-          {/* TODO(UI011): sacar los paneles de Layout cuando DashboardLayout tenga logo y «Cerrar sesión» (wireframes 11 y 16) */}
-          <Route element={<RoleRoute role={ROLES.COMPANY} />}>
-            {/* TODO(UI011): cabecera del panel sin menú lateral, fuera de Layout (wireframe 10b) */}
-            <Route path="company/request" element={<CompanyRequestStatus />} />
-
-            <Route
-              path="company"
-              element={<DashboardLayout title="Panel de empresa" links={COMPANY_LINKS} />}
-            >
-              <Route index element={<CompanyDashboard />} />
-              <Route path="buildings" element={<CompanyBuildings />} />
-              <Route path="floors/:floorId/editor" element={<MapEditorPage />} />
-              <Route path="rooms" element={<CompanyRooms />} />
-              {/* El detalle es un panel lateral sobre la lista (EMP014) */}
-              <Route path="bookings" element={<CompanyBookings />} />
-              <Route path="bookings/:bookingId" element={<CompanyBookings />} />
-              <Route path="settings" element={<CompanySettings />} />
-            </Route>
-          </Route>
-
-          <Route element={<RoleRoute role={ROLES.ADMIN} />}>
-            <Route
-              path="admin"
-              element={<DashboardLayout title="Panel de administración" links={ADMIN_LINKS} />}
-            >
-              <Route index element={<AdminDashboard />} />
-              <Route path="companies" element={<AdminCompanies />} />
-              <Route path="companies/:companyId" element={<AdminCompanyDetail />} />
-              <Route path="users" element={<AdminUsers />} />
-              {/* El detalle es un panel lateral sobre la lista (ADM005) */}
-              <Route path="bookings" element={<AdminBookings />} />
-              <Route path="bookings/:bookingId" element={<AdminBookings />} />
-              <Route path="payments" element={<AdminPayments />} />
-            </Route>
-          </Route>
         </Route>
 
         <Route path="*" element={<NotFound />} />
+      </Route>
+
+      {/* Paneles: con su propia cabecera (DashboardLayout), sin la cabecera ni el pie públicos */}
+      <Route element={<PrivateRoute />}>
+        <Route element={<RoleRoute role={ROLES.COMPANY} />}>
+          {/* Estado de la solicitud de alta: cabecera del panel sin menú lateral (wireframe 10b) */}
+          <Route element={<DashboardLayout title="Panel de empresa" />}>
+            <Route path="company/request" element={<CompanyRequestStatus />} />
+          </Route>
+
+          <Route
+            path="company"
+            element={<DashboardLayout title="Panel de empresa" links={COMPANY_LINKS} />}
+          >
+            <Route index element={<CompanyDashboard />} />
+            <Route path="buildings" element={<CompanyBuildings />} />
+            <Route path="floors/:floorId/editor" element={<MapEditorPage />} />
+            <Route path="rooms" element={<CompanyRooms />} />
+            {/* El detalle es un panel lateral sobre la lista (EMP014) */}
+            <Route path="bookings" element={<CompanyBookings />} />
+            <Route path="bookings/:bookingId" element={<CompanyBookings />} />
+            <Route path="settings" element={<CompanySettings />} />
+          </Route>
+        </Route>
+
+        <Route element={<RoleRoute role={ROLES.ADMIN} />}>
+          <Route
+            path="admin"
+            element={<DashboardLayout title="Panel de administración" links={ADMIN_LINKS} />}
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="companies" element={<AdminCompanies />} />
+            <Route path="companies/:companyId" element={<AdminCompanyDetail />} />
+            <Route path="users" element={<AdminUsers />} />
+            {/* El detalle es un panel lateral sobre la lista (ADM005) */}
+            <Route path="bookings" element={<AdminBookings />} />
+            <Route path="bookings/:bookingId" element={<AdminBookings />} />
+            <Route path="payments" element={<AdminPayments />} />
+          </Route>
+        </Route>
       </Route>
     </Routes>
   );

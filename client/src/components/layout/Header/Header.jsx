@@ -1,9 +1,13 @@
-// Cabecera: logo, navegación centrada, acceso y CTA. Debajo de 900 px la navegación pasa a un panel «Menú».
-import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router';
+// Cabecera: logo, navegación centrada y, según la sesión, acceso y CTA o el enlace del rol y UserMenu.
+// Debajo de 900 px la navegación pasa a MobileMenu (pantalla completa), que se abre con el botón «Menú».
+import { useCallback, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router';
 import Button from '@/components/ui/Button/Button.jsx';
+import MobileMenu from '@/components/layout/MobileMenu/MobileMenu.jsx';
+import UserMenu from '@/components/layout/UserMenu/UserMenu.jsx';
+import { ACCOUNT_ITEMS, LOGOUT, displayName } from '@/config/accountMenu.js';
+import { ROLES } from '@/config/constants.js';
 import { useAuth } from '@/hooks/useAuth.js';
-import { signOutUser } from '@/services/authService.js';
 import logo from '@/assets/images/ipuente-logo-sobre-oscuro.svg';
 import styles from './Header.module.css';
 
@@ -14,52 +18,46 @@ const NAV_LINKS = [
   { to: '/#pie', label: 'Contacto' },
 ];
 
-// Enlaces de la cuenta con sesión iniciada: «Mis reservas» para todos y el panel que corresponda al rol.
-const ACCOUNT_LINKS = [
-  { to: '/my-bookings', label: 'Mis reservas', roles: ['CLIENT', 'COMPANY', 'ADMIN'] },
-  { to: '/company', label: 'Panel de empresa', roles: ['COMPANY'] },
-  { to: '/admin', label: 'Administración', roles: ['ADMIN'] },
-];
+// Enlace de cada rol junto al menú de usuario.
+const ROLE_LINKS = {
+  [ROLES.CLIENT]: { to: '/my-bookings', label: 'Mis reservas' },
+  [ROLES.COMPANY]: { to: '/company', label: 'Empresa' },
+  [ROLES.ADMIN]: { to: '/admin', label: 'Admin' },
+};
 
 export default function Header() {
+  const { user, role, loading } = useAuth();
   const [openPath, setOpenPath] = useState(null);
   const { pathname, hash } = useLocation();
-  const navigate = useNavigate();
-  const { user, role, loading } = useAuth();
-  const accountLinks = user ? ACCOUNT_LINKS.filter((link) => link.roles.includes(role)) : [];
-
-  async function handleLogout() {
-    setOpenPath(null);
-    await signOutUser();
-    navigate('/');
-  }
   const buttonRef = useRef(null);
   const routeKey = `${pathname}${hash}`;
-  // El panel solo está abierto en la ruta en la que se abrió: al cambiar de ruta se cierra.
+  // El menú móvil solo está abierto en la ruta en la que se abrió: al cambiar de ruta se cierra.
   const open = openPath === routeKey;
+  const closeMenu = useCallback(() => setOpenPath(null), []);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (event) => {
-      if (event.key === 'Escape') {
-        setOpenPath(null);
-        buttonRef.current?.focus();
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [open]);
+  const roleLink = user ? (ROLE_LINKS[role] ?? ROLE_LINKS[ROLES.CLIENT]) : null;
+  const accountItems = user ? (ACCOUNT_ITEMS[role] ?? ACCOUNT_ITEMS[ROLES.CLIENT]) : [];
+  const name = user ? displayName(user) : '';
+  const roleActive = Boolean(roleLink) && pathname.startsWith(roleLink.to);
 
-  const close = () => setOpenPath(null);
+  // En móvil, el enlace del rol va dentro del menú (el de cliente ya está en sus opciones).
+  const mobileAccount = user && {
+    name,
+    email: user.email,
+    items: [
+      ...(role === ROLES.COMPANY || role === ROLES.ADMIN ? [roleLink] : []),
+      ...accountItems.filter((item) => !item.desktopOnly),
+      LOGOUT,
+    ],
+  };
 
   // Los enlaces llevan ancla, así que el activo se decide por el hash y no por la ruta.
-  const renderLink = ({ to, label }, className) => {
+  const renderLink = ({ to, label }) => {
     const active = pathname === '/' && to === `/${hash}`;
     return (
       <Link
         to={to}
-        className={active ? `${className} ${styles.active}` : className}
-        onClick={close}
+        className={active ? `${styles.navLink} ${styles.active}` : styles.navLink}
         aria-current={active ? 'location' : undefined}
       >
         {label}
@@ -77,35 +75,44 @@ export default function Header() {
         <nav className={styles.nav} aria-label="Principal">
           <ul className={styles.navList}>
             {NAV_LINKS.map((link) => (
-              <li key={link.to}>{renderLink(link, styles.navLink)}</li>
+              <li key={link.to}>{renderLink(link)}</li>
             ))}
           </ul>
         </nav>
 
         <div className={styles.actions}>
-          {!loading && user ? (
+          {/* Mientras se comprueba la sesión no se pinta nada, para no enseñar «Iniciar sesión» de más. */}
+          {!loading && !user && (
             <>
-              {accountLinks.map((link) => (
-                <Link key={link.to} to={link.to} className={`${styles.navLink} ${styles.login}`}>
-                  {link.label}
-                </Link>
-              ))}
-              <button
-                type="button"
-                className={`${styles.navLink} ${styles.login} ${styles.logout}`}
-                onClick={handleLogout}
-              >
-                Cerrar sesión
-              </button>
+              <Link to="/login" className={`${styles.navLink} ${styles.desktopOnly}`}>
+                Iniciar sesión
+              </Link>
+              <Button to="/company/register" className={styles.desktopOnly}>
+                Publica tu oficina
+              </Button>
             </>
-          ) : (
-            <Link to="/login" className={`${styles.navLink} ${styles.login}`}>
-              Iniciar sesión
-            </Link>
           )}
-          <Button to="/company/register" className={styles.cta}>
-            Publica tu oficina
-          </Button>
+          {!loading && user && (
+            <>
+              <Link
+                to={roleLink.to}
+                className={[styles.navLink, styles.desktopOnly, roleActive && styles.active]
+                  .filter(Boolean)
+                  .join(' ')}
+                aria-current={roleActive ? 'page' : undefined}
+              >
+                {roleLink.label}
+              </Link>
+              <div className={styles.desktopOnly}>
+                <UserMenu
+                  name={name}
+                  email={user.email}
+                  photoUrl={user.photoURL}
+                  items={[...accountItems, LOGOUT]}
+                />
+              </div>
+            </>
+          )}
           <button
             ref={buttonRef}
             type="button"
@@ -117,44 +124,18 @@ export default function Header() {
             Menú
           </button>
         </div>
-
-        {open && (
-          <div id="menu-movil" className={styles.panel}>
-            {NAV_LINKS.map((link) => (
-              <span key={link.to} className={styles.panelItem}>
-                {renderLink(link, styles.panelLink)}
-              </span>
-            ))}
-            {!loading && user ? (
-              <>
-                {accountLinks.map((link) => (
-                  <Link key={link.to} to={link.to} className={styles.panelLink} onClick={close}>
-                    {link.label}
-                  </Link>
-                ))}
-                <button
-                  type="button"
-                  className={`${styles.panelLink} ${styles.logout}`}
-                  onClick={handleLogout}
-                >
-                  Cerrar sesión
-                </button>
-              </>
-            ) : (
-              <Link to="/login" className={styles.panelLink} onClick={close}>
-                Iniciar sesión
-              </Link>
-            )}
-            <Link
-              to="/company/register"
-              className={`${styles.panelLink} ${styles.panelCta}`}
-              onClick={close}
-            >
-              Publica tu oficina
-            </Link>
-          </div>
-        )}
       </div>
+
+      {open && (
+        <MobileMenu
+          id="menu-movil"
+          navLinks={NAV_LINKS}
+          account={mobileAccount}
+          loading={loading}
+          onClose={closeMenu}
+          returnFocusRef={buttonRef}
+        />
+      )}
     </header>
   );
 }

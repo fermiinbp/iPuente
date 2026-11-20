@@ -7,7 +7,9 @@ import { setDbForTests } from '../../src/config/config.js';
 import { setTokenVerifier } from '../../src/middlewares/auth.js';
 import * as blockModel from '../../src/models/blockModel.js';
 import * as bookingModel from '../../src/models/bookingModel.js';
+import * as buildingModel from '../../src/models/buildingModel.js';
 import * as companyModel from '../../src/models/companyModel.js';
+import * as floorModel from '../../src/models/floorModel.js';
 import * as occupancyModel from '../../src/models/occupancyModel.js';
 import * as roomModel from '../../src/models/roomModel.js';
 import * as userModel from '../../src/models/userModel.js';
@@ -364,6 +366,81 @@ describe('Panel de empresa: reservas y bloqueos', () => {
     });
   });
 
+  describe('GET /api/company/bookings/:id', () => {
+    const detalle = (id, token) => call('GET', `/api/company/bookings/${id}`, { token });
+
+    it('devuelve la reserva propia con sala, planta, edificio y cliente', async () => {
+      await buildingModel.upsert('b', { name: 'Edificio', address: 'Calle 1', city: 'Sevilla' });
+      await floorModel.upsert('f', { name: 'Planta baja', level: 0 });
+      await seedBooking('bk-a', {});
+      await bookingModel.update('bk-a', { code: 'IP-1000' });
+      const { status, body, text } = await detalle('bk-a');
+      assert.equal(status, 200);
+      assert.equal(body.id, 'bk-a');
+      assert.equal(body.codigo, 'IP-1000');
+      assert.deepEqual(body.sala, { id: 'r-a', codigo: 'Sala A', nombre: 'Sala A' });
+      assert.deepEqual(body.planta, { id: 'f', nombre: 'Planta baja', nivel: 0 });
+      assert.deepEqual(body.edificio, {
+        id: 'b',
+        nombre: 'Edificio',
+        direccion: 'Calle 1',
+        ciudad: 'Sevilla',
+      });
+      assert.equal(body.fecha, FECHA);
+      assert.equal(body.inicio, 10);
+      assert.equal(body.fin, 12);
+      assert.equal(body.importe, 50);
+      assert.equal(body.estado, 'CONFIRMED');
+      assert.deepEqual(body.cliente, { nombre: 'Cliente Uno', email: 'cli@example.com' });
+      assert.ok(!text.includes('u-cli'));
+      assert.ok(!text.includes('600123456'));
+      assert.ok(!text.includes('userId'));
+      assert.ok(!text.includes('companyId'));
+    });
+
+    it('responde 404 NOT_FOUND (como una inexistente) si la reserva es de otra empresa', async () => {
+      await seedBooking('bk-b', { roomId: 'r-b', companyId: 'c-b' });
+      const { status, body } = await detalle('bk-b');
+      const falta = await detalle('no-existe');
+      assert.equal(status, 404);
+      assert.equal(body.error.code, 'NOT_FOUND');
+      assert.deepEqual(body, falta.body);
+    });
+
+    it('responde 404 si no existe y 400 si el id no es válido', async () => {
+      assert.equal((await detalle('no-existe')).status, 404);
+      assert.equal((await detalle('a.b')).status, 400);
+    });
+
+    it('responde 401 sin token, 403 a un cliente y COMPANY_NOT_APPROVED a una pendiente', async () => {
+      await seedBooking('bk-a', {});
+      assert.equal((await detalle('bk-a', null)).status, 401);
+      const cli = await detalle('bk-a', 'cliente');
+      assert.equal(cli.status, 403);
+      assert.equal(cli.body.error.code, 'FORBIDDEN');
+      const pend = await detalle('bk-a', 'pend');
+      assert.equal(pend.status, 403);
+      assert.equal(pend.body.error.code, 'COMPANY_NOT_APPROVED');
+    });
+
+    it('si la cancela la empresa devuelve canceladaPor empresa y el motivo', async () => {
+      await seedBooking('bk-a', {});
+      await call('PATCH', '/api/company/bookings/bk-a/cancel', { body: { motivo: 'Obras' } });
+      const { body } = await detalle('bk-a');
+      assert.equal(body.estado, 'CANCELLED');
+      assert.equal(body.canceladaPor, 'empresa');
+      assert.equal(body.motivoCancelacion, 'Obras');
+    });
+
+    it('sigue viéndose aunque la sala ya no exista', async () => {
+      await seedBooking('bk-a', {});
+      await roomModel.remove('r-a');
+      const { status, body } = await detalle('bk-a');
+      assert.equal(status, 200);
+      assert.equal(body.sala, null);
+    });
+  });
+
   describe('PATCH /api/company/bookings/:id/cancel', () => {
     const cancelar = (id, body, token) =>
       call('PATCH', `/api/company/bookings/${id}/cancel`, { token, body });
@@ -407,10 +484,12 @@ describe('Panel de empresa: reservas y bloqueos', () => {
       );
     });
 
-    it('responde 403 con una reserva de otra empresa sin cambiarla', async () => {
+    it('responde 404 NOT_FOUND con una reserva de otra empresa sin cambiarla', async () => {
       await seedBooking('bk-b', { roomId: 'r-b', companyId: 'c-b' });
-      const { status } = await cancelar('bk-b', { motivo: 'x' });
-      assert.equal(status, 403);
+      const { status, body } = await cancelar('bk-b', { motivo: 'x' });
+      const falta = await cancelar('no-existe', { motivo: 'x' });
+      assert.equal(status, 404);
+      assert.deepEqual(body, falta.body);
       assert.equal((await bookingModel.findById('bk-b')).status, 'CONFIRMED');
       assert.equal((await occupancyModel.listByRoomAndDate('r-b', FECHA)).length, 2);
     });

@@ -12,9 +12,10 @@
 | `.editorconfig` | Mismo formato básico en cualquier editor: UTF-8, 2 espacios, saltos de línea LF. |
 | `.prettierrc` | Reglas de Prettier (comillas simples, punto y coma, 100 caracteres) para que los 4 escribamos igual. |
 | `.prettierignore` | Carpetas que Prettier no toca. |
-| `firebase.json` | Indica a Firebase CLI dónde están las reglas y los índices de Firestore (`npx firebase-tools deploy --only firestore`). Storage se añadirá cuando tenga reglas. |
+| `firebase.json` | Indica a Firebase CLI dónde están las reglas y los índices de Firestore (`npx firebase-tools deploy --only firestore`) y de Storage (`storage.rules`; `npx firebase-tools deploy --only storage`). |
+| `storage.rules` | Reglas de Firebase Storage: lectura pública bajo `companies/{companyId}/…`; lectura solo con `get` (sin listar); solo escribe un usuario `COMPANY` con ese mismo `companyId` y `companyApproved == true` en el token (tras aprobar, el front refresca el token con `getIdToken(true)`), solo PNG, JPEG, WebP o GIF (sin SVG) de 1 byte a 5 MB. Todo lo demás, denegado. |
 | `firestore.rules` | Reglas de seguridad de Firestore: el navegador no lee ni escribe directamente (todo pasa por la API, que usa `firebase-admin`). Si el front necesita leer algo, se abre solo esa lectura. |
-| `firestore.indexes.json` | Índices compuestos de Firestore que necesitan las consultas de reservas y plantas. |
+| `firestore.indexes.json` | Índices compuestos de Firestore que necesitan las consultas de reservas y plantas. Incluye `bookings` por `status` + `startDate` y por `companyId` + `status` + `startDate` (listado de admin), y `users` por `role` + `createdAt` DESC (listado de usuarios por rol). |
 | `netlify/functions/api.js` | Única Netlify Function: envuelve la app de Express (`server/src/app.js`) con `serverless-http` para que la API funcione en Netlify sin servidor propio. |
 | `CLAUDE.md` | Instrucciones que Claude Code lee al empezar: qué es el proyecto, qué agente usar y las reglas clave. |
  
@@ -42,6 +43,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/App.jsx` | Componente raíz y mapa de rutas de la web (React Router): públicas, de cliente, de empresa y de admin, anidadas en `Layout` (y las de empresa y admin, además, en `DashboardLayout`). |
 | `client/src/config/firebase.js` | Conexión del navegador con Firebase: inicializa la app y exporta `auth` (login) y `storage` (subida de planos y fotos). |
 | `client/src/config/constants.js` | Constantes compartidas del front: URL de la API, roles (`CLIENT`, `COMPANY`, `ADMIN`), estados de sala (en el plano y en el panel), de edificio y planta, de reserva (los de la API y los que calcula la pantalla), de pago, de empresa y de cuenta de cobro, y horario reservable. |
+| `client/src/config/accountMenu.js` | Opciones del menú de cuenta por rol, «Cerrar sesión» y nombre visible de la cuenta (`displayName`), compartidos por `Header` y `DashboardLayout`. |
 | `client/src/router/PrivateRoute.jsx` | Guarda de ruta: si no hay sesión, redirige a `/login`. Solo oculta pantallas; la seguridad real está en la API. |
 | `client/src/router/RoleRoute.jsx` | Guarda de ruta por rol (`COMPANY` o `ADMIN`): si el usuario no lo tiene, vuelve a la home. |
 | `client/src/context/authContext.js` | Crea el contexto de autenticación (separado del provider para que Vite haga fast refresh). |
@@ -57,8 +59,8 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/services/floorsService.js` | Llamada pública del mapa de una planta con el estado de cada sala en una fecha. |
 | `client/src/services/roomsService.js` | Ficha de sala y huecos libres. |
 | `client/src/services/bookingsService.js` | Reservas del cliente: crear, listar y cancelar. |
-| `client/src/services/paymentsService.js` | Pide a la API la URL de Stripe Checkout de una reserva. |
-| `client/src/services/companyService.js` | Panel de empresa: alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos. |
+| `client/src/services/paymentsService.js` | (extra) Pide a la API la URL de Stripe Checkout de una reserva. |
+| `client/src/services/companyService.js` | Panel de empresa: empresa propia (`getMyCompany`, nombre en la cabecera del panel), alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos. |
 | `client/src/services/adminService.js` | Panel de admin: empresas, usuarios, reservas, pagos y reembolsos. |
 | `client/src/services/uploadService.js` | Sube planos y fotos directamente a Firebase Storage y devuelve su URL y su ruta. |
 | `client/src/components/ui/Button/Button.jsx` + `.module.css` | Botón reutilizable con variantes primario, secundario y fantasma, tamaños `md` (44 px) y `lg` (52 px), `loading` y `disabled`; con `to` funciona como enlace. |
@@ -67,7 +69,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/ui/Input/Input.jsx` + `.module.css` | Campo de formulario con etiqueta, ayuda y mensaje de error. |
 | `client/src/components/ui/Modal/Modal.jsx` + `.module.css` | Ventana modal accesible (cierre con Escape y foco atrapado). |
 | `client/src/components/ui/Spinner/Spinner.jsx` + `.module.css` | Indicador de carga. |
-| `client/src/components/ui/StatusBadge/StatusBadge.jsx` + `.module.css` | Etiqueta de estado: de una sala (libre, ocupada, no reservable; en el panel de empresa: publicada, sin precio, oculta), de una reserva (`PENDING_PAYMENT`, `CONFIRMED`…), de un pago o de una empresa (verificada, pendiente, rechazada o suspendida). |
+| `client/src/components/ui/StatusBadge/StatusBadge.jsx` + `.module.css` | Etiqueta de estado: de una sala (libre, ocupada, no reservable; en el panel de empresa: publicada, sin precio, oculta), de una reserva (`CONFIRMED`, `CANCELLED`…; `PENDING_PAYMENT` solo con el extra de Stripe), de un pago o de una empresa (verificada, pendiente, rechazada o suspendida). |
 | `client/src/components/ui/Select/Select.jsx` + `.module.css` | Desplegable con etiqueta, ayuda y mensaje de error (buscador, filtros, cambio de rol). |
 | `client/src/components/ui/Textarea/Textarea.jsx` + `.module.css` | Texto largo con etiqueta y error (motivo de rechazo, suspensión, cancelación o bloqueo). |
 | `client/src/components/ui/Checkbox/Checkbox.jsx` + `.module.css` | Casilla con etiqueta (equipamiento, aceptar condiciones). |
@@ -89,7 +91,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/layout/UserMenu/UserMenu.jsx` + `.module.css` | Menú desplegable del usuario en escritorio (reservas, panel según rol, cerrar sesión). |
 | `client/src/components/layout/MobileMenu/MobileMenu.jsx` + `.module.css` | Menú de navegación a pantalla completa en móvil. |
 | `client/src/components/layout/Footer/Footer.jsx` + `.module.css` | Pie de página. |
-| `client/src/components/layout/DashboardLayout/DashboardLayout.jsx` + `.module.css` | Plantilla con menú lateral para los paneles de empresa y admin. |
+| `client/src/components/layout/DashboardLayout/DashboardLayout.jsx` + `.module.css` | Plantilla de los paneles de empresa y admin, sin la cabecera ni el pie públicos: menú lateral (logo, rol, secciones y «Cerrar sesión»; en móvil, panel deslizante) y barra superior con `UserMenu`. Sin `links`, solo la barra (estado de la solicitud de alta). |
 | `client/src/components/search/SearchBar/SearchBar.jsx` + `.module.css` | Buscador de ciudad, fecha y personas (landing y resultados). |
 | `client/src/components/search/CategoryFilters/CategoryFilters.jsx` + `.module.css` | Filtros por tipo de sala (reuniones, eventos, formación, boxes privados). |
 | `client/src/components/search/BuildingCard/BuildingCard.jsx` + `.module.css` | Tarjeta de edificio en los resultados: foto, dirección, salas libres y precio desde. |
@@ -151,7 +153,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/pages/ResetPassword/ResetPassword.jsx` + `.module.css` | Recuperar contraseña: formulario de nueva contraseña desde el enlace. |
 | `client/src/pages/MyBookings/MyBookings.jsx` + `.module.css` | Reservas del cliente: próximas y pasadas, con cancelación. |
 | `client/src/pages/BookingDetailPage/BookingDetailPage.jsx` + `.module.css` | Detalle de una reserva del cliente, con cancelación. |
-| `client/src/pages/PaymentResult/PaymentResult.jsx` + `.module.css` | Vuelta desde Stripe: reserva confirmada, pago cancelado o reserva expirada. |
+| `client/src/pages/PaymentResult/PaymentResult.jsx` + `.module.css` | (extra) Vuelta desde Stripe: reserva confirmada, pago cancelado o reserva expirada. |
 | `client/src/pages/NotFound/NotFound.jsx` + `.module.css` | Página 404. |
 | `client/src/pages/company/CompanyDashboard/CompanyDashboard.jsx` + `.module.css` | Resumen del panel de empresa, con estado vacío en el primer acceso (sin edificios). |
 | `client/src/pages/company/CompanyRegister/CompanyRegister.jsx` + `.module.css` | Solicitud de alta como empresa (queda pendiente de aprobación). |
@@ -177,22 +179,24 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/package.json` | Dependencias y scripts de la API (`dev`, `start`, `lint`, `test`, `seed`, `make-admin`, `get-token`). |
+| `server/package.json` | Dependencias (incluye `express-rate-limit`) y scripts de la API (`dev`, `start`, `lint`, `test`, `seed`, `make-admin`, `sync-company-claims`, `get-token`). |
 | `server/eslint.config.js` | Reglas de ESLint para Node. |
-| `server/.env.example` | Plantilla de variables secretas de la API (Firebase Admin, Stripe, IA, URL de la web, puerto). Se copia a `.env` y nunca se sube. |
+| `server/.env.example` | Plantilla de variables secretas de la API (Firebase Admin, bucket de Storage `FIREBASE_STORAGE_BUCKET`, Stripe, IA, URL de la web, puerto). Se copia a `.env` y nunca se sube. |
+| `server/scripts/syncCompanyClaims.js` | Script idempotente: pone `companyApproved: true` al dueño de cada empresa `APPROVED` y `false` al resto (para las aprobadas antes de existir el claim). Escribe en consola qué cambia (`npm run sync-company-claims -w server`). |
 | `server/scripts/makeAdmin.js` | Script para convertir en admin a un usuario ya registrado (`npm run make-admin -w server -- correo@ejemplo.com`). |
 | `server/scripts/getToken.js` | Hace login con email y contraseña (`accounts:signInWithPassword` con `FIREBASE_WEB_API_KEY`) e imprime el ID token para probar la API en `/api/docs` (`npm run get-token -w server -- correo contraseña`). |
-| `server/scripts/seed.js` | Carga datos de demo en Firestore (empresa, edificio, plantas con su mapa, salas y unas reservas confirmadas) a partir de `scripts/data/`. Idempotente: ids fijos y `set` con `merge` (`npm run seed -w server`). |
+| `server/scripts/seed.js` | Carga datos de demo en Firestore (empresa, edificio, plantas con su mapa, salas y unas reservas confirmadas) a partir de `scripts/data/`. Idempotente: ids fijos y `set` con `merge` (`npm run seed -w server`). Las reservas llevan `code` fijo `IP-9xx` (por debajo de 1000) y no toca `counters/bookings`. |
 | `server/scripts/data/demo-floor.json` | Ejemplo de mapa de planta en el formato que usan el editor, el plano y la API. Sirve para el seed y para probar el front sin backend. |
  
 ### Back: `server/src/config/`
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/config/config.js` | Configuración del backend y conexión a la base de datos: lee y valida las variables de entorno y conecta con Firebase (Firestore y Auth) mediante `firebase-admin`. |
+| `server/src/config/config.js` | Configuración del backend y conexión a la base de datos: lee y valida las variables de entorno y conecta con Firebase (Firestore y Auth) mediante `firebase-admin`. Expone `config.appUrl` (de `APP_URL`; origen CORS permitido, por defecto `http://localhost:5173` solo fuera de producción), `config.storageBucket` (de `FIREBASE_STORAGE_BUCKET`, opcional) y `setStorageBucketForTests`. |
+| `server/src/config/bookingHours.js` | `BOOKING_HOURS`: horario reservable (8–20) que comparten los services y los validators. |
 | `server/src/config/roles.js` | Roles de usuario (`CLIENT`, `COMPANY`, `ADMIN`) del custom claim `role`, los mismos que en el front. |
 | `server/src/config/swagger.js` | Documentación de la API con Swagger: genera la especificación OpenAPI leyendo los comentarios `@openapi` de las rutas y la sirve en `/api/docs`. |
-| `server/src/config/stripe.js` | Cliente de Stripe (modo test) creado con la clave secreta. |
+| `server/src/config/stripe.js` | (extra) Cliente de Stripe (modo test) creado con la clave secreta. |
 | `server/src/config/ai.js` | Cliente del modelo de IA con visión (Anthropic) que detecta las salas en los planos. |
  
 ### Back: `server/src/routes/`
@@ -203,17 +207,17 @@ Cada archivo define los endpoints de un recurso y los documenta con un comentari
 | --- | --- |
 | `server/src/routes/health.routes.js` | Ruta pública `GET /api/health` para comprobar que la API responde. Es el ejemplo de comentario `@openapi` para el resto de rutas. |
 | `server/src/routes/auth.routes.js` | Rutas públicas de registro: `POST /api/auth/register/client` y `/register/company` (la empresa queda pendiente de aprobación). |
-| `server/src/routes/buildings.routes.js` | Rutas públicas de edificios: listado de edificios publicados y detalle con sus plantas. |
-| `server/src/routes/floors.routes.js` | Ruta pública del mapa de una planta con el estado de cada sala en una fecha. |
+| `server/src/routes/buildings.routes.js` | Rutas públicas de edificios: buscador `GET /api/buildings` (filtros `ciudad`, `personas`, `equipamiento`, `fecha`, `tipo`, `precioMax`, `orden`, `page`, `limit`) y detalle con sus plantas. |
+| `server/src/routes/floors.routes.js` | Ruta pública del mapa de una planta con el estado de cada sala en una fecha y, con `hora` (8–19), a esa hora. |
 | `server/src/routes/rooms.routes.js` | Rutas públicas de salas: ficha y horas libres. |
-| `server/src/routes/bookings.routes.js` | Rutas de reservas del cliente: crear, listar las propias y cancelar. |
-| `server/src/routes/payments.routes.js` | Rutas de pago del cliente: crea la sesión de Stripe Checkout. El webhook va en `webhook.routes.js`. |
-| `server/src/routes/webhook.routes.js` | Ruta del webhook de Stripe: recibe el body sin parsear para verificar la firma y confirma la reserva pagada. |
+| `server/src/routes/bookings.routes.js` | Rutas de reservas del cliente: crear, listar las propias, detalle (`GET /api/bookings/:id`) y cancelar. Todas exigen rol `CLIENT` (empresa y admin reciben 403); una reserva ajena responde 404 como una inexistente. |
+| `server/src/routes/payments.routes.js` | (extra) Rutas de pago del cliente: crea la sesión de Stripe Checkout. El webhook va en `webhook.routes.js`. |
+| `server/src/routes/webhook.routes.js` | (extra) Ruta del webhook de Stripe: recibe el body sin parsear para verificar la firma y confirma la reserva pagada. |
 | `server/src/routes/users.routes.js` | Rutas del perfil del usuario autenticado. |
 | `server/src/routes/company.routes.js` | Rutas del panel de empresa: alta, edificios, plantas, mapas (detección con IA, guardar, publicar), salas, reservas y bloqueos. Cada empresa solo accede a lo suyo. |
-| `server/src/routes/maps.routes.js` | Rutas de mapas de planta de la empresa: `PUT /api/company/floors/:id/map` (guardar) y `POST /api/company/floors/:id/publish` (publicar). |
-| `server/src/routes/companyBookings.routes.js` | Rutas del panel de empresa para reservas y bloqueos: `GET /api/company/bookings`, `PATCH /api/company/bookings/:id/cancel`, `GET` y `POST /api/company/blocks` y `DELETE /api/company/blocks/:id`. |
-| `server/src/routes/admin.routes.js` | Rutas del panel de admin: empresas, usuarios, reservas, pagos y reembolsos. |
+| `server/src/routes/maps.routes.js` | Rutas de mapas de planta de la empresa: `PUT /api/company/floors/:id/map` (guardar) `POST /api/company/floors/:id/publish` (publicar) y `POST /api/company/floors/:id/unpublish` (despublicar). |
+| `server/src/routes/companyBookings.routes.js` | Rutas del panel de empresa para reservas y bloqueos: `GET /api/company/bookings`, `PATCH /api/company/bookings/:id/cancel`, `GET` y `POST /api/company/blocks` y `DELETE /api/company/blocks/:id`. `GET /api/company/bookings/:id` devuelve el detalle de una reserva propia con el cliente. |
+| `server/src/routes/admin.routes.js` | Rutas del panel de admin (solo `ADMIN`): `GET /api/admin/companies?estado=`, `GET /api/admin/companies/:id` y `POST /api/admin/companies/:id/approve`, `/reject`, `/suspend` y `/reactivate`; con `authStrict` (rechaza tokens revocados); usuarios, reservas, pagos y reembolsos irán aquí. Además, `GET /api/admin/users`, `GET /api/admin/bookings`, `GET /api/admin/bookings/:id` y `GET /api/admin/summary`, con la misma protección. |
 | `server/src/routes/index.js` | Une todas las rutas bajo `/api` (excepto el webhook y la documentación, que se montan en `app.js`). |
  
 ### Back: `server/src/validators/`
@@ -222,28 +226,29 @@ Reglas de `express-validator`: un archivo por recurso y un export por endpoint (
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/validators/commonValidator.js` | Reglas reutilizables: id en la URL, fecha `AAAA-MM-DD` en la query y franja horaria. |
-| `server/src/validators/bookingValidator.js` | Validación de reservas: crear (`roomId`, `fecha`, `inicio`, `fin`; fecha no pasada, horas enteras e `inicio < fin`) y cancelar (id en la URL). |
+| `server/src/validators/commonValidator.js` | Reglas reutilizables: id en la URL, fecha `AAAA-MM-DD` y hora entera (8–19) en la query y franja horaria; `storageImageUrl`: solo URLs de Firebase Storage del bucket configurado dentro de `companies/{companyId}/` de la empresa del token (sin `..`, sin fragmento y solo con los parámetros `alt=media` y `token`; 400 si no hay bucket configurado); `normalizeStorageUrl` (sanitizer) guarda la URL canónica `origen + ruta + ?alt=media[&token=…]`. |
+| `server/src/validators/bookingValidator.js` | Validación de reservas: crear (`roomId`, `fecha`, `inicio`, `fin`; fecha no pasada, horas enteras e `inicio < fin`) y cancelar (id en la URL). `detail` valida el id de `GET /bookings/:id`. |
 | `server/src/validators/userValidator.js` | Validación del perfil de usuario. |
 | `server/src/validators/authValidator.js` | Validación del registro: email, contraseña (mín. 8), nombres, CIF español con dígito de control y teléfono de 9 dígitos. |
-| `server/src/validators/companyValidator.js` | Validación del panel de empresa: alta, edificios, plantas, datos de sala y bloqueos. |
-| `server/src/validators/mapValidator.js` | Validación de mapas: `validateMap` (función pura: dimensiones, origen, salas dentro del plano, tipos `ROOM_TYPES` e ids únicos), `saveMap` y `publishFloor` para las rutas. |
-| `server/src/validators/companyBookingsValidator.js` | Validación de reservas y bloqueos de empresa: filtros `desde`/`hasta` (máx. 366 días) y `roomId`, crear bloqueo (con `motivo` 1–200) y cancelar reserva (`motivo` 1–500). |
-| `server/src/validators/adminValidator.js` | Validación del panel de admin: aprobar o suspender empresas (`verified`) y cambio de rol. |
-| `server/src/validators/buildingValidator.js` | Validación de edificios públicos: id en la URL y fecha opcional del detalle. |
-| `server/src/validators/floorValidator.js` | Validación del mapa público de una planta: id en la URL y fecha opcional. |
+| `server/src/validators/companyValidator.js` | Validación del panel de empresa: alta, edificios, plantas, datos de sala y bloqueos; `fotos` solo admite URLs de Storage de la empresa (`storageImageUrl`). |
+| `server/src/validators/mapValidator.js` | Validación de mapas: `validateMap` (función pura: dimensiones, origen, salas dentro del plano, tipos `ROOM_TYPES` e ids únicos), `saveMap` (con `mapImageUrl` opcional validada con `storageImageUrl` y normalizada; `null` quita el plano) y `publishFloor` para las rutas. |
+| `server/src/validators/companyBookingsValidator.js` | Validación de reservas y bloqueos de empresa: filtros `desde`/`hasta` (máx. 366 días) y `roomId`, crear bloqueo (con `motivo` 1–200) y cancelar reserva (`motivo` 1–500). `detail` valida el id de `GET /company/bookings/:id`. |
+| `server/src/validators/adminValidator.js` | Validación del panel de admin: `idParam`, `list` (`estado` en español: pendiente, aprobada, rechazada o suspendida; sin arrays ni corchetes) y `reject`/`suspend` (`motivo` obligatorio, texto de 3 a 500 caracteres tras recortar). También `listUsers` (`rol` en inglés, `q` hasta 100, `page` 1–50), `listBookings` (`estado` en inglés, `desde`/`hasta`, `companyId` y `page` 1–25; mismo rango máximo de 366 días que las reservas de empresa), `getBooking` y `summary`. |
+| `server/src/validators/buildingValidator.js` | Validación de edificios públicos: id en la URL y fecha opcional del detalle (`getById`) y filtros del buscador (`search`: todos opcionales, rechaza arrays y claves con corchetes, con el error en el nombre base de la clave; `page` hasta 10000). |
+| `server/src/validators/floorValidator.js` | Validación del mapa público de una planta: id en la URL y fecha y hora opcionales; rechaza con 400 las claves `hora[]` y `hora[x]`. |
 | `server/src/validators/roomValidator.js` | Validación de salas públicas: id en la URL y fecha opcional para la disponibilidad. |
  
 ### Back: `server/src/middlewares/`
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/middlewares/auth.js` | Verifica el token de Firebase de la cabecera `Authorization` y deja en `req.user` el `uid`, el rol y el `companyId`. |
+| `server/src/middlewares/auth.js` | Verifica el token de Firebase de la cabecera `Authorization` y deja en `req.user` el `uid`, el rol y el `companyId`. `auth` no comprueba revocación; `authStrict` (rutas de admin) llama a `verifyIdToken(token, true)` y rechaza con `401` los tokens revocados. |
 | `server/src/middlewares/requireRole.js` | Corta la petición con `403` si el rol del usuario no es uno de los permitidos. |
-| `server/src/middlewares/requireApprovedCompany.js` | Tras `auth` y `requireRole`: corta con `403 COMPANY_NOT_APPROVED` si la empresa no está aprobada y la deja en `req.company`. |
+| `server/src/middlewares/requireApprovedCompany.js` | Tras `auth` y `requireRole`: corta con `403 COMPANY_NOT_APPROVED` si la empresa no está aprobada (mensaje según su estado: pendiente, rechazada o suspendida) y la deja en `req.company`. |
 | `server/src/middlewares/validate.js` | Recoge el resultado de los validators de `express-validator` y, si hay errores, responde `400 VALIDATION_ERROR` con el detalle por campo. |
 | `server/src/middlewares/errorHandler.js` | Respuesta de error única `{ error: { code, message, details } }` y 404 para rutas que no existen. Oculta el detalle de los 500. |
-| `server/src/middlewares/rateLimit.js` | Límites de peticiones: uno general para la API y otro estricto para la detección con IA (cuesta dinero). |
+| `server/src/middlewares/rateLimit.js` | Límites de peticiones con `express-rate-limit`: `generalLimiter` (300 cada 15 min por IP, en `/api`, en memoria: orientativo), `registerLimiter` (10 por hora) y `aiDetectLimiter` (10 por hora por uid, debe ir después de `auth`) que usan el store de Firestore. La IP sale de `x-nf-client-connection-ip` (Netlify) o `req.ip`. Responden `429 RATE_LIMITED`. Solo se saltan con `NODE_ENV=test` (fijado por `tests/setup.js`); nunca en producción. Orden en `app.js`: cors → límite general → json → docs → rutas. |
+| `server/src/middlewares/firestoreRateLimitStore.js` | Store de `express-rate-limit` sobre Firestore (`init`, `increment`, `decrement`, `resetKey`). Si Firestore falla: registro deja pasar y la IA responde `503 RATE_LIMIT_UNAVAILABLE` (fallar cerrado). |
  
 ### Back: `server/src/controllers/`
  
@@ -251,36 +256,38 @@ Un controlador por recurso, con un método por endpoint. Leen `req`, llaman al s
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/controllers/buildingsController.js` | Controlador de edificios públicos. Lee `req`, llama al service y responde; nunca habla con Firestore. |
+| `server/src/controllers/buildingsController.js` | Controlador de edificios públicos. Lee `req`, llama al service y responde (el buscador, sin `fecha`, con `Cache-Control: public, max-age=30`); nunca habla con Firestore. |
 | `server/src/controllers/floorsController.js` | Controlador del mapa público de una planta. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/roomsController.js` | Controlador de fichas y disponibilidad de salas. Lee `req`, llama al service y responde; nunca habla con Firestore. |
-| `server/src/controllers/bookingsController.js` | Controlador de reservas del cliente. Lee `req`, llama al service y responde; nunca habla con Firestore. |
-| `server/src/controllers/paymentsController.js` | Controlador de pagos: checkout de Stripe y webhook. Lee `req`, llama al service y responde; nunca habla con Firestore. |
+| `server/src/controllers/bookingsController.js` | Controlador de reservas del cliente. Lee `req`, llama al service y responde; nunca habla con Firestore. Incluye `getMyBooking` (detalle). |
+| `server/src/controllers/paymentsController.js` | (extra) Controlador de pagos: checkout de Stripe y webhook. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/usersController.js` | Controlador del perfil de usuario. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/authController.js` | Controlador del registro de clientes y empresas. Lee `req`, llama al service y responde; nunca habla con Firestore. |
 | `server/src/controllers/companyController.js` | Controlador del panel de empresa: alta, edificios, plantas, salas, reservas y bloqueos. Lee `req`, llama al service y responde; nunca habla con Firestore. |
-| `server/src/controllers/mapsController.js` | Controlador de mapas: guardar y publicar. Lee `req`, llama al service y responde; nunca habla con Firestore. |
-| `server/src/controllers/companyBookingsController.js` | Controlador de reservas y bloqueos de la empresa. Lee `req`, llama al service y responde; nunca habla con Firestore. |
-| `server/src/controllers/adminController.js` | Controlador del panel de admin. Lee `req`, llama al service y responde; nunca habla con Firestore. |
+| `server/src/controllers/mapsController.js` | Controlador de mapas: guardar, publicar y despublicar. Lee `req`, llama al service y responde; nunca habla con Firestore. |
+| `server/src/controllers/companyBookingsController.js` | Controlador de reservas y bloqueos de la empresa. Lee `req`, llama al service y responde; nunca habla con Firestore. Incluye `getBooking` (detalle). |
+| `server/src/controllers/adminController.js` | Controlador del panel de admin: empresas (listar, detalle, aprobar, rechazar, suspender, reactivar). Lee `req`, llama al service y responde; nunca habla con Firestore. También usuarios, reservas, detalle de reserva y resumen. |
  
 ### Back: `server/src/services/`
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/services/availabilityService.js` | Reglas de disponibilidad: calcula las horas libres de una sala (horario reservable 8–20) a partir de sus reservas `CONFIRMED` y sus `blocks`, el estado de una sala en un día (`FREE`, `OCCUPIED` o `UNAVAILABLE`) y detecta solapes (`nuevoInicio < existenteFin && nuevoFin > existenteInicio`) dentro de una transacción de Firestore. |
-| `server/src/services/bookingsService.js` | Crear, listar y cancelar reservas; calcula en el servidor `price`, `pricePeriod` y `totalAmount` a partir del `price` de la sala. |
-| `server/src/services/paymentsService.js` | Crea sesiones de Stripe Checkout, procesa el webhook (firma verificada) y hace reembolsos. |
-| `server/src/services/mapDetectionService.js` | Envía la imagen del plano a la IA con visión, le pide solo JSON con las salas detectadas (nombre, código, posición y tamaño) y lo valida antes de devolverlo como borrador de `mapData`. |
-| `server/src/services/mapsService.js` | Guarda el mapa de una planta (campos `ancho`, `alto`, `origen` y `salas` en `floors`), sincroniza la colección `rooms` en una transacción (crea las salas nuevas, conserva las existentes y marca como no reservables las que ya no están; `409 ROOM_ID_TAKEN` si el id es de otra planta) y publica la planta (`MAP_REQUIRED`, `NO_BOOKABLE_ROOMS`). |
-| `server/src/services/companyBookingsService.js` | Reservas de la empresa con datos del cliente (nombre y email), bloqueos de horas (crear con occupancy en transacción, listar, quitar) y cancelación de reservas por la empresa con motivo. |
-| `server/src/services/companyService.js` | Empresa propia (`getMyCompany`) y, para el panel de empresa, listar y crear/editar edificios, crear/editar plantas (409 `FLOOR_EXISTS` si el número ya existe en el edificio) y editar los datos comerciales de una sala. Body y respuestas en español; whitelist de campos y `companyId` siempre del token. |
-| `server/src/services/ownershipService.js` | Propiedad de recursos: `assertOwnedBy` (404 si no existe, 403 si es de otra empresa) y `getOwnedBuilding`, `getOwnedFloor` y `getOwnedRoom`. |
+| `server/src/services/availabilityService.js` | Reglas de disponibilidad: calcula las horas libres de una sala (horario reservable 8–20) a partir de sus reservas `CONFIRMED` y sus `blocks`, el estado de una sala en un día o en una hora (`FREE`, `OCCUPIED` o `UNAVAILABLE`; una sala sin precio no es reservable), `getDayItemsForRooms` (franjas de varias salas con una consulta por lote) y detecta solapes (`nuevoInicio < existenteFin && nuevoFin > existenteInicio`) dentro de una transacción de Firestore. |
+| `server/src/services/bookingsService.js` | Crear, listar y cancelar reservas; calcula en el servidor `price`, `pricePeriod` y `totalAmount` a partir del `price` de la sala. Asigna a cada reserva un código legible secuencial `IP-1000`, `IP-1001`… (contador `counters/bookings` leído y actualizado en la transacción), guarda `cancelledBy: CLIENT` al cancelar y ofrece `getMyBooking` (404 si es ajena) y `buildBookingDetail(booking, { room })` (reutiliza la sala ya leída); `translateConflict` traduce `ALREADY_EXISTS` a 409 `SLOT_TAKEN` y `ABORTED` (contención) a 409 `BUSY`. Ofrece también (sala, planta, edificio y quién canceló; nunca `userId` ni `companyId`). |
+| `server/src/services/paymentsService.js` | (extra) Crea sesiones de Stripe Checkout, procesa el webhook (firma verificada) y hace reembolsos. |
+| `server/src/services/mapDetectionService.js` | Envía la imagen del plano a la IA con visión, le pide solo JSON con las salas detectadas (nombre, código, posición y tamaño) y lo valida antes de devolverlo como borrador del mapa (`ancho`, `alto`, `origen`, `salas`). |
+| `server/src/services/futureBookingsService.js` | Cuenta las reservas futuras (`CONFIRMED` o `PENDING_PAYMENT`) de unas salas y redacta el aviso al despublicar o ocultar; no bloquea. |
+| `server/src/services/mapsService.js` | Guarda el mapa de una planta (campos `ancho`, `alto`, `origen` y `salas` en `floors`, y `mapImageUrl` si viene; `null` la borra), sincroniza la colección `rooms` en una transacción (crea las salas nuevas, conserva las existentes y marca como no reservables las que ya no están; `409 ROOM_ID_TAKEN` si el id es de otra planta) publica la planta (`MAP_REQUIRED`, `NO_BOOKABLE_ROOMS`) y la despublica (con aviso si el edificio publicado se queda sin plantas publicadas). |
+| `server/src/services/companyBookingsService.js` | Reservas de la empresa con datos del cliente (nombre y email), bloqueos de horas (crear con occupancy en transacción, listar, quitar) y cancelación de reservas por la empresa con motivo. `getBooking` da el detalle de una reserva propia con el cliente (404 `NOT_FOUND` si no existe o es de otra empresa; lee la sala una sola vez). |
+| `server/src/services/companyService.js` | Estados de empresa (`COMPANY_STATUS` con `SUSPENDED`, `companyStatus`, `companyEstado` en español incl. `suspendida`, `companyMotivo`), empresa propia (`getMyCompany`, con `estado` y `motivo`) y, para el panel de empresa, listar y crear/editar edificios, crear/editar plantas (409 `FLOOR_EXISTS` si el número ya existe en el edificio) editar los datos comerciales de una sala, publicar y despublicar edificios (`NO_PUBLISHED_FLOORS`), listar las salas con su estado (`publicada`, `sin_precio`, `oculta`) y mostrarlas u ocultarlas (`ROOM_WITHOUT_PRICE`, `ROOM_INACTIVE`). Body y respuestas en español; whitelist de campos y `companyId` siempre del token. |
+| `server/src/services/ownershipService.js` | Propiedad de recursos: `assertOwnedBy` (404 si no existe, 403 si es de otra empresa) y `getOwnedBuilding`, `getOwnedFloor` y `getOwnedRoom`. `assertBookingOwned` es el equivalente para reservas: lanza el mismo 404 `NOT_FOUND` ("La reserva no existe") si no existe o es ajena. |
 | `server/src/services/usersService.js` | Perfil de usuario y asignación de rol (`CLIENT`, `COMPANY`, `ADMIN`) mediante custom claims (`role`, `companyId`). |
-| `server/src/services/authService.js` | Registro: crea el usuario en Firebase Auth, su ficha en `users` (y la empresa pendiente) y su rol; si algo falla, deshace lo creado. Traduce `auth/email-already-exists` a `409 EMAIL_EXISTS`. `setAuthClientForTests` sustituye Firebase Auth en tests. |
-| `server/src/services/adminService.js` | Aprobación y suspensión de empresas y listados globales. |
-| `server/src/services/buildingsService.js` | Edificios públicos: listado de publicados y detalle con sus plantas y las salas libres de cada una en una fecha. Nunca devuelve quién reservó. |
-| `server/src/services/floorsService.js` | Mapa público de una planta publicada: sus salas con estado (`FREE`, `OCCUPIED`, `UNAVAILABLE`), capacidad y precio en una fecha. |
-| `server/src/services/roomsService.js` | Ficha pública de una sala y sus horas libres de un día (8–20); `404` si la sala, su planta o su edificio no están publicados. |
+| `server/src/services/authService.js` | Registro: crea el usuario en Firebase Auth, su ficha en `users` (y la empresa pendiente) y su rol; si algo falla, deshace lo creado. Traduce `auth/email-already-exists` a `409 EMAIL_EXISTS`. En el alta de empresa responde `409 EMAIL_IS_CLIENT` si el email ya es de un cliente y reserva el CIF creando `companyTaxIds/{cif}` con `create()` (`409 COMPANY_EXISTS` si ya existe, sin carreras); el rollback lo borra. `setAuthClientForTests` sustituye Firebase Auth en tests y `authClient()` lo comparte con `adminService`. Los claims iniciales de la empresa son `role`, `companyId` y `companyApproved: false`. |
+| `server/src/services/adminService.js` | Panel de admin sobre empresas: `listCompanies` (filtro por estado, más recientes primero), `getCompany` (con dueño y edificios) y las transiciones `approveCompany`, `rejectCompany`, `suspendCompany` y `reactivateCompany` (PENDING→APPROVED/REJECTED, APPROVED→SUSPENDED, SUSPENDED→APPROVED; otra → `400 INVALID_TRANSITION`). Cada una en una transacción (y después, fuera de ella, fija el claim `companyApproved` del dueño con el cliente de Auth, conservando sus demás claims: `true` al aprobar y reactivar, `false` más `revokeRefreshTokens` al rechazar y suspender; reintenta una vez y, si Auth falla, responde 200 con `aviso`): `status`, `verified`, `reviewedAt`, `reviewedBy` y el motivo; solo se toca la empresa (la API pública lee su estado, no se marcan edificios) y suspender avisa de las reservas futuras sin tocarlas (si el aviso falla, responde 200 sin `reservasFuturas`). También `listUsers` (rol, búsqueda sin tildes por nombre o email, orden por alta en la consulta con tope de 1000, páginas de 20, empresa por `companyId` o por `ownerUid` solo de los de la página), `listBookings` (rango y tope de 500 como en la empresa; resuelve sala, edificio, empresa y cliente solo de la página; con `truncado` añade `desdeEfectivo`), `getBooking` (con empresa y cliente, sin teléfono ni uid) y `getSummary` (empresas por estado, usuarios por rol y reservas del mes, con agregaciones `count()`; las empresas sin `status` cuentan como pendientes). El nombre del cliente es name + surname. |
+| `server/src/services/buildingsService.js` | Edificios públicos: buscador `searchPublished` (edificios publicados con salas reservables que encajan con los filtros, ordenados y paginados, con `salasDisponibles` y `precioDesde`) y detalle con sus plantas y las salas libres de cada una en una fecha. Nunca devuelve quién reservó. Solo salen edificios `PUBLISHED` de empresas `APPROVED` (`filterPublicBuildings`: lee las empresas por lotes de 30, ceil(E/30) consultas con E = empresas de los edificios publicados). |
+| `server/src/services/floorsService.js` | Mapa público de una planta publicada: sus salas con estado (`FREE`, `OCCUPIED`, `UNAVAILABLE`), capacidad y precio (solo de las salas reservables; si no, `null`) en una fecha o, con `hora`, a esa hora. Lee reservas y bloqueos por lotes. `404` si la empresa del edificio no está `APPROVED` (`isBuildingPublic`). |
+| `server/src/services/publicCatalogService.js` | Visibilidad pública: `isBuildingPublic(building, { tx })` y `filterPublicBuildings(buildings)` leen la empresa (por lotes en el buscador) y aplican `isPublicBuilding`. Empresa inexistente o no `APPROVED` = no público. |
+| `server/src/services/roomsService.js` | Ficha pública de una sala y sus horas libres de un día (8–20); `404` si la sala no es reservable (oculta o sin precio) o si ella, su planta o su edificio no están publicados o su empresa no está `APPROVED` (`isBuildingPublic`); `findPublicRoom(id, { tx })` también se usa dentro de la transacción de crear reserva (sin TOCTOU con suspender o despublicar); las reservas dan el mismo `404`. |
  
 ### Back: `server/src/models/`
  
@@ -288,15 +295,18 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `server/src/models/baseModel.js` | Funciones comunes de los models (`findById`, `create`, `upsert`, `update`, `remove`, `listBy`): añaden `createdAt` y `updatedAt` con `serverTimestamp()` y aceptan `{ tx }` para transacciones. |
-| `server/src/models/userModel.js` | Acceso a la colección `users` (id = UID de Firebase Auth). Campos: name, surname, email, phone, role (`CLIENT` \| `COMPANY` \| `ADMIN`), createdAt, updatedAt. |
-| `server/src/models/companyModel.js` | Acceso a la colección `companies` y a su subcolección `members` (userId, role `OWNER` \| `MANAGER` \| `EMPLOYEE`, joinedAt). Campos: name, legalName, taxId (CIF normalizado), contactName, description, logoUrl, email, phone, address, ownerUid, status (`PENDING` \| `APPROVED` \| `REJECTED`), verified (status === `APPROVED`), createdAt, updatedAt. `findByTaxId` busca por CIF. |
-| `server/src/models/buildingModel.js` | Acceso a la colección `buildings`. Campos: companyId, name, description, address, city, postalCode, country, latitude, longitude, floorCount, status, createdAt, updatedAt. |
+| `server/src/models/baseModel.js` | Funciones comunes de los models (`findById`, `create`, `upsert`, `update`, `remove`, `listBy`, `countWhere` con `count()`): añaden `createdAt` y `updatedAt` con `serverTimestamp()` y aceptan `{ tx }` para transacciones. |
+| `server/src/models/userModel.js` | Acceso a la colección `users` (id = UID de Firebase Auth). Campos: name, surname, email, phone, role (`CLIENT` \| `COMPANY` \| `ADMIN`), createdAt, updatedAt. `listAll({ role, limit = 1000 })` lista usuarios para el panel de admin, los más recientes primero, y `countWhere` cuenta por filtros. |
+| `server/src/models/companyTaxIdModel.js` | Acceso a la colección `companyTaxIds`: índice de CIF únicos (id = CIF normalizado; campos taxId, companyId). `create()` falla si el CIF ya existe, así dos registros simultáneos no pueden repetirlo; lo rellenan el registro, el seed y `sync-company-claims`. |
+| `server/src/models/rateLimitModel.js` | Acceso a la colección `rateLimits`: contador por clave de límite (id = hash; campos count, expiresAt). `hit` incrementa de forma atómica en transacción. Conviene activar la política TTL de Firestore sobre `expiresAt`. |
+| `server/src/models/companyModel.js` | Acceso a la colección `companies` y a su subcolección `members` (userId, role `OWNER` \| `MANAGER` \| `EMPLOYEE`, joinedAt). Campos: name, legalName, taxId (CIF normalizado), contactName, description, logoUrl, email, phone, address, ownerUid, status (`PENDING` \| `APPROVED` \| `REJECTED` \| `SUSPENDED`), verified (status === `APPROVED`), rejectionReason, suspensionReason, lastSuspensionReason, reviewedAt, reviewedBy (uid del admin), createdAt, updatedAt. `findByTaxId` busca por CIF, `findByOwnerUids` por dueño (lotes de 30), `countWhere` cuenta por filtros y `listAll` devuelve todas. |
+| `server/src/models/buildingModel.js` | Acceso a la colección `buildings`. Campos: companyId, name, description, address, city, postalCode, country, latitude, longitude, floorCount, photos, status (`DRAFT` \| `PUBLISHED`), createdAt, updatedAt. |
 | `server/src/models/floorModel.js` | Acceso a la colección `floors`. Campos: companyId, buildingId, name, level, mapImageUrl, status, createdAt, updatedAt y el mapa en el formato del editor: ancho, alto, origen y `salas` (id, codigo, nombre, tipo, x, y, w, h; el id es el de su documento en `rooms`). |
-| `server/src/models/roomModel.js` | Acceso a la colección `rooms` (las salas; id = id de la sala en `floors.salas`). Campos: companyId, buildingId, floorId, name, code, type, description, surface, capacity, price, pricePeriod (`HOUR`), amenities, bookable, status, openingHours, createdAt, updatedAt. |
-| `server/src/models/blockModel.js` | Acceso a la colección `blocks`: horas bloqueadas por la empresa en una sala. Campos: companyId, roomId, startDate, endDate, reason, createdAt, updatedAt. |
+| `server/src/models/roomModel.js` | Acceso a la colección `rooms` (las salas; id = id de la sala en `floors.salas`); `listByBuildings` lee las de varios edificios por lotes de 30. Campos: companyId, buildingId, floorId, name, code, type, description, surface, capacity, price, pricePeriod (`HOUR`), amenities, photos, bookable, status (`ACTIVE` \| `INACTIVE`), openingHours, createdAt, updatedAt. |
+| `server/src/models/blockModel.js` | Acceso a la colección `blocks`: horas bloqueadas por la empresa en una sala. Campos: companyId, roomId, startDate, endDate, reason, createdAt, updatedAt. `listByRooms` lee los de varias salas en lotes de 30 (`in`). |
 | `server/src/models/occupancyModel.js` | Acceso a la colección `occupancy`: una ficha por sala y hora ocupada con id fijo `roomId_AAAA-MM-DD_HH`, para que dos reservas no puedan coger la misma hora. Campos: companyId, roomId, date, hour, bookingId o blockId, createdAt, updatedAt. |
-| `server/src/models/bookingModel.js` | Acceso a la colección `bookings`. Campos: userId, companyId, roomId, startDate, endDate, price, pricePeriod, totalAmount, status (`PENDING_PAYMENT` \| `CONFIRMED` \| `CANCELLED` \| `EXPIRED` \| `COMPLETED`), paymentId, createdAt, updatedAt. |
+| `server/src/models/bookingModel.js` | Acceso a la colección `bookings`. Campos: userId, companyId, roomId, startDate, endDate, price, pricePeriod, totalAmount, status (`PENDING_PAYMENT` \| `CONFIRMED` \| `CANCELLED` \| `EXPIRED` \| `COMPLETED`), paymentId, cancelledAt, createdAt, updatedAt. La reserva nace `CONFIRMED`; `PENDING_PAYMENT` y `EXPIRED` solo con el extra de Stripe. `listByRooms` lee las de varias salas en lotes de 30 (`in`). Incluye también `code` (`IP-n`), `cancelledAt`, `cancelledBy` (`CLIENT` \| `COMPANY`) y `cancelReason`. `listInRange({ from, to, companyId, status, limit = 500 })` lista reservas de todas las empresas por `startDate` descendente. |
+| `server/src/models/counterModel.js` | Acceso a la colección `counters`: un documento por contador (`counters/bookings`, campo `value` = último número usado). `getValue` y `setValue` aceptan `{ tx }`; el service los usa dentro de la transacción de `createBooking` para el código `IP-n`. `counters/bookings` no se debe borrar ni bajar (se repetirían códigos). |
 | `server/src/models/paymentModel.js` | Acceso a la colección `payments`. Campos: bookingId, userId, amount, currency (`EUR`), provider (`STRIPE`), providerPaymentId, status (`PENDING` \| `SUCCEEDED` \| `FAILED` \| `REFUNDED`), createdAt, updatedAt. |
 | `server/src/models/favoriteModel.js` | Acceso a la colección `favorites`: salas guardadas por cada usuario. Estructura por definir; relaciona un usuario con una sala. |
  
@@ -305,10 +315,12 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | Archivo | Para qué sirve |
 | --- | --- |
 | `server/src/utils/httpError.js` | Clase `HttpError(status, code, message)` para lanzar errores con código HTTP desde cualquier capa. |
+| `server/src/utils/publicBuilding.js` | `isPublicBuilding(building, estadoEmpresa)`: parte pura de la visibilidad pública (`status === 'PUBLISHED'` y empresa `APPROVED`). El estado de la empresa (`companies.status`) es la única fuente de verdad; no hay marca en los edificios. |
 | `server/src/utils/cif.js` | `normalizeCif` (mayúsculas, sin espacios ni guiones) e `isValidCif` (formato y dígito de control del CIF). |
 | `server/src/utils/asyncHandler.js` | Envuelve controladores `async` para que sus errores lleguen al `errorHandler`. |
+| `server/src/utils/text.js` | `normalizeText`: minúsculas, sin tildes ni espacios de más (tolera `null`); para comparar ciudad y equipamiento. |
 | `server/src/utils/dates.js` | Utilidades de fechas: validar `AAAA-MM-DD` (fecha real del calendario), `todayString`, `dayRange` (rango de un día en hora local), `addDays`, `daysBetween` y `resolveRange` (rango por defecto de los listados: hoy − 30 días y +90). |
-| `server/src/app.js` | Configura Express sin arrancarlo: CORS, límite de peticiones, webhook de Stripe (body sin parsear), JSON, `/api/health`, documentación Swagger en `/api/docs`, rutas y manejo de errores. Lo usan `server.js`, la Netlify Function y los tests. |
+| `server/src/app.js` | Configura Express sin arrancarlo: `trust proxy` 1 (Netlify), CORS restringido a `config.appUrl` (sin `Origin` se permite; otro origen no recibe cabeceras CORS), límite general de peticiones, webhook de Stripe (body sin parsear), JSON, `/api/health`, documentación Swagger en `/api/docs`, rutas y manejo de errores. Lo usan `server.js`, la Netlify Function y los tests. |
 | `server/src/server.js` | Arranca la API en local con `app.listen`. En producción no se usa: Netlify ejecuta `app.js` como función. |
  
 ### Tests: `server/tests/`
@@ -318,18 +330,26 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | `server/tests/integration/health.test.js` | Test de integración: la API arranca y `GET /api/health` responde `{ ok: true }`. |
 | `server/tests/integration/auth.test.js` | Test de integración: `auth` y `requireRole` con `verifyIdToken` sustituido por un doble (`401 NO_TOKEN`, `401 INVALID_TOKEN`, `403 FORBIDDEN`) y `GET /api/users/me`. |
 | `server/tests/integration/docs.test.js` | Test de integración: la especificación OpenAPI se genera y documenta todas las rutas. |
-| `server/tests/integration/buildings.test.js` | Test de integración de `GET /api/buildings` y `/buildings/:id` con Firestore sustituido por un doble: solo publicados, salas libres por planta, 404 y 400. |
-| `server/tests/integration/floors.test.js` | Test de integración de `GET /api/floors/:id`: estado de cada sala (`FREE`, `OCCUPIED`, `UNAVAILABLE`) en una fecha, 404 y 400. |
-| `server/tests/integration/rooms.test.js` | Test de integración de `GET /api/rooms/:id` y `/rooms/:id/availability`: ficha, horas libres de 8 a 20, 404 y 400; ninguna respuesta incluye datos de clientes. |
-| `server/tests/integration/bookings.test.js` | Test de integración de las reservas del cliente con auth y Firestore sustituidos por dobles: crear (201, 409 `SLOT_TAKEN`, 400, 404, 401), importe y estado no manipulables, occupancy sin datos personales, `GET /bookings/me` y cancelar (200, 403, 400, 404). |
-| `server/tests/integration/companyBookings.test.js` | Test de integración de reservas y bloqueos del panel de empresa: listado propio sin datos privados del cliente y con filtros, bloqueos (201, 409 `SLOT_TAKEN`, 403, 404, 400, occupancy por hora), borrar bloqueo, cancelar reserva (motivo, `BOOKING_NOT_CANCELLABLE`, `BOOKING_STARTED`) y permisos (401, 403, `COMPANY_NOT_APPROVED`). |
-| `server/tests/helpers/publicData.js` | Datos de prueba de los endpoints públicos (edificios, plantas, salas, reservas y un bloqueo) y utilidades para levantar la app y hacer peticiones. |
-| `server/tests/unit/availability.test.js` | Tests unitarios de las reglas de disponibilidad: solapes, bordes de franja, horas libres y `assertSlotAvailable` con models dobles. |
+| `server/tests/integration/buildings.test.js` | Test de integración de `GET /api/buildings` y `/buildings/:id` con Firestore sustituido por un doble: solo publicados, salas libres por planta, 404 y 400, y el buscador (ciudad, personas, equipamiento, tipo, precioMax, fecha, orden, paginación y 400). |
+| `server/tests/integration/floors.test.js` | Test de integración de `GET /api/floors/:id`: estado de cada sala (`FREE`, `OCCUPIED`, `UNAVAILABLE`) en una fecha y a una hora (bordes, bloqueos, sala sin precio), precio y capacidad `null` en salas no reservables, 404 y 400 (incluye `hora[]=10`). |
+| `server/tests/integration/rooms.test.js` | Test de integración de `GET /api/rooms/:id` y `/rooms/:id/availability`: ficha, horas libres de 8 a 20, 404 (también sala oculta o sin precio) y 400; ninguna respuesta incluye datos de clientes. |
+| `server/tests/integration/bookings.test.js` | Test de integración de las reservas del cliente con auth y Firestore sustituidos por dobles: crear (201, 409 `SLOT_TAKEN`, 400, 404, 401), importe y estado no manipulables, occupancy sin datos personales, `GET /bookings/me` y cancelar (200, 404 si es ajena, 400, 404). También códigos `IP-n` consecutivos y `GET /bookings/:id` (200, 404, 401, 400, rol `COMPANY`/`ADMIN` 403 también al crear, listar y cancelar, reserva ajena 404 igual que inexistente, sin datos privados, `canceladaPor`). |
+| `server/tests/integration/publishing.test.js` | Test de integración de publicar edificios y gestionar salas de empresa: publicar/despublicar edificio y planta (`NO_PUBLISHED_FLOORS`, aviso, idempotencia), efecto en la API pública, `GET /company/buildings` con plantas, `GET /company/rooms` con estado y filtros, visibilidad de sala (`ROOM_WITHOUT_PRICE`, `ROOM_INACTIVE`) y permisos. |
+| `server/tests/integration/companyBookings.test.js` | Test de integración de reservas y bloqueos del panel de empresa: listado propio sin datos privados del cliente y con filtros, bloqueos (201, 409 `SLOT_TAKEN`, 403, 404, 400, occupancy por hora), borrar bloqueo, cancelar reserva (motivo, `BOOKING_NOT_CANCELLABLE`, `BOOKING_STARTED`) y permisos (401, 403, `COMPANY_NOT_APPROVED`). También `GET /company/bookings/:id` (200 con cliente, 404 si es de otra empresa igual que inexistente, 400, `COMPANY_NOT_APPROVED`, `canceladaPor` y motivo). |
+| `server/tests/integration/adminCompanies.test.js` | Test de integración del panel de admin sobre empresas: permisos (401, 403 a `CLIENT` y `COMPANY`), listado con filtro de estado y orden, detalle con dueño y edificios, aprobar, rechazar y suspender con su motivo (400 si falta o es corto), reactivar, transiciones inválidas (`INVALID_TRANSITION`), `reviewedBy`, empresa suspendida sin panel (`COMPANY_NOT_APPROVED`, `/companies/me`) y sin presencia en la API pública (buscador, edificio, planta, sala, disponibilidad y reserva) hasta reactivarla. |
+| `server/tests/integration/adminUsersBookings.test.js` | Test de integración de `GET /api/admin/users`, `/bookings`, `/bookings/:id` y `/summary`: permisos (401, 403, 200), filtros de rol, búsqueda, estado, empresa y rango (400 si es inválido), paginación, datos de sala, edificio, empresa y cliente sin teléfono ni uid, 404, cifras del resumen con `count()`, orden de usuarios, empresa por `ownerUid`, `desdeEfectivo`, `page` fuera de rango (400) y nombre completo del cliente. |
+| `server/tests/setup.js` | Se carga con `node --import` en `npm test`: fija `NODE_ENV=test` (multiplataforma) para saltarse los límites de peticiones. |
+| `server/tests/helpers/publicData.js` | Datos de prueba de los endpoints públicos (edificios, plantas, salas, reservas y un bloqueo) y utilidades para levantar la app (con un bucket de Storage de prueba, `TEST_BUCKET` y `storageUrl`) y hacer peticiones; `seedSearchData` añade un edificio en Málaga y otro sin salas reservables para el buscador. |
+| `server/tests/unit/translateConflict.test.js` | Tests unitarios de `translateConflict`: `ALREADY_EXISTS` a 409 `SLOT_TAKEN`, `ABORTED` a 409 `BUSY` y el resto sin cambios. |
+| `server/tests/unit/seed.test.js` | Tests unitarios del seed con Firestore doble: carga completa, códigos fijos `IP-9xx` (todos menores que `IP-1000`, sin tocar el contador) e idempotencia. |
+| `server/tests/unit/availability.test.js` | Tests unitarios de las reglas de disponibilidad: solapes, bordes de franja, horas libres, `roomStatusAtHour`, `isBookable` y `assertSlotAvailable` con models dobles. |
 | `server/tests/unit/mapValidator.test.js` | Tests unitarios de `validateMap`: mapa válido (y `floor-0.json`), salas fuera del plano, coordenadas y tamaños inválidos, tipo, id repetido o con barra, campos que faltan, origen, tipos de dato y más de 300 salas, con el `field` de cada error. |
 | `server/tests/unit/ownershipService.test.js` | Tests unitarios de `ownershipService`: 404 si el recurso no existe, 403 si es de otra empresa y devolución del recurso propio (edificio, planta, sala). |
-| `server/tests/integration/company.test.js` | Test de integración de `/api/company/*` (edificios, plantas y salas): permisos (401, 403 `FORBIDDEN`, 403 `COMPANY_NOT_APPROVED`), recurso ajeno sin cambios, 404, 409 `FLOOR_EXISTS`, 400 de validación y campos protegidos ignorados. |
-| `server/tests/integration/maps.test.js` | Test de integración de `PUT /api/company/floors/:id/map` y `POST .../publish`: permisos, guardar y volver a guardar sincronizando `rooms` (crea, conserva, desactiva sin borrar), 409 `ROOM_ID_TAKEN`, 400 de validación, planta ajena o inexistente, `MAP_REQUIRED`, `NO_BOOKABLE_ROOMS`, publicar idempotente y aviso en planta publicada. |
-| `server/tests/integration/register.test.js` | Test de integración del registro (`POST /api/auth/register/client` y `/company`) y `GET /api/companies/me`, con Firebase Auth, token y Firestore sustituidos por dobles: claims y estado fijados por el servidor, `409 EMAIL_EXISTS` y `COMPANY_EXISTS`, rollback si falla Firestore, `400` y permisos. |
+| `server/tests/integration/company.test.js` | Test de integración de `/api/company/*` (edificios, plantas y salas): permisos (401, 403 `FORBIDDEN`, 403 `COMPANY_NOT_APPROVED`), recurso ajeno sin cambios, 404, 409 `FLOOR_EXISTS`, 400 de validación (incluidas fotos fuera del bucket o de otra empresa, `..`, sin bucket configurado) y campos protegidos ignorados. |
+| `server/tests/integration/maps.test.js` | Test de integración de `PUT /api/company/floors/:id/map` y `POST .../publish`: permisos, guardar y volver a guardar sincronizando `rooms` (crea, conserva, desactiva sin borrar), 409 `ROOM_ID_TAKEN`, 400 de validación, planta ajena o inexistente, `MAP_REQUIRED`, `NO_BOOKABLE_ROOMS`, publicar idempotente y aviso en planta publicada, y `mapImageUrl` (URL propia 200; ajena, otro bucket, http, `..`, `storage.googleapis.com`, muy larga o sin bucket 400). |
+| `server/tests/integration/register.test.js` | Test de integración del registro (`POST /api/auth/register/client` y `/company`) y `GET /api/companies/me`, con Firebase Auth, token y Firestore sustituidos por dobles: claims y estado fijados por el servidor, `409 EMAIL_EXISTS`, `COMPANY_EXISTS` (también con dos registros simultáneos) y `EMAIL_IS_CLIENT`, índice `companyTaxIds` y su rollback, `400` y permisos. |
+| `server/tests/integration/security.test.js` | Test de integración de la seguridad de la API: `429 RATE_LIMITED` con límites bajos (general, registro e IA por uid/IP) y CORS restringido a `APP_URL`. |
+| `server/tests/unit/text.test.js` | Tests unitarios de `normalizeText`: tildes, mayúsculas, espacios y `null`. |
 | `server/tests/unit/cif.test.js` | Tests unitarios de `utils/cif.js`: normalizar y validar el dígito de control del CIF. |
 | `server/tests/unit/requireApprovedCompany.test.js` | Tests unitarios del middleware `requireApprovedCompany`: pasa solo con empresa aprobada (`403 COMPANY_NOT_APPROVED`, `401` sin usuario). |
  
@@ -390,6 +410,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 - `client/styles/style.css` queda solo para lo global: variables en `:root`, reset y estilos base. No lleva estilos de componentes.
 - En el CSS: colores, espacios y tipografía siempre con las variables de `:root` (`var(--color-primary)`); mobile first; clases para dar estilo y los `id` reservados para JavaScript; `@media` y `@keyframes` siempre al final de cada archivo.
 - Textos de la interfaz y mensajes de error en español.
+- Body y respuestas de la API en español (`nombre`, `precioHora`, `fecha`, `inicio`, `fin`, `estado`) y Firestore en inglés (`name`, `price`, `startDate`…); equivalencias en el [README](./README.md#9-idioma-de-la-api).
 
 ## Flujo de trabajo (GitHub)
 - Tablero: proyecto 6 de la org TheBridge-FullStackDeveloper.

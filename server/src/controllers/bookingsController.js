@@ -18,6 +18,11 @@ export async function listMyBookings(req, res) {
   res.json(await bookingsService.listMyBookings(req.user.uid));
 }
 
+// Detalle de una reserva propia.
+export async function getMyBooking(req, res) {
+  res.json(await bookingsService.getMyBooking(req.user.uid, req.params.id));
+}
+
 // Cancela una reserva propia.
 export async function cancelBooking(req, res) {
   res.json(await bookingsService.cancelBooking(req.user.uid, req.params.id));

@@ -1,6 +1,7 @@
 // Doble de Firestore en memoria para los tests unitarios de los models.
-// Implementa solo lo que usan los models: doc, collection, where, orderBy, limit, get, set, create, update, delete y runTransaction.
+// Implementa solo lo que usan los models: doc, collection, where, orderBy, limit, get, count, set, create, update, delete y runTransaction.
 // Uso: setDbForTests(createFakeFirestore()) antes de llamar a un model.
+import { FieldPath } from 'firebase-admin/firestore';
 
 const COMPARATORS = {
   '==': (a, b) => a === b,
@@ -8,6 +9,7 @@ const COMPARATORS = {
   '>': (a, b) => a > b,
   '<=': (a, b) => a <= b,
   '<': (a, b) => a < b,
+  in: (a, list) => list.includes(a),
 };
 
 // Las fechas se comparan por su valor numérico, igual que los Timestamp de Firestore.
@@ -56,7 +58,7 @@ export function createFakeFirestore() {
   }
 
   function query(path, filters = [], order = null, max = null) {
-    return {
+    const self = {
       where: (field, op, value) => query(path, [...filters, { field, op, value }], order, max),
       orderBy: (field, direction = 'asc') => query(path, filters, { field, direction }, max),
       limit: (n) => query(path, filters, order, n),
@@ -67,9 +69,13 @@ export function createFakeFirestore() {
             return parent === path;
           })
           .map(([docPath, data]) => ({ id: docPath.split('/').pop(), data }))
-          .filter(({ data }) =>
+          .filter(({ id, data }) =>
             filters.every(({ field, op, value }) =>
-              COMPARATORS[op](comparable(data[field]), comparable(value)),
+              COMPARATORS[op](
+                // FieldPath.documentId() filtra por el id del documento.
+                field instanceof FieldPath ? id : comparable(data[field]),
+                Array.isArray(value) ? value : comparable(value),
+              ),
             ),
           );
         if (order) {
@@ -83,7 +89,15 @@ export function createFakeFirestore() {
         const snaps = docs.map(({ id, data }) => makeSnap(id, data));
         return { docs: snaps, size: snaps.length, empty: snaps.length === 0 };
       },
+      // Agregación count(): ignora orderBy y limit, como Firestore.
+      count: () => ({
+        async get() {
+          const { size } = await query(path, filters).get();
+          return { data: () => ({ count: size }) };
+        },
+      }),
     };
+    return self;
   }
 
   function collectionRef(path) {

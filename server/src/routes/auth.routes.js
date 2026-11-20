@@ -2,6 +2,7 @@
 import { Router } from 'express';
 
 import { registerClient, registerCompany } from '../controllers/authController.js';
+import { registerLimiter } from '../middlewares/rateLimit.js';
 import { validate } from '../middlewares/validate.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import * as authValidator from '../validators/authValidator.js';
@@ -53,9 +54,12 @@ const router = Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       429:
+ *         $ref: '#/components/responses/TooManyRequests'
  */
 router.post(
   '/auth/register/client',
+  registerLimiter,
   authValidator.registerClient,
   validate,
   asyncHandler(registerClient),
@@ -119,14 +123,17 @@ router.post(
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       409:
- *         description: Ya existe una cuenta con ese email (`EMAIL_EXISTS`) o una empresa con ese CIF (`COMPANY_EXISTS`).
+ *         description: Ya existe una cuenta con ese email (`EMAIL_EXISTS`), el email es de un cliente (`EMAIL_IS_CLIENT`) o ya hay una empresa con ese CIF (`COMPANY_EXISTS`).
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       429:
+ *         $ref: '#/components/responses/TooManyRequests'
  */
 router.post(
   '/auth/register/company',
+  registerLimiter,
   authValidator.registerCompany,
   validate,
   asyncHandler(registerCompany),

@@ -1,4 +1,4 @@
-// Validación de reservas del cliente: crear (roomId, fecha, inicio, fin) y cancelar (id en la URL).
+// Validación de reservas del cliente: crear (roomId, fecha, inicio, fin), detalle y cancelar (id en la URL).
 import { body } from 'express-validator';
 
 import { isValidDateString, todayString } from '../utils/dates.js';
@@ -41,4 +41,5 @@ export const finBody = body('fin')
   .withMessage('fin debe ser mayor que inicio');
 
 export const create = [roomIdBody, fechaBody, inicioBody, finBody];
+export const detail = [idParam];
 export const cancel = [idParam];

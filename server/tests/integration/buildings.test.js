@@ -3,9 +3,19 @@ import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 
 import { setDbForTests } from '../../src/config/config.js';
+import * as blockModel from '../../src/models/blockModel.js';
 import * as bookingModel from '../../src/models/bookingModel.js';
+import * as roomModel from '../../src/models/roomModel.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
-import { FECHA, getJson, listen, privateWordsIn, seedPublicData } from '../helpers/publicData.js';
+import {
+  FECHA,
+  getJson,
+  listen,
+  privateWordsIn,
+  seedPublicData,
+  seedSearchData,
+  seedRoomWithoutPrice,
+} from '../helpers/publicData.js';
 
 describe('Edificios públicos', () => {
   let server;
@@ -32,14 +42,212 @@ describe('Edificios públicos', () => {
       // Comprobar
       assert.equal(status, 200);
       assert.deepEqual(
-        body.map((b) => b.id),
+        body.edificios.map((b) => b.id),
         ['b-pub'],
       );
-      assert.equal(body[0].nombre, 'Edificio publicado');
+      assert.equal(body.edificios[0].nombre, 'Edificio publicado');
       for (const campo of ['companyId', 'status', 'demo']) {
-        assert.equal(campo in body[0], false, campo);
+        assert.equal(campo in body.edificios[0], false, campo);
       }
       assert.deepEqual(privateWordsIn(text), []);
+    });
+
+    describe('buscador', () => {
+      const search = (qs) => getJson(baseUrl, `/api/buildings?${qs}`);
+      const ids = async (qs) => (await search(qs)).body.edificios.map((b) => b.id);
+
+      beforeEach(async () => {
+        await seedSearchData();
+      });
+
+      it('sin filtros lista edificios con salas reservables y resume salas, precio y foto', async () => {
+        const { body, text } = await search('');
+        assert.deepEqual(
+          body.edificios.map((b) => b.id),
+          ['b-mal', 'b-pub'],
+        );
+        assert.deepEqual([body.total, body.page, body.limit], [2, 1, 20]);
+        const [mal, pub] = body.edificios;
+        assert.deepEqual(
+          [mal.salasDisponibles, mal.precioDesde, mal.foto],
+          [3, 10, 'https://example.com/malaga.jpg'],
+        );
+        assert.deepEqual([pub.salasDisponibles, pub.precioDesde, pub.foto], [5, 25, null]);
+        assert.equal(mal.ciudad, 'Málaga');
+        assert.equal('companyId' in mal, false);
+        assert.equal(text.includes('c1'), false);
+        assert.deepEqual(privateWordsIn(text), []);
+      });
+
+      it('nunca devuelve edificios DRAFT, plantas DRAFT, salas no reservables ni edificios sin salas reservables', async () => {
+        const { body } = await search('');
+        const all = body.edificios.map((b) => b.id);
+        assert.ok(!all.includes('b-draft'));
+        assert.ok(!all.includes('b-empty'));
+        // r-mal-draft (1 €, planta DRAFT) no cuenta: el mínimo de Málaga sigue siendo 10.
+        assert.equal(body.edificios.find((b) => b.id === 'b-mal').precioDesde, 10);
+        // r-nobook, r-inactive y r-ghost no cuentan: b-pub tiene 5 salas.
+        assert.equal(body.edificios.find((b) => b.id === 'b-pub').salasDisponibles, 5);
+        assert.deepEqual(await ids('personas=100'), []);
+      });
+
+      it('ciudad: contiene, sin mayúsculas ni tildes', async () => {
+        assert.deepEqual(await ids('ciudad=malaga'), ['b-mal']);
+        assert.deepEqual(await ids('ciudad=M%C3%81LAG'), ['b-mal']);
+        assert.deepEqual(await ids('ciudad=evil'), ['b-pub']);
+        assert.deepEqual(await ids('ciudad=zaragoza'), []);
+      });
+
+      it('personas es la capacidad mínima', async () => {
+        assert.deepEqual(await ids('personas=10'), ['b-pub', 'b-mal']);
+        assert.deepEqual(await ids('personas=11'), ['b-mal']);
+        const { body } = await search('personas=11');
+        assert.equal(body.edificios[0].salasDisponibles, 1);
+        assert.deepEqual(await ids('personas=41'), []);
+      });
+
+      it('equipamiento exige todos los elementos, normalizados', async () => {
+        assert.deepEqual(await ids('equipamiento=wifi'), ['b-mal', 'b-pub']);
+        assert.deepEqual(await ids('equipamiento=proyector'), ['b-mal']);
+        assert.deepEqual(await ids('equipamiento=WiFi,%20Pantalla'), ['b-pub', 'b-mal']);
+        const { body } = await search('equipamiento=wifi,pantalla&ciudad=malaga');
+        assert.equal(body.edificios[0].salasDisponibles, 1);
+        assert.deepEqual(await ids('equipamiento=wifi,proyector,pantalla&ciudad=sevilla'), []);
+      });
+
+      it('tipo filtra por sala o box', async () => {
+        assert.deepEqual(await ids('tipo=box'), ['b-mal']);
+        assert.deepEqual(await ids('tipo=sala'), ['b-mal', 'b-pub']);
+      });
+
+      it('precioMax es el precio máximo por hora', async () => {
+        assert.deepEqual(await ids('precioMax=10'), ['b-mal']);
+        assert.deepEqual(await ids('precioMax=25'), ['b-mal', 'b-pub']);
+        assert.deepEqual(await ids('precioMax=9.99'), []);
+      });
+
+      it('fecha excluye las salas sin ninguna hora libre ese día', async () => {
+        // r-mal-full (4 pers., 15 €) encaja con los filtros pero está ocupada de 8 a 20.
+        const qs = 'ciudad=malaga&personas=3&precioMax=20';
+        assert.deepEqual(await ids(qs), ['b-mal']);
+        assert.deepEqual(await ids(`${qs}&fecha=${FECHA}`), []);
+        assert.deepEqual(await ids(`${qs}&fecha=2026-06-16`), ['b-mal']);
+      });
+
+      it('fecha: una sala ocupada o bloqueada todo el día no cuenta', async () => {
+        const qs = `fecha=${FECHA}&ciudad=sevilla`;
+        const antes = (await search(qs)).body.edificios[0].salasDisponibles;
+        await blockModel.upsert('bl-all', {
+          companyId: 'c1',
+          roomId: 'r-up',
+          startDate: new Date(2026, 5, 15, 8),
+          endDate: new Date(2026, 5, 15, 20),
+        });
+        const despues = (await search(qs)).body.edificios[0].salasDisponibles;
+        assert.equal(despues, antes - 1);
+        // Una reserva parcial deja huecos: r-busy (10-12) sigue contando.
+        assert.equal(despues, 5 - 1);
+      });
+
+      it('combina varios filtros', async () => {
+        assert.deepEqual(
+          await ids('ciudad=malaga&personas=30&equipamiento=proyector&tipo=sala&precioMax=60'),
+          ['b-mal'],
+        );
+        assert.deepEqual(await ids('ciudad=malaga&personas=30&precioMax=59'), []);
+        assert.deepEqual(await ids(`ciudad=sevilla&tipo=box&fecha=${FECHA}`), []);
+      });
+
+      it('pagina con page y limit, y total cuenta antes de paginar', async () => {
+        const p1 = (await search('limit=1')).body;
+        assert.deepEqual(
+          [p1.edificios.map((b) => b.id), p1.total, p1.page, p1.limit],
+          [['b-mal'], 2, 1, 1],
+        );
+        const p2 = (await search('limit=1&page=2')).body;
+        assert.deepEqual([p2.edificios.map((b) => b.id), p2.total, p2.page], [['b-pub'], 2, 2]);
+        const p3 = (await search('limit=1&page=3')).body;
+        assert.deepEqual([p3.edificios, p3.total], [[], 2]);
+      });
+
+      it('orden=precio (por defecto) ordena por precio desde y desempata por más salas', async () => {
+        assert.deepEqual(await ids('orden=precio'), ['b-mal', 'b-pub']);
+        await roomModel.update('r-mal-box', { price: 25 });
+        await roomModel.update('r-mal-full', { price: 25 });
+        // Mismo precio desde (25): primero el que tiene más salas.
+        assert.deepEqual(await ids(''), ['b-pub', 'b-mal']);
+      });
+
+      it('orden=salas ordena por más salas y desempata por precio y nombre', async () => {
+        assert.deepEqual(await ids('orden=salas'), ['b-pub', 'b-mal']);
+        // Empate a 5 salas: gana el más barato.
+        await roomModel.upsert('r-mal-x1', {
+          ...(await roomModel.findById('r-mal-full')),
+          price: 30,
+        });
+        await roomModel.upsert('r-mal-x2', {
+          ...(await roomModel.findById('r-mal-full')),
+          price: 30,
+        });
+        assert.deepEqual(await ids('orden=salas'), ['b-mal', 'b-pub']);
+        // Empate también en precio: por nombre («Centro Málaga» antes que «Edificio publicado»).
+        await roomModel.update('r-mal-box', { price: 25 });
+        await roomModel.update('r-mal-full', { price: 25 });
+        assert.deepEqual(await ids('orden=salas'), ['b-mal', 'b-pub']);
+      });
+
+      it('responde 400 con parámetros inválidos', async () => {
+        const malos = [
+          'personas=0',
+          'personas=1001',
+          'personas=1.5',
+          'personas=abc',
+          'tipo=oficina',
+          'precioMax=0',
+          'precioMax=10001',
+          'precioMax=abc',
+          'orden=barato',
+          'page=0',
+          'page=1.5',
+          'page=10001',
+          `page=${'9'.repeat(30)}`,
+          'limit=0',
+          'limit=51',
+          'fecha=2026-02-30',
+          `ciudad=${'a'.repeat(101)}`,
+          'ciudad=a&ciudad=b',
+          'ciudad[]=x',
+          'personas[a]=3',
+          'equipamiento[]=wifi',
+          'equipamiento=wi$fi',
+          `equipamiento=${Array.from({ length: 31 }, (_, i) => `e${i}`).join(',')}`,
+          `equipamiento=${'a'.repeat(51)}`,
+        ];
+        for (const qs of malos) {
+          const { status, body } = await search(qs);
+          assert.equal(status, 400, qs);
+          assert.equal(body.error.code, 'VALIDATION_ERROR', qs);
+        }
+      });
+
+      it('el error por corchetes apunta al nombre base de la clave', async () => {
+        const { status, body } = await search('personas[a]=1');
+        assert.equal(status, 400);
+        assert.equal(body.error.details[0].field, 'personas');
+      });
+
+      it('envía Cache-Control corto solo cuando no viene fecha', async () => {
+        const sin = await fetch(`${baseUrl}/api/buildings?ciudad=sevilla`);
+        assert.equal(sin.headers.get('cache-control'), 'public, max-age=30');
+        const con = await fetch(`${baseUrl}/api/buildings?fecha=${FECHA}`);
+        assert.equal(con.status, 200);
+        assert.equal(con.headers.get('cache-control')?.includes('public') ?? false, false);
+      });
+
+      it('acepta tildes en el equipamiento y límites correctos', async () => {
+        assert.equal((await search('equipamiento=Pantalla%20Gr%C3%A1nde')).status, 200);
+        assert.equal((await search('limit=50&personas=1000&precioMax=10000')).status, 200);
+      });
     });
   });
 
@@ -92,6 +300,14 @@ describe('Edificios públicos', () => {
       assert.equal(status, 400);
       assert.equal(body.error.code, 'VALIDATION_ERROR');
       assert.equal(body.error.details[0].field, 'fecha');
+    });
+
+    it('una sala reservable sin precio no cuenta como libre', async () => {
+      const antes = await getJson(baseUrl, `/api/buildings/b-pub?fecha=${FECHA}`);
+      await seedRoomWithoutPrice();
+      const { status, body } = await getJson(baseUrl, `/api/buildings/b-pub?fecha=${FECHA}`);
+      assert.equal(status, 200);
+      assert.equal(body.salasLibres, antes.body.salasLibres);
     });
   });
 });
