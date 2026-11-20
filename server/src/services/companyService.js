@@ -1,4 +1,4 @@
-// Reglas de empresas: estado (PENDING, APPROVED, REJECTED) y su nombre en español, y consulta de la empresa propia.
+// Reglas de empresas: estado (PENDING, APPROVED, REJECTED, SUSPENDED) y su nombre en español, y consulta de la empresa propia.
 import * as buildingModel from '../models/buildingModel.js';
 import * as companyModel from '../models/companyModel.js';
 import { runTransaction } from '../models/baseModel.js';
@@ -12,22 +12,37 @@ export const COMPANY_STATUS = Object.freeze({
   PENDING: 'PENDING',
   APPROVED: 'APPROVED',
   REJECTED: 'REJECTED',
+  SUSPENDED: 'SUSPENDED',
 });
 
 const STATUS_ES = {
   [COMPANY_STATUS.PENDING]: 'pendiente',
   [COMPANY_STATUS.APPROVED]: 'aprobada',
   [COMPANY_STATUS.REJECTED]: 'rechazada',
+  [COMPANY_STATUS.SUSPENDED]: 'suspendida',
 };
+
+// Estado de una empresa en Firestore. Si es antigua y no tiene status, se deriva de verified.
+export function companyStatus(company) {
+  if (COMPANY_STATUS[company?.status]) return company.status;
+  return company?.verified === true ? COMPANY_STATUS.APPROVED : COMPANY_STATUS.PENDING;
+}
+
+// Motivo vigente: de rechazo o de suspensión según el estado; null si no hay.
+export function companyMotivo(company) {
+  const status = companyStatus(company);
+  if (status === COMPANY_STATUS.REJECTED) return company.rejectionReason ?? null;
+  if (status === COMPANY_STATUS.SUSPENDED) return company.suspensionReason ?? null;
+  return null;
+}
 
 // Estado en español de una empresa. Si es antigua y no tiene status, se deriva de verified.
 export function companyEstado(company) {
-  if (STATUS_ES[company?.status]) return STATUS_ES[company.status];
-  return company?.verified === true ? 'aprobada' : 'pendiente';
+  return STATUS_ES[companyStatus(company)];
 }
 
 // Convierte un timestamp de Firestore (o fecha) a ISO; si no hay, undefined.
-function toIso(value) {
+export function toIso(value) {
   if (!value) return undefined;
   const date = typeof value.toDate === 'function' ? value.toDate() : new Date(value);
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
@@ -297,6 +312,7 @@ export async function getMyCompany(companyId) {
     phone: company.phone ?? null,
     email: company.email ?? null,
     estado: companyEstado(company),
+    motivo: companyMotivo(company),
     createdAt: toIso(company.createdAt),
   };
 }

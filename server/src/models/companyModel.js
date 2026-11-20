@@ -1,9 +1,14 @@
-// Acceso a la colección companies y a su subcolección members (userId, role OWNER | MANAGER | EMPLOYEE, joinedAt). Campos: name, legalName, taxId (CIF normalizado), contactName, description, logoUrl, email, phone, address, ownerUid, status (PENDING | APPROVED | REJECTED), verified (status === APPROVED), createdAt, updatedAt.
+// Acceso a la colección companies y a su subcolección members (userId, role OWNER | MANAGER | EMPLOYEE, joinedAt). Campos: name, legalName, taxId (CIF normalizado), contactName, description, logoUrl, email, phone, address, ownerUid, status (PENDING | APPROVED | REJECTED | SUSPENDED), verified (status === APPROVED), rejectionReason, suspensionReason, lastSuspensionReason, reviewedAt, reviewedBy (uid del admin), createdAt, updatedAt.
 import { createModel, now, runQuery, toObject } from './baseModel.js';
 
 const base = createModel('companies');
 
 export const { findById, create, upsert, update, remove } = base;
+
+// Todas las empresas (el panel de admin filtra y ordena en memoria).
+export function listAll() {
+  return runQuery(base.collection());
+}
 
 // Empresas aprobadas (true) o pendientes (false).
 export function listByVerified(verified) {

@@ -6,6 +6,7 @@ import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
+import { isPublicBuilding } from '../utils/publicBuilding.js';
 import { freeSlots, getDayItems, isBookable } from './availabilityService.js';
 
 // Devuelve { room, floor, building } si la sala es pública; si no, lanza 404.
@@ -16,7 +17,7 @@ export async function findPublicRoom(id) {
   const floor = await floorModel.findById(room.floorId);
   if (!floor || floor.status !== 'PUBLISHED') throw notFound();
   const building = await buildingModel.findById(floor.buildingId);
-  if (!building || building.status !== 'PUBLISHED') throw notFound();
+  if (!isPublicBuilding(building)) throw notFound();
   return { room, floor, building };
 }
 

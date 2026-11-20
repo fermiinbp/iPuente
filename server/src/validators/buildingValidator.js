@@ -12,7 +12,7 @@ const isScalar = (v) => typeof v === 'string' || typeof v === 'number';
 
 // Rechaza claves como ciudad[] o personas[a]: Express no las agrupa en el parámetro y se
 // ignorarían sin avisar. El error apunta al nombre base de la clave (antes del corchete).
-function sinCorchetes(req, res, next) {
+export function sinCorchetes(req, res, next) {
   const clave = Object.keys(req.query).find((k) => k.includes('['));
   if (clave === undefined) return next();
   const err = new HttpError(400, 'VALIDATION_ERROR', 'La petición no es válida');

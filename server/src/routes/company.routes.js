@@ -18,7 +18,7 @@ const router = Router();
  *   get:
  *     tags: [Empresa]
  *     summary: Devuelve la empresa del usuario autenticado
- *     description: 'Incluye su estado (`pendiente`, `aprobada` o `rechazada`). Disponible aunque la empresa aún no esté aprobada.'
+ *     description: 'Incluye su estado (`pendiente`, `aprobada`, `rechazada` o `suspendida`) y su `motivo` (de rechazo o suspensión, o null). Disponible aunque la empresa aún no esté aprobada.'
  *     security:
  *       - bearerAuth: []
  *     responses:

@@ -6,6 +6,7 @@ import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
+import { isPublicBuilding } from '../utils/publicBuilding.js';
 import { normalizeText } from '../utils/text.js';
 import {
   freeSlots,
@@ -69,11 +70,13 @@ export async function searchPublished(filtros = {}) {
   const { fecha, orden, page = 1, limit = DEFAULT_LIMIT } = filtros;
   const equipamiento = (filtros.equipamiento ?? []).map(normalizeText).filter(Boolean);
   const ciudad = normalizeText(filtros.ciudad);
-  const [allBuildings, floors] = await Promise.all([
+  const [published, floors] = await Promise.all([
     buildingModel.listByStatus('PUBLISHED'),
     floorModel.listByStatus('PUBLISHED'),
   ]);
-  const buildings = allBuildings.filter((b) => normalizeText(b.city).includes(ciudad));
+  const buildings = published
+    .filter(isPublicBuilding)
+    .filter((b) => normalizeText(b.city).includes(ciudad));
   const buildingsById = new Map(buildings.map((b) => [b.id, b]));
   const floorIds = new Set(floors.filter((f) => buildingsById.has(f.buildingId)).map((f) => f.id));
   const allRooms = await roomModel.listByBuildings([...buildingsById.keys()]);
@@ -109,7 +112,7 @@ export async function searchPublished(filtros = {}) {
 
 export async function getPublished(id, fecha = todayString()) {
   const building = await buildingModel.findById(id);
-  if (!building || building.status !== 'PUBLISHED') {
+  if (!isPublicBuilding(building)) {
     throw new HttpError(404, 'NOT_FOUND', 'El edificio no existe');
   }
   const floors = (await floorModel.listByBuilding(id))

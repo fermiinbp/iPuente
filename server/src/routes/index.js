@@ -1,6 +1,7 @@
 // Une todas las rutas bajo /api (excepto el webhook y la documentación, que se montan en app.js).
 import { Router } from 'express';
 
+import adminRoutes from './admin.routes.js';
 import authRoutes from './auth.routes.js';
 import bookingsRoutes from './bookings.routes.js';
 import buildingsRoutes from './buildings.routes.js';
@@ -15,6 +16,7 @@ import usersRoutes from './users.routes.js';
 const router = Router();
 
 router.use(healthRoutes);
+router.use(adminRoutes);
 router.use(authRoutes);
 router.use(bookingsRoutes);
 router.use(buildingsRoutes);
