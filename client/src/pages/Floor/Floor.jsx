@@ -1,9 +1,11 @@
 // Página de una planta: plano 3D con el estado de cada sala en la fecha elegida, lista de salas y panel de sala.
-import { lazy, Suspense, useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import ErrorBoundary from '@/components/three/ErrorBoundary/ErrorBoundary.jsx';
+import FloorSelector from '@/components/building/FloorSelector/FloorSelector.jsx';
 import Legend from '@/components/floor-plan/Legend/Legend.jsx';
 import RoomSidePanel from '@/components/room/RoomSidePanel/RoomSidePanel.jsx';
+import Breadcrumbs from '@/components/ui/Breadcrumbs/Breadcrumbs.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
@@ -13,6 +15,7 @@ import { useFetch } from '@/hooks/useFetch.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import { FLOOR_CAMERA, FLOOR_PLAN } from '@/pages/Landing/floorPlanData.js';
 import { FLOORS_HERO, roomsForFloor } from '@/pages/Landing/heroBuildingData.js';
+import { getBuilding } from '@/services/buildingsService.js';
 import { getFloor } from '@/services/floorsService.js';
 import { formatLongDate, todayString } from '@/utils/dates.js';
 import { hasWebGL } from '@/utils/webgl.js';
@@ -59,12 +62,21 @@ function demoPlan(floorId) {
 export default function Floor() {
   const { buildingId, floorId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const fecha = searchParams.get('date') || todayString();
+  const people = searchParams.get('people') ?? '';
   const { data, error, loading, reload } = useFetch(
     (signal) => getFloor(floorId, { fecha, signal }),
     `${floorId}|${fecha}`,
   );
+  // Plantas hermanas para el selector. Si no llegan, la página funciona igual (sin selector).
+  const { data: building } = useFetch(
+    (signal) => getBuilding(buildingId, { fecha, signal }).catch(() => null),
+    `${buildingId}|${fecha}|plantas`,
+  );
   const [selectedId, setSelectedId] = useState(null);
+  const roomButtons = useRef({});
+  const lastFocusedId = useRef(null);
 
   const demo = error ? demoPlan(floorId) : null;
   const plan = useMemo(() => (data ? toPlan(data) : demo), [data, demo]);
@@ -79,7 +91,21 @@ export default function Floor() {
   );
   const webgl = hasWebGL();
 
-  const backTo = `/buildings/${buildingId}?date=${encodeURIComponent(fecha)}`;
+  // Escape cierra el panel y devuelve el foco a la sala de la lista que lo abrió.
+  useEffect(() => {
+    if (!selectedId) return undefined;
+    lastFocusedId.current = selectedId;
+    function handleKeyDown(event) {
+      if (event.key !== 'Escape') return;
+      setSelectedId(null);
+      roomButtons.current[lastFocusedId.current]?.focus();
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId]);
+
+  const keep = new URLSearchParams({ date: fecha, ...(people ? { people } : {}) }).toString();
+  const backTo = `/buildings/${buildingId}?${keep}`;
   const backLink = (
     <Link className={styles.back} to={backTo}>
       <span aria-hidden="true">←</span> Volver al edificio
@@ -88,7 +114,24 @@ export default function Floor() {
 
   function handleDateChange(event) {
     const next = event.target.value;
-    setSearchParams(next ? { date: next } : {}, { replace: true });
+    const params = {};
+    if (next) params.date = next;
+    if (people) params.people = people;
+    setSearchParams(params, { replace: true });
+  }
+
+  // Plantas del edificio de la más alta a la más baja, con la forma que usa el selector.
+  const siblingFloors = [...(building?.plantas ?? [])]
+    .sort((a, b) => b.nivel - a.nivel)
+    .map((planta) => ({
+      id: planta.id,
+      name: planta.nombre,
+      number: planta.nivel,
+      free: planta.salasLibres,
+    }));
+
+  function handleSelectFloor(id) {
+    if (id !== floorId) navigate(`/buildings/${buildingId}/floors/${id}?${keep}`);
   }
 
   if (loading) {
@@ -135,7 +178,18 @@ export default function Floor() {
       <div className={styles.inner}>
         <div className={styles.info}>
           {backLink}
+          <Breadcrumbs
+            items={[{ label: building?.nombre ?? 'Edificio', to: backTo }, { label: plan.name }]}
+          />
           <h1 className={styles.title}>{plan.name}</h1>
+          {siblingFloors.length > 1 && (
+            <FloorSelector
+              floors={siblingFloors}
+              activeFloorId={floorId}
+              onSelect={handleSelectFloor}
+              label="Cambiar de planta"
+            />
+          )}
           <p className={styles.summary}>
             {freeCount} de {rooms.length} salas libres el {formatLongDate(fecha)}.
           </p>
@@ -162,6 +216,9 @@ export default function Floor() {
               return (
                 <button
                   key={room.id}
+                  ref={(node) => {
+                    roomButtons.current[room.id] = node;
+                  }}
                   type="button"
                   className={`${styles.room} ${active ? styles.roomActive : ''}`}
                   aria-pressed={active}
@@ -175,7 +232,12 @@ export default function Floor() {
           </div>
 
           <Legend className={styles.legend} />
-          <RoomSidePanel room={selected} fecha={fecha} onClose={() => setSelectedId(null)} />
+          <RoomSidePanel
+            room={selected}
+            fecha={fecha}
+            people={people}
+            onClose={() => setSelectedId(null)}
+          />
           {rooms.length === 0 && (
             <Button to={backTo} variant="secondary">
               Volver al edificio

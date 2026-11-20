@@ -5,7 +5,7 @@ import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
 import { formatPrice } from '@/utils/formatPrice.js';
 import styles from './RoomSidePanel.module.css';
 
-export default function RoomSidePanel({ room, fecha, onClose }) {
+export default function RoomSidePanel({ room, fecha, people = '', onClose }) {
   if (!room) {
     return (
       <div className={styles.panel} aria-live="polite">
@@ -16,7 +16,10 @@ export default function RoomSidePanel({ room, fecha, onClose }) {
     );
   }
 
-  const query = fecha ? `?date=${encodeURIComponent(fecha)}` : '';
+  const params = new URLSearchParams();
+  if (fecha) params.set('date', fecha);
+  if (people) params.set('people', people);
+  const query = params.toString() ? `?${params.toString()}` : '';
   const rentable = room.status !== 'off';
 
   return (
