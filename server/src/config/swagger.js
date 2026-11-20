@@ -1,11 +1,18 @@
 // Documentación de la API con Swagger: genera la especificación OpenAPI leyendo los comentarios @openapi de las rutas y la sirve en /api/docs.
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
-// Ruta absoluta a src/routes calculada desde este archivo, para que funcione igual en local, en los tests y en Netlify.
-const routesGlob = fileURLToPath(new URL('../routes/*.js', import.meta.url)).replace(/\\/g, '/');
+// Carpeta de las rutas. Desde este archivo funciona en local y en los tests; empaquetado en Netlify
+// import.meta.url ya no apunta aquí, así que se usa la copia que añade included_files en la raíz de la función.
+const sourceRoutesDir = fileURLToPath(new URL('../routes', import.meta.url));
+const routesDir = existsSync(sourceRoutesDir)
+  ? sourceRoutesDir
+  : path.join(process.cwd(), 'server/src/routes');
+const routesGlob = path.join(routesDir, '*.js').replace(/\\/g, '/');
 
 const errorResponse = (description) => ({
   description,
@@ -90,5 +97,6 @@ export const swaggerSpec = swaggerJsdoc({ definition, apis: [routesGlob] });
 export const swaggerServe = swaggerUi.serve;
 export const swaggerSetup = swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'iPuente API',
-  swaggerOptions: { persistAuthorization: true },
+  // El token guardado en el navegador solo se recuerda fuera de producción.
+  swaggerOptions: { persistAuthorization: process.env.NODE_ENV !== 'production' },
 });

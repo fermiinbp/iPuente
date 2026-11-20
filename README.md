@@ -259,7 +259,7 @@ Contiene la información de las plantas y los datos necesarios para representar 
 | `createdAt` | Fecha de creación. |
 | `updatedAt` | Última actualización. |
 
-Los campos del mapa (`ancho`, `alto`, `origen` y `salas`) son los mismos que usan el editor, el plano de los clientes y la API, y se guardan y se leen de una vez. `tipo` es `sala`, `box`, `comun`, `cocina` o `pasillo`. Hay un ejemplo en `server/scripts/data/demo-floor.json`.
+Los campos del mapa (`ancho`, `alto`, `origen` y `salas`) son los mismos que usan el editor, el plano de los clientes y la API, y se guardan y se leen de una vez. `tipo` es `sala`, `box`, `comun`, `cocina` o `pasillo`. Hay ejemplos en `server/scripts/data/floor-0.json` a `floor-3.json`.
 
 ### `rooms`
 
@@ -407,7 +407,7 @@ companies/{companyId}/rooms/{roomId}/photos/{uuid}.{ext}
 - Lectura pública de fotos y planos solo por ruta (`allow get`): no se pueden listar carpetas.
 - Solo escribe (crear, actualizar y borrar) un usuario con `role == 'COMPANY'`, el mismo `companyId` en su token que el de la carpeta y el claim `companyApproved == true`. Nadie más escribe; lo que no está bajo `companies/` queda denegado.
 - Solo imágenes PNG, JPEG, WebP o GIF (nada de SVG) de entre 1 byte y 5 MB.
-- `companyApproved` lo fija la API: `false` al registrar la empresa, `true` al aprobarla o reactivarla y `false` (más revocación de tokens) al rechazarla o suspenderla. Tras aprobar, el front debe refrescar el token (`getIdToken(true)`) para poder subir. Las empresas ya aprobadas antes de este cambio necesitan que el admin las suspenda y reactive o ejecutar `npm run sync-company-claims -w server` (idempotente: pone `companyApproved: true` al dueño de cada empresa `APPROVED` y `false` al resto). El seed no toca Firebase Auth, así que sus usuarios demo no reciben el claim.
+- `companyApproved` lo fija la API: `false` al registrar la empresa, `true` al aprobarla o reactivarla y `false` (más revocación de tokens) al rechazarla o suspenderla. Tras aprobar, el front debe refrescar el token (`getIdToken(true)`) para poder subir. Las empresas ya aprobadas antes de este cambio necesitan que el admin las suspenda y reactive o ejecutar `npm run sync-company-claims -w server` (idempotente: pone `companyApproved: true` al dueño de cada empresa `APPROVED` y `false` al resto). El seed sí crea sus usuarios demo en Auth y les fija el claim (ver «Cuentas de demo»).
 - La API refuerza esto: `fotos` (edificio y sala) y `mapImageUrl` (guardar mapa) solo aceptan URLs de descarga de ese bucket dentro de `companies/{companyId}/` de la empresa del token.
 
 **Variable de entorno:** `FIREBASE_STORAGE_BUCKET` en el `.env` de `server/` (y en Netlify), con el mismo valor que `VITE_FIREBASE_STORAGE_BUCKET` del front (`<proyecto>.firebasestorage.app` o `<proyecto>.appspot.com`). Sin ella, la API rechaza cualquier URL de foto o plano con `400`.
@@ -633,9 +633,46 @@ En **Netlify**, las mismas variables van en *Site configuration → Environment 
 
 **CIF huérfano:** `companyTaxIds/<cif>` se reserva en una transacción; si el documento no tiene `companyId` y tiene más de 10 minutos, o su `companyId` apunta a una empresa que no existe, se sobrescribe. Rechazar o suspender una empresa NO libera su CIF.
 
-### Pendiente para el despliegue (DAT027)
+## Despliegue en Netlify
 
-`netlify/functions/api.js` hoy solo tiene un comentario: debe exportar el handler con `serverless-http` (dependencia que se instalará en DAT027, avisando antes).
+La web (`client/`) y la API (Express como Netlify Function) se despliegan juntas desde `netlify.toml`. Requiere Node 22 (`.nvmrc`).
+
+1. En Netlify: **Add new site → Import an existing project**, elige el repositorio de GitHub y la rama `main`. Netlify lee `netlify.toml` (comando `npm run build`, carpeta `client/dist`, funciones en `netlify/functions`).
+2. En *Site configuration → Environment variables* crea estas variables, cada una en su ámbito:
+   - **Builds** (las lee Vite al construir; no son secretas): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID` y `NODE_VERSION=22`.
+   - **Functions** (las lee la API en ejecución): `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (márcala como **Contains secret values** y con scope solo **Functions**), `FIREBASE_STORAGE_BUCKET`, `APP_URL` (obligatoria en producción: la URL pública del sitio, p. ej. `https://ipuente.netlify.app`) y `NODE_ENV=production`.
+   - **Nunca** definas `FIREBASE_PRIVATE_KEY`, `FIREBASE_CLIENT_EMAIL` ni ningún secreto con prefijo `VITE_` ni en el ámbito Builds: todo lo que lleva `VITE_` acaba dentro del JavaScript público de la web.
+   - **Aviso:** `NODE_ENV=production` NO va en el ámbito Builds: haría que `npm ci` omitiera las dependencias de desarrollo (Vite) y fallaría el build.
+3. En Firebase, una sola vez: `npx firebase-tools deploy --only firestore,storage` (reglas e índices); añade el dominio de Netlify en *Authentication → Settings → Authorized domains*; activa la política TTL de Firestore sobre `rateLimits.expiresAt`.
+4. Si ya había empresas aprobadas antes del claim `companyApproved`: `npm run sync-company-claims -w server`.
+5. Despliega y comprueba `/api/health` (debe responder `{ "ok": true }`) y `/api/docs` (Swagger). La zona horaria de la API se fija en `Europe/Madrid` (`server/src/config/timezone.js`).
+
+El CI de GitHub Actions (`.github/workflows/ci.yml`) ejecuta lint, tests y build en cada Pull Request.
+
+## Cuentas de demo
+
+El seed crea usuarios en Firebase Auth (con su rol, sus claims, la marca `demo` y su ficha en `users`) y los datos de ejemplo. Como solo hay un proyecto de Firebase, está protegido:
+
+- Se niega a ejecutarse con `NODE_ENV=production`.
+- Exige `--yes`. Sin él imprime el `FIREBASE_PROJECT_ID` de destino y lo que haría, y sale sin escribir.
+- El admin demo solo se crea con `--admin`; sin esa opción no se toca. Tu admin propio nunca se modifica.
+- Un usuario que ya existía en Auth y no tiene la marca `demo` no se toca (ni sus claims ni su ficha): el admin se salta con un aviso y, si es el cliente o un dueño de empresa, el seed aborta antes de escribir datos.
+- `SEED_DEMO_PASSWORD` (mínimo 12 caracteres) es la contraseña de las cuentas nuevas; no cambia la de las que ya existen y no se guarda en el repositorio.
+
+En Git Bash (la contraseña va entre comillas simples y solo para ese comando):
+
+```bash
+SEED_DEMO_PASSWORD='una-clave-larga-y-unica' npm run seed -w server -- --yes
+# con el admin demo:
+SEED_DEMO_PASSWORD='una-clave-larga-y-unica' npm run seed -w server -- --yes --admin
+```
+
+| Email | Rol | Qué es |
+| --- | --- | --- |
+| `admin.demo@ipuente.test` | `ADMIN` | Panel de administración (solo con `--admin`) |
+| `cliente.demo@ipuente.test` | `CLIENT` | Dueño de las reservas de ejemplo (confirmadas y canceladas) |
+| `empresa.demo@ipuente.test` | `COMPANY` | Dueño de la empresa aprobada «Espacios Demo Sevilla» (edificio, plantas, salas y un bloqueo) |
+| `pendiente.demo@ipuente.test` | `COMPANY` | Dueño de una empresa pendiente de aprobación, sin edificios |
 
 ## ESLint y Prettier
 

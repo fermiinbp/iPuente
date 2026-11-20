@@ -1,1 +1,28 @@
 # Configuración de Netlify: construye client/, publica client/dist, despliega la API como función y redirige /api/* a ella y el resto a index.html (React Router).
+[build]
+  # Script raíz: construye el front (client/).
+  command = "npm run build"
+  publish = "client/dist"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  node_bundler = "esbuild"
+  # Paquetes que no se empaquetan bien: se instalan tal cual junto a la función.
+  external_node_modules = ["firebase-admin", "swagger-ui-express", "swagger-ui-dist", "swagger-jsdoc"]
+  # swagger-jsdoc lee los comentarios @openapi de las rutas en tiempo de ejecución.
+  included_files = ["server/src/routes/**/*.js"]
+
+# La API: con status 200 es una reescritura y Express recibe la ruta original (/api/...).
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# React Router: cualquier otra ruta sirve index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
