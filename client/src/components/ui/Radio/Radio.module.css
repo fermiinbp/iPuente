@@ -1,0 +1,120 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: var(--space-1);
+  padding: 0;
+  font-size: var(--text-pequeno);
+  line-height: 1.2;
+  color: var(--crema-suave);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Toda la fila es clicable y mide 44 px de alto como mínimo (objetivo táctil). */
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--campo-alto);
+  color: var(--crema);
+  font-size: var(--text-cuerpo);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+/* Círculo dibujado con CSS: el punto en lima, el color de lo seleccionado. */
+.circle {
+  appearance: none;
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 1px solid var(--campo-borde);
+  border-radius: var(--radio-pildora);
+  background: var(--campo-fondo);
+  cursor: inherit;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.circle::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radio-pildora);
+  background: var(--lima);
+  transform: scale(0);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.circle:checked {
+  border-color: var(--lima);
+}
+
+.circle:checked::before {
+  transform: scale(1);
+}
+
+.circle:focus-visible {
+  border-color: var(--campo-borde-foco);
+}
+
+.circle.invalid {
+  border-color: var(--error);
+}
+
+.circle:disabled {
+  border-color: var(--campo-desactivado-texto);
+  background: var(--campo-desactivado-fondo);
+}
+
+.circle:disabled::before {
+  background: var(--campo-desactivado-texto);
+}
+
+.disabled,
+.field:disabled .option {
+  color: var(--campo-desactivado-texto);
+  cursor: not-allowed;
+}
+
+.hint,
+.error {
+  margin: 0;
+  font-size: var(--text-pequeno);
+  line-height: 1.4;
+}
+
+.hint {
+  color: var(--crema-suave);
+}
+
+.error {
+  color: var(--error);
+  border-left: 3px solid var(--error);
+  padding-left: var(--space-2);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

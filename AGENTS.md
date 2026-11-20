@@ -42,7 +42,8 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/main.jsx` | Punto de entrada de React: monta `<App />` dentro del router y del `AuthProvider`. |
 | `client/src/App.jsx` | Componente raíz y mapa de rutas de la web (React Router): públicas, de cliente, de empresa y de admin, anidadas en `Layout` (y las de empresa y admin, además, en `DashboardLayout`). |
 | `client/src/config/firebase.js` | Conexión del navegador con Firebase: inicializa la app y exporta `auth` (login) y `storage` (subida de planos y fotos). |
-| `client/src/config/constants.js` | Constantes compartidas del front: URL de la API, roles (`CLIENT`, `COMPANY`, `ADMIN`), estados de sala, de reserva y de pago, y horario reservable. |
+| `client/src/config/constants.js` | Constantes compartidas del front: URL de la API, roles (`CLIENT`, `COMPANY`, `ADMIN`), estados de sala (en el plano y en el panel), de edificio y planta, de reserva (los de la API y los que calcula la pantalla), de pago, de empresa y de cuenta de cobro, y horario reservable. |
+| `client/src/config/accountMenu.js` | Opciones del menú de cuenta por rol, «Cerrar sesión» y nombre visible de la cuenta (`displayName`), compartidos por `Header` y `DashboardLayout`. |
 | `client/src/router/PrivateRoute.jsx` | Guarda de ruta: si no hay sesión, redirige a `/login`. Solo oculta pantallas; la seguridad real está en la API. |
 | `client/src/router/RoleRoute.jsx` | Guarda de ruta por rol (`COMPANY` o `ADMIN`): si el usuario no lo tiene, vuelve a la home. |
 | `client/src/context/authContext.js` | Crea el contexto de autenticación (separado del provider para que Vite haga fast refresh). |
@@ -57,7 +58,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/services/roomsService.js` | Ficha de sala y huecos libres. |
 | `client/src/services/bookingsService.js` | Reservas del cliente: crear, listar y cancelar. |
 | `client/src/services/paymentsService.js` | (extra) Pide a la API la URL de Stripe Checkout de una reserva. |
-| `client/src/services/companyService.js` | Panel de empresa: alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos. |
+| `client/src/services/companyService.js` | Panel de empresa: empresa propia (`getMyCompany`, nombre en la cabecera del panel), alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos. |
 | `client/src/services/adminService.js` | Panel de admin: empresas, usuarios, reservas, pagos y reembolsos. |
 | `client/src/services/uploadService.js` | Sube planos y fotos directamente a Firebase Storage y devuelve su URL y su ruta. |
 | `client/src/components/ui/Button/Button.jsx` + `.module.css` | Botón reutilizable con variantes primario, secundario y fantasma, tamaños `md` (44 px) y `lg` (52 px), `loading` y `disabled`; con `to` funciona como enlace. |
@@ -70,6 +71,9 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/ui/Select/Select.jsx` + `.module.css` | Desplegable con etiqueta, ayuda y mensaje de error (buscador, filtros, cambio de rol). |
 | `client/src/components/ui/Textarea/Textarea.jsx` + `.module.css` | Texto largo con etiqueta y error (motivo de rechazo, suspensión, cancelación o bloqueo). |
 | `client/src/components/ui/Checkbox/Checkbox.jsx` + `.module.css` | Casilla con etiqueta (equipamiento, aceptar condiciones). |
+| `client/src/components/ui/Radio/Radio.jsx` + `.module.css` | Grupo de botones de opción con título, ayuda y error, que se maneja con las flechas (reembolso total o parcial, lugar principal). |
+| `client/src/components/ui/SegmentedControl/SegmentedControl.jsx` + `.module.css` | Elección de una opción entre pocas con aspecto de botones unidos (tipo de sala en el editor). |
+| `client/src/components/ui/Stepper/Stepper.jsx` + `.module.css` | Pasos numerados con el actual destacado y `aria-current="step"` (los 4 pasos del alta de empresa). |
 | `client/src/components/ui/Chip/Chip.jsx` + `.module.css` | Píldora pequeña: filtro seleccionable por tipo de sala o etiqueta informativa (`Black Room I · 25 €/h`). |
 | `client/src/components/ui/Avatar/Avatar.jsx` + `.module.css` | Círculo con la foto o las iniciales del usuario. |
 | `client/src/components/ui/Alert/Alert.jsx` + `.module.css` | Mensaje de error, aviso o éxito dentro de una pantalla. |
@@ -85,7 +89,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/layout/UserMenu/UserMenu.jsx` + `.module.css` | Menú desplegable del usuario en escritorio (reservas, panel según rol, cerrar sesión). |
 | `client/src/components/layout/MobileMenu/MobileMenu.jsx` + `.module.css` | Menú de navegación a pantalla completa en móvil. |
 | `client/src/components/layout/Footer/Footer.jsx` + `.module.css` | Pie de página. |
-| `client/src/components/layout/DashboardLayout/DashboardLayout.jsx` + `.module.css` | Plantilla con menú lateral para los paneles de empresa y admin. |
+| `client/src/components/layout/DashboardLayout/DashboardLayout.jsx` + `.module.css` | Plantilla de los paneles de empresa y admin, sin la cabecera ni el pie públicos: menú lateral (logo, rol, secciones y «Cerrar sesión»; en móvil, panel deslizante) y barra superior con `UserMenu`. Sin `links`, solo la barra (estado de la solicitud de alta). |
 | `client/src/components/search/SearchBar/SearchBar.jsx` + `.module.css` | Buscador de ciudad, fecha y personas (landing y resultados). |
 | `client/src/components/search/CategoryFilters/CategoryFilters.jsx` + `.module.css` | Filtros por tipo de sala (reuniones, eventos, formación, boxes privados). |
 | `client/src/components/search/BuildingCard/BuildingCard.jsx` + `.module.css` | Tarjeta de edificio en los resultados: foto, dirección, salas libres y precio desde. |
@@ -149,15 +153,13 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/pages/company/CompanyBuildings/CompanyBuildings.jsx` + `.module.css` | Edificios y plantas de la empresa. |
 | `client/src/pages/company/MapEditorPage/MapEditorPage.jsx` + `.module.css` | Página del editor de mapas de una planta: subir plano, detectar, corregir, guardar y publicar. |
 | `client/src/pages/company/CompanyRooms/CompanyRooms.jsx` + `.module.css` | Datos comerciales de las salas: precio, capacidad, equipamiento y fotos; estados y ocultar o mostrar sala. |
-| `client/src/pages/company/CompanyBookings/CompanyBookings.jsx` + `.module.css` | Reservas de las salas de la empresa y bloqueo de horas. |
-| `client/src/pages/company/CompanyBookingDetail/CompanyBookingDetail.jsx` + `.module.css` | Detalle de una reserva de la empresa, con cancelación. |
+| `client/src/pages/company/CompanyBookings/CompanyBookings.jsx` + `.module.css` | Reservas de las salas de la empresa y bloqueo de horas; con `/company/bookings/:bookingId` abre el detalle en un panel lateral sobre la lista, con cancelación. |
 | `client/src/pages/company/CompanySettings/CompanySettings.jsx` + `.module.css` | Ajustes de la empresa: cobros con Stripe Connect. |
 | `client/src/pages/admin/AdminDashboard/AdminDashboard.jsx` + `.module.css` | Resumen del panel de admin. |
 | `client/src/pages/admin/AdminCompanies/AdminCompanies.jsx` + `.module.css` | Aprobar, rechazar o suspender empresas. |
 | `client/src/pages/admin/AdminCompanyDetail/AdminCompanyDetail.jsx` + `.module.css` | Detalle de una empresa: datos, edificios y acciones de aprobar, rechazar o suspender. |
 | `client/src/pages/admin/AdminUsers/AdminUsers.jsx` + `.module.css` | Usuarios y cambio de rol. |
-| `client/src/pages/admin/AdminBookings/AdminBookings.jsx` + `.module.css` | Todas las reservas. |
-| `client/src/pages/admin/AdminBookingDetail/AdminBookingDetail.jsx` + `.module.css` | Detalle de cualquier reserva. |
+| `client/src/pages/admin/AdminBookings/AdminBookings.jsx` + `.module.css` | Todas las reservas; con `/admin/bookings/:bookingId` abre el detalle de cualquier reserva en un panel lateral sobre la lista. |
 | `client/src/pages/admin/AdminPayments/AdminPayments.jsx` + `.module.css` | Pagos y reembolsos. |
 | `client/src/utils/formatPrice.js` | Formatea importes en euros (`25` → `25,00 €`). |
 | `client/src/utils/dates.js` | Utilidades de fechas: formato `AAAA-MM-DD`, horas y rangos para el calendario. |

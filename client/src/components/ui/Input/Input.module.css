@@ -46,9 +46,21 @@
 }
 
 .error {
-  color: var(--crema);
-  border-left: 3px solid var(--ocupada);
+  color: var(--error);
+  border-left: 3px solid var(--error);
   padding-left: var(--space-2);
+}
+
+.input:disabled {
+  color: var(--campo-desactivado-texto);
+  cursor: not-allowed;
+}
+
+.input.invalid {
+  border: 1px solid var(--error);
+  border-radius: var(--radio-chip);
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
 }
 
 /* Variante de formulario: campo con borde visible y 44 px de alto como mínimo. */
@@ -61,16 +73,24 @@
   min-height: var(--campo-alto);
   padding: 0 var(--space-3);
   border: 1px solid var(--campo-borde);
-  border-radius: var(--radio-control, var(--radio-chip));
+  border-radius: var(--radio-plano);
+  background: var(--campo-fondo);
 }
 
-.boxed .input.invalid,
-.input.invalid {
-  border: 1px solid var(--ocupada);
+.boxed .input::placeholder {
+  font-weight: 400;
 }
 
-.input.invalid {
-  border-radius: var(--radio-chip);
-  padding-left: var(--space-3);
-  padding-right: var(--space-3);
+.boxed .input:focus-visible {
+  border-color: var(--campo-borde-foco);
+}
+
+.boxed .input:disabled {
+  background: var(--campo-desactivado-fondo);
+}
+
+/* Después del foco: el borde de error se mantiene; el foco lo marca el contorno. */
+.boxed .input.invalid {
+  border-color: var(--error);
+  border-radius: var(--radio-plano);
 }

@@ -1,4 +1,4 @@
-// Constantes compartidas del front: URL de la API, roles (CLIENT, COMPANY, ADMIN), estados de sala, de reserva y de pago, y horario reservable.
+// Constantes compartidas del front: URL de la API, roles (CLIENT, COMPANY, ADMIN), estados de sala, edificio y planta, reserva, pago, empresa y cuenta de cobro, y horario reservable.
 export const API_URL = import.meta.env.VITE_API_URL ?? '/api';
 
 export const ROLES = Object.freeze({
@@ -26,6 +26,44 @@ export const PAYMENT_STATUS = Object.freeze({
   SUCCEEDED: 'SUCCEEDED',
   FAILED: 'FAILED',
   REFUNDED: 'REFUNDED',
+});
+
+// Estado de una sala en el panel de empresa (wireframe 14b).
+export const ROOM_LISTING_STATUS = Object.freeze({
+  PUBLISHED: 'PUBLISHED',
+  NO_PRICE: 'NO_PRICE',
+  HIDDEN: 'HIDDEN',
+});
+
+// Estado de publicación de un edificio o una planta (wireframes 12 y 13).
+export const PUBLISH_STATUS = Object.freeze({
+  PUBLISHED: 'PUBLISHED',
+  DRAFT: 'DRAFT',
+});
+
+// Estados de reserva que calcula la pantalla y que NO existen en la API: la API solo tiene
+// CANCELLED (sin quién canceló ni el reembolso) y guarda los bloqueos en la colección blocks.
+export const BOOKING_DISPLAY_STATUS = Object.freeze({
+  CANCELLED_BY_CLIENT: 'CANCELLED_BY_CLIENT',
+  CANCELLED_BY_SPACE: 'CANCELLED_BY_SPACE',
+  REFUND_PENDING: 'REFUND_PENDING',
+  BLOCKED: 'BLOCKED',
+});
+
+// Estado de una empresa (wireframes 17 y 17b). En minúscula, como las claves de StatusBadge.
+// La API tiene PENDING, APPROVED y REJECTED; «suspendida» todavía no existe.
+export const COMPANY_STATUS = Object.freeze({
+  PENDING: 'pending',
+  VERIFIED: 'verified',
+  REJECTED: 'rejected',
+  SUSPENDED: 'suspended',
+});
+
+// Estado de la cuenta de cobro con Stripe Connect (wireframe 25). Pendiente de decidir con back.
+export const PAYOUT_ACCOUNT_STATUS = Object.freeze({
+  NOT_CONNECTED: 'NOT_CONNECTED',
+  PENDING_VERIFICATION: 'PENDING_VERIFICATION',
+  ACTIVE: 'ACTIVE',
 });
 
 export const BOOKING_HOURS = Object.freeze({ start: 8, end: 20 });

@@ -39,6 +39,7 @@ SET010 (#64, «Componentes comunes react») se cerró por duplicada: su contenid
 | #90 · UI016 · Migas, pestañas y hoja inferior              | `Breadcrumbs` (edificio, planta y sala), `Tabs` (ajustes de empresa) y `BottomSheet` (hoja que sube desde abajo en móvil: panel de sala, filtros de búsqueda)                  | M    | UI001                                    |
 | #91 · UI017 · Opciones y pasos                             | `Radio` (reembolso total o parcial, lugar principal), `SegmentedControl` (tipo de sala en el editor) y `Stepper` (los 4 pasos del alta de empresa)                             | S    | UI003                                    |
 | #92 · UI018 · Panel lateral, barra fija y menú de acciones | `SidePanel` (detalle de reserva de empresa y admin), `StickyActionBar` (barra fija inferior en móvil con total y botón) y `ActionMenu` (menú «···» de la tarjeta de edificio)  | M    | UI002                                    |
+| #186 · UI019 · Iconos del menú lateral de los paneles      | Iconos SVG de cada opción del menú lateral de empresa y admin (`currentColor`, `aria-hidden`)                                                                                  | S    | UI011                                    |
 
 ### UI012 · Rutas de las páginas nuevas
 

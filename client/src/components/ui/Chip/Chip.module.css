@@ -1,0 +1,61 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radio-pildora);
+  font-family: var(--font-body);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Informativa: pequeña, sobre bosque elevado. */
+.info {
+  padding: 2px var(--space-3);
+  background: var(--bosque-elevado);
+  color: var(--crema);
+  font-size: var(--text-pequeno);
+  line-height: 1.5;
+}
+
+/* Filtro: borde de control y 44 px de alto (objetivo táctil); seleccionado en lima. */
+.filter {
+  min-height: var(--campo-alto);
+  padding: 0 18px;
+  border: 1px solid var(--borde-control);
+  background: transparent;
+  color: var(--crema);
+  font-size: var(--text-menu);
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.filter:active {
+  transform: scale(0.97);
+}
+
+.selected {
+  border-color: var(--lima);
+  background: var(--lima);
+  color: var(--bosque-profundo);
+}
+
+.filter:disabled {
+  border-color: var(--campo-desactivado-texto);
+  color: var(--campo-desactivado-texto);
+  cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .filter:not(.selected):not(:disabled):hover {
+    border-color: var(--crema);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter {
+    transition: none;
+  }
+}
