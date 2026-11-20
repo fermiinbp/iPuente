@@ -8,6 +8,7 @@ import * as userModel from '../models/userModel.js';
 import { addDays, resolveRange } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 import { normalizeText } from '../utils/text.js';
+import { authClient } from './authService.js';
 import { atHour, buildBookingDetail, toCancellation, toItem } from './bookingsService.js';
 import {
   COMPANY_STATUS,
@@ -144,33 +145,54 @@ async function transition(action, id, adminUid, motivo) {
   });
 }
 
-// Vista tras una transición.
-async function viewAfter(company) {
-  return companyView(company);
+// Pone el claim companyApproved al dueño (conservando role y companyId) y, si se retira, revoca sus
+// tokens. Reintenta una vez; devuelve el aviso para el admin si no se pudo o null si todo fue bien.
+async function syncOwnerClaim(ownerUid, approved) {
+  if (!ownerUid) return null;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const auth = authClient();
+      const user = await auth.getUser(ownerUid);
+      await auth.setCustomUserClaims(ownerUid, { ...user.customClaims, companyApproved: approved });
+      if (!approved) await auth.revokeRefreshTokens(ownerUid);
+      return null;
+    } catch (err) {
+      console.error(`No se pudo actualizar el permiso de subida (intento ${attempt})`, err?.code);
+    }
+  }
+  return 'El estado de la empresa ha cambiado, pero los permisos de subida de imágenes del dueño se actualizarán al reintentar la acción o al ejecutar sync-company-claims.';
+}
+
+// Vista tras una transición, con el aviso si fallaron los claims.
+async function viewAfter(company, approved) {
+  const view = await companyView(company);
+  const aviso = await syncOwnerClaim(company.ownerUid, approved);
+  return aviso ? { ...view, aviso } : view;
 }
 
 export async function approveCompany(id, adminUid) {
-  return viewAfter(await transition('approve', id, adminUid));
+  return viewAfter(await transition('approve', id, adminUid), true);
 }
 
 export async function rejectCompany(id, adminUid, motivo) {
-  return viewAfter(await transition('reject', id, adminUid, motivo));
+  return viewAfter(await transition('reject', id, adminUid, motivo), false);
 }
 
 export async function reactivateCompany(id, adminUid) {
-  return viewAfter(await transition('reactivate', id, adminUid));
+  return viewAfter(await transition('reactivate', id, adminUid), true);
 }
 
 // Suspende una empresa: sus edificios dejan de verse en la API pública (por su estado). Las reservas futuras
 // no se tocan; la respuesta avisa de cuántas hay.
 export async function suspendCompany(id, adminUid, motivo) {
   const company = await transition('suspend', id, adminUid, motivo);
-  const view = await viewAfter(company);
+  const view = await viewAfter(company, false);
   // La empresa ya está suspendida: si el aviso falla, se responde sin él en vez de dar error.
   try {
     const rooms = await roomModel.listByCompany(id);
     const reservasFuturas = await countFutureBookings(rooms.map((r) => r.id));
-    const aviso = futureBookingsNotice(reservasFuturas, 'esta empresa');
+    const futuras = futureBookingsNotice(reservasFuturas, 'esta empresa');
+    const aviso = [futuras, view.aviso].filter(Boolean).join(' ');
     return { ...view, reservasFuturas, ...(aviso && { aviso }) };
   } catch (err) {
     console.error('No se pudo calcular el aviso de reservas futuras al suspender', err?.code);

@@ -17,7 +17,8 @@ export function setAuthClientForTests(fake) {
   testAuth = fake ?? null;
 }
 
-const authClient = () => testAuth ?? adminAuth();
+// Cliente de Auth (el real o el doble de los tests); lo reutiliza adminService.
+export const authClient = () => testAuth ?? adminAuth();
 
 // Traduce los errores de Firebase Auth a errores de la API; el resto pasa tal cual.
 function translateAuthError(err) {
@@ -102,7 +103,11 @@ export async function registerCompany(data) {
     });
     await companyModel.setMember(companyId, uid, 'OWNER');
     await userModel.create({ name: nombre, email, role: ROLES.COMPANY }, { id: uid });
-    await authClient().setCustomUserClaims(uid, { role: ROLES.COMPANY, companyId });
+    await authClient().setCustomUserClaims(uid, {
+      role: ROLES.COMPANY,
+      companyId,
+      companyApproved: false,
+    });
     return { uid, companyId, estado: 'pendiente' };
   } catch (err) {
     await rollback(uid, companyId);

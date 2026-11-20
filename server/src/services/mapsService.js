@@ -135,7 +135,8 @@ export async function saveMap(companyId, floorId, map) {
 
     const publicado = floor.status === 'PUBLISHED';
     const result = { id: floorId, ancho, alto, origen, salas, publicado };
-    result.mapImageUrl = update.mapImageUrl ?? floor.mapImageUrl ?? null;
+    result.mapImageUrl =
+      update.mapImageUrl !== undefined ? update.mapImageUrl : (floor.mapImageUrl ?? null);
     result.salasCreadas = plan.creates.length;
     result.salasDesactivadas = plan.deactivations.filter((r) => r.status !== 'INACTIVE').length;
     // Planta publicada que tras guardar ya no cumple los requisitos: se avisa, no se despublica.

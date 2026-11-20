@@ -47,6 +47,14 @@ export function storageImageUrlError(value, companyId) {
     return invalid;
   }
   if (url.origin !== STORAGE_HOST || !url.pathname.startsWith(STORAGE_PREFIX)) return invalid;
+  if (url.hash !== '' || value.includes('#')) return invalid;
+  // Solo alt=media y token (una vez cada uno): cualquier otro parámetro se rechaza.
+  for (const key of new Set(url.searchParams.keys())) {
+    const values = url.searchParams.getAll(key);
+    const valid =
+      key === 'alt' ? values[0] === 'media' : key === 'token' && /^[\w-]+$/.test(values[0]);
+    if (values.length !== 1 || !valid) return invalid;
+  }
   const rest = url.pathname.slice(STORAGE_PREFIX.length);
   const [bucket, o, ...segments] = rest.split('/');
   if (bucket !== config.storageBucket || o !== 'o' || segments.length !== 1) return invalid;
@@ -68,3 +76,16 @@ export const storageImageUrl = (value, { req }) => {
   if (error) throw new Error(error);
   return true;
 };
+
+// Forma canónica de una URL de Storage ya validada: origen y ruta tal como los normaliza URL,
+// con ?alt=media y, si viene, &token=... en ese orden. Si no es una URL, devuelve el valor tal cual.
+export function normalizeStorageUrl(value) {
+  if (typeof value !== 'string') return value;
+  try {
+    const url = new URL(value);
+    const token = url.searchParams.get('token');
+    return `${url.origin}${url.pathname}?alt=media${token ? `&token=${token}` : ''}`;
+  } catch {
+    return value;
+  }
+}

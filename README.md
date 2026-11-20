@@ -404,9 +404,10 @@ companies/{companyId}/rooms/{roomId}/photos/{uuid}.{ext}
 
 **Reglas** (`storage.rules`):
 
-- Lectura pública de fotos y planos (se muestran a clientes sin sesión).
-- Solo escribe (crear, actualizar y borrar) un usuario con `role == 'COMPANY'` y el mismo `companyId` en su token que el de la carpeta. Nadie más escribe; lo que no está bajo `companies/` queda denegado.
-- Solo imágenes (`image/*`) de menos de 5 MB.
+- Lectura pública de fotos y planos solo por ruta (`allow get`): no se pueden listar carpetas.
+- Solo escribe (crear, actualizar y borrar) un usuario con `role == 'COMPANY'`, el mismo `companyId` en su token que el de la carpeta y el claim `companyApproved == true`. Nadie más escribe; lo que no está bajo `companies/` queda denegado.
+- Solo imágenes PNG, JPEG, WebP o GIF (nada de SVG) de entre 1 byte y 5 MB.
+- `companyApproved` lo fija la API: `false` al registrar la empresa, `true` al aprobarla o reactivarla y `false` (más revocación de tokens) al rechazarla o suspenderla. Tras aprobar, el front debe refrescar el token (`getIdToken(true)`) para poder subir. Las empresas ya aprobadas antes de este cambio necesitan que el admin las suspenda y reactive o ejecutar `npm run sync-company-claims -w server` (idempotente: pone `companyApproved: true` al dueño de cada empresa `APPROVED` y `false` al resto). El seed no toca Firebase Auth, así que sus usuarios demo no reciben el claim.
 - La API refuerza esto: `fotos` (edificio y sala) y `mapImageUrl` (guardar mapa) solo aceptan URLs de descarga de ese bucket dentro de `companies/{companyId}/` de la empresa del token.
 
 **Variable de entorno:** `FIREBASE_STORAGE_BUCKET` en el `.env` de `server/` (y en Netlify), con el mismo valor que `VITE_FIREBASE_STORAGE_BUCKET` del front (`<proyecto>.firebasestorage.app` o `<proyecto>.appspot.com`). Sin ella, la API rechaza cualquier URL de foto o plano con `400`.
@@ -422,7 +423,10 @@ npx firebase-tools deploy --only storage
 1. Empresa propia: sube una imagen pequeña (PNG o JPG) a `companies/{su companyId}/rooms/{roomId}/photos/prueba.png`. Debe funcionar.
 2. Empresa ajena: con ese mismo usuario, sube a `companies/{otro companyId}/…`. Debe fallar con `403 storage/unauthorized`.
 3. Archivo no imagen o grande: sube un PDF o una imagen de más de 5 MB a la carpeta propia. Debe fallar con `403 storage/unauthorized`.
-4. Sin sesión o con un cliente (`CLIENT`): cualquier subida falla; abrir en el navegador la URL de la imagen del paso 1 sí funciona (lectura pública).
+4. SVG: sube un `.svg` (`image/svg+xml`) a la carpeta propia. Debe fallar con `403 storage/unauthorized`.
+5. Listado: con `listAll` del SDK sobre `companies/{companyId}/`, o con la API REST `GET .../o?prefix=companies/`, debe fallar con `403`.
+6. Empresa sin aprobar (token sin `companyApproved`, o recién aprobada sin refrescar el token): la subida falla; tras `getIdToken(true)` funciona.
+7. Sin sesión o con un cliente (`CLIENT`): cualquier subida falla; abrir en el navegador la URL de la imagen del paso 1 sí funciona (lectura pública).
 
 Nota para el front: `uploadService` debe subir a estas rutas y enviar a la API la URL de descarga (`getDownloadURL`) tal cual.
 

@@ -136,6 +136,37 @@ describe('Mapa de planta: guardar y publicar', () => {
       assert.equal((await floorModel.findById('f-a')).mapImageUrl, undefined);
     });
 
+    it('null quita el plano: 200 y se guarda null', async () => {
+      await put('f-a', mapa([sala('r1')], { mapImageUrl: own }));
+      const r = await put('f-a', mapa([sala('r1')], { mapImageUrl: null }));
+      assert.equal(r.status, 200);
+      assert.equal(r.body.mapImageUrl, null);
+      assert.equal((await floorModel.findById('f-a')).mapImageUrl, null);
+    });
+
+    it('400 con fragmento o parámetros extra', async () => {
+      for (const url of [
+        `${own}#x`,
+        `${own}&export=1`,
+        `${own}&alt=json`,
+        `${own}&token=a&token=b`,
+      ]) {
+        const r = await put('f-a', mapa([sala('r1')], { mapImageUrl: url }));
+        assert.equal(r.status, 400, url.slice(-30));
+      }
+    });
+
+    it('guarda la URL normalizada (host en mayúsculas, parámetros en otro orden)', async () => {
+      const raw = own.replace(
+        'https://firebasestorage.googleapis.com',
+        'HTTPS://FirebaseStorage.GoogleAPIs.com',
+      );
+      const messy = raw.replace('?alt=media&token=t', '?token=t&alt=media');
+      const r = await put('f-a', mapa([sala('r1')], { mapImageUrl: messy }));
+      assert.equal(r.status, 200);
+      assert.equal((await floorModel.findById('f-a')).mapImageUrl, own);
+    });
+
     it('400 con %2E%2E codificado en el path', async () => {
       const url = `https://firebasestorage.googleapis.com/v0/b/${TEST_BUCKET}/o/companies%2Fc-a%2F%2E%2E%2Fc-b%2Fp.png?alt=media`;
       const r = await put('f-a', mapa([sala('r1')], { mapImageUrl: url }));

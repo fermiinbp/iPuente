@@ -170,7 +170,11 @@ describe('Registro de clientes y empresas', () => {
       assert.equal(body.uid, 'uid1');
       assert.equal(body.estado, 'pendiente');
       assert.ok(body.companyId);
-      assert.deepEqual(fakeAuth.claims.uid1, { role: 'COMPANY', companyId: body.companyId });
+      assert.deepEqual(fakeAuth.claims.uid1, {
+        role: 'COMPANY',
+        companyId: body.companyId,
+        companyApproved: false,
+      });
       const company = await companyModel.findById(body.companyId);
       assert.equal(company.status, 'PENDING');
       assert.equal(company.verified, false);

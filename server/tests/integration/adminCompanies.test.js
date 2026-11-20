@@ -10,6 +10,7 @@ import * as companyModel from '../../src/models/companyModel.js';
 import * as floorModel from '../../src/models/floorModel.js';
 import * as roomModel from '../../src/models/roomModel.js';
 import * as userModel from '../../src/models/userModel.js';
+import { setAuthClientForTests } from '../../src/services/authService.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
 import { listen, seedPublicData } from '../helpers/publicData.js';
 
@@ -24,6 +25,28 @@ describe('Panel de admin: empresas', () => {
   let server;
   let baseUrl;
   let fakeDb;
+  let fakeAuth;
+
+  // Doble de Firebase Auth: guarda los claims por uid y registra las revocaciones.
+  function createFakeAuth() {
+    const fake = {
+      claims: { 'owner-1': { role: 'COMPANY', companyId: 'c1', companyApproved: false } },
+      revoked: [],
+      fail: false,
+      async getUser(uid) {
+        if (fake.fail) throw new Error('auth caído');
+        return { uid, customClaims: fake.claims[uid] };
+      },
+      async setCustomUserClaims(uid, claims) {
+        if (fake.fail) throw new Error('auth caído');
+        fake.claims[uid] = claims;
+      },
+      async revokeRefreshTokens(uid) {
+        fake.revoked.push(uid);
+      },
+    };
+    return fake;
+  }
 
   async function call(method, path, { token, body } = {}) {
     const headers = { 'Content-Type': 'application/json' };
@@ -60,6 +83,8 @@ describe('Panel de admin: empresas', () => {
   beforeEach(async () => {
     fakeDb = createFakeFirestore();
     setDbForTests(fakeDb);
+    fakeAuth = createFakeAuth();
+    setAuthClientForTests(fakeAuth);
     setTokenVerifier(async (token) => tokens[token]);
     await seedPublicData();
     await userModel.create(
@@ -72,6 +97,7 @@ describe('Panel de admin: empresas', () => {
   });
 
   after(async () => {
+    setAuthClientForTests(null);
     setTokenVerifier(null);
     setDbForTests(null);
     await new Promise((resolve) => server.close(resolve));
@@ -352,6 +378,50 @@ describe('Panel de admin: empresas', () => {
         body: { roomId: 'r-free', fecha: FUTURA, inicio: 10, fin: 11 },
       });
       assert.equal(res.status, 404);
+    });
+  });
+
+  describe('claim companyApproved del dueño', () => {
+    const COMPLETO = { role: 'COMPANY', companyId: 'c1' };
+
+    it('approve y reactivate: companyApproved true conservando role y companyId', async () => {
+      fakeAuth.claims['owner-1'] = { ...COMPLETO, companyApproved: false };
+      assert.equal((await admin('POST', '/api/admin/companies/c-pend/approve')).status, 200);
+      assert.deepEqual(fakeAuth.claims['owner-1'], { ...COMPLETO, companyApproved: true });
+      assert.deepEqual(fakeAuth.revoked, []);
+      await suspender();
+      fakeAuth.claims['owner-1'] = { ...COMPLETO, companyApproved: false };
+      assert.equal((await admin('POST', '/api/admin/companies/c1/reactivate')).status, 200);
+      assert.deepEqual(fakeAuth.claims['owner-1'], { ...COMPLETO, companyApproved: true });
+    });
+
+    it('reject y suspend: companyApproved false y revoca los tokens', async () => {
+      fakeAuth.claims['owner-1'] = { ...COMPLETO, companyApproved: true };
+      const rej = await admin('POST', '/api/admin/companies/c-pend/reject', {
+        motivo: 'Datos falsos',
+      });
+      assert.equal(rej.status, 200);
+      assert.deepEqual(fakeAuth.claims['owner-1'], { ...COMPLETO, companyApproved: false });
+      assert.deepEqual(fakeAuth.revoked, ['owner-1']);
+      fakeAuth.claims['owner-1'] = { ...COMPLETO, companyApproved: true };
+      assert.equal((await suspender()).status, 200);
+      assert.deepEqual(fakeAuth.claims['owner-1'], { ...COMPLETO, companyApproved: false });
+      assert.deepEqual(fakeAuth.revoked, ['owner-1', 'owner-1']);
+    });
+
+    it('si Auth falla: 200 con aviso y el estado ya cambiado', async () => {
+      fakeAuth.fail = true;
+      const errors = mock.method(console, 'error', () => {});
+      try {
+        const { status, body } = await admin('POST', '/api/admin/companies/c-pend/approve');
+        assert.equal(status, 200);
+        assert.equal(body.estado, 'aprobada');
+        assert.match(body.aviso, /permisos de subida/);
+        assert.equal((await companyModel.findById('c-pend')).status, 'APPROVED');
+        assert.ok(!JSON.stringify(errors.mock.calls).includes('ana@x.com'));
+      } finally {
+        errors.mock.restore();
+      }
     });
   });
 
