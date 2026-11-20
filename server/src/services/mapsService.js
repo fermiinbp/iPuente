@@ -129,10 +129,13 @@ export async function saveMap(companyId, floorId, map) {
       );
     }
     await writePlan(floor, plan, tx);
-    await floorModel.update(floorId, { ancho, alto, origen, salas }, { tx });
+    const update = { ancho, alto, origen, salas };
+    if (map.mapImageUrl !== undefined) update.mapImageUrl = map.mapImageUrl;
+    await floorModel.update(floorId, update, { tx });
 
     const publicado = floor.status === 'PUBLISHED';
     const result = { id: floorId, ancho, alto, origen, salas, publicado };
+    result.mapImageUrl = update.mapImageUrl ?? floor.mapImageUrl ?? null;
     result.salasCreadas = plan.creates.length;
     result.salasDesactivadas = plan.deactivations.filter((r) => r.status !== 'INACTIVE').length;
     // Planta publicada que tras guardar ya no cumple los requisitos: se avisa, no se despublica.

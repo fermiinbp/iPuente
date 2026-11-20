@@ -89,7 +89,7 @@ router.get(
  *   post:
  *     tags: [Empresa]
  *     summary: Crea un edificio
- *     description: 'Se crea en borrador (`publicado: false`). Obligatorios `nombre`, `direccion` y `ciudad`; opcionales `descripcion` y `fotos` (URLs https). Solo para empresas aprobadas.'
+ *     description: 'Se crea en borrador (`publicado: false`). Obligatorios `nombre`, `direccion` y `ciudad`; opcionales `descripcion` y `fotos` (URLs de imágenes de tu carpeta `companies/{companyId}/` en Firebase Storage). Solo para empresas aprobadas.'
  *     security:
  *       - bearerAuth: []
  *     responses:

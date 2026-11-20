@@ -19,7 +19,7 @@ const router = Router();
  *   put:
  *     tags: [Mapas]
  *     summary: Guarda el mapa de una planta propia
- *     description: 'Sustituye el mapa de la planta y sincroniza sus salas: crea las nuevas (no reservables y sin precio), actualiza nombre, código y tipo de las existentes y marca como no reservables las que ya no están en el mapa. No cambia el estado de publicación; si la planta está publicada y deja de tener salas reservables con precio, la respuesta incluye `aviso`. Si hay reservas futuras (CONFIRMED o PENDING_PAYMENT) en sus salas, `reservasFuturas` las cuenta y `aviso` (texto único, se combinan los avisos) lo indica; siguen en pie y no se bloquea. Solo para empresas aprobadas.'
+ *     description: 'Sustituye el mapa de la planta y sincroniza sus salas: crea las nuevas (no reservables y sin precio), actualiza nombre, código y tipo de las existentes y marca como no reservables las que ya no están en el mapa. No cambia el estado de publicación; si la planta está publicada y deja de tener salas reservables con precio, la respuesta incluye `aviso`. Si hay reservas futuras (CONFIRMED o PENDING_PAYMENT) en sus salas, `reservasFuturas` las cuenta y `aviso` (texto único, se combinan los avisos) lo indica; siguen en pie y no se bloquea. Opcional `mapImageUrl`: URL de la imagen del plano en tu carpeta de Firebase Storage. Solo para empresas aprobadas.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -36,6 +36,8 @@ const router = Router();
  *             type: object
  *             required: [ancho, alto, origen, salas]
  *             properties:
+ *               mapImageUrl:
+ *                 type: string
  *               ancho:
  *                 type: number
  *                 example: 1000
@@ -74,7 +76,7 @@ const router = Router();
  *                       type: number
  *     responses:
  *       200:
- *         description: 'Mapa guardado: `{ id, ancho, alto, origen, salas, publicado, salasCreadas, salasDesactivadas, aviso? }`.'
+ *         description: 'Mapa guardado: `{ id, ancho, alto, origen, salas, publicado, mapImageUrl, salasCreadas, salasDesactivadas, aviso? }`.'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       # Además de VALIDATION_ERROR, puede ser TOO_MANY_CHANGES (más de 490 escrituras).

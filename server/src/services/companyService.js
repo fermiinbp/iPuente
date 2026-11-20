@@ -69,6 +69,7 @@ function floorView(f) {
     numero: f.level,
     nombre: f.name,
     publicado: f.status === 'PUBLISHED',
+    mapImageUrl: f.mapImageUrl ?? null,
   };
 }
 

@@ -1,7 +1,7 @@
 // Validación del panel de empresa: alta, edificios, plantas, datos de sala y bloqueos.
 import { body, query } from 'express-validator';
 
-import { idParam } from './commonValidator.js';
+import { idParam, storageImageUrl } from './commonValidator.js';
 
 // Exige un valor escalar (no array ni objeto) para que express-validator no valide por elemento.
 const scalarNumber = (field) => (v) => {
@@ -42,12 +42,7 @@ const fotos = body('fotos')
   .isArray({ max: 20 })
   .withMessage('fotos debe ser una lista de hasta 20 URLs');
 
-const fotosItems = body('fotos.*')
-  .isLength({ max: 2048 })
-  .withMessage('cada foto admite como máximo 2048 caracteres')
-  .bail()
-  .isURL({ protocols: ['https'], require_protocol: true })
-  .withMessage('cada foto debe ser una URL https');
+const fotosItems = body('fotos.*').custom(storageImageUrl);
 
 const numero = (required) => {
   const chain = body('numero');

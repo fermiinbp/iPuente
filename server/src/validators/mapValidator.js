@@ -1,8 +1,8 @@
 // Validación de mapas: id de la planta y JSON del mapa (dimensiones y salas dentro del plano).
-import { validationResult } from 'express-validator';
+import { body, validationResult } from 'express-validator';
 
 import { HttpError } from '../utils/httpError.js';
-import { idParam } from './commonValidator.js';
+import { idParam, storageImageUrl } from './commonValidator.js';
 
 export const ROOM_TYPES = ['sala', 'box', 'comun', 'cocina', 'pasillo'];
 export const MAP_ORIGINS = ['manual', 'ia'];
@@ -105,7 +105,10 @@ function checkMapBody(req, res, next) {
   return next(err);
 }
 
-export const saveMap = [idParam, checkMapBody];
+// mapImageUrl es opcional y, si viene, debe ser una imagen de la carpeta de la empresa en Storage.
+const mapImageUrl = body('mapImageUrl').optional().custom(storageImageUrl);
+
+export const saveMap = [idParam, mapImageUrl, checkMapBody];
 export const publishFloor = [idParam];
 
 export const unpublishFloor = [idParam];
