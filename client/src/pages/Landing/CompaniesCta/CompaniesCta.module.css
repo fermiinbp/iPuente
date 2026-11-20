@@ -42,7 +42,7 @@
   font-family: var(--font-display);
   font-style: italic;
   font-size: var(--text-lista-movil);
-  color: var(--bronce);
+  color: var(--bronce-claro);
 }
 
 .editor {

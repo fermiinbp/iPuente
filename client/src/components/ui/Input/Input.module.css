@@ -100,3 +100,10 @@
   border-color: var(--error);
   border-radius: var(--radio-plano);
 }
+
+/* El icono del calendario de los campos de fecha es un botón nativo: sin esto no se ve cuándo tiene el foco. */
+.input[type='date']::-webkit-calendar-picker-indicator:focus-visible {
+  border-radius: var(--radio-chip);
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+}
