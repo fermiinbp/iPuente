@@ -2,6 +2,8 @@
 // Lee GET /companies/me y muestra una tarjeta según `estado`: pendiente («Editar datos de la solicitud»), rechazada
 // (motivo, «Corregir y reenviar» y «Contactar con iPuente») o suspendida. «Editar» y «Corregir» abren aquí mismo el
 // formulario con los datos de la empresa (CompanyDataFields), que se guarda con PATCH /companies/me (DAT030).
+// Aprobada: solo se llega aquí con el token antiguo (claim companyApproved sin renovar; CompanyStatusRoute manda
+// aquí). Se renueva el token una vez al cargar y CompanyStatusRoute lleva al panel; «Ir a tu panel» lo reintenta.
 import { useEffect, useRef, useState } from 'react';
 import CompanyDataFields from '@/components/company/CompanyDataFields/CompanyDataFields.jsx';
 import Alert from '@/components/ui/Alert/Alert.jsx';
@@ -11,6 +13,7 @@ import PageContainer from '@/components/ui/PageContainer/PageContainer.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import Stepper from '@/components/ui/Stepper/Stepper.jsx';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
+import { refreshSession } from '@/services/authService.js';
 import { getMyCompany, updateMyCompany } from '@/services/companyService.js';
 import {
   COMPANY_STEPS,
@@ -47,6 +50,19 @@ function describeSaveError(err) {
   return { message: err?.message || 'No hemos podido guardar los cambios. Inténtalo de nuevo.' };
 }
 
+// Renueva el token. Si ya trae companyApproved, CompanyStatusRoute lleva al panel y esta pantalla se desmonta;
+// si no, devuelve 'stale': la cuenta no tiene el claim aunque la empresa esté aprobada (aprobada antes de existir
+// el claim); lo arregla el admin suspendiendo y reactivando o `npm run sync-company-claims -w server`.
+// 'error' si no se pudo renovar.
+async function openPanel() {
+  try {
+    const claims = await refreshSession();
+    return claims.companyApproved === true ? 'done' : 'stale';
+  } catch {
+    return 'error';
+  }
+}
+
 export default function CompanyRequestStatus() {
   usePageTitle('Estado de tu solicitud');
   const [reloadKey, setReloadKey] = useState(0);
@@ -56,8 +72,11 @@ export default function CompanyRequestStatus() {
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState(null);
   const [saving, setSaving] = useState(false);
+  // Renovación del token de una empresa aprobada: 'pending' (renovando), 'stale', 'error' o 'done'.
+  const [panelStatus, setPanelStatus] = useState('pending');
   const formRef = useRef(null);
   const alertRef = useRef(null);
+  const autoRefreshed = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -72,6 +91,19 @@ export default function CompanyRequestStatus() {
   const loading = result.key !== reloadKey;
   const { company, error } = result;
   const rejected = company?.estado === 'rechazada';
+  const approved = company?.estado === 'aprobada';
+
+  // Aprobada con el token antiguo: se renueva una sola vez al cargar (sin bucles).
+  useEffect(() => {
+    if (!approved || autoRefreshed.current) return;
+    autoRefreshed.current = true;
+    openPanel().then(setPanelStatus);
+  }, [approved]);
+
+  const retryPanel = async () => {
+    setPanelStatus('pending');
+    setPanelStatus(await openPanel());
+  };
 
   const openEditor = () => {
     setValues(companyToForm(company));
@@ -170,13 +202,27 @@ export default function CompanyRequestStatus() {
           </>
         );
       default:
-        // Aprobada: hasta que exista la redirección por estado (EMP017) se puede llegar aquí.
+        // Aprobada con el token antiguo: se está renovando o no se pudo (ver openPanel).
         return (
           <>
             <p className={styles.label}>Aprobada</p>
             <h2 className={styles.cardTitle}>Tu empresa ya está aprobada</h2>
+            {panelStatus === 'stale' && (
+              <Alert type="warning">
+                Tu cuenta todavía no tiene acceso al panel. Contacta con iPuente para que lo
+                revisemos.
+              </Alert>
+            )}
+            {panelStatus === 'error' && (
+              <Alert type="error">No hemos podido abrir tu panel. Inténtalo de nuevo.</Alert>
+            )}
             <div className={styles.actions}>
-              <Button to="/company">Ir a tu panel</Button>
+              <Button
+                onClick={retryPanel}
+                loading={panelStatus === 'pending' || panelStatus === 'done'}
+              >
+                Ir a tu panel
+              </Button>
             </div>
           </>
         );

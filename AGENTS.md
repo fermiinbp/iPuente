@@ -49,8 +49,9 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/config/accountMenu.js` | Opciones del menú de cuenta por rol, «Cerrar sesión» y nombre visible de la cuenta (`displayName`), compartidos por `Header` y `DashboardLayout`. |
 | `client/src/router/PrivateRoute.jsx` | Guarda de ruta: si no hay sesión, redirige a `/login`. Solo oculta pantallas; la seguridad real está en la API. |
 | `client/src/router/RoleRoute.jsx` | Guarda de ruta por rol (`COMPANY` o `ADMIN`): si el usuario no lo tiene, vuelve a la home. |
+| `client/src/router/CompanyStatusRoute.jsx` | Guarda de ruta de empresa (dentro de `RoleRoute` `COMPANY`) según el claim `companyApproved`: sin aprobar, `/company/*` lleva a `/company/request`; aprobada, `/company/request` lleva a `/company`. Solo oculta pantallas; la seguridad real está en la API. |
 | `client/src/context/authContext.js` | Crea el contexto de autenticación (separado del provider para que Vite haga fast refresh). |
-| `client/src/context/AuthProvider.jsx` | Escucha la sesión de Firebase y expone a toda la app el usuario, su rol (`CLIENT`, `COMPANY`, `ADMIN`) y su `companyId`. |
+| `client/src/context/AuthProvider.jsx` | Escucha la sesión de Firebase y expone a toda la app el usuario, su rol (`CLIENT`, `COMPANY`, `ADMIN`), su `companyId` y `companyApproved` (claim de la API: `true` solo si su empresa está aprobada). |
 | `client/src/hooks/useAuth.js` | Hook para leer el usuario y su rol desde cualquier componente. |
 | `client/src/hooks/useMapEditor.js` | Estado y acciones del editor de mapas: salas, selección, dibujar, mover, redimensionar, borrar, deshacer y cargar el borrador de la IA. |
 | `client/src/hooks/useModalFocus.js` | Comportamiento común de lo que se abre encima de la página (`Modal`, `MobileMenu` y el menú móvil de `DashboardLayout`): página inerte y sin scroll, foco dentro, Tab que no sale, Escape y foco devuelto al cerrar. |
@@ -64,7 +65,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/services/bookingsService.js` | Reservas del cliente: crear, listar y cancelar. |
 | `client/src/services/paymentsService.js` | Pide a la API la URL de Stripe Checkout de una reserva pendiente (`createCheckout`). La API aún no tiene endpoint de pago: hasta entonces la llamada falla y la pantalla lo avisa. |
 | `client/src/services/companyService.js` | Panel de empresa: empresa propia (`getMyCompany`, y `updateMyCompany` para editar la solicitud, que espera a DAT030), alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos. |
-| `client/src/services/authService.js` | Sesión con Firebase Auth: entrar con correo o Google, registro de cliente, cerrar sesión, recuperar y cambiar la contraseña, nombre y rol de la cuenta, y `registerCompany` (alta de empresa en la API e inicio de sesión). |
+| `client/src/services/authService.js` | Sesión con Firebase Auth: entrar con correo o Google, registro de cliente, cerrar sesión, recuperar y cambiar la contraseña, nombre y rol de la cuenta, `refreshSession` (renueva el token para leer los claims actuales) y `registerCompany` (alta de empresa en la API e inicio de sesión). |
 | `client/src/services/adminService.js` | Panel de admin: empresas, usuarios, reservas, pagos y reembolsos. |
 | `client/src/services/uploadService.js` | Sube planos y fotos directamente a Firebase Storage y devuelve su URL y su ruta. |
 | `client/src/services/mapStyleService.js` | Descarga una sola vez el estilo base del mapa (OpenFreeMap) y devuelve una copia. Es un servidor externo, no nuestra API, así que no pasa por `apiClient`. |
@@ -170,7 +171,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/pages/NotFound/NotFound.jsx` + `.module.css` | Página 404. |
 | `client/src/pages/company/CompanyDashboard/CompanyDashboard.jsx` + `.module.css` | Resumen del panel de empresa, con estado vacío en el primer acceso (sin edificios). |
 | `client/src/pages/company/CompanyRegister/CompanyRegister.jsx` + `.module.css` | Solicitud de alta como empresa (sin sesión): cuenta de acceso, datos de la empresa y condiciones; crea la empresa pendiente con `authService.registerCompany`, inicia sesión y lleva al estado de la solicitud. |
-| `client/src/pages/company/CompanyRequestStatus/CompanyRequestStatus.jsx` + `.module.css` | Estado de la solicitud de alta (`GET /companies/me`): en revisión, rechazada con su motivo («Corregir y reenviar» y «Contactar con iPuente», este sin destino todavía) o suspendida; «Editar» y «Corregir» abren el formulario con `CompanyDataFields`. |
+| `client/src/pages/company/CompanyRequestStatus/CompanyRequestStatus.jsx` + `.module.css` | Estado de la solicitud de alta (`GET /companies/me`): en revisión, rechazada con su motivo («Corregir y reenviar» y «Contactar con iPuente», este sin destino todavía) o suspendida; «Editar» y «Corregir» abren el formulario con `CompanyDataFields`. Si la API dice aprobada (token antiguo), renueva el token una vez y `CompanyStatusRoute` lleva al panel; «Ir a tu panel» lo reintenta. |
 | `client/src/pages/company/CompanyBuildings/CompanyBuildings.jsx` + `.module.css` | Edificios y plantas de la empresa. |
 | `client/src/pages/company/MapEditorPage/MapEditorPage.jsx` + `.module.css` | Página del editor de mapas de una planta: subir plano, detectar, corregir, guardar y publicar. |
 | `client/src/pages/company/CompanyRooms/CompanyRooms.jsx` + `.module.css` | Datos comerciales de las salas: precio, capacidad, equipamiento y fotos; estados y ocultar o mostrar sala. |
