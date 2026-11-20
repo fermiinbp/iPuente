@@ -199,8 +199,13 @@ Almacena la información de las empresas que publican espacios.
 | `phone` | Teléfono de contacto. |
 | `address` | Dirección de la empresa. |
 | `ownerUid` | UID del usuario que dio de alta la empresa. |
-| `status` | Estado de la solicitud: `PENDING`, `APPROVED` o `REJECTED`. `SUSPENDED` está previsto (lo añade la issue de admin). |
+| `status` | Estado de la solicitud: `PENDING`, `APPROVED`, `REJECTED` o `SUSPENDED`. |
 | `verified` | `true` si `status` es `APPROVED`. |
+| `rejectionReason` | Motivo del rechazo (lo escribe el admin al rechazar). |
+| `suspensionReason` | Motivo de la suspensión vigente; `null` al reactivar. |
+| `lastSuspensionReason` | Motivo de la última suspensión, guardado al reactivar. |
+| `reviewedAt` | Fecha de la última decisión del admin. |
+| `reviewedBy` | UID del admin que tomó la última decisión. |
 | `createdAt` | Fecha de creación. |
 | `updatedAt` | Última actualización. |
 
@@ -232,6 +237,7 @@ Almacena los edificios publicados por las empresas.
 | `floorCount` | Número de plantas. |
 | `photos` | Lista de URLs de fotos del edificio. |
 | `status` | Estado del edificio: `DRAFT` (borrador) o `PUBLISHED` (publicado). |
+| `companySuspended` | `true` mientras la empresa está suspendida: el edificio no se ve en la API pública, pero conserva su `status`. |
 | `createdAt` | Fecha de creación. |
 | `updatedAt` | Última actualización. |
 
@@ -495,7 +501,7 @@ Equivalencias por recurso (campo de la API → campo de Firestore):
 | Empresa (registro) | `telefono` | `companies.phone` |
 | Empresa (registro) | `email` | `companies.email` (y el email de acceso) |
 | Empresa (registro) | `nombre` (del usuario) | `users.name` |
-| Empresa | `estado` (`pendiente`, `aprobada`, `rechazada`) | `companies.status` (`PENDING`, `APPROVED`, `REJECTED`) |
+| Empresa | `estado` (`pendiente`, `aprobada`, `rechazada`, `suspendida`) | `companies.status` (`PENDING`, `APPROVED`, `REJECTED`, `SUSPENDED`) |
 | Edificio | `nombre` | `name` |
 | Edificio | `direccion` | `address` |
 | Edificio | `ciudad` | `city` |
