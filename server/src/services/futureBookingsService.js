@@ -1,7 +1,13 @@
 // Reservas futuras de unas salas: sirve para avisar al despublicar o ocultar (no bloquea nada).
 import * as bookingModel from '../models/bookingModel.js';
+import { toDate } from './availabilityService.js';
 
 const ACTIVE_STATUSES = new Set(['CONFIRMED', 'PENDING_PAYMENT']);
+
+// ¿La reserva está viva (CONFIRMED o PENDING_PAYMENT) y empieza después de nowMs?
+export function isActiveFuture(booking, nowMs = Date.now()) {
+  return ACTIVE_STATUSES.has(booking.status) && toDate(booking.startDate).getTime() > nowMs;
+}
 
 // Nº de reservas CONFIRMED o PENDING_PAYMENT que empiezan después de ahora en las salas dadas.
 export async function countFutureBookings(roomIds) {

@@ -17,16 +17,24 @@ export function listByCompany(companyId) {
 
 // Reservas de una sala que empiezan en [from, to). Si no se pasan fechas, todas.
 // Acepta { tx } para leer dentro de una transacción.
-export function listByRoom(roomId, { from, to, tx } = {}) {
+// Con { limit } devuelve como mucho ese número de reservas (las más próximas primero).
+export function listByRoom(roomId, { from, to, tx, limit } = {}) {
   let query = base.collection().where('roomId', '==', roomId);
   if (from) query = query.where('startDate', '>=', from);
   if (to) query = query.where('startDate', '<', to);
-  return runQuery(query, { orderBy: 'startDate', tx });
+  return runQuery(query, { orderBy: 'startDate', tx, limit });
+}
+
+// ¿La sala tiene alguna reserva, en cualquier estado? Lee como mucho un documento.
+export async function hasAnyForRoom(roomId, { tx } = {}) {
+  const query = base.collection().where('roomId', '==', roomId);
+  return (await runQuery(query, { limit: 1, tx })).length > 0;
 }
 
 // Reservas de varias salas que empiezan en [from, to), en lotes de 30 ids (límite de `in`).
 // Una consulta por lote en lugar de una por sala.
-export async function listByRooms(roomIds, { from, to } = {}) {
+// Con { tx } lee dentro de una transacción.
+export async function listByRooms(roomIds, { from, to, tx } = {}) {
   const chunks = [];
   for (let i = 0; i < roomIds.length; i += 30) chunks.push(roomIds.slice(i, i + 30));
   const results = await Promise.all(
@@ -34,7 +42,7 @@ export async function listByRooms(roomIds, { from, to } = {}) {
       let query = base.collection().where('roomId', 'in', ids);
       if (from) query = query.where('startDate', '>=', from);
       if (to) query = query.where('startDate', '<', to);
-      return runQuery(query, { orderBy: 'startDate' });
+      return runQuery(query, { orderBy: 'startDate', tx });
     }),
   );
   return results.flat();

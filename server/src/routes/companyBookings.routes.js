@@ -448,4 +448,71 @@ router.delete(
   asyncHandler(ctrl.removeBlock),
 );
 
+/**
+ * @openapi
+ * /company/rooms/{id}/future-bookings:
+ *   get:
+ *     tags: [Empresa]
+ *     summary: Reservas futuras de una sala propia
+ *     description: 'Reservas CONFIRMED o PENDING_PAYMENT que empiezan después de ahora, por inicio ascendente (máx. 500). Son las que impiden eliminar la sala (`HAS_FUTURE_BOOKINGS`). Mismo formato que `/company/bookings`: incluye nombre y email del cliente, nunca su id. Sala ajena 403; inexistente o eliminada 404.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Reservas futuras de la sala.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 reservas:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id: {type: string}
+ *                       codigo: {type: string, nullable: true}
+ *                       roomId: {type: string}
+ *                       sala:
+ *                         type: object
+ *                         nullable: true
+ *                         properties:
+ *                           nombre: {type: string}
+ *                           codigo: {type: string}
+ *                       fecha: {type: string, example: '2026-11-20'}
+ *                       inicio: {type: integer}
+ *                       fin: {type: integer}
+ *                       horas: {type: integer}
+ *                       precioHora: {type: number}
+ *                       importe: {type: number}
+ *                       estado: {type: string, enum: [PENDING_PAYMENT, CONFIRMED]}
+ *                       cliente:
+ *                         type: object
+ *                         nullable: true
+ *                         properties:
+ *                           nombre: {type: string, nullable: true}
+ *                           email: {type: string, nullable: true}
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.get(
+  '/company/rooms/:id/future-bookings',
+  ...guard,
+  validator.futureBookings,
+  validate,
+  asyncHandler(ctrl.listFutureBookings),
+);
+
 export default router;

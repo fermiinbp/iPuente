@@ -18,6 +18,11 @@ export async function getBooking(req, res) {
   res.json(await service.getBooking(req.user.companyId, req.params.id));
 }
 
+// GET /api/company/rooms/:id/future-bookings: reservas futuras de una sala propia.
+export async function listFutureBookings(req, res) {
+  res.json({ reservas: await service.listFutureBookings(req.user.companyId, req.params.id) });
+}
+
 // PATCH /api/company/bookings/:id/cancel: cancela una reserva de la empresa con motivo.
 export async function cancelBooking(req, res) {
   res.json(await service.cancelBooking(req.user.companyId, req.params.id, req.body.motivo));

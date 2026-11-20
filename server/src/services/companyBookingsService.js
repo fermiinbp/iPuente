@@ -10,6 +10,7 @@ import { addDays, resolveRange, todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 import { BOOKING_HOURS } from '../config/bookingHours.js';
 import { assertSlotAvailable, toDate, toSlot } from './availabilityService.js';
+import { isActiveFuture } from './futureBookingsService.js';
 import {
   atHour,
   buildBookingDetail,
@@ -25,6 +26,9 @@ async function loadRooms(ids) {
   const rooms = await Promise.all(unique.map((id) => roomModel.findById(id)));
   return new Map(unique.map((id, i) => [id, rooms[i]]));
 }
+
+// Tope de reservas futuras que devuelve el listado de una sala.
+const MAX_FUTURE = 500;
 
 // Datos mínimos de una sala para las respuestas.
 const toSala = (room) => (room ? { nombre: room.name, codigo: room.code } : null);
@@ -43,9 +47,10 @@ function queryRange(filters) {
 // Ordena por fecha e inicio ascendentes.
 const byDate = (a, b) => a.fecha.localeCompare(b.fecha) || a.inicio - b.inicio;
 
-// Si viene roomId comprueba que es de la empresa (404/403); sin roomId no filtra por sala.
+// Si viene roomId comprueba que es de la empresa (404/403; una sala eliminada lógicamente sigue
+// consultable por su historial); sin roomId no filtra por sala.
 async function checkRoomFilter(roomId, companyId) {
-  if (roomId) await getOwnedRoom(roomId, companyId);
+  if (roomId) await getOwnedRoom(roomId, companyId, { includeDeleted: true });
 }
 
 // Reservas de la empresa en el rango pedido (por defecto hoy - 30 días y 90 días desde ahí; máximo
@@ -74,6 +79,27 @@ export async function listBookings(companyId, { desde, hasta, roomId } = {}) {
       };
     })
     .sort(byDate);
+}
+
+// Reservas futuras (CONFIRMED o PENDING_PAYMENT, con inicio posterior a ahora) de una sala propia,
+// por inicio ascendente y como mucho 500: las que bloquean eliminarla. 404/403 si la sala no es
+// propia o ya está eliminada. Mismo formato que el listado de reservas (cliente con nombre y email).
+export async function listFutureBookings(companyId, roomId) {
+  const room = await getOwnedRoom(roomId, companyId);
+  const nowMs = Date.now();
+  // La consulta ya va limitada por fecha (desde ahora, las más próximas, máx. 500); los estados
+  // se filtran en memoria, así que no hace falta un índice nuevo.
+  const bookings = (
+    await bookingModel.listByRoom(roomId, { from: new Date(nowMs), limit: MAX_FUTURE })
+  ).filter((b) => b.companyId === companyId && isActiveFuture(b, nowMs));
+  const userIds = [...new Set(bookings.map((b) => b.userId).filter(Boolean))];
+  const users = await Promise.all(userIds.map((id) => userModel.findById(id)));
+  const usersById = new Map(userIds.map((id, i) => [id, users[i]]));
+  return bookings.map((booking) => ({
+    ...toItem(booking),
+    sala: toSala(room),
+    cliente: toCliente(usersById.get(booking.userId)),
+  }));
 }
 
 // Detalle de una reserva de la empresa: 404 NOT_FOUND si no existe o es de otra empresa (la reserva
@@ -154,7 +180,7 @@ export async function createBlock(companyId, { roomId, fecha, inicio, fin, motiv
 }
 
 // Ids de las fichas de occupancy de una sala, fecha y franja [inicio, fin).
-function slotIds(roomId, fecha, inicio, fin) {
+export function slotIds(roomId, fecha, inicio, fin) {
   const ids = [];
   for (let hour = inicio; hour < fin; hour++) ids.push(occupancyModel.slotId(roomId, fecha, hour));
   return ids;
