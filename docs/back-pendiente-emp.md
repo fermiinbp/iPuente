@@ -8,29 +8,29 @@ Para cada issue se indica qué cubre ya la API en `main` y qué falta. Lo que fa
 
 Issues de back que usa `EMP`:
 
-| Issue                                                            | Estado                         | Qué da                                                                                                                                                                                 |
-| ---------------------------------------------------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DAT013 (#116) · Registro de empresa y perfil de usuario          | Hecho                          | `POST /api/auth/register/company` (cuenta y empresa en un paso, empresa pendiente), `GET /api/companies/me` y `requireApprovedCompany`                                                 |
-| DAT014 (#117) · Endpoints de empresa: edificios, plantas y salas | Hecho                          | Crear, editar y listar edificios; crear y editar plantas; `PATCH /api/company/rooms/:id` con los datos comerciales                                                                     |
-| DAT015 (#118) · Guardar y publicar el mapa de una planta         | Hecho                          | `PUT /api/company/floors/:id/map`, sincronizar `rooms`, `POST /api/company/floors/:id/publish` y `/unpublish`                                                                          |
-| DAT016 (#119) · Panel de empresa: reservas y bloqueos            | Hecho                          | Listar reservas de sus salas (`desde`, `hasta`, `roomId`), crear, listar y borrar bloqueos, y cancelar una reserva con motivo                                                          |
-| DAT017 (#147) · Alcance del MVP y contrato de la API             | Hecho                          | Alcance del MVP (reserva confirmada sin pago; Stripe es un extra) e idioma de la API en el [README](../README.md#9-idioma-de-la-api)                                                   |
-| DAT018 (#148) · Publicar edificios y gestionar salas             | Hecho                          | Publicar y despublicar edificios (`NO_PUBLISHED_FLOORS`), `GET /api/company/rooms` con filtros y estado (`publicada`, `sin_precio`, `oculta`) y ocultar o mostrar una sala             |
-| DAT021 (#151) · Detalle de reserva para cliente y empresa        | Hecho                          | `GET /api/company/bookings/:id` (solo de sus salas)                                                                                                                                    |
-| DAT022 (#152) · Admin I: aprobar, rechazar y suspender empresas  | Hecho                          | Aprobar, rechazar con motivo, suspender y reactivar; estados `PENDING`, `APPROVED`, `REJECTED` y `SUSPENDED`; `GET /api/companies/me` con `estado` y `motivo`; claim `companyApproved` |
-| DAT024 (#154) · Reglas de Firebase Storage                       | Hecho                          | `storage.rules`: solo escribe la empresa dueña y aprobada en `companies/{companyId}/…`; imágenes PNG, JPEG, WebP o GIF de hasta 5 MB                                                   |
-| DAT026 (#156) · Seguridad de la API                              | Hecho                          | Límite de peticiones, CORS y registro más seguro, con `409 EMAIL_IS_CLIENT` si el email del alta ya es de un cliente                                                                   |
-| DAT025 (#155) · Detección de salas con IA                        | Cerrada, **no está en `main`** | El código está en la rama `DAT025-deteccion-de-salas-con-ia`, sin PR. La retoma DAT040 (#180), en pausa                                                                                |
-| DAT028 (#158) · Eliminar edificio, planta o sala                 | Pendiente                      | Eliminar con las reservas futuras protegidas                                                                                                                                           |
-| DAT029 (#159) · Resumen del panel de empresa                     | Pendiente                      | Resumen de EMP002                                                                                                                                                                      |
-| DAT030 (#160) · Completar el alta de empresa                     | Pendiente                      | Email de contacto, ciudad y condiciones en el alta, y `PATCH /api/companies/me`                                                                                                        |
-| DAT039 (#172) · Salas gratis                                     | Pendiente                      | Elegir entre precio, gratis u oculta                                                                                                                                                   |
+| Issue                                                            | Estado                         | Qué da                                                                                                                                                                                        |
+| ---------------------------------------------------------------- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DAT013 (#116) · Registro de empresa y perfil de usuario          | Hecho                          | `POST /api/auth/register/company` (cuenta y empresa en un paso, empresa pendiente), `GET /api/companies/me` y `requireApprovedCompany`                                                        |
+| DAT014 (#117) · Endpoints de empresa: edificios, plantas y salas | Hecho                          | Crear, editar y listar edificios; crear y editar plantas; `PATCH /api/company/rooms/:id` con los datos comerciales                                                                            |
+| DAT015 (#118) · Guardar y publicar el mapa de una planta         | Hecho                          | `PUT /api/company/floors/:id/map`, sincronizar `rooms`, `POST /api/company/floors/:id/publish` y `/unpublish`                                                                                 |
+| DAT016 (#119) · Panel de empresa: reservas y bloqueos            | Hecho                          | Listar reservas de sus salas (`desde`, `hasta`, `roomId`), crear, listar y borrar bloqueos, y cancelar una reserva con motivo                                                                 |
+| DAT017 (#147) · Alcance del MVP y contrato de la API             | Hecho                          | Alcance del MVP (reserva confirmada sin pago; Stripe es un extra) e idioma de la API en el [README](../README.md#9-idioma-de-la-api)                                                          |
+| DAT018 (#148) · Publicar edificios y gestionar salas             | Hecho                          | Publicar y despublicar edificios (`NO_PUBLISHED_FLOORS`), `GET /api/company/rooms` con filtros y estado (`publicada`, `sin_precio`, `oculta`) y ocultar o mostrar una sala                    |
+| DAT021 (#151) · Detalle de reserva para cliente y empresa        | Hecho                          | `GET /api/company/bookings/:id` (solo de sus salas)                                                                                                                                           |
+| DAT022 (#152) · Admin I: aprobar, rechazar y suspender empresas  | Hecho                          | Aprobar, rechazar con motivo, suspender y reactivar; estados `PENDING`, `APPROVED`, `REJECTED` y `SUSPENDED`; `GET /api/companies/me` con `estado` y `motivo`; claim `companyApproved`        |
+| DAT024 (#154) · Reglas de Firebase Storage                       | Hecho                          | `storage.rules`: solo escribe la empresa dueña y aprobada en `companies/{companyId}/…`; imágenes PNG, JPEG, WebP o GIF de hasta 5 MB                                                          |
+| DAT026 (#156) · Seguridad de la API                              | Hecho                          | Límite de peticiones, CORS y registro más seguro, con `409 EMAIL_IS_CLIENT` si el email del alta ya es de un cliente                                                                          |
+| DAT025 (#155) · Detección de salas con IA                        | Cerrada, **no está en `main`** | El código está en la rama `DAT025-deteccion-de-salas-con-ia`, sin PR. La retoma DAT040 (#180), en pausa                                                                                       |
+| DAT028 (#158) · Eliminar edificio, planta o sala                 | Hecho                          | `DELETE /api/company/buildings/:id`, `/floors/:id` y `/rooms/:id` (`409 HAS_FUTURE_BOOKINGS`; borrado lógico con `deletedAt` si hay historial) y `GET /api/company/rooms/:id/future-bookings` |
+| DAT029 (#159) · Resumen del panel de empresa                     | Pendiente                      | Resumen de EMP002                                                                                                                                                                             |
+| DAT030 (#160) · Completar el alta de empresa                     | Pendiente                      | Email de contacto, ciudad y condiciones en el alta, y `PATCH /api/companies/me`                                                                                                               |
+| DAT039 (#172) · Salas gratis                                     | Pendiente                      | Elegir entre precio, gratis u oculta                                                                                                                                                          |
 
 Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@openapi` (etiqueta `Empresa` o `Mapas`, `bearerAuth`) y como mínimo un test de permisos (propio 200, ajeno 403, rol cliente 403). El `companyId` sale siempre del token y los endpoints del panel usan `requireApprovedCompany`.
 
 ## Decisiones pendientes que afectan al back
 
-1. **Eliminar sala con reservas futuras.** El plan (EMP009) las cancela y las reembolsa; DAT015 (#118) solo marca la sala como no reservable y conserva las reservas. Lo resuelve DAT028 (#158), abierta.
+1. **Eliminar sala con reservas futuras.** Resuelto en DAT028 (#158): no se elimina nada si hay reservas futuras (`CONFIRMED` o `PENDING_PAYMENT`): `409 HAS_FUTURE_BOOKINGS` con `details.reservasFuturas`, y la empresa debe cancelarlas antes (no se cancelan ni reembolsan solas). Sin reservas futuras, lo que nunca tuvo reservas se borra del todo y lo que tiene historial se elimina de forma lógica (`deletedAt`): desaparece de paneles y API pública, pero las reservas pasadas siguen mostrando su sala, planta y edificio.
 2. **Pago online y Stripe Connect.** Resuelto: la reserva queda confirmada sin pago; Stripe es el extra 2 del [Alcance del MVP](../README.md#alcance-del-mvp) y Stripe Connect está fuera de alcance. Lo que dependía de ello en EMP010 (comprobar la cuenta de cobro), EMP014 (desglose de comisiones y reembolso al cancelar) y EMP015 (cobros) queda como maqueta en el front.
 3. **Nombres de campos.** Resuelto en DAT017: body y respuestas de la API en español (`nombreEmpresa`, `cif`, `precioHora`, `fecha`, `inicio`, `fin`) y Firestore en inglés (`name`, `taxId`, `price`, `startDate`, `endDate`). Equivalencias en el [README](../README.md#9-idioma-de-la-api). Excepción: `GET /api/companies/me` responde con nombres en inglés (`name`, `taxId`, `contactName`, `phone`) salvo `estado` y `motivo`. El front usa los nombres de la API tal cual y solo traduce los textos de pantalla.
 4. **Firebase Storage.** Resuelto en DAT024 (#154): `storage.rules` solo deja escribir a la empresa dueña y aprobada en su carpeta, con imágenes de tamaño limitado.
@@ -60,16 +60,14 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 
 ## EMP003 · Mis edificios
 
-- **Ya cubierto:** listar sus edificios con sus plantas (`plantas: [{ id, numero, nombre, publicado, salas }]`, ordenadas por número), crear plantas, el estado del edificio y publicarlo o despublicarlo (DAT014, DAT018).
+- **Ya cubierto:** `DELETE /api/company/buildings/:id`, bloqueado con `409 HAS_FUTURE_BOOKINGS` si alguna sala tiene reservas futuras (DAT028); listar sus edificios con sus plantas (`plantas: [{ id, numero, nombre, publicado, salas }]`, ordenadas por número), crear plantas, el estado del edificio y publicarlo o despublicarlo (DAT014, DAT018).
 - **Falta:**
-  - `DELETE /api/company/buildings/:id`, bloqueado si alguna sala tiene reservas futuras (DAT028, #158).
   - Campo «tiene salas» de la planta del modal «Añadir planta» (la posición es `numero`).
 
 ## EMP004 · Formulario de edificio
 
-- **Ya cubierto:** crear y editar edificio y plantas (DAT014); el edificio se crea en borrador (`publicado: false`) y se publica aparte (DAT018); fotos del edificio (`fotos`, URLs de Storage) y reglas de Storage (DAT024).
+- **Ya cubierto:** eliminar planta con `DELETE /api/company/floors/:id`, bloqueado con `409 HAS_FUTURE_BOOKINGS` (DAT028; el orden de las plantas es su `numero`); crear y editar edificio y plantas (DAT014); el edificio se crea en borrador (`publicado: false`) y se publica aparte (DAT018); fotos del edificio (`fotos`, URLs de Storage) y reglas de Storage (DAT024).
 - **Falta:**
-  - Eliminar planta, bloqueado si tiene reservas futuras (DAT028, #158). El orden de las plantas es su `numero`.
   - Distinguir la foto de la fachada entre las `fotos` del edificio (p. ej. la primera).
 
 ## EMP005 · Zonas de la fachada
@@ -95,9 +93,7 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 ## EMP009 · Editor III: panel de sala
 
 - **Ya cubierto (DAT014):** editar los datos comerciales de una sala, incluido el m² (`m2`). El tipo se guarda desde el editor de mapas (`tipo` en `salas`, DAT015).
-- **Falta (DAT028, #158):**
-  - Reservas futuras de una sala, para avisar antes de eliminarla.
-  - Qué pasa con esas reservas al eliminarla (decisión 1).
+- **Ya cubierto (DAT028):** `GET /api/company/rooms/:id/future-bookings` (reservas futuras de una sala, para avisar antes de eliminarla) y `DELETE /api/company/rooms/:id`, que se rechaza con `409 HAS_FUTURE_BOOKINGS` si las hay.
 
 ## EMP010 · Editor IV: guardar y publicar
 
