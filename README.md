@@ -198,10 +198,14 @@ Almacena la información de las empresas que publican espacios.
 | `email` | Correo de contacto. |
 | `phone` | Teléfono de contacto. |
 | `address` | Dirección de la empresa. |
+| `city` | Ciudad de la empresa (alta). |
+| `termsAcceptedAt` | Fecha en que aceptó las condiciones al darse de alta. |
 | `ownerUid` | UID del usuario que dio de alta la empresa. |
 | `status` | Estado de la solicitud: `PENDING`, `APPROVED`, `REJECTED` o `SUSPENDED`. |
 | `verified` | `true` si `status` es `APPROVED`. |
-| `rejectionReason` | Motivo del rechazo (lo escribe el admin al rechazar). |
+| `rejectionReason` | Motivo del rechazo (lo escribe el admin al rechazar); `null` al reenviar la solicitud. |
+| `lastRejectionReason` | Motivo del último rechazo, guardado al reenviar la solicitud. |
+| `resubmittedAt` | Fecha del último reenvío tras un rechazo. |
 | `suspensionReason` | Motivo de la suspensión vigente; `null` al reactivar. |
 | `lastSuspensionReason` | Motivo de la última suspensión, guardado al reactivar. |
 | `reviewedAt` | Fecha de la última decisión del admin. |
@@ -517,7 +521,11 @@ Equivalencias por recurso (campo de la API → campo de Firestore):
 | Empresa (registro) | `cif` | `companies.taxId` |
 | Empresa (registro) | `contacto` | `companies.contactName` |
 | Empresa (registro) | `telefono` | `companies.phone` |
-| Empresa (registro) | `email` | `companies.email` (y el email de acceso) |
+| Empresa (registro) | `email` | Email de acceso (Firebase Auth y `users.email`) |
+| Empresa (registro) | `emailContacto` | `companies.email` |
+| Empresa (registro) | `ciudad` | `companies.city` |
+| Empresa (registro) | `aceptaCondiciones` (`true`) | `companies.termsAcceptedAt` (fecha) |
+| Empresa (`/companies/me`) | `fechaSolicitud` | `companies.resubmittedAt` o, si no hay, `createdAt` |
 | Empresa (registro) | `nombre` (del usuario) | `users.name` |
 | Empresa | `estado` (`pendiente`, `aprobada`, `rechazada`, `suspendida`) | `companies.status` (`PENDING`, `APPROVED`, `REJECTED`, `SUSPENDED`) |
 | Edificio | `nombre` | `name` |
@@ -556,8 +564,6 @@ Equivalencias por recurso (campo de la API → campo de Firestore):
 | Reserva | `importe` | `totalAmount` |
 | Reserva | `estado` (`CONFIRMED`, `CANCELLED`…, sin traducir) | `status` |
 | Reserva | `horas` | Calculado (`fin - inicio`); no se guarda |
-
-**Excepción conocida:** `GET /api/companies/me` todavía responde en inglés (`name`, `taxId`, `contactName`, `phone`, `email`, `createdAt`; solo `estado` va en español). Está pendiente de traducir en una issue de código.
 
 Publicar y despublicar un edificio (`publicado`, que cambia `status` entre `DRAFT` y `PUBLISHED`) y los filtros de `GET /api/company/rooms` estarán disponibles tras fusionar #170 (DAT018).
 
