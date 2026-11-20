@@ -106,6 +106,14 @@ export async function getCurrentRole() {
   return result?.claims?.role ?? 'CLIENT';
 }
 
+// Pide un token nuevo para leer los claims actuales (p. ej. `companyApproved` justo después de que el admin apruebe la
+// empresa). onIdTokenChanged avisa a AuthProvider con el token nuevo. Devuelve los claims del token nuevo.
+export async function refreshSession() {
+  if (!auth.currentUser) throw new Error('No hay sesión iniciada.');
+  const result = await auth.currentUser.getIdTokenResult(true);
+  return result.claims;
+}
+
 // Comprueba el código del enlace de recuperación y devuelve el correo de la cuenta. Lanza si caducó o no vale.
 export function checkResetCode(code) {
   return verifyPasswordResetCode(auth, code);
