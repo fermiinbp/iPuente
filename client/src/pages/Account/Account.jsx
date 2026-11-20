@@ -5,6 +5,7 @@ import { useLocation } from 'react-router';
 import Alert from '@/components/ui/Alert/Alert.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
+import { MIN_PASSWORD } from '@/config/constants.js';
 import { useAuth } from '@/hooks/useAuth.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import {
@@ -14,8 +15,6 @@ import {
   updateDisplayName,
 } from '@/services/authService.js';
 import styles from './Account.module.css';
-
-const MIN_PASSWORD = 6; // el mismo mínimo que el registro
 
 export default function Account() {
   usePageTitle('Mi cuenta');

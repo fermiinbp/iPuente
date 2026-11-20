@@ -4,7 +4,9 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import AuthLayout from '@/components/auth/AuthLayout/AuthLayout.jsx';
 import Alert from '@/components/ui/Alert/Alert.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
+import Checkbox from '@/components/ui/Checkbox/Checkbox.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
+import { MIN_PASSWORD } from '@/config/constants.js';
 import { useAuth } from '@/hooks/useAuth.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import { authErrorMessage, registerWithEmail, signInWithGoogle } from '@/services/authService.js';
@@ -48,8 +50,11 @@ export default function Register() {
     const errors = {};
     if (!name) errors.name = 'Escribe tu nombre.';
     if (!EMAIL_RE.test(email)) errors.email = 'Escribe un correo válido.';
-    if (password.length < 6) errors.password = 'Usa al menos 6 caracteres.';
+    if (password.length < MIN_PASSWORD) {
+      errors.password = `Usa al menos ${MIN_PASSWORD} caracteres.`;
+    }
     if (repeat !== password) errors.repeat = 'Las contraseñas no coinciden.';
+    if (data.get('privacy') !== 'on') errors.privacy = 'Debes aceptar la política de privacidad.';
     setFieldErrors(errors);
     if (Object.keys(errors).length === 0) {
       run(() => registerWithEmail({ name, email, password }));
@@ -92,7 +97,7 @@ export default function Register() {
           type="password"
           variant="boxed"
           autoComplete="new-password"
-          hint="Mínimo 6 caracteres."
+          hint={`Mínimo ${MIN_PASSWORD} caracteres.`}
           error={fieldErrors.password}
         />
         <Input
@@ -102,6 +107,11 @@ export default function Register() {
           variant="boxed"
           autoComplete="new-password"
           error={fieldErrors.repeat}
+        />
+        <Checkbox
+          name="privacy"
+          label="Acepto la política de privacidad"
+          error={fieldErrors.privacy}
         />
         {error && <Alert type="error">{error}</Alert>}
         <Button type="submit" loading={submitting}>

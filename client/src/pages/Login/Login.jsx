@@ -5,30 +5,37 @@ import AuthLayout from '@/components/auth/AuthLayout/AuthLayout.jsx';
 import Alert from '@/components/ui/Alert/Alert.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
+import { ROLE_HOME } from '@/config/constants.js';
 import { useAuth } from '@/hooks/useAuth.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
-import { authErrorMessage, signInWithEmail, signInWithGoogle } from '@/services/authService.js';
+import {
+  authErrorMessage,
+  getCurrentRole,
+  signInWithEmail,
+  signInWithGoogle,
+} from '@/services/authService.js';
 import styles from './Login.module.css';
 
 export default function Login() {
   usePageTitle('Iniciar sesión');
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from || '/';
+  // Página de la que se venía; sin ella, la de su rol (cliente a la home, empresa a /company, admin a /admin).
+  const from = location.state?.from;
 
   const [fieldErrors, setFieldErrors] = useState({});
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  if (user && !submitting) return <Navigate to={from} replace />;
+  if (user && !submitting) return <Navigate to={from || ROLE_HOME[role] || '/'} replace />;
 
   async function run(action) {
     setSubmitting(true);
     setError('');
     try {
       await action();
-      navigate(from, { replace: true });
+      navigate(from || ROLE_HOME[await getCurrentRole()] || '/', { replace: true });
     } catch (err) {
       setError(authErrorMessage(err));
       setSubmitting(false);

@@ -1,6 +1,7 @@
 // Sesión del usuario con Firebase Auth: entrar, registrarse, Google, salir y recuperar la contraseña.
 // Los componentes no llaman a Firebase: pasan por aquí. Los errores salen ya en español.
 import {
+  confirmPasswordReset,
   createUserWithEmailAndPassword,
   EmailAuthProvider,
   GoogleAuthProvider,
@@ -11,6 +12,7 @@ import {
   signOut,
   updatePassword,
   updateProfile,
+  verifyPasswordResetCode,
 } from 'firebase/auth';
 import { auth } from '../config/firebase.js';
 
@@ -25,6 +27,8 @@ const MESSAGES = {
   'auth/too-many-requests': 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
   'auth/network-request-failed': 'No hay conexión. Revisa tu red e inténtalo de nuevo.',
   'auth/user-disabled': 'Esta cuenta está desactivada.',
+  'auth/expired-action-code': 'El enlace ha caducado. Pide uno nuevo.',
+  'auth/invalid-action-code': 'El enlace no es válido o ya se ha usado. Pide uno nuevo.',
   'auth/requires-recent-login': 'Por seguridad, vuelve a iniciar sesión e inténtalo de nuevo.',
   'auth/operation-not-allowed': 'El acceso con Google no está activado en Firebase.',
   'auth/unauthorized-domain': 'Este dominio no está autorizado en Firebase Authentication.',
@@ -91,4 +95,20 @@ export async function changePassword(current, next) {
   if (!user?.email) throw new Error('No hay sesión iniciada.');
   await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, current));
   await updatePassword(user, next);
+}
+
+// Rol de la sesión actual (custom claim `role`); sin claim, es cliente.
+export async function getCurrentRole() {
+  const result = await auth.currentUser?.getIdTokenResult();
+  return result?.claims?.role ?? 'CLIENT';
+}
+
+// Comprueba el código del enlace de recuperación y devuelve el correo de la cuenta. Lanza si caducó o no vale.
+export function checkResetCode(code) {
+  return verifyPasswordResetCode(auth, code);
+}
+
+// Fija la contraseña nueva con el código del enlace.
+export function confirmReset(code, newPassword) {
+  return confirmPasswordReset(auth, code, newPassword);
 }

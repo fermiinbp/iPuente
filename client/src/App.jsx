@@ -55,6 +55,12 @@ const ADMIN_LINKS = [
 export default function App() {
   return (
     <Routes>
+      {/* Acceso: sin cabecera ni pie (AuthLayout dentro de cada pantalla) */}
+      <Route path="login" element={<Login />} />
+      <Route path="register" element={<Register />} />
+      <Route path="forgot-password" element={<ForgotPassword />} />
+      <Route path="reset-password" element={<ResetPassword />} />
+
       <Route element={<Layout />}>
         {/* Públicas */}
         <Route index element={<Landing />} />
@@ -62,10 +68,6 @@ export default function App() {
         <Route path="buildings/:buildingId" element={<Building />} />
         <Route path="buildings/:buildingId/floors/:floorId" element={<Floor />} />
         <Route path="rooms/:roomId" element={<Room />} />
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
-        <Route path="forgot-password" element={<ForgotPassword />} />
-        <Route path="reset-password" element={<ResetPassword />} />
 
         {/* Alta de empresa: sin sesión, porque crea una cuenta de empresa nueva (EMP001) */}
         <Route path="company/register" element={<CompanyRegister />} />
