@@ -60,7 +60,7 @@ export default function MyBookings() {
       <>
         <section aria-labelledby="proximas-titulo">
           <h2 className={styles.subtitle} id="proximas-titulo">
-            Próximas
+            Próximas ({data.proximas.length})
           </h2>
           {data.proximas.length === 0 ? (
             <p className={styles.none}>No tienes reservas próximas.</p>
@@ -78,7 +78,7 @@ export default function MyBookings() {
         {data.pasadas.length > 0 && (
           <section aria-labelledby="pasadas-titulo">
             <h2 className={styles.subtitle} id="pasadas-titulo">
-              Pasadas
+              Pasadas ({data.pasadas.length})
             </h2>
             <ul className={styles.list}>
               {data.pasadas.map((booking) => (

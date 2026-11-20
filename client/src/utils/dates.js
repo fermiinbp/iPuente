@@ -17,3 +17,9 @@ export function formatLongDate(fecha) {
     month: 'long',
   });
 }
+
+// ¿Ya ha empezado la reserva? `fecha` es AAAA-MM-DD e `inicio` la hora entera de comienzo.
+export function hasStarted({ fecha, inicio }) {
+  const [year, month, day] = fecha.split('-').map(Number);
+  return new Date(year, month - 1, day, inicio).getTime() <= Date.now();
+}

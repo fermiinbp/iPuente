@@ -1,1 +1,14 @@
-/* Estilos de BookingDetailPage (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de BookingDetailPage (CSS Module). Mobile first. */
+.page {
+  min-height: 60vh;
+  background: var(--bosque);
+  color: var(--crema);
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 880px;
+  margin: 0 auto;
+  padding: clamp(32px, 5vw, 72px) var(--gutter) var(--espacio-seccion);
+}

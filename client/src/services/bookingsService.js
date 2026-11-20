@@ -6,6 +6,11 @@ export function createBooking({ roomId, fecha, inicio, fin }) {
   return post('/bookings', { roomId, fecha, inicio, fin });
 }
 
+// Detalle de una reserva propia (sala, planta, edificio y, si está cancelada, motivo y quién). 404 si es ajena.
+export function getBooking(id, { signal } = {}) {
+  return get(`/bookings/${encodeURIComponent(id)}`, { signal });
+}
+
 export function getMyBookings({ signal } = {}) {
   return get('/bookings/me', { signal });
 }

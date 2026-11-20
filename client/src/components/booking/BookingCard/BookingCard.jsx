@@ -3,16 +3,11 @@
 import { Link } from 'react-router';
 import Button from '@/components/ui/Button/Button.jsx';
 import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
-import { formatLongDate } from '@/utils/dates.js';
+import { formatLongDate, hasStarted } from '@/utils/dates.js';
 import { formatPrice } from '@/utils/formatPrice.js';
 import styles from './BookingCard.module.css';
 
 const pad = (hour) => String(hour).padStart(2, '0');
-
-function hasStarted({ fecha, inicio }) {
-  const [year, month, day] = fecha.split('-').map(Number);
-  return new Date(year, month - 1, day, inicio).getTime() <= Date.now();
-}
 
 export default function BookingCard({ booking, onCancel }) {
   const canCancel = booking.estado === 'CONFIRMED' && !hasStarted(booking);
@@ -32,6 +27,9 @@ export default function BookingCard({ booking, onCancel }) {
       <div className={styles.side}>
         <StatusBadge status={booking.estado} kind="booking" />
         <p className={styles.amount}>{formatPrice(booking.importe)}</p>
+        <Link className={styles.detail} to={`/my-bookings/${booking.id}`}>
+          Ver detalle<span className={styles.srOnly}> de la reserva de {name}</span>
+        </Link>
         {canCancel && (
           <Button variant="ghost" onClick={() => onCancel(booking)}>
             Cancelar
