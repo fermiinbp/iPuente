@@ -143,6 +143,7 @@
 }
 
 .bookingTitle {
+  scroll-margin-top: calc(var(--alto-cabecera) + var(--space-5));
   margin: 0;
   font-family: var(--font-display);
   font-size: var(--text-lista);
@@ -183,7 +184,31 @@
   white-space: nowrap;
 }
 
+/* En móvil la caja de reserva queda al final: este enlace salta a ella. En escritorio va al lado y no hace falta. */
+.jump {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-pildora);
+  color: var(--crema);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.jump:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 3px;
+}
+
 @media (min-width: 900px) {
+  .jump {
+    display: none;
+  }
+
   .inner {
     grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
     gap: var(--space-8);

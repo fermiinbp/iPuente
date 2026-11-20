@@ -170,6 +170,11 @@ export default function Room() {
           <Breadcrumbs items={crumbs} />
           {where && <p className={styles.eyebrow}>{where}</p>}
           <h1 className={styles.title}>{room.nombre}</h1>
+          {room.reservable && (
+            <a className={styles.jump} href="#reserva-titulo">
+              Reservar esta sala<span aria-hidden="true"> ↓</span>
+            </a>
+          )}
 
           <RoomGallery photos={room.fotos} name={room.nombre} />
 
