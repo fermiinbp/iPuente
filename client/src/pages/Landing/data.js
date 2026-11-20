@@ -65,7 +65,7 @@ export const HOW_IT_WORKS_STEPS = [
   {
     number: '03',
     title: 'Reserva y paga online',
-    text: 'Eliges fecha y horas, pagas con tarjeta y recibes la confirmación por email.',
+    text: 'Eliges fecha y horas, pagas con tarjeta y ves la reserva confirmada al momento en Mis reservas.',
   },
 ];
 
