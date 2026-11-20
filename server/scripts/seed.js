@@ -8,6 +8,7 @@ import { ROLES } from '../src/config/roles.js';
 import * as bookingModel from '../src/models/bookingModel.js';
 import * as buildingModel from '../src/models/buildingModel.js';
 import * as companyModel from '../src/models/companyModel.js';
+import * as companyTaxIdModel from '../src/models/companyTaxIdModel.js';
 import * as floorModel from '../src/models/floorModel.js';
 import * as occupancyModel from '../src/models/occupancyModel.js';
 import * as roomModel from '../src/models/roomModel.js';
@@ -53,6 +54,8 @@ async function seedCompany(company) {
     verified: company.estado === 'aprobada',
     demo: true,
   });
+  // Índice de CIF únicos (idempotente), igual que el que crea el registro de empresas.
+  await companyTaxIdModel.upsert(company.cif, { taxId: company.cif, companyId: company.id });
 }
 
 async function seedBuilding(building) {

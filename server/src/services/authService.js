@@ -2,6 +2,7 @@
 import { adminAuth } from '../config/config.js';
 import { ROLES } from '../config/roles.js';
 import * as companyModel from '../models/companyModel.js';
+import * as companyTaxIdModel from '../models/companyTaxIdModel.js';
 import * as userModel from '../models/userModel.js';
 import { HttpError } from '../utils/httpError.js';
 
@@ -81,14 +82,63 @@ export async function registerClient({ email, password, nombre }) {
   }
 }
 
+// Corta con 409 EMAIL_IS_CLIENT si el email ya es de un cliente (Auth o users).
+async function assertEmailNotClient(email) {
+  let existing = null;
+  try {
+    existing = await authClient().getUserByEmail(email);
+  } catch (err) {
+    if (err?.code !== 'auth/user-not-found') throw err;
+  }
+  if (!existing) return;
+  const profile = await userModel.findById(existing.uid);
+  if (existing.customClaims?.role === ROLES.CLIENT || profile?.role === ROLES.CLIENT) {
+    throw new HttpError(
+      409,
+      'EMAIL_IS_CLIENT',
+      'Ese email ya tiene una cuenta de cliente. Usa otro email para la empresa.',
+    );
+  }
+}
+
+// Reserva el CIF creando su documento índice (falla si ya existe: 409 COMPANY_EXISTS).
+async function reserveTaxId(cif) {
+  try {
+    await companyTaxIdModel.create({ taxId: cif }, { id: cif });
+  } catch (err) {
+    if (companyTaxIdModel.isAlreadyExists(err)) {
+      throw new HttpError(409, 'COMPANY_EXISTS', 'Ya existe una empresa con ese CIF');
+    }
+    throw err;
+  }
+}
+
+// Libera el CIF reservado; si falla solo se registra para limpiar a mano.
+async function releaseTaxId(cif) {
+  try {
+    await companyTaxIdModel.remove(cif);
+  } catch {
+    console.error(`Rollback del registro: no se pudo borrar companyTaxIds/${cif}`);
+  }
+}
+
 // Registra una empresa (queda pendiente de aprobación). Devuelve { uid, companyId, estado }.
 export async function registerCompany(data) {
   const { email, password, nombre, nombreEmpresa, cif, contacto, telefono } = data;
+  // Comprobaciones previas amigables; la unicidad real del CIF la garantiza reserveTaxId.
   if (await companyModel.findByTaxId(cif)) {
     throw new HttpError(409, 'COMPANY_EXISTS', 'Ya existe una empresa con ese CIF');
   }
+  await assertEmailNotClient(email);
+  await reserveTaxId(cif);
 
-  const uid = await createAuthUser({ email, password, nombre });
+  let uid;
+  try {
+    uid = await createAuthUser({ email, password, nombre });
+  } catch (err) {
+    await releaseTaxId(cif);
+    throw err;
+  }
   let companyId = null;
   try {
     companyId = await companyModel.create({
@@ -101,6 +151,7 @@ export async function registerCompany(data) {
       status: COMPANY_STATUS.PENDING,
       verified: false,
     });
+    await companyTaxIdModel.update(cif, { companyId });
     await companyModel.setMember(companyId, uid, 'OWNER');
     await userModel.create({ name: nombre, email, role: ROLES.COMPANY }, { id: uid });
     await authClient().setCustomUserClaims(uid, {
@@ -111,6 +162,7 @@ export async function registerCompany(data) {
     return { uid, companyId, estado: 'pendiente' };
   } catch (err) {
     await rollback(uid, companyId);
+    await releaseTaxId(cif);
     throw err;
   }
 }

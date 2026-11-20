@@ -1,7 +1,8 @@
 // Sincroniza el claim companyApproved: true al dueño de cada empresa APPROVED y false al resto.
-// Idempotente: solo escribe si el claim cambia. Uso: npm run sync-company-claims -w server
+// También rellena companyTaxIds/{cif}. Idempotente: solo escribe si el claim cambia. Uso: npm run sync-company-claims -w server
 import { adminAuth } from '../src/config/config.js';
 import * as companyModel from '../src/models/companyModel.js';
+import * as companyTaxIdModel from '../src/models/companyTaxIdModel.js';
 
 // Pone el claim al dueño si hace falta. Devuelve 'actualizado', 'igual' o 'sin dueño'.
 async function syncOwner(ownerUid, approved) {
@@ -21,6 +22,8 @@ async function main() {
   for (const c of companies) {
     const approved = c.status === 'APPROVED';
     try {
+      // Rellena el índice de CIF únicos de las empresas anteriores a companyTaxIds (idempotente).
+      if (c.taxId) await companyTaxIdModel.upsert(c.taxId, { taxId: c.taxId, companyId: c.id });
       const result = await syncOwner(c.ownerUid, approved);
       counts[result] += 1;
       console.log(`${c.id}: companyApproved=${approved} (${result})`);
