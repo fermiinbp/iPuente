@@ -138,6 +138,10 @@ export default function Room() {
     );
   }
 
+  const place = [room.edificio?.direccion, room.edificio?.ciudad].filter(Boolean).join(', ');
+  const mapsUrl = place
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${room.edificio?.nombre ?? ''} ${place}`.trim())}`
+    : null;
   const where = [room.edificio?.nombre, room.planta?.nombre].filter(Boolean).join(' · ');
   const keep = keepParams().toString();
   const buildingTo = `/buildings/${room.edificio.id}?${keep}`;
@@ -190,6 +194,24 @@ export default function Room() {
 
           <h2 className={styles.subtitle}>Equipamiento</h2>
           <AmenitiesList items={room.equipamiento} />
+
+          {place && (
+            <section aria-labelledby="como-llegar">
+              <h2 className={styles.subtitle} id="como-llegar">
+                Cómo llegar
+              </h2>
+              <p className={styles.place}>{place}</p>
+              <a
+                className={styles.mapLink}
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Abrir en el mapa
+                <span className={styles.srOnly}> (se abre en una pestaña nueva)</span>
+              </a>
+            </section>
+          )}
         </div>
 
         <aside className={styles.booking} aria-labelledby="reserva-titulo">
