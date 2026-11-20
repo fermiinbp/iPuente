@@ -1,5 +1,5 @@
-// Menú de navegación a pantalla completa en móvil (por debajo de 900 px). Se pinta en un portal fuera de #root,
-// deja la página inerte y sin scroll mientras está abierto (como LandingLoader) y atrapa el foco dentro.
+// Menú de navegación a pantalla completa en móvil (por debajo de 900 px). Se pinta en un portal fuera de #root y,
+// con useModalFocus, deja la página inerte y sin scroll mientras está abierto y atrapa el foco dentro.
 // Se cierra con la ×, con Escape, al elegir un enlace o al pasar a escritorio; al cerrar, el foco vuelve a `returnFocusRef`.
 // `account`: null sin sesión, o { name, email, items: [{ label, to?, separated? }] } con sesión.
 import { useEffect, useRef } from 'react';
@@ -7,10 +7,10 @@ import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router';
 import Button from '@/components/ui/Button/Button.jsx';
 import IconButton from '@/components/ui/IconButton/IconButton.jsx';
+import { useModalFocus } from '@/hooks/useModalFocus.js';
 import logo from '@/assets/images/ipuente-logo-sobre-oscuro.svg';
 import styles from './MobileMenu.module.css';
 
-const FOCUSABLE = 'a[href], button:not([disabled])';
 const DESKTOP = '(min-width: 900px)';
 
 export default function MobileMenu({ id, navLinks, account, loading, onClose, returnFocusRef }) {
@@ -18,45 +18,13 @@ export default function MobileMenu({ id, navLinks, account, loading, onClose, re
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
 
-  // Aislamiento: página inerte y sin scroll; al cerrar se devuelve el foco al botón «Menú».
-  useEffect(() => {
-    const root = document.getElementById('root');
-    const html = document.documentElement;
-    const prevOverflow = html.style.overflow;
-    const returnTo = returnFocusRef?.current;
-    root?.setAttribute('inert', '');
-    html.style.overflow = 'hidden';
-    closeRef.current?.focus();
-    return () => {
-      root?.removeAttribute('inert');
-      html.style.overflow = prevOverflow;
-      returnTo?.focus();
-    };
-  }, [returnFocusRef]);
-
-  // Escape cierra y Tab no sale del menú.
-  useEffect(() => {
-    const onKey = (event) => {
-      if (event.key === 'Escape') {
-        onClose();
-        return;
-      }
-      if (event.key !== 'Tab') return;
-      const focusable = dialogRef.current?.querySelectorAll(FOCUSABLE);
-      if (!focusable?.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // Solo se monta abierto: mientras exista, página inerte, foco en la × y Escape cierra.
+  useModalFocus(true, {
+    containerRef: dialogRef,
+    initialFocusRef: closeRef,
+    returnFocusRef,
+    onEscape: onClose,
+  });
 
   // En escritorio no hay menú móvil: si se agranda la ventana con el menú abierto, se cierra.
   useEffect(() => {

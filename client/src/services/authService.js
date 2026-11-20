@@ -1,4 +1,5 @@
-// Sesión del usuario con Firebase Auth: entrar, registrarse, Google, salir y recuperar la contraseña.
+// Sesión del usuario con Firebase Auth: entrar, registrarse, Google, salir y recuperar la contraseña,
+// y el alta de empresa (registerCompany, de EMP001, que usa las rutas /auth de la API).
 // Los componentes no llaman a Firebase: pasan por aquí. Los errores salen ya en español.
 import {
   confirmPasswordReset,
@@ -15,6 +16,7 @@ import {
   verifyPasswordResetCode,
 } from 'firebase/auth';
 import { auth } from '../config/firebase.js';
+import { post } from './apiClient.js';
 
 const MESSAGES = {
   'auth/invalid-credential': 'El correo o la contraseña no son correctos.',
@@ -112,4 +114,26 @@ export function checkResetCode(code) {
 // Fija la contraseña nueva con el código del enlace.
 export function confirmReset(code, newPassword) {
   return confirmPasswordReset(auth, code, newPassword);
+}
+
+// Alta de empresa (queda pendiente de aprobación) y, a continuación, inicio de sesión con la cuenta nueva.
+// `datos`: { email, password, personaContacto, nombreEmpresa, cif, telefono, emailContacto, ciudad }.
+// Errores de la API (ApiError): EMAIL_EXISTS, EMAIL_IS_CLIENT, COMPANY_EXISTS y VALIDATION_ERROR (con `details`).
+// Devuelve { uid, companyId, estado }.
+export async function registerCompany(datos) {
+  const { email, password, personaContacto, nombreEmpresa, cif, telefono } = datos;
+  // TODO(DAT030): enviar también emailContacto, ciudad y la aceptación de las condiciones cuando la API los acepte.
+  // La API pide `nombre` (titular de la cuenta) y `contacto` (persona de contacto): los dos son la misma persona.
+  const result = await post('/auth/register/company', {
+    email,
+    password,
+    nombre: personaContacto,
+    contacto: personaContacto,
+    nombreEmpresa,
+    cif,
+    telefono,
+  });
+  // El servidor ya ha puesto el rol COMPANY en la cuenta: el token de este inicio de sesión lo trae.
+  await signInWithEmailAndPassword(auth, email, password);
+  return result;
 }

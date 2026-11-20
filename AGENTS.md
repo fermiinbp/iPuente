@@ -50,9 +50,9 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/context/AuthProvider.jsx` | Escucha la sesión de Firebase y expone a toda la app el usuario, su rol (`CLIENT`, `COMPANY`, `ADMIN`) y su `companyId`. |
 | `client/src/hooks/useAuth.js` | Hook para leer el usuario y su rol desde cualquier componente. |
 | `client/src/hooks/useMapEditor.js` | Estado y acciones del editor de mapas: salas, selección, dibujar, mover, redimensionar, borrar, deshacer y cargar el borrador de la IA. |
+| `client/src/hooks/useModalFocus.js` | Comportamiento común de lo que se abre encima de la página (`Modal`, `MobileMenu` y el menú móvil de `DashboardLayout`): página inerte y sin scroll, foco dentro, Tab que no sale, Escape y foco devuelto al cerrar. |
 | `client/src/hooks/useFetch.js` | Hook genérico para llamar a un service y gestionar `data`, `loading` y `error` en las pantallas. |
 | `client/src/services/apiClient.js` | Cliente HTTP único: añade el token de Firebase a cada petición y convierte los errores de la API (`{ error: { code, message } }`) en excepciones. |
-| `client/src/services/authService.js` | Sesión con Firebase Auth: entrar con email o Google, registrarse, salir y recuperar la contraseña. Devuelve los errores ya en español (`authErrorMessage`). |
 | `client/src/components/auth/AuthLayout/AuthLayout.jsx` + `.module.css` | Marco de las pantallas de acceso (entrar, crear cuenta, recuperar contraseña): fondo vivo y tarjeta centrada. |
 | `client/src/services/healthService.js` | Lectura de comprobación: llama a `/api/health` a través de `apiClient`. |
 | `client/src/services/buildingsService.js` | Llamadas públicas de edificios: listado y detalle con sus plantas. |
@@ -60,7 +60,8 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/services/roomsService.js` | Ficha de sala y huecos libres. |
 | `client/src/services/bookingsService.js` | Reservas del cliente: crear, listar y cancelar. |
 | `client/src/services/paymentsService.js` | Pide a la API la URL de Stripe Checkout de una reserva pendiente (`createCheckout`). La API aún no tiene endpoint de pago: hasta entonces la llamada falla y la pantalla lo avisa. |
-| `client/src/services/companyService.js` | Panel de empresa: empresa propia (`getMyCompany`, nombre en la cabecera del panel), alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos. |
+| `client/src/services/companyService.js` | Panel de empresa: empresa propia (`getMyCompany`, y `updateMyCompany` para editar la solicitud, que espera a DAT030), alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos. |
+| `client/src/services/authService.js` | Sesión con Firebase Auth: entrar con correo o Google, registro de cliente, cerrar sesión, recuperar y cambiar la contraseña, nombre y rol de la cuenta, y `registerCompany` (alta de empresa en la API e inicio de sesión). |
 | `client/src/services/adminService.js` | Panel de admin: empresas, usuarios, reservas, pagos y reembolsos. |
 | `client/src/services/uploadService.js` | Sube planos y fotos directamente a Firebase Storage y devuelve su URL y su ruta. |
 | `client/src/services/mapStyleService.js` | Descarga una sola vez el estilo base del mapa (OpenFreeMap) y devuelve una copia. Es un servidor externo, no nuestra API, así que no pasa por `apiClient`. |
@@ -69,7 +70,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/ui/BackLink/BackLink.jsx` + `.module.css` | Enlace «← Volver a…» con la flecha decorativa (`aria-hidden`). |
 | `client/src/components/ui/Breadcrumbs/Breadcrumbs.jsx` + `.module.css` | Migas de pan (`items: [{ label, to? }]`): el último elemento es la página actual (`aria-current="page"`) y los separadores son decorativos. |
 | `client/src/components/ui/Input/Input.jsx` + `.module.css` | Campo de formulario con etiqueta, ayuda y mensaje de error. |
-| `client/src/components/ui/Modal/Modal.jsx` + `.module.css` | Ventana modal accesible (cierre con Escape y foco atrapado). |
+| `client/src/components/ui/Modal/Modal.jsx` + `.module.css` | Ventana modal accesible: portal fuera de `#root`, cierre con Escape y con el fondo, foco atrapado y devuelto al cerrar (con `useModalFocus`), título obligatorio, pie de botones y tamaños `md` y `lg`. |
 | `client/src/components/ui/Spinner/Spinner.jsx` + `.module.css` | Indicador de carga. |
 | `client/src/components/ui/StatusBadge/StatusBadge.jsx` + `.module.css` | Etiqueta de estado: de una sala (libre, ocupada, no reservable; en el panel de empresa: publicada, sin precio, oculta), de una reserva (`CONFIRMED`, `CANCELLED`…; `PENDING_PAYMENT` solo con el extra de Stripe), de un pago o de una empresa (verificada, pendiente, rechazada o suspendida). |
 | `client/src/components/ui/Select/Select.jsx` + `.module.css` | Desplegable con etiqueta, ayuda y mensaje de error (buscador, filtros, cambio de rol). |
@@ -83,7 +84,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/ui/Alert/Alert.jsx` + `.module.css` | Mensaje de error, aviso o éxito dentro de una pantalla. |
 | `client/src/components/ui/EmptyState/EmptyState.jsx` + `.module.css` | Estado vacío con título, texto y acciones (sin resultados, sin edificios, sin reservas). |
 | `client/src/components/ui/StatCard/StatCard.jsx` + `.module.css` | Cifra destacada con título para los resúmenes de empresa y admin. |
-| `client/src/components/ui/ConfirmModal/ConfirmModal.jsx` + `.module.css` | Modal de confirmación sobre `Modal`: título, texto, motivo opcional y acción (cancelar reserva, rechazar o suspender empresa, reembolsar, eliminar sala). |
+| `client/src/components/ui/ConfirmModal/ConfirmModal.jsx` + `.module.css` | Modal de confirmación sobre `Modal`: título, texto, contenido libre (avisos, campos, casillas, opciones o tablas), acción principal que se puede desactivar y con estado de carga, cancelar y una acción secundaria opcional (cancelar reserva, rechazar o suspender empresa, reembolsar, eliminar sala o edificio, salir sin guardar). |
 | `client/src/components/ui/DataTable/DataTable.jsx` + `.module.css` | Tabla de los paneles: columnas, acciones por fila y estado vacío; en móvil pasa a tarjetas. |
 | `client/src/components/ui/FilterBar/FilterBar.jsx` + `.module.css` | Fila de filtros (edificio, planta, estado, fechas) encima de las tablas. |
 | `client/src/components/ui/FileDropzone/FileDropzone.jsx` + `.module.css` | Zona para arrastrar o seleccionar archivos; la usan `PlanUploader` y las fotos de sala. |
@@ -122,6 +123,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/map-editor/DetectionError/DetectionError.jsx` + `.module.css` | Aviso de fallo en la detección con IA, con opción de reintentar o dibujar a mano. |
 | `client/src/components/map-editor/UnsavedChangesModal/UnsavedChangesModal.jsx` + `.module.css` | Aviso al salir del editor con cambios sin guardar. |
 | `client/src/components/map-editor/PublishValidationModal/PublishValidationModal.jsx` + `.module.css` | Comprobaciones antes de publicar una planta (salas sin nombre, sin precio…). |
+| `client/src/components/company/CompanyDataFields/CompanyDataFields.jsx` + `.module.css` | Campos con los datos de la empresa del alta (nombre, CIF, teléfono, persona de contacto, email de contacto y ciudad), compartidos por `CompanyRegister` y `CompanyRequestStatus`. |
 | `client/src/components/company/BuildingFormModal/BuildingFormModal.jsx` + `.module.css` | Formulario para crear o editar un edificio. |
 | `client/src/components/company/BuildingMenu/BuildingMenu.jsx` + `.module.css` | Menú de acciones de un edificio: editar, añadir planta y eliminar. |
 | `client/src/components/company/FloorList/FloorList.jsx` + `.module.css` | Plantas de un edificio con su estado y acceso al editor de mapas. |
@@ -164,8 +166,8 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/pages/PaymentResult/PaymentResult.jsx` + `.module.css` | (extra) Vuelta desde Stripe: reserva confirmada, pago cancelado o reserva expirada. |
 | `client/src/pages/NotFound/NotFound.jsx` + `.module.css` | Página 404. |
 | `client/src/pages/company/CompanyDashboard/CompanyDashboard.jsx` + `.module.css` | Resumen del panel de empresa, con estado vacío en el primer acceso (sin edificios). |
-| `client/src/pages/company/CompanyRegister/CompanyRegister.jsx` + `.module.css` | Solicitud de alta como empresa (queda pendiente de aprobación). |
-| `client/src/pages/company/CompanyRequestStatus/CompanyRequestStatus.jsx` + `.module.css` | Estado de la solicitud de alta: en revisión o rechazada con su motivo. |
+| `client/src/pages/company/CompanyRegister/CompanyRegister.jsx` + `.module.css` | Solicitud de alta como empresa (sin sesión): cuenta de acceso, datos de la empresa y condiciones; crea la empresa pendiente con `authService.registerCompany`, inicia sesión y lleva al estado de la solicitud. |
+| `client/src/pages/company/CompanyRequestStatus/CompanyRequestStatus.jsx` + `.module.css` | Estado de la solicitud de alta (`GET /companies/me`): en revisión, rechazada con su motivo («Corregir y reenviar» y «Contactar con iPuente», este sin destino todavía) o suspendida; «Editar» y «Corregir» abren el formulario con `CompanyDataFields`. |
 | `client/src/pages/company/CompanyBuildings/CompanyBuildings.jsx` + `.module.css` | Edificios y plantas de la empresa. |
 | `client/src/pages/company/MapEditorPage/MapEditorPage.jsx` + `.module.css` | Página del editor de mapas de una planta: subir plano, detectar, corregir, guardar y publicar. |
 | `client/src/pages/company/CompanyRooms/CompanyRooms.jsx` + `.module.css` | Datos comerciales de las salas: precio, capacidad, equipamiento y fotos; estados y ocultar o mostrar sala. |
@@ -180,6 +182,8 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/utils/formatPrice.js` | Formatea importes en euros (`25` → `25,00 €`). |
 | `client/src/utils/dates.js` | Utilidades de fechas: formato `AAAA-MM-DD`, horas y rangos para el calendario. |
 | `client/src/utils/mapGeometry.js` | Cálculos del editor: escalar coordenadas, ajustar a la rejilla y limitar las salas al plano. |
+| `client/src/utils/cif.js` | CIF español en el front: `normalizeCif` e `isValidCif` (formato y dígito de control), la misma regla que `server/src/utils/cif.js`. |
+| `client/src/utils/companyForm.js` | Formulario de alta de empresa: pasos del `Stepper`, valores iniciales, validación de la cuenta y de los datos de la empresa, traducción de los errores de la API a cada campo y conversión desde `GET /companies/me`. |
 | `client/src/assets/icons/` | Iconos SVG importados desde componentes (equipamiento, estación, metro…). |
 | `client/src/assets/images/` | Imágenes importadas desde componentes (las que pasan por Vite). |
  

@@ -2,7 +2,7 @@
 // «Cerrar sesión», y barra superior con UserMenu. Sustituye a la cabecera y el pie públicos.
 // Sin `links` no hay menú lateral y el logo pasa a la barra (estado de la solicitud de alta, wireframe 10b).
 // Por debajo de 900 px el menú lateral se abre con «Menú» como panel deslizante: página inerte y sin scroll, foco
-// atrapado y cierre con ×, Escape, al elegir una opción o al pasar a escritorio (como MobileMenu).
+// atrapado (useModalFocus) y cierre con ×, Escape, al elegir una opción o al pasar a escritorio.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
@@ -13,12 +13,12 @@ import { ACCOUNT_ITEMS, LOGOUT, displayName } from '@/config/accountMenu.js';
 import { signOutUser } from '@/services/authService.js';
 import { ROLES } from '@/config/constants.js';
 import { useAuth } from '@/hooks/useAuth.js';
+import { useModalFocus } from '@/hooks/useModalFocus.js';
 import { getMyCompany } from '@/services/companyService.js';
 import logo from '@/assets/images/ipuente-logo-sobre-oscuro.svg';
 import styles from './DashboardLayout.module.css';
 
 const ROLE_BADGES = { [ROLES.COMPANY]: 'Empresa', [ROLES.ADMIN]: 'Admin' };
-const FOCUSABLE = 'a[href], button:not([disabled])';
 const DESKTOP = '(min-width: 900px)';
 
 export default function DashboardLayout({ title, links = [] }) {
@@ -51,54 +51,23 @@ export default function DashboardLayout({ title, links = [] }) {
     return () => controller.abort();
   }, [role, uid]);
 
-  // Panel móvil abierto: página inerte y sin scroll; al cerrar, el foco vuelve al botón «Menú».
-  useEffect(() => {
-    if (!open) return undefined;
-    const root = document.getElementById('root');
-    const html = document.documentElement;
-    const prevOverflow = html.style.overflow;
-    const returnTo = menuButtonRef.current;
-    root?.setAttribute('inert', '');
-    html.style.overflow = 'hidden';
-    closeRef.current?.focus();
-    return () => {
-      root?.removeAttribute('inert');
-      html.style.overflow = prevOverflow;
-      returnTo?.focus();
-    };
-  }, [open]);
+  // Panel móvil abierto: página inerte, foco en la ×, Escape cierra y al cerrar vuelve al botón «Menú».
+  useModalFocus(open, {
+    containerRef: drawerRef,
+    initialFocusRef: closeRef,
+    returnFocusRef: menuButtonRef,
+    onEscape: closeMenu,
+  });
 
-  // Escape cierra, Tab no sale del panel y al pasar a escritorio se cierra.
+  // En escritorio no hay panel móvil: si se agranda la ventana con el panel abierto, se cierra.
   useEffect(() => {
     if (!open) return undefined;
-    const onKey = (event) => {
-      if (event.key === 'Escape') {
-        closeMenu();
-        return;
-      }
-      if (event.key !== 'Tab') return;
-      const focusable = drawerRef.current?.querySelectorAll(FOCUSABLE);
-      if (!focusable?.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
     const query = window.matchMedia(DESKTOP);
     const onChange = (event) => {
       if (event.matches) closeMenu();
     };
-    document.addEventListener('keydown', onKey);
     query.addEventListener('change', onChange);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      query.removeEventListener('change', onChange);
-    };
+    return () => query.removeEventListener('change', onChange);
   }, [open, closeMenu]);
 
   const companyName = role === ROLES.COMPANY && company?.uid === uid ? company.name : null;

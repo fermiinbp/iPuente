@@ -120,10 +120,11 @@ export default function MyBookings() {
         }
         confirmLabel="Cancelar reserva"
         loading={cancelling}
-        error={cancelError}
         onConfirm={confirmCancel}
-        onCancel={closeModal}
-      />
+        onClose={closeModal}
+      >
+        {cancelError && <Alert type="error">{cancelError}</Alert>}
+      </ConfirmModal>
     </div>
   );
 }

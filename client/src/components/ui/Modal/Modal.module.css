@@ -1,27 +1,107 @@
-/* Estilos de Modal (CSS Module). */
-.dialog {
-  width: min(92vw, 460px);
-  padding: 0;
+/* Estilos de Modal (CSS Module). Caja centrada sobre el velo; en móvil, botones apilados a todo el ancho. */
+.layer {
+  position: fixed;
+  z-index: var(--z-modal);
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--gutter);
+  font-family: var(--font-body);
+}
+
+.veil {
+  position: absolute;
+  inset: 0;
+  background: var(--velo-modal);
+  animation: aparecer var(--dur-media) var(--ease-out);
+}
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100dvh - 2 * var(--gutter));
+  padding: var(--space-6) var(--space-5);
   border: 1px solid var(--linea);
   border-radius: var(--radio-tarjeta);
-  background: var(--bosque-profundo);
+  background: var(--bosque-elevado);
   color: var(--crema);
   box-shadow: var(--sombra-flotante);
+  animation: abrirModal var(--dur-media) var(--ease-out);
 }
 
-.dialog::backdrop {
-  background: var(--velo-modal);
+.panel:focus {
+  outline: none;
 }
 
-.card {
-  display: grid;
-  gap: var(--space-4);
-  padding: var(--space-6);
+.lg {
+  max-width: 720px;
 }
 
 .title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--text-lista);
-  font-weight: 400;
+  font-size: var(--text-titulo-paso);
+  line-height: var(--leading-declaracion);
+}
+
+.body {
+  overflow-y: auto;
+  font-size: var(--text-interfaz);
+  line-height: var(--leading-cuerpo);
+}
+
+.footer {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--space-3);
+}
+
+.footer > * {
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .panel {
+    padding: var(--space-6);
+  }
+
+  .footer {
+    flex-flow: row wrap;
+    justify-content: flex-end;
+  }
+
+  .footer > * {
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .veil,
+  .panel {
+    animation: none;
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes abrirModal {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
