@@ -68,8 +68,8 @@ export default function Landing() {
             </h1>
             <p className={styles.lead}>
               iPuente te enseña cada planta del edificio con sus salas libres, su precio y su
-              capacidad. Para equipos y profesionales que necesitan una sala unas horas: eliges,
-              pagas online y listo.
+              capacidad. Para equipos y profesionales que necesitan una sala unas horas: eliges las
+              horas y listo.
             </p>
           </div>
 

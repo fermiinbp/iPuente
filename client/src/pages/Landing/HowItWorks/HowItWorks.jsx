@@ -63,7 +63,7 @@ function PayVisual() {
         <span>2 h × 12 €</span>
         <strong>24 €</strong>
       </span>
-      <span className={styles.ticketChip}>Pago confirmado</span>
+      <span className={styles.ticketChip}>Reserva confirmada</span>
     </div>
   );
 }
