@@ -4,7 +4,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-7) var(--space-4);
-  border-left: 3px solid var(--ocupada);
+  border-left: 3px solid var(--error);
   text-align: center;
   color: var(--crema);
 }
@@ -19,4 +19,11 @@
   margin: 0;
   font-size: var(--text-cuerpo);
   color: var(--crema-suave);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
 }
