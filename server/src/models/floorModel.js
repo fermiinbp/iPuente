@@ -14,8 +14,8 @@ export function listByBuilding(buildingId, { tx, limit } = {}) {
   return base.listBy('buildingId', buildingId, { orderBy: 'level', tx, limit });
 }
 
-export function listByCompany(companyId) {
-  return base.listBy('companyId', companyId);
+export function listByCompany(companyId, { limit } = {}) {
+  return base.listBy('companyId', companyId, { limit });
 }
 
 // Plantas con un estado (DRAFT | PUBLISHED) de todas las empresas.

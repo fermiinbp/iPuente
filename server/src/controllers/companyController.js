@@ -1,5 +1,6 @@
 // Controlador del panel de empresa. Lee req, llama al service y responde; nunca habla con Firestore.
 import * as companyService from '../services/companyService.js';
+import * as companySummaryService from '../services/companySummaryService.js';
 import * as deletionService from '../services/deletionService.js';
 
 // GET /api/companies/me: empresa del usuario autenticado.
@@ -10,6 +11,13 @@ export async function getMyCompany(req, res) {
 // GET /api/company/buildings: edificios de la empresa.
 export async function listBuildings(req, res) {
   res.json(await companyService.listBuildings(req.user.companyId));
+}
+
+// GET /api/company/summary: cifras, próximas reservas y tareas pendientes de la empresa (caché
+// solo del navegador del usuario, 30 s).
+export async function getSummary(req, res) {
+  res.set('Cache-Control', 'private, max-age=30');
+  res.json(await companySummaryService.getSummary(req.user.companyId));
 }
 
 // POST /api/company/buildings: crea un edificio.

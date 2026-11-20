@@ -28,6 +28,6 @@ export async function listByBuildings(buildingIds) {
   return results.flat();
 }
 
-export function listByCompany(companyId) {
-  return base.listBy('companyId', companyId);
+export function listByCompany(companyId, { limit } = {}) {
+  return base.listBy('companyId', companyId, { limit });
 }

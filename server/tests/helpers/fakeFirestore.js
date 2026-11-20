@@ -89,6 +89,20 @@ export function createFakeFirestore() {
         const snaps = docs.map(({ id, data }) => makeSnap(id, data));
         return { docs: snaps, size: snaps.length, empty: snaps.length === 0 };
       },
+      // Agregación aggregate({ alias: AggregateField.count() | .sum(campo) }): ignora orderBy y limit.
+      aggregate: (spec) => ({
+        async get() {
+          const { docs } = await query(path, filters).get();
+          const data = {};
+          for (const [alias, agg] of Object.entries(spec)) {
+            data[alias] =
+              agg.aggregateType === 'count'
+                ? docs.length
+                : docs.reduce((sum, d) => sum + (Number(d.data()[agg._field]) || 0), 0);
+          }
+          return { data: () => data };
+        },
+      }),
       // Agregación count(): ignora orderBy y limit, como Firestore.
       count: () => ({
         async get() {

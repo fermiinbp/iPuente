@@ -22,7 +22,7 @@ Issues de back que usa `EMP`:
 | DAT026 (#156) · Seguridad de la API                              | Hecho                          | Límite de peticiones, CORS y registro más seguro, con `409 EMAIL_IS_CLIENT` si el email del alta ya es de un cliente                                                                          |
 | DAT025 (#155) · Detección de salas con IA                        | Cerrada, **no está en `main`** | El código está en la rama `DAT025-deteccion-de-salas-con-ia`, sin PR. La retoma DAT040 (#180), en pausa                                                                                       |
 | DAT028 (#158) · Eliminar edificio, planta o sala                 | Hecho                          | `DELETE /api/company/buildings/:id`, `/floors/:id` y `/rooms/:id` (`409 HAS_FUTURE_BOOKINGS`; borrado lógico con `deletedAt` si hay historial) y `GET /api/company/rooms/:id/future-bookings` |
-| DAT029 (#159) · Resumen del panel de empresa                     | Pendiente                      | Resumen de EMP002                                                                                                                                                                             |
+| DAT029 (#159) · Resumen del panel de empresa                     | Hecho                          | `GET /api/company/summary` (EMP002): cifras, próximas reservas, tareas pendientes y `primerAcceso`                                                                                            |
 | DAT030 (#160) · Completar el alta de empresa                     | Pendiente                      | Email de contacto, ciudad y condiciones en el alta, y `PATCH /api/companies/me`                                                                                                               |
 | DAT039 (#172) · Salas gratis                                     | Pendiente                      | Elegir entre precio, gratis u oculta                                                                                                                                                          |
 
@@ -51,12 +51,12 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 
 ## EMP002 · Resumen
 
-- **Ya cubierto:** nada (`GET /api/admin/summary` es solo del admin).
-- **Falta (DAT029, #159):** `GET /api/company/summary` con:
-  - Cifras: edificios, salas publicadas, reservas del mes e ingresos del mes.
-  - Próximas reservas (sala, fecha, cliente y estado).
-  - Tareas pendientes calculadas en el servidor: plantas sin publicar, salas sin precio y salas sin fotos, cada una con el id del recurso para «Resolver».
-  - Señal de primer acceso (sin edificios) para mostrar la bienvenida.
+- **Ya cubierto (DAT029, #159):** `GET /api/company/summary` (empresa aprobada, sin parámetros):
+  - `primerAcceso`: `true` si no tiene edificios (los eliminados no cuentan), para mostrar la bienvenida.
+  - `mes` (`AAAA-MM`) y `cifras`: `edificios`, `salasPublicadas` (activas, con precio y reservables), `reservasMes` e `ingresosMes` (reservas `CONFIRMED` y `COMPLETED` con inicio en el mes natural, zona Europe/Madrid; `ingresosMes` es la suma de `totalAmount`).
+  - `proximasReservas`: las 5 próximas reservas vivas (`CONFIRMED` o `PENDING_PAYMENT`) a partir de ahora, sin límite de días, de la más cercana a la más lejana: `{ id, codigo, fecha, inicio, fin, importe, estado, sala: { nombre, codigo }, cliente: { nombre, email } }` (sin `userId` ni teléfono).
+  - `tareas`: `plantasSinPublicar` (`{ id, nombre, numero, buildingId, edificio, sinMapa }`), `salasSinPrecio` y `salasSinFotos` (`{ id, nombre, codigo, floorId, buildingId }`, salas activas), cada lista recortada a 50, y `totales` con el recuento real. Una sala sin precio y sin fotos sale en las dos listas.
+  - `truncado: true` (solo si aparece): la empresa tiene más de 1000 edificios, plantas o salas y las cifras y tareas pueden quedarse cortas. La respuesta lleva `Cache-Control: private, max-age=30`. Requiere el índice `bookings` `companyId` + `status` + `startDate` (`npx firebase-tools deploy --only firestore`).
 
 ## EMP003 · Mis edificios
 
