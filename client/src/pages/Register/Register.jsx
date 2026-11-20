@@ -74,6 +74,13 @@ export default function Register() {
         </>
       }
     >
+      <Button variant="secondary" disabled={submitting} onClick={() => run(signInWithGoogle)}>
+        Continuar con Google
+      </Button>
+      <p className={styles.divider} aria-hidden="true">
+        o
+      </p>
+
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
         <Input
           label="Nombre"
@@ -118,13 +125,6 @@ export default function Register() {
           Crear cuenta
         </Button>
       </form>
-
-      <p className={styles.divider} aria-hidden="true">
-        o
-      </p>
-      <Button variant="secondary" disabled={submitting} onClick={() => run(signInWithGoogle)}>
-        Continuar con Google
-      </Button>
     </AuthLayout>
   );
 }

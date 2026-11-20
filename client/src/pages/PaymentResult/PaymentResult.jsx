@@ -59,6 +59,9 @@ export default function PaymentResult() {
   } else if (confirmed) {
     content = (
       <>
+        <span className={`${styles.icon} ${styles.iconOk}`} aria-hidden="true">
+          ✓
+        </span>
         <h1 className={styles.title} ref={headingRef} tabIndex={-1} role="status">
           {title}
         </h1>
@@ -91,6 +94,9 @@ export default function PaymentResult() {
   } else if (pending) {
     content = (
       <>
+        <span className={styles.icon} aria-hidden="true">
+          !
+        </span>
         <h1 className={styles.title} ref={headingRef} tabIndex={-1} role="status">
           {title}
         </h1>

@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import Button from '@/components/ui/Button/Button.jsx';
 import PageContainer from '@/components/ui/PageContainer/PageContainer.jsx';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
+import styles from './NotFound.module.css';
 
 export default function NotFound() {
   usePageTitle('Página no encontrada');
@@ -14,7 +15,10 @@ export default function NotFound() {
 
   return (
     <PageContainer>
-      <h1 ref={headingRef} tabIndex={-1}>
+      <p className={styles.code} aria-hidden="true">
+        404
+      </p>
+      <h1 className={styles.title} ref={headingRef} tabIndex={-1}>
         Esta página no existe
       </h1>
       <p>

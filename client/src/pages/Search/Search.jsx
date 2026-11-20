@@ -236,6 +236,7 @@ export default function Search() {
             <Input
               key={`precio-${precioMax}`}
               label="Precio máximo (€/h)"
+              variant="boxed"
               name="precioMax"
               type="number"
               min="1"

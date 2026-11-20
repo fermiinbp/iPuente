@@ -21,6 +21,7 @@ export default function BookingDetail({ booking, onCancel }) {
   const mapsUrl = place
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`
     : null;
+  const hours = `${booking.horas} ${booking.horas === 1 ? 'hora' : 'horas'}`;
 
   return (
     <div className={styles.detail}>
@@ -41,84 +42,93 @@ export default function BookingDetail({ booking, onCancel }) {
         </p>
       )}
 
-      <dl className={styles.facts}>
-        <div>
-          <dt>Fecha</dt>
-          <dd>{formatLongDate(booking.fecha)}</dd>
-        </div>
-        <div>
-          <dt>Horario</dt>
-          <dd>
-            {pad(booking.inicio)}:00 – {pad(booking.fin)}:00 ({booking.horas}{' '}
-            {booking.horas === 1 ? 'hora' : 'horas'})
-          </dd>
-        </div>
-        <div>
-          <dt>Sala</dt>
-          <dd>{[booking.sala?.codigo, booking.sala?.nombre].filter(Boolean).join(' · ') || '—'}</dd>
-        </div>
-        <div>
-          <dt>Planta y edificio</dt>
-          <dd>
-            {[booking.planta?.nombre, booking.edificio?.nombre].filter(Boolean).join(' · ') || '—'}
-          </dd>
-        </div>
-        <div>
-          <dt>Precio por hora</dt>
-          <dd>{formatPrice(booking.precioHora)}</dd>
-        </div>
-        <div>
-          <dt>Total</dt>
-          <dd className={styles.total}>{formatPrice(booking.importe)}</dd>
-        </div>
-      </dl>
+      <div className={styles.layout}>
+        <div className={styles.main}>
+          <dl className={styles.facts}>
+            <div>
+              <dt>Fecha</dt>
+              <dd>{formatLongDate(booking.fecha)}</dd>
+            </div>
+            <div>
+              <dt>Horario</dt>
+              <dd>
+                {pad(booking.inicio)}:00 – {pad(booking.fin)}:00 ({hours})
+              </dd>
+            </div>
+            <div>
+              <dt>Sala</dt>
+              <dd>
+                {[booking.sala?.codigo, booking.sala?.nombre].filter(Boolean).join(' · ') || '—'}
+              </dd>
+            </div>
+            <div>
+              <dt>Planta y edificio</dt>
+              <dd>
+                {[booking.planta?.nombre, booking.edificio?.nombre].filter(Boolean).join(' · ') ||
+                  '—'}
+              </dd>
+            </div>
+          </dl>
 
-      <section className={styles.block} aria-labelledby="como-llegar">
-        <h2 className={styles.subtitle} id="como-llegar">
-          Cómo llegar
-        </h2>
-        {place ? (
-          <>
-            <p className={styles.text}>{place}</p>
-            <a className={styles.link} href={mapsUrl} target="_blank" rel="noopener noreferrer">
-              Abrir en el mapa
-              <span className={styles.srOnly}> (se abre en una pestaña nueva)</span>
-            </a>
-          </>
-        ) : (
-          <p className={styles.text}>La dirección del edificio no está disponible.</p>
-        )}
-      </section>
+          <section className={styles.block} aria-labelledby="como-llegar">
+            <h2 className={styles.subtitle} id="como-llegar">
+              Cómo llegar
+            </h2>
+            {place ? (
+              <>
+                <p className={styles.text}>{place}</p>
+                <a className={styles.link} href={mapsUrl} target="_blank" rel="noopener noreferrer">
+                  Abrir en el mapa
+                  <span className={styles.srOnly}> (se abre en una pestaña nueva)</span>
+                </a>
+              </>
+            ) : (
+              <p className={styles.text}>La dirección del edificio no está disponible.</p>
+            )}
+          </section>
+        </div>
 
-      <section className={styles.block} aria-labelledby="politica">
-        <h2 className={styles.subtitle} id="politica">
-          Política de cancelación
-        </h2>
-        <p className={styles.text}>
-          Puedes cancelar mientras la reserva no haya empezado. Las horas quedan libres para otras
-          personas.
-        </p>
-      </section>
-
-      <div className={styles.actions}>
-        {canCancel && (
-          <Button variant="secondary" onClick={() => onCancel(booking)}>
-            Cancelar reserva
-          </Button>
-        )}
-        {booking.estado === 'CANCELLED' && <Button to="/search">Buscar otra sala</Button>}
-        {booking.sala?.id && (
-          <Button variant="ghost" to={`/rooms/${booking.sala.id}`}>
-            Ver la sala
-          </Button>
-        )}
-        <Button variant="ghost" disabled aria-describedby="factura-nota">
-          Descargar factura
-        </Button>
+        <aside className={styles.side} aria-labelledby="pago-titulo">
+          <div className={styles.payBox}>
+            <h2 className={styles.subtitle} id="pago-titulo">
+              Pago
+            </h2>
+            <dl className={styles.prices}>
+              <div>
+                <dt>
+                  {formatPrice(booking.precioHora)} × {hours}
+                </dt>
+                <dd>{formatPrice(booking.importe)}</dd>
+              </div>
+              <div className={styles.total}>
+                <dt>Total</dt>
+                <dd>{formatPrice(booking.importe)}</dd>
+              </div>
+            </dl>
+            <Button variant="secondary" disabled aria-describedby="factura-nota">
+              Descargar factura
+            </Button>
+            <p className={styles.note} id="factura-nota">
+              La factura estará disponible cuando se active el pago online.
+            </p>
+            {canCancel && (
+              <Button variant="ghost" onClick={() => onCancel(booking)}>
+                Cancelar reserva
+              </Button>
+            )}
+            {booking.estado === 'CANCELLED' && <Button to="/search">Buscar otra sala</Button>}
+            {booking.sala?.id && (
+              <Button variant="ghost" to={`/rooms/${booking.sala.id}`}>
+                Ver la sala
+              </Button>
+            )}
+          </div>
+          <p className={styles.policy}>
+            Puedes cancelar mientras la reserva no haya empezado. Las horas quedan libres para otras
+            personas.
+          </p>
+        </aside>
       </div>
-      <p className={styles.note} id="factura-nota">
-        La factura estará disponible cuando se active el pago online.
-      </p>
     </div>
   );
 }

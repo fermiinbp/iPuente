@@ -145,57 +145,67 @@ export default function BookingCheckout() {
         <BackLink to={roomTo}>Volver a la sala</BackLink>
         <h1 className={styles.title}>Revisa tu reserva</h1>
 
-        <dl className={styles.facts}>
-          <div>
-            <dt>Sala</dt>
-            <dd>
-              <Link to={`/rooms/${booking.roomId}`}>{booking.sala?.nombre ?? 'Sala'}</Link>
-            </dd>
-          </div>
-          <div>
-            <dt>Planta y edificio</dt>
-            <dd>
-              {[booking.planta?.nombre, booking.edificio?.nombre].filter(Boolean).join(' · ') ||
-                '—'}
-            </dd>
-          </div>
-          <div>
-            <dt>Fecha</dt>
-            <dd>{formatLongDate(booking.fecha)}</dd>
-          </div>
-          <div>
-            <dt>Horario</dt>
-            <dd>
-              {pad(booking.inicio)}:00 – {pad(booking.fin)}:00 ({booking.horas}{' '}
-              {booking.horas === 1 ? 'hora' : 'horas'})
-            </dd>
-          </div>
-          <div>
-            <dt>Precio</dt>
-            <dd>
-              {formatPrice(booking.precioHora)} × {booking.horas}{' '}
-              {booking.horas === 1 ? 'hora' : 'horas'}
-            </dd>
-          </div>
-          <div className={styles.total}>
-            <dt>Total</dt>
-            <dd>{formatPrice(booking.importe)}</dd>
-          </div>
-        </dl>
+        <div className={styles.layout}>
+          <div className={styles.left}>
+            <dl className={styles.facts}>
+              <div>
+                <dt>Sala</dt>
+                <dd>
+                  <Link to={`/rooms/${booking.roomId}`}>{booking.sala?.nombre ?? 'Sala'}</Link>
+                </dd>
+              </div>
+              <div>
+                <dt>Planta y edificio</dt>
+                <dd>
+                  {[booking.planta?.nombre, booking.edificio?.nombre].filter(Boolean).join(' · ') ||
+                    '—'}
+                </dd>
+              </div>
+              <div>
+                <dt>Fecha</dt>
+                <dd>{formatLongDate(booking.fecha)}</dd>
+              </div>
+              <div>
+                <dt>Horario</dt>
+                <dd>
+                  {pad(booking.inicio)}:00 – {pad(booking.fin)}:00 ({booking.horas}{' '}
+                  {booking.horas === 1 ? 'hora' : 'horas'})
+                </dd>
+              </div>
+            </dl>
 
-        <p className={styles.policy}>
-          Puedes cancelar mientras la reserva no haya empezado. Tienes {PAY_WINDOW_MINUTES} minutos
-          para pagar: después las horas vuelven a quedar libres.
-        </p>
+            <p className={styles.policy}>
+              Puedes cancelar mientras la reserva no haya empezado. Tienes {PAY_WINDOW_MINUTES}{' '}
+              minutos para pagar: después las horas vuelven a quedar libres.
+            </p>
+          </div>
 
-        {payError && <Alert type="error">{payError}</Alert>}
+          <aside className={styles.priceBox} aria-labelledby="precio-titulo">
+            <h2 className={styles.priceTitle} id="precio-titulo">
+              Precio
+            </h2>
+            <dl className={styles.prices}>
+              <div>
+                <dt>
+                  {formatPrice(booking.precioHora)} × {booking.horas}{' '}
+                  {booking.horas === 1 ? 'hora' : 'horas'}
+                </dt>
+                <dd>{formatPrice(booking.importe)}</dd>
+              </div>
+              <div className={styles.total}>
+                <dt>Total</dt>
+                <dd>{formatPrice(booking.importe)}</dd>
+              </div>
+            </dl>
 
-        <div className={styles.actions}>
-          <Button size="lg" loading={paying} onClick={handlePay}>
-            Ir a pagar
-          </Button>
+            {payError && <Alert type="error">{payError}</Alert>}
+
+            <Button size="lg" loading={paying} onClick={handlePay}>
+              Ir a pagar
+            </Button>
+            <p className={styles.secure}>Pago seguro con Stripe</p>
+          </aside>
         </div>
-        <p className={styles.secure}>Pago seguro con Stripe</p>
       </div>
     </div>
   );

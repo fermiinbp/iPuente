@@ -1,4 +1,4 @@
-/* Estilos de BookingDetail (CSS Module). Mobile first. */
+/* Estilos de BookingDetail (CSS Module). Mobile first: una columna; dos desde 900 px. */
 .detail {
   display: grid;
   gap: var(--space-5);
@@ -24,6 +24,7 @@
   font-size: var(--text-seccion);
   font-weight: 400;
   line-height: var(--leading-declaracion);
+  letter-spacing: var(--tracking-titular);
 }
 
 .cancelled {
@@ -32,6 +33,18 @@
   border: 1px solid var(--linea);
   border-radius: var(--radio-tarjeta);
   background: var(--bosque-elevado);
+}
+
+.layout {
+  display: grid;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.main,
+.side {
+  display: grid;
+  gap: var(--space-5);
 }
 
 .facts {
@@ -53,8 +66,38 @@
   margin: var(--space-1) 0 0;
 }
 
+.payBox {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque-elevado);
+}
+
+.prices {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.prices div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.prices dd {
+  margin: 0;
+}
+
 .total {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--linea);
   font-weight: 600;
+}
+
+.total dd {
   font-size: var(--text-lista);
 }
 
@@ -75,6 +118,14 @@
   color: var(--crema-suave);
 }
 
+.policy {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radio-tarjeta);
+  background: color-mix(in srgb, var(--bosque-profundo) 80%, transparent);
+  color: var(--crema-suave);
+}
+
 .link {
   display: inline-flex;
   align-items: center;
@@ -86,12 +137,6 @@
 .link:focus-visible {
   outline: 2px solid var(--foco);
   outline-offset: 2px;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
 }
 
 .note {
@@ -109,8 +154,8 @@
   white-space: nowrap;
 }
 
-@media (min-width: 720px) {
-  .facts {
-    grid-template-columns: repeat(2, 1fr);
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
   }
 }

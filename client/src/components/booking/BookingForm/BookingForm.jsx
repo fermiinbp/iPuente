@@ -64,12 +64,15 @@ export default function BookingForm({
       ) : freeHours.length === 0 ? (
         <Alert type="info">No quedan horas libres este día. Prueba con otra fecha.</Alert>
       ) : (
-        <AvailabilityCalendar
-          freeHours={freeHours}
-          selection={selection}
-          onChange={onSelectionChange}
-          disabled={submitting}
-        />
+        <>
+          <AvailabilityCalendar
+            freeHours={freeHours}
+            selection={selection}
+            onChange={onSelectionChange}
+            disabled={submitting}
+          />
+          <p className={styles.legend}>Gris = ocupada. Se seleccionan horas seguidas.</p>
+        </>
       )}
 
       <Input
@@ -86,10 +89,6 @@ export default function BookingForm({
         onChange={(event) => onAttendeesChange?.(event.target.value)}
         error={attendeesError}
       />
-
-      {freeHours.length > 0 && !loadingHours && !hoursError && (
-        <p className={styles.legend}>Gris = ocupada. Se seleccionan horas seguidas.</p>
-      )}
 
       <BookingSummary fecha={fecha} selection={selection} pricePerHour={pricePerHour} />
 
