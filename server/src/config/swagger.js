@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
+import { isProduction } from './config.js';
+
 // Carpeta de las rutas. Desde este archivo funciona en local, en los tests y en Vercel (función ESM);
 // si import.meta.url no apuntara aquí, se usa la copia que añade includeFiles (vercel.json) desde la raíz.
 const sourceRoutesDir = import.meta.url
@@ -101,5 +103,5 @@ export const swaggerServe = swaggerUi.serve;
 export const swaggerSetup = swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'iPuente API',
   // El token guardado en el navegador solo se recuerda fuera de producción.
-  swaggerOptions: { persistAuthorization: process.env.NODE_ENV !== 'production' },
+  swaggerOptions: { persistAuthorization: !isProduction },
 });

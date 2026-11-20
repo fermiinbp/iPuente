@@ -1,0 +1,26 @@
+# Lo que Vercel no sube en el despliegue: secretos, material de trabajo y lo que no hace falta para el build ni para la función.
+# Sí hace falta: client/, server/src/, api/, package.json, package-lock.json, vercel.json y .nvmrc.
+
+# Variables de entorno (nunca viajan en el despliegue; se definen en el panel de Vercel)
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Claves de cuentas de servicio de Firebase (mismos patrones que .gitignore)
+*serviceAccount*.json
+*service-account*.json
+*firebase-adminsdk*.json
+**/*serviceAccount*.json
+**/*service-account*.json
+**/*firebase-adminsdk*.json
+
+# Material de trabajo, documentación y ajustes personales
+_to_delete/
+docs/
+.claude/
+.netlify/
+
+# Scripts de uso local (seed, make-admin...) y tests del servidor
+server/scripts/
+server/tests/
