@@ -125,6 +125,8 @@ export default function Room() {
         <ErrorState
           error={roomFetch.error}
           home
+          page
+          code={notFound ? '404' : undefined}
           title={notFound ? 'No encontramos esta sala' : undefined}
           onRetry={notFound ? undefined : roomFetch.reload}
         >

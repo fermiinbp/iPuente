@@ -96,6 +96,8 @@ export default function Building() {
         <ErrorState
           error={error}
           home
+          page
+          code={notFound ? '404' : undefined}
           title={notFound ? 'No encontramos este edificio' : undefined}
           onRetry={notFound ? undefined : reload}
         >

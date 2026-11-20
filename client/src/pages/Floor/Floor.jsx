@@ -160,6 +160,8 @@ export default function Floor() {
         <ErrorState
           error={error}
           home
+          page
+          code={notFound ? '404' : undefined}
           title={notFound ? 'No encontramos esta planta' : undefined}
           onRetry={notFound ? undefined : reload}
         >

@@ -89,6 +89,8 @@ export default function BookingCheckout() {
         <ErrorState
           error={error}
           home
+          page
+          code={notFound ? '404' : undefined}
           title={notFound ? 'No encontramos esta reserva' : undefined}
           onRetry={notFound ? undefined : reload}
         >

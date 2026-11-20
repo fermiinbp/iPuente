@@ -52,7 +52,14 @@ export default function PaymentResult() {
   } else if (error) {
     const notFound = error.status === 404;
     content = (
-      <ErrorState error={error} home title={title} onRetry={notFound ? undefined : reload}>
+      <ErrorState
+        error={error}
+        home
+        page
+        code={notFound ? '404' : undefined}
+        title={title}
+        onRetry={notFound ? undefined : reload}
+      >
         {notFound ? 'Puede que no exista o que no sea tuya.' : error.message}
       </ErrorState>
     );
