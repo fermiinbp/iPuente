@@ -76,7 +76,7 @@ export default function App() {
 
           {/* TODO(UI011): sacar los paneles de Layout cuando DashboardLayout tenga logo y «Cerrar sesión» (wireframes 11 y 16) */}
           <Route element={<RoleRoute role={ROLES.COMPANY} />}>
-            {/* TODO(EMP001): cabecera propia de empresa, fuera de Layout (wireframe 10b) */}
+            {/* TODO(UI011): cabecera del panel sin menú lateral, fuera de Layout (wireframe 10b) */}
             <Route path="company/request" element={<CompanyRequestStatus />} />
 
             <Route
