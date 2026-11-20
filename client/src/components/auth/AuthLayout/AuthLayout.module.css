@@ -84,6 +84,19 @@
   outline-offset: 3px;
 }
 
+.home {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: var(--space-5);
+}
+
+.home:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 4px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .aurora span {
     animation: none;
@@ -97,17 +110,4 @@
   to {
     transform: translate3d(6%, 8%, 0) scale(1.15);
   }
-}
-
-.home {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  margin-bottom: var(--space-5);
-}
-
-.home:focus-visible {
-  outline: 2px solid var(--foco);
-  outline-offset: 4px;
 }

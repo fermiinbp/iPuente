@@ -59,27 +59,6 @@
   list-style: none;
 }
 
-@media (min-width: 720px) {
-  .filters {
-    grid-template-columns: 1fr auto;
-    align-items: end;
-  }
-
-  .filterFields {
-    grid-template-columns: repeat(2, minmax(160px, 1fr));
-  }
-
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1040px) {
-  .grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
 .layout {
   display: grid;
   gap: var(--space-5);
@@ -118,6 +97,27 @@
 .cardActive > a {
   border-color: var(--lima);
   transform: translateY(-4px);
+}
+
+@media (min-width: 720px) {
+  .filters {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+
+  .filterFields {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1040px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (min-width: 1040px) {

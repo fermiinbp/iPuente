@@ -59,6 +59,9 @@ export default function BookingCheckout() {
     setPayError('');
     try {
       const { url } = await createCheckout(bookingId);
+      // Solo se redirige a una página segura: nunca a una URL que no sea https.
+      if (!/^https:\/\//i.test(url ?? ''))
+        throw new Error('No hemos podido abrir la página de pago.');
       window.location.assign(url);
     } catch (err) {
       setPayError(

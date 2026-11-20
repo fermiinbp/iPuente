@@ -1,6 +1,6 @@
 // Recolorea el estilo base de OpenFreeMap (positron) con la paleta Bosque.
 // Los colores salen de las variables de :root, no de hexadecimales escritos aquí.
-import { MAP_STYLE_URL } from '@/config/nearby.js';
+import { getBaseMapStyle } from '@/services/mapStyleService.js';
 
 const NOMBRES = [
   'bosque',
@@ -20,19 +20,9 @@ export function readMapColors() {
   return colores;
 }
 
-let baseStyle;
-
-// El JSON del estilo se descarga una sola vez; cada llamada recibe una copia para poder modificarla.
-export async function loadBaseStyle() {
-  baseStyle ??= fetch(MAP_STYLE_URL).then((respuesta) => {
-    if (!respuesta.ok) throw new Error(`Estilo del mapa: ${respuesta.status}`);
-    return respuesta.json();
-  });
-  const estilo = await baseStyle.catch((error) => {
-    baseStyle = undefined;
-    throw error;
-  });
-  return structuredClone(estilo);
+// El estilo se pide al service (una sola descarga); aquí solo se recolorea.
+export function loadBaseStyle() {
+  return getBaseMapStyle();
 }
 
 function paint(capa, propiedades) {

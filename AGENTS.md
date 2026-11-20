@@ -59,13 +59,15 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/services/floorsService.js` | Llamada pública del mapa de una planta con el estado de cada sala en una fecha. |
 | `client/src/services/roomsService.js` | Ficha de sala y huecos libres. |
 | `client/src/services/bookingsService.js` | Reservas del cliente: crear, listar y cancelar. |
-| `client/src/services/paymentsService.js` | (extra) Pide a la API la URL de Stripe Checkout de una reserva. |
+| `client/src/services/paymentsService.js` | Pide a la API la URL de Stripe Checkout de una reserva pendiente (`createCheckout`). La API aún no tiene endpoint de pago: hasta entonces la llamada falla y la pantalla lo avisa. |
 | `client/src/services/companyService.js` | Panel de empresa: empresa propia (`getMyCompany`, nombre en la cabecera del panel), alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos. |
 | `client/src/services/adminService.js` | Panel de admin: empresas, usuarios, reservas, pagos y reembolsos. |
 | `client/src/services/uploadService.js` | Sube planos y fotos directamente a Firebase Storage y devuelve su URL y su ruta. |
+| `client/src/services/mapStyleService.js` | Descarga una sola vez el estilo base del mapa (OpenFreeMap) y devuelve una copia. Es un servidor externo, no nuestra API, así que no pasa por `apiClient`. |
 | `client/src/components/ui/Button/Button.jsx` + `.module.css` | Botón reutilizable con variantes primario, secundario y fantasma, tamaños `md` (44 px) y `lg` (52 px), `loading` y `disabled`; con `to` funciona como enlace. |
 | `client/src/components/ui/IconButton/IconButton.jsx` + `.module.css` | Botón solo con icono y `aria-label` obligatorio (barra del editor, cerrar paneles y modales, menú móvil). |
 | `client/src/components/ui/BackLink/BackLink.jsx` + `.module.css` | Enlace «← Volver a…» con la flecha decorativa (`aria-hidden`). |
+| `client/src/components/ui/Breadcrumbs/Breadcrumbs.jsx` + `.module.css` | Migas de pan (`items: [{ label, to? }]`): el último elemento es la página actual (`aria-current="page"`) y los separadores son decorativos. |
 | `client/src/components/ui/Input/Input.jsx` + `.module.css` | Campo de formulario con etiqueta, ayuda y mensaje de error. |
 | `client/src/components/ui/Modal/Modal.jsx` + `.module.css` | Ventana modal accesible (cierre con Escape y foco atrapado). |
 | `client/src/components/ui/Spinner/Spinner.jsx` + `.module.css` | Indicador de carga. |
@@ -92,7 +94,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/layout/MobileMenu/MobileMenu.jsx` + `.module.css` | Menú de navegación a pantalla completa en móvil. |
 | `client/src/components/layout/Footer/Footer.jsx` + `.module.css` | Pie de página. |
 | `client/src/components/layout/DashboardLayout/DashboardLayout.jsx` + `.module.css` | Plantilla de los paneles de empresa y admin, sin la cabecera ni el pie públicos: menú lateral (logo, rol, secciones y «Cerrar sesión»; en móvil, panel deslizante) y barra superior con `UserMenu`. Sin `links`, solo la barra (estado de la solicitud de alta). |
-| `client/src/components/search/SearchBar/SearchBar.jsx` + `.module.css` | Buscador de ciudad, fecha y personas (landing y resultados). |
+| `client/src/components/search/SearchBar/SearchBar.jsx` + `.module.css` | Buscador de ciudad, fecha y personas (landing, variante `hero`, y resultados). No deja buscar con una fecha pasada ni con menos de 1 persona. |
 | `client/src/components/search/CategoryFilters/CategoryFilters.jsx` + `.module.css` | Filtros por tipo de sala (reuniones, eventos, formación, boxes privados). |
 | `client/src/components/search/BuildingCard/BuildingCard.jsx` + `.module.css` | Tarjeta de edificio en los resultados: foto, dirección, salas libres y precio desde. |
 | `client/src/components/search/SearchMap/SearchMap.jsx` + `.module.css` | Extra: mapa de resultados con un pin por edificio, resaltado al pasar por su tarjeta. |
@@ -108,6 +110,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/config/nearby.js` | Config del mapa «Alrededor»: URL del estilo, coordenadas y huella provisionales de iPuente, y vista (zoom, pitch, bearing). |
 | `client/src/components/floor-plan/FloorPlan/FloorPlan.jsx` + `.module.css` | Plano SVG de una planta para clientes, generado desde el `mapData` de la planta y coloreado por el estado de cada sala. |
 | `client/src/components/floor-plan/RoomShape/RoomShape.jsx` + `.module.css` | Una sala del plano: rectángulo con código y nombre, clicable y accesible con teclado. |
+| `client/src/components/floor-plan/RoomInterior/RoomInterior.jsx` + `.module.css` | Interior de una sala en el plano 3D según su tipo, capacidad y equipamiento. |
 | `client/src/components/floor-plan/Legend/Legend.jsx` + `.module.css` | Leyenda de estados del plano (con texto, no solo color). |
 | `client/src/components/map-editor/MapEditor/MapEditor.jsx` + `.module.css` | Lienzo del editor: plano de fondo y salas editables encima. |
 | `client/src/components/map-editor/EditorToolbar/EditorToolbar.jsx` + `.module.css` | Herramientas del editor: seleccionar, dibujar, borrar, deshacer, detectar con IA y guardar. |
@@ -137,6 +140,8 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/booking/BookingDetail/BookingDetail.jsx` + `.module.css` | Detalle de una reserva, común a cliente, empresa y admin; cada rol ve sus acciones. |
 | `client/src/components/layout/Layout/Layout.jsx` + `.module.css` | Plantilla común de las páginas públicas: cabecera, contenido (`<Outlet />`) y pie. |
 | `client/src/pages/Landing/Landing.jsx` + `.module.css` | Home: hero con el edificio por plantas, buscador, salas destacadas, cómo funciona y llamada a empresas. |
+| `client/src/pages/Landing/HeroStory.jsx` | Edificio 3D del hero de la home: pulsar una planta la abre en la maqueta. El selector con salas y plano vive aparte, en `FloorSection`. |
+| `client/src/pages/Landing/loaderSession.js` | Recuerda en la sesión si ya se vio el cargador de la home, para no repetirlo y ajustar la entrada del hero. |
 | `client/src/pages/Landing/LandingLoader/LandingLoader.jsx` + `.module.css` | Pantalla de carga de la Landing: el monograma «iP» se abre como una puerta; se puede saltar. |
 | `client/src/pages/Landing/FloorSection/FloorSection.jsx` + `.module.css` | Sección de la Landing con una planta: lista de salas, detalle de la seleccionada y plano 3D. |
 | `client/src/pages/Landing/NearbySection/NearbySection.jsx` + `.module.css` | Sección «Alrededor del edificio» de la Landing: mapa 3D de los puntos cercanos y lista accesible con sus tiempos. |
@@ -147,12 +152,15 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/pages/Building/Building.jsx` + `.module.css` | Página de un edificio: plantas, salas libres y «Qué hay cerca». |
 | `client/src/pages/Floor/Floor.jsx` + `.module.css` | Página de una planta: plano, selector de fecha y panel de sala. |
 | `client/src/pages/Room/Room.jsx` + `.module.css` | Ficha de sala con galería, equipamiento, disponibilidad y reserva. |
+| `client/src/pages/Room/demoRoom.js` | Salas de ejemplo de la landing y sus horas libres: se usan si la API no responde. |
 | `client/src/pages/Login/Login.jsx` + `.module.css` | Inicio de sesión con email o Google. |
 | `client/src/pages/Register/Register.jsx` + `.module.css` | Registro de cliente. |
 | `client/src/pages/ForgotPassword/ForgotPassword.jsx` + `.module.css` | Recuperar contraseña: pide el email y envía el enlace. |
 | `client/src/pages/ResetPassword/ResetPassword.jsx` + `.module.css` | Recuperar contraseña: formulario de nueva contraseña desde el enlace. |
 | `client/src/pages/MyBookings/MyBookings.jsx` + `.module.css` | Reservas del cliente: próximas y pasadas, con cancelación. |
 | `client/src/pages/BookingDetailPage/BookingDetailPage.jsx` + `.module.css` | Detalle de una reserva del cliente, con cancelación. |
+| `client/src/pages/BookingCheckout/BookingCheckout.jsx` + `.module.css` | Revisa tu reserva (`/checkout/:bookingId`): resumen antes de pagar, «Ir a pagar» (sin doble clic) y estado «Tiempo agotado». Solo enseña el resumen si la reserva es del usuario y está pendiente de pago. |
+| `client/src/pages/Account/Account.jsx` + `.module.css` | Mi cuenta (`/account`): «Mis datos» (nombre) y «Cambiar contraseña» con Firebase Auth; los enlaces del menú llevan a `#datos` y `#password`. |
 | `client/src/pages/PaymentResult/PaymentResult.jsx` + `.module.css` | (extra) Vuelta desde Stripe: reserva confirmada, pago cancelado o reserva expirada. |
 | `client/src/pages/NotFound/NotFound.jsx` + `.module.css` | Página 404. |
 | `client/src/pages/company/CompanyDashboard/CompanyDashboard.jsx` + `.module.css` | Resumen del panel de empresa, con estado vacío en el primer acceso (sin edificios). |
