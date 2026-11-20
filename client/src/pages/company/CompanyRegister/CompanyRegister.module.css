@@ -1,1 +1,118 @@
-/* Estilos de CompanyRegister (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de CompanyRegister (CSS Module). Mobile first: una columna; desde 900 px, formulario y «Qué pasa después»
+   en dos columnas. */
+.title {
+  font-size: var(--text-seccion);
+  line-height: var(--leading-declaracion);
+}
+
+.stepper {
+  margin-top: var(--space-6);
+}
+
+.layout {
+  display: grid;
+  gap: var(--space-7);
+  margin-top: var(--space-7);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.section {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.sectionTitle {
+  margin-bottom: var(--space-4);
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-titulo-paso);
+  line-height: 1.1;
+  letter-spacing: var(--tracking-titular);
+}
+
+.accountFields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+.alert:focus {
+  outline: none;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.login {
+  margin: 0;
+  color: var(--crema-suave);
+  font-size: var(--text-interfaz);
+}
+
+.login a {
+  color: var(--crema);
+  font-weight: 600;
+}
+
+.next {
+  align-self: start;
+  padding: var(--space-5);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque-elevado);
+}
+
+.nextTitle {
+  font-size: var(--text-titulo-paso);
+  line-height: 1.1;
+}
+
+.nextList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 0;
+  padding-left: var(--space-5);
+  color: var(--crema-suave);
+  font-size: var(--text-interfaz);
+}
+
+@media (min-width: 600px) {
+  .accountFields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .full {
+    grid-column: 1 / -1;
+  }
+
+  .actions {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-5);
+  }
+}
+
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: var(--space-8);
+  }
+
+  .next {
+    position: sticky;
+    top: var(--space-5);
+  }
+}

@@ -1,0 +1,16 @@
+/* Estilos de CompanyDataFields (CSS Module). Mobile first: una columna; desde 600 px, CIF y teléfono en paralelo. */
+.fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 600px) {
+  .fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .full {
+    grid-column: 1 / -1;
+  }
+}
