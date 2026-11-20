@@ -32,7 +32,10 @@
 .when {
   margin: var(--space-2) 0 0;
   color: var(--crema-suave);
-  text-transform: capitalize;
+}
+
+.when::first-letter {
+  text-transform: uppercase;
 }
 
 .side {
