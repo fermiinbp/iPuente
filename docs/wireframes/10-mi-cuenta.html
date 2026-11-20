@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mi cuenta</title><link rel="stylesheet" href="wireframe.css"></head><body>
+<header class="hdr"><div class="wrap"><span class="logo">iPuente</span><nav class="nav"><span>Espacios</span><span>Para empresas</span><span>Cómo funciona</span><span>Contacto</span></nav><div class="acc"><span>Mis reservas</span><span><span class="avatar"></span> Ana ▾</span></div><span class="btn o menu-btn">Menú</span></div></header>
+
+<div class="wrap" style="max-width:640px">
+ <h1 style="margin-top:36px">Mi cuenta</h1>
+ <div class="card" style="margin-bottom:20px"><h2>Mis datos</h2>
+  <div class="field"><label>Nombre</label><div class="input">Ana García</div></div>
+  <div class="field"><label>Correo electrónico</label><div class="input" style="background:#f3f3f3">ana@email.com</div><span class="hint">El correo no se puede cambiar desde aquí.</span></div>
+  <span class="btn">Guardar</span></div>
+ <div class="card"><h2>Cambiar contraseña</h2>
+  <div class="field"><label>Contraseña actual</label><div class="input">••••••••</div></div>
+  <div class="field"><label>Contraseña nueva</label><div class="input">••••••••</div><span class="hint">Mínimo 8 caracteres.</span></div>
+  <div class="field"><label>Repite la contraseña nueva</label><div class="input">••••••••</div></div>
+  <span class="btn">Cambiar contraseña</span></div>
+ <div class="dash" style="margin-top:20px"><p class="tag">Variante: cuenta de Google</p><div class="grey">Entras con Google, así que tu contraseña se gestiona en tu cuenta de Google.</div></div>
+</div>
+<footer class="ftr"><div class="wrap"><span class="logo">iPuente</span><span>© 2026 iPuente</span></div></footer>
+<div class="notes"><p class="note"><b>1</b><span>Nueva pantalla (sin wireframe previo). «Mis datos» y «Cambiar contraseña» del menú de usuario llevan a su sección (#datos y #password) y le dan el foco.</span></p><p class="note"><b>2</b><span>Al guardar se avisa del resultado y los errores salen bajo su campo. Cambiar la contraseña pide antes la actual (Firebase) y usa el mismo mínimo que el registro.</span></p><p class="note"><b>3</b><span>Pendiente de back: el teléfono y el correo no se editan (solo existe GET /users/me).</span></p></div>
+</body></html>

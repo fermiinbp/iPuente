@@ -36,14 +36,21 @@ export default function MobileMenu({ id, navLinks, account, loading, onClose, re
     return () => query.removeEventListener('change', onChange);
   }, [onClose]);
 
-  const renderItem = ({ label, to }) =>
-    to ? (
-      <Link to={to} className={styles.link} onClick={onClose}>
-        {label}
+  const renderItem = (item) =>
+    item.to ? (
+      <Link to={item.to} className={styles.link} onClick={onClose}>
+        {item.label}
       </Link>
     ) : (
-      <button type="button" className={styles.link} onClick={onClose}>
-        {label}
+      <button
+        type="button"
+        className={styles.link}
+        onClick={() => {
+          item.onSelect?.();
+          onClose();
+        }}
+      >
+        {item.label}
       </button>
     );
 

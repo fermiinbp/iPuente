@@ -1,6 +1,6 @@
 /* Estilos de Building3D (CSS Module). El gesto vertical sigue siendo scroll de la página. */
 .escena {
-  height: clamp(280px, 60vw, 440px);
+  height: clamp(360px, 78vw, 620px);
   cursor: grab;
   touch-action: pan-y;
   user-select: none;

@@ -1,11 +1,12 @@
 // Cabecera: logo, navegación centrada y, según la sesión, acceso y CTA o el enlace del rol y UserMenu.
 // Debajo de 900 px la navegación pasa a MobileMenu (pantalla completa), que se abre con el botón «Menú».
 import { useCallback, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import Button from '@/components/ui/Button/Button.jsx';
 import MobileMenu from '@/components/layout/MobileMenu/MobileMenu.jsx';
 import UserMenu from '@/components/layout/UserMenu/UserMenu.jsx';
 import { ACCOUNT_ITEMS, LOGOUT, displayName } from '@/config/accountMenu.js';
+import { signOutUser } from '@/services/authService.js';
 import { ROLES } from '@/config/constants.js';
 import { useAuth } from '@/hooks/useAuth.js';
 import logo from '@/assets/images/ipuente-logo-sobre-oscuro.svg';
@@ -27,6 +28,7 @@ const ROLE_LINKS = {
 
 export default function Header() {
   const { user, role, loading } = useAuth();
+  const navigate = useNavigate();
   const [openPath, setOpenPath] = useState(null);
   const { pathname, hash } = useLocation();
   const buttonRef = useRef(null);
@@ -34,6 +36,15 @@ export default function Header() {
   // El menú móvil solo está abierto en la ruta en la que se abrió: al cambiar de ruta se cierra.
   const open = openPath === routeKey;
   const closeMenu = useCallback(() => setOpenPath(null), []);
+
+  // «Cerrar sesión»: cierra la sesión de Firebase y vuelve a la home.
+  const logoutItem = {
+    ...LOGOUT,
+    onSelect: async () => {
+      await signOutUser();
+      navigate('/');
+    },
+  };
 
   const roleLink = user ? (ROLE_LINKS[role] ?? ROLE_LINKS[ROLES.CLIENT]) : null;
   const accountItems = user ? (ACCOUNT_ITEMS[role] ?? ACCOUNT_ITEMS[ROLES.CLIENT]) : [];
@@ -47,7 +58,7 @@ export default function Header() {
     items: [
       ...(role === ROLES.COMPANY || role === ROLES.ADMIN ? [roleLink] : []),
       ...accountItems.filter((item) => !item.desktopOnly),
-      LOGOUT,
+      logoutItem,
     ],
   };
 
@@ -108,7 +119,7 @@ export default function Header() {
                   name={name}
                   email={user.email}
                   photoUrl={user.photoURL}
-                  items={[...accountItems, LOGOUT]}
+                  items={[...accountItems, logoutItem]}
                 />
               </div>
             </>

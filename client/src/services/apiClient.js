@@ -32,7 +32,11 @@ export async function apiClient(path, { method = 'GET', body, headers = {}, sign
     response = await fetch(`${API_URL}${path}`, options);
   } catch (err) {
     if (err?.name === 'AbortError') throw err;
-    throw new ApiError(0, 'NETWORK_ERROR', 'No se pudo conectar con el servidor. Inténtalo de nuevo.');
+    throw new ApiError(
+      0,
+      'NETWORK_ERROR',
+      'No se pudo conectar con el servidor. Inténtalo de nuevo.',
+    );
   }
 
   let data = null;

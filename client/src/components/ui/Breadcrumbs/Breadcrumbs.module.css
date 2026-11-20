@@ -1,0 +1,46 @@
+/* Estilos de Breadcrumbs (CSS Module). Mobile first: las migas pasan a la línea siguiente si no caben. */
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-interfaz);
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--crema-suave);
+  text-decoration: none;
+}
+
+.link:hover {
+  color: var(--lima);
+  text-decoration: underline;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.current {
+  color: var(--crema);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.separator {
+  color: var(--crema-suave);
+}

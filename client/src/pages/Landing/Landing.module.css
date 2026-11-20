@@ -7,26 +7,85 @@
 }
 
 .hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   background: var(--bosque);
 }
 
+/* Fondo del hero: cuadrícula de plano que se desvanece y un foco de luz de bronce que sigue al ratón. */
+.hero::before,
+.hero::after {
+  background: radial-gradient(
+    40% 50% at 0% 100%,
+    color-mix(in srgb, var(--lima) 8%, transparent),
+    transparent 70%
+  );
+  animation: heroLuz 1200ms var(--ease-out) both;
+  animation-delay: var(--entrada-base, 0ms);
+}
+
+/* En móvil el edificio va primero y su halo de bronce lo acompaña, centrado en la maqueta 3D. */
+.heroBuilding {
+  position: relative;
+}
+
+.heroBuilding::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -20%;
+  right: -20%;
+  z-index: -1;
+  height: clamp(360px, 78vw, 620px);
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--bronce) 30%, transparent),
+    transparent
+  );
+}
+
 .heroInner {
-  display: flex;
-  flex-direction: column;
-  gap: 56px;
+  /* Móvil: texto, edificio con su historia y, justo debajo, el buscador. */
+  display: grid;
+  grid-template-areas:
+    'texto'
+    'edificio'
+    'buscador';
+  gap: var(--space-7);
+  position: relative;
   max-width: var(--ancho-max);
   margin: 0 auto;
   padding: clamp(48px, 7vw, 96px) var(--gutter) clamp(56px, 7vw, 104px);
 }
 
-.heroText,
+.heroText {
+  grid-area: texto;
+}
+
 .heroBuilding {
+  grid-area: edificio;
+}
+
+.heroText,
+.heroBuilding,
+.search {
   min-width: 0;
 }
 
+.eyebrow {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-etiqueta);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bronce-claro);
+}
+
 .heroTitle {
-  font-size: var(--text-hero);
-  line-height: var(--leading-hero);
+  font-size: clamp(42px, 5.6vw, 84px);
+  line-height: 1;
 }
 
 .lead {
@@ -37,29 +96,39 @@
   color: var(--crema-suave);
 }
 
+/* Entrada del hero al cargar: cada pieza sube y aparece, una detrás de otra. Espera a que termine el cargador. */
+.eyebrow,
+.heroTitle,
+.lead,
+.search,
+.heroBuilding {
+  animation: heroEntra 640ms var(--ease-out) both;
+  animation-delay: calc(var(--entrada-base, 0ms) + var(--orden, 0) * 90ms);
+}
+
+.eyebrow,
+.heroTitle {
+  --orden: 0;
+}
+
+.lead {
+  --orden: 1;
+}
+
 .search {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 36px;
-  padding: var(--space-2);
-  border: 1px solid var(--borde-control);
-  border-radius: var(--radio-buscador);
-  background: var(--bosque-elevado);
+  --orden: 2;
 }
 
-.field {
-  min-width: 0;
+.heroBuilding {
+  --orden: 2;
+  animation-name: heroEntraEdificio;
+  animation-duration: 900ms;
 }
 
-.field + .field {
-  border-top: 1px solid var(--borde-control);
-}
-
-.hint {
-  margin: var(--space-3) var(--space-1) 0;
-  font-size: var(--text-pequeno);
-  color: var(--crema-suave);
+/* El aspecto del buscador (campos, bordes, botón) está en SearchBar; aquí solo su sitio en el hero. */
+.search {
+  grid-area: buscador;
+  margin-top: 0;
 }
 
 .roomsHead {
@@ -67,59 +136,107 @@
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-end;
-  gap: 20px 40px;
+  gap: var(--space-5) var(--space-7);
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
   gap: var(--space-6) var(--space-5);
-  margin: 40px 0 0;
+  margin: var(--space-7) 0 0;
   padding: 0;
   list-style: none;
+}
+
+/* Con la sala protagonista: una columna en móvil; dos desde 960px (grande a la izquierda, tres en fila a la derecha). */
+.gridFeatured {
+  grid-template-columns: 1fr;
 }
 
 .empty {
   margin: var(--space-5) 0 0;
 }
 
-@media (min-width: 600px) {
+@media (min-width: 960px) {
+  .hero::before {
+    -webkit-mask-image: radial-gradient(ellipse 80% 90% at 70% 40%, #000 10%, transparent 75%);
+    mask-image: radial-gradient(ellipse 80% 90% at 70% 40%, #000 10%, transparent 75%);
+  }
+
+  /* En escritorio el foco sigue al ratón y el halo propio del edificio sobra. */
+  .hero::after {
+    background:
+      radial-gradient(
+        520px circle at var(--mx, 72%) var(--my, 42%),
+        color-mix(in srgb, var(--bronce) 26%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        40% 50% at 0% 100%,
+        color-mix(in srgb, var(--lima) 8%, transparent),
+        transparent 70%
+      );
+  }
+
+  .heroBuilding {
+    order: 0;
+  }
+
+  .heroBuilding::before {
+    display: none;
+  }
+
+  /* Escritorio: texto y buscador a la izquierda, uno bajo otro; el edificio a la derecha ocupa las dos filas. */
+  .heroInner {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'texto edificio'
+      'buscador edificio';
+    grid-template-rows: auto 1fr;
+    column-gap: var(--space-8);
+    row-gap: 0;
+  }
+
+  .heroText {
+    align-self: start;
+  }
+
   .search {
-    flex-direction: row;
-    flex-wrap: wrap;
+    align-self: start;
+    margin-top: var(--space-6);
+  }
+
+  .heroBuilding {
+    align-self: start;
+  }
+
+  .gridFeatured {
+    grid-template-columns: 1.3fr 1fr;
+    grid-auto-flow: dense;
     align-items: center;
   }
 
-  .field {
-    flex: 1 1 140px;
-  }
-
-  .fieldCity {
-    flex-grow: 2;
-    flex-basis: 160px;
-  }
-
-  .field + .field {
-    border-top: 0;
-    border-left: 1px solid var(--borde-control);
-  }
-
-  .search > button,
-  .search > a {
-    flex: 1 1 130px;
-    min-height: 56px;
+  .featuredItem {
+    grid-row: span 3;
   }
 }
 
-@media (min-width: 960px) {
-  .heroInner {
-    flex-direction: row;
-    align-items: center;
-    gap: 56px var(--space-8);
+@keyframes heroEntra {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
   }
+}
 
-  .heroText,
-  .heroBuilding {
-    flex: 1 1 0;
+@keyframes heroEntraEdificio {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98);
+  }
+}
+
+@keyframes heroLuz {
+  from {
+    opacity: 0;
   }
 }

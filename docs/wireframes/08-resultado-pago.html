@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resultado del pago</title><link rel="stylesheet" href="wireframe.css"></head><body>
+<header class="hdr"><div class="wrap"><span class="logo">iPuente</span><nav class="nav"><span>Espacios</span><span>Para empresas</span><span>Cómo funciona</span><span>Contacto</span></nav><div class="acc"><span>Mis reservas</span><span><span class="avatar"></span> Ana ▾</span></div><span class="btn o menu-btn">Menú</span></div></header>
+
+<div class="wrap" style="padding-top:40px"><div class="g2">
+ <div class="card" style="padding:32px"><p class="tag">Éxito</p>
+  <div class="icon ok">✓</div><h2 class="center">Reserva confirmada</h2>
+  <div class="grey" style="margin:16px 0"><b>Black Room I · Planta 2</b><br>Jueves 20 nov · 12:00 – 14:00<br>Total pagado: 50,00 €</div>
+  <div class="row" style="justify-content:center"><span class="btn">Ver mis reservas</span><span class="btn o">Volver al inicio</span></div></div>
+ <div class="card" style="padding:32px"><p class="tag">Error / cancelado</p>
+  <div class="icon warn">!</div><h2 class="center">El pago no se ha completado</h2>
+  <p class="mut center">No se ha hecho ningún cargo. Tu reserva sigue guardada 15 minutos.</p>
+  <div class="row" style="justify-content:center;margin-top:60px"><span class="btn">Intentar de nuevo</span><span class="btn o">Cambiar la reserva</span></div></div>
+</div></div>
+<footer class="ftr"><div class="wrap"><span class="logo">iPuente</span><span>© 2026 iPuente</span></div></footer>
+<div class="notes"><p class="note"><b>1</b><span>El estado sale de la reserva que devuelve la API (confirmada = pagada, pendiente = no completado), nunca de un parámetro de la URL.</span></p><p class="note"><b>2</b><span>El título se anuncia a lectores de pantalla y recibe el foco al cargar. Una reserva que no existe o no es del usuario muestra «No encontramos esta reserva».</span></p><p class="note"><b>3</b><span>«Intentar de nuevo» vuelve a la pantalla 07 de esa reserva; «Cambiar la reserva» a la ficha de la sala.</span></p></div>
+</body></html>

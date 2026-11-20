@@ -1,1 +1,37 @@
-/* Estilos de BookingSummary (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de BookingSummary (CSS Module). */
+.summary {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.summary dt {
+  color: var(--crema-suave);
+}
+
+.summary dd {
+  margin: 0;
+  text-align: right;
+}
+
+.summary .total {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--linea);
+  font-size: var(--text-lead);
+  font-weight: 600;
+}
+
+.total dt {
+  color: var(--crema);
+}
+
+.empty {
+  margin: 0;
+  color: var(--crema-suave);
+}

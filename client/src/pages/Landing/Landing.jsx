@@ -1,100 +1,110 @@
 // Home: hero con el edificio por plantas, buscador, salas destacadas, cómo funciona y llamada a empresas.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
-import BuildingHero from '@/components/building/BuildingHero/BuildingHero.jsx';
 import RoomCard from '@/components/room/RoomCard/RoomCard.jsx';
-import CategoryFilters from '@/components/search/CategoryFilters/CategoryFilters.jsx';
-import Button from '@/components/ui/Button/Button.jsx';
+import SearchBar from '@/components/search/SearchBar/SearchBar.jsx';
 import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
-import Input from '@/components/ui/Input/Input.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
 import CompaniesCta from './CompaniesCta/CompaniesCta.jsx';
-import { BUILDING, DEFAULT_FLOOR_ID, FEATURED_ROOMS, ROOM_FILTERS } from './data.js';
+import { BUILDING, FEATURED_ROOMS, ROOM_FILTERS } from './data.js';
 import FloorSection from './FloorSection/FloorSection.jsx';
-import { FLOORS_HERO } from './heroBuildingData.js';
+import HeroStory from './HeroStory.jsx';
 import HowItWorks from './HowItWorks/HowItWorks.jsx';
 import styles from './Landing.module.css';
 import LandingLoader from './LandingLoader/LandingLoader.jsx';
+import { heroEntranceDelay } from './loaderSession.js';
 import NearbySection from './NearbySection/NearbySection.jsx';
+import CategoryFilters from '@/components/search/CategoryFilters/CategoryFilters.jsx';
 
 export default function Landing() {
   usePageTitle('Salas por horas');
   const navigate = useNavigate();
-  const [floorId, setFloorId] = useState(DEFAULT_FLOOR_ID);
+  // Se calcula una sola vez, antes de que el cargador marque la sesión como vista.
+  const [entranceDelay] = useState(heroEntranceDelay);
+  const heroRef = useRef(null);
+
+  // Foco de luz que sigue al ratón por el hero. Solo ratón: en táctil queda el resplandor fijo.
+  function handleHeroPointerMove(event) {
+    if (event.pointerType !== 'mouse') return;
+    const box = event.currentTarget.getBoundingClientRect();
+    heroRef.current?.style.setProperty('--mx', `${event.clientX - box.left}px`);
+    heroRef.current?.style.setProperty('--my', `${event.clientY - box.top}px`);
+  }
   const [filter, setFilter] = useState(ROOM_FILTERS[0]);
 
   const rooms =
     filter === ROOM_FILTERS[0] ? FEATURED_ROOMS : FEATURED_ROOMS.filter((r) => r.type === filter);
+  // Con tres salas o más, la primera va grande y las demás en fila; con menos, tarjetas iguales.
+  const featuredLayout = rooms.length >= 3;
 
-  // De momento no hay ruta con el listado de edificios: se lleva al edificio de ejemplo con la búsqueda.
-  function handleSearch(event) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
+  // La búsqueda lleva a /search con la ciudad, la fecha y las personas elegidas.
+  function handleSearch(values) {
     const params = new URLSearchParams();
     ['city', 'date', 'people'].forEach((key) => {
-      const value = String(data.get(key) ?? '').trim();
-      if (value) params.set(key, value);
+      if (values[key]) params.set(key, values[key]);
     });
     const query = params.toString();
-    navigate(`/buildings/${BUILDING.id}${query ? `?${query}` : ''}`);
+    navigate(`/search${query ? `?${query}` : ''}`);
   }
 
   return (
     <div className={styles.page}>
       <LandingLoader />
 
-      <section className={styles.hero} aria-labelledby="hero-titulo">
+      <section
+        ref={heroRef}
+        className={styles.hero}
+        onPointerMove={handleHeroPointerMove}
+        aria-labelledby="hero-titulo"
+        style={{ '--entrada-base': `${entranceDelay}ms` }}
+      >
         <div className={styles.heroInner}>
           <div className={styles.heroText}>
+            <p className={styles.eyebrow}>Salas de oficina por horas</p>
             <h1 className={styles.heroTitle} id="hero-titulo">
-              Elige tu sala sin ir a ciegas.
+              Elige tu sala en el plano y resérvala por horas.
             </h1>
             <p className={styles.lead}>
-              Mira el edificio, abre la planta y comprueba qué salas están libres. Reservas por
-              horas y pagas online.
+              iPuente te enseña cada planta del edificio con sus salas libres, su precio y su
+              capacidad. Para equipos y profesionales que necesitan una sala unas horas: eliges,
+              pagas online y listo.
             </p>
-            <form className={styles.search} aria-label="Buscar salas" onSubmit={handleSearch}>
-              <div className={`${styles.field} ${styles.fieldCity}`}>
-                <Input label="Ciudad" name="city" type="text" placeholder="Sevilla" />
-              </div>
-              <div className={styles.field}>
-                <Input label="Fecha" name="date" type="date" />
-              </div>
-              <div className={styles.field}>
-                <Input label="Personas" name="people" type="number" min="1" placeholder="10" />
-              </div>
-              <Button type="submit">Buscar</Button>
-            </form>
-            <p className={styles.hint}>Pronto filtraremos por ciudad, fecha y personas.</p>
           </div>
 
           <div className={styles.heroBuilding}>
-            <BuildingHero
-              buildingId={BUILDING.id}
-              buildingName={BUILDING.name}
-              floors={FLOORS_HERO}
-              activeFloorId={floorId}
-              onSelectFloor={setFloorId}
-            />
+            <HeroStory buildingId={BUILDING.id} buildingName={BUILDING.name} />
           </div>
+
+          <SearchBar
+            variant="hero"
+            className={styles.search}
+            submitLabel="Buscar salas"
+            onSearch={handleSearch}
+          />
         </div>
       </section>
 
-      <FloorSection />
+      <FloorSection buildingName={BUILDING.name} />
       <NearbySection />
 
-      <Section id="salas" titleId="salas-titulo" tone="elevated">
+      <Section id="salas" titleId="salas-titulo" decor="grid">
         <div className={styles.roomsHead}>
           <SectionTitle id="salas-titulo">Salas destacadas</SectionTitle>
           <CategoryFilters filters={ROOM_FILTERS} active={filter} onChange={setFilter} />
         </div>
         {rooms.length > 0 ? (
-          <ul className={styles.grid}>
-            {rooms.map((room) => (
-              <li key={room.id}>
-                <RoomCard room={room} />
+          <ul className={`${styles.grid} ${featuredLayout ? styles.gridFeatured : ''}`}>
+            {rooms.map((room, index) => (
+              <li
+                key={room.id}
+                className={featuredLayout && index === 0 ? styles.featuredItem : ''}
+              >
+                <RoomCard
+                  room={room}
+                  variant={featuredLayout ? (index === 0 ? 'featured' : 'compact') : 'default'}
+                />
               </li>
             ))}
           </ul>

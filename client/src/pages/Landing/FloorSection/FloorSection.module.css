@@ -22,6 +22,13 @@
   border-top: 1px solid var(--linea);
 }
 
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border-bottom: 1px solid var(--linea);
+}
+
 .room {
   position: relative;
   display: flex;
@@ -29,11 +36,11 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-1) var(--space-4);
-  width: 100%;
-  min-height: var(--campo-alto);
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
   padding: 10px 0 10px 22px;
   border: 0;
-  border-bottom: 1px solid var(--linea);
   background: transparent;
   color: var(--crema);
   text-align: left;
@@ -131,7 +138,7 @@
 }
 
 .clear {
-  min-height: var(--campo-alto);
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -150,11 +157,36 @@
   transform: scale(0.97);
 }
 
+.lightsScore {
+  margin: var(--space-5) 0 0;
+  font-size: var(--text-interfaz);
+  color: var(--crema-suave);
+}
+
+.lightsScore strong {
+  color: var(--crema);
+}
+
+.celebration {
+  /* Sitio reservado para que el mensaje no empuje la lista al aparecer. */
+  min-height: 2.5em;
+  margin: var(--space-3) 0 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lista-movil);
+  line-height: 1.2;
+  color: var(--bronce-claro);
+}
+
+.celebrationOn {
+  animation: mensajeLuz 420ms var(--ease-out) both;
+}
+
 .legend {
   margin-top: var(--space-2);
 }
 
 .stage {
+  position: relative;
   flex: 1.35 1 540px;
   min-width: 0;
   height: clamp(380px, 56vw, 600px);
@@ -169,6 +201,37 @@
   margin: 0;
   font-size: var(--text-interfaz);
   color: var(--crema-suave);
+}
+
+/* Resplandor pegado al plano: va con él en móvil y en escritorio, sin quedar lejos. */
+.stage::before {
+  content: '';
+  position: absolute;
+  inset: -22% -14%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--foto-hueco) 80%, transparent),
+    transparent
+  );
+}
+
+.stageFlash::before {
+  animation: destello 1400ms var(--ease-out);
+}
+
+/* Al cambiar de planta, título, lista y plano entran desde el lado hacia el que se ha movido la persona. */
+.swap {
+  animation: plantaEntra 320ms var(--ease-out) both;
+}
+
+.swap[data-direction='down'] {
+  --entra-desde: 16px;
+}
+
+.swap[data-direction='up'] {
+  --entra-desde: -16px;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -194,7 +257,41 @@
   }
 }
 
+@keyframes plantaEntra {
+  from {
+    opacity: 0;
+    transform: translateY(var(--entra-desde, 16px));
+  }
+}
+
+@keyframes mensajeLuz {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes destello {
+  35% {
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--bronce-claro) 55%, transparent),
+      transparent
+    );
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .swap {
+    animation: none;
+  }
+
+  .stageFlash::before,
+  .celebrationOn {
+    animation: none;
+    transition: none;
+  }
+
   .room,
   .bar,
   .roomName,

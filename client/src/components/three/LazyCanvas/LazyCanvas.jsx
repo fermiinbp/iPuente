@@ -2,6 +2,7 @@
 // Las vistas que la usan se importan con React.lazy para que Three.js no pese en la carga inicial.
 import { useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
+import { ACESFilmicToneMapping } from 'three';
 import { hasWebGL } from '@/utils/webgl.js';
 import ErrorBoundary from '../ErrorBoundary/ErrorBoundary.jsx';
 import styles from './LazyCanvas.module.css';
@@ -12,6 +13,7 @@ export default function LazyCanvas({
   lazy = false,
   camera,
   frameloop = 'demand',
+  shadows = false,
   className = '',
   children,
 }) {
@@ -48,7 +50,12 @@ export default function LazyCanvas({
             dpr={[1, 2]}
             frameloop={frameloop}
             camera={camera}
-            gl={{ antialias: true, powerPreference: 'high-performance' }}
+            shadows={shadows}
+            gl={{
+              antialias: true,
+              powerPreference: 'high-performance',
+              toneMapping: ACESFilmicToneMapping,
+            }}
           >
             {children}
           </Canvas>

@@ -35,11 +35,21 @@
 @media (hover: hover) and (pointer: fine) {
   .chip:not(.active):hover {
     border-color: var(--crema);
+    background: var(--bosque-elevado);
+    transform: translateY(-1px);
+  }
+
+  .chip:not(.active):active:hover {
+    transform: scale(0.97);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .chip {
     transition: none;
+  }
+
+  .chip:not(.active):hover {
+    transform: none;
   }
 }

@@ -1,1 +1,43 @@
-/* Estilos de MyBookings (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de MyBookings (CSS Module). */
+.page {
+  min-height: 60vh;
+  background: var(--bosque);
+  color: var(--crema);
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-6);
+  max-width: 900px;
+  margin: 0 auto;
+  padding: clamp(32px, 5vw, 72px) var(--gutter) var(--espacio-seccion);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-seccion);
+  font-weight: 400;
+  line-height: var(--leading-declaracion);
+  letter-spacing: var(--tracking-titular);
+}
+
+.subtitle {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-display);
+  font-size: var(--text-lista);
+  font-weight: 400;
+}
+
+.list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.none {
+  margin: 0;
+  color: var(--crema-suave);
+}

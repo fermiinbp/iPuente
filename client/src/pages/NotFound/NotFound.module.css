@@ -1,1 +1,14 @@
 /* Estilos de NotFound (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+
+.title:focus {
+  outline: none;
+}
+
+.code {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(88px, 18vw, 180px);
+  line-height: 1;
+  color: var(--crema-suave);
+  opacity: 0.45;
+}

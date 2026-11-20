@@ -4,12 +4,14 @@ import { Route, Routes } from 'react-router';
 import DashboardLayout from '@/components/layout/DashboardLayout/DashboardLayout.jsx';
 import Layout from '@/components/layout/Layout/Layout.jsx';
 import { ROLES } from '@/config/constants.js';
+import Account from '@/pages/Account/Account.jsx';
 import AdminBookings from '@/pages/admin/AdminBookings/AdminBookings.jsx';
 import AdminCompanies from '@/pages/admin/AdminCompanies/AdminCompanies.jsx';
 import AdminCompanyDetail from '@/pages/admin/AdminCompanyDetail/AdminCompanyDetail.jsx';
 import AdminDashboard from '@/pages/admin/AdminDashboard/AdminDashboard.jsx';
 import AdminPayments from '@/pages/admin/AdminPayments/AdminPayments.jsx';
 import AdminUsers from '@/pages/admin/AdminUsers/AdminUsers.jsx';
+import BookingCheckout from '@/pages/BookingCheckout/BookingCheckout.jsx';
 import BookingDetailPage from '@/pages/BookingDetailPage/BookingDetailPage.jsx';
 import Building from '@/pages/Building/Building.jsx';
 import CompanyBookings from '@/pages/company/CompanyBookings/CompanyBookings.jsx';
@@ -53,6 +55,12 @@ const ADMIN_LINKS = [
 export default function App() {
   return (
     <Routes>
+      {/* Acceso: sin cabecera ni pie (AuthLayout dentro de cada pantalla) */}
+      <Route path="login" element={<Login />} />
+      <Route path="register" element={<Register />} />
+      <Route path="forgot-password" element={<ForgotPassword />} />
+      <Route path="reset-password" element={<ResetPassword />} />
+
       <Route element={<Layout />}>
         {/* Públicas */}
         <Route index element={<Landing />} />
@@ -60,10 +68,6 @@ export default function App() {
         <Route path="buildings/:buildingId" element={<Building />} />
         <Route path="buildings/:buildingId/floors/:floorId" element={<Floor />} />
         <Route path="rooms/:roomId" element={<Room />} />
-        <Route path="login" element={<Login />} />
-        <Route path="register" element={<Register />} />
-        <Route path="forgot-password" element={<ForgotPassword />} />
-        <Route path="reset-password" element={<ResetPassword />} />
 
         {/* Alta de empresa: sin sesión, porque crea una cuenta de empresa nueva (EMP001) */}
         <Route path="company/register" element={<CompanyRegister />} />
@@ -72,7 +76,9 @@ export default function App() {
         <Route element={<PrivateRoute />}>
           <Route path="my-bookings" element={<MyBookings />} />
           <Route path="my-bookings/:bookingId" element={<BookingDetailPage />} />
+          <Route path="checkout/:bookingId" element={<BookingCheckout />} />
           <Route path="payment/result" element={<PaymentResult />} />
+          <Route path="account" element={<Account />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

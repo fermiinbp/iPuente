@@ -1,1 +1,156 @@
-/* Estilos de Search (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de Search (CSS Module). Mobile first. */
+.page {
+  min-height: 60vh;
+  background: var(--bosque);
+  color: var(--crema);
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-6);
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: clamp(32px, 5vw, 72px) var(--gutter) var(--espacio-seccion);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-seccion);
+  font-weight: 400;
+  line-height: var(--leading-declaracion);
+  letter-spacing: var(--tracking-titular);
+}
+
+.count {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-cuerpo);
+  font-weight: 400;
+  color: var(--crema-suave);
+}
+
+.filters {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.filterFields {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+}
+
+.demoNote {
+  margin: 0;
+  font-size: var(--text-pequeno);
+  color: var(--aviso);
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-5);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.layout {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+  min-width: 0;
+}
+
+/* En móvil, «Ver mapa» cambia la lista por el mapa. En escritorio se ven los dos. */
+.listHidden {
+  display: none;
+}
+
+.mapPane {
+  display: none;
+  height: min(70vh, 560px);
+}
+
+.mapPaneOpen {
+  display: block;
+}
+
+.mapNote {
+  margin: 0;
+  color: var(--crema-suave);
+}
+
+.mapToggle {
+  display: flex;
+}
+
+.cardActive > a {
+  border-color: var(--lima);
+  transform: translateY(-4px);
+}
+
+.summary {
+  margin: 0;
+  font-size: var(--text-interfaz);
+  color: var(--crema-suave);
+}
+
+@media (min-width: 720px) {
+  .filters {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+
+  .filterFields {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 1040px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 1040px) {
+  .mapToggle {
+    display: none;
+  }
+
+  .listHidden {
+    display: grid;
+    gap: var(--space-4);
+    align-content: start;
+    min-width: 0;
+  }
+
+  .withMap {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
+    align-items: start;
+  }
+
+  .withMap .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mapPane {
+    position: sticky;
+    top: 96px;
+    display: block;
+    height: calc(100vh - 128px);
+  }
+}

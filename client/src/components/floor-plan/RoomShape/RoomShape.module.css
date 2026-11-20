@@ -10,6 +10,7 @@
   line-height: 1.4;
   white-space: nowrap;
   user-select: none;
+  transition: transform var(--dur-fast) var(--ease-out);
   pointer-events: none;
 }
 
@@ -35,6 +36,13 @@
 .selected {
   outline: 2px solid var(--lima);
   outline-offset: 1px;
+}
+
+/* Con el ratón encima: la etiqueta se perfila en lima y crece un poco. */
+.hover {
+  outline: 2px solid var(--lima);
+  outline-offset: 1px;
+  transform: scale(1.1);
 }
 
 /* Bajo 600 px la etiqueta muestra solo el código de la sala; el estado completo está en la lista. */

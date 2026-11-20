@@ -22,6 +22,8 @@
   border-radius: var(--radio-tarjeta);
   background: var(--foto-hueco);
   border: 1px solid var(--linea);
+  overflow: hidden;
+  transition: border-color var(--dur-fast) var(--ease-out);
 }
 
 .symbol {
@@ -31,6 +33,48 @@
   background: var(--linea-plano);
   -webkit-mask: var(--simbolo) center / contain no-repeat;
   mask: var(--simbolo) center / contain no-repeat;
+  transition: transform var(--dur-media) var(--ease-out);
+}
+
+/* Variante en fila: foto a la izquierda y datos a la derecha. */
+.compact {
+  flex-direction: row;
+  align-items: stretch;
+  gap: var(--space-4);
+}
+
+.compact .photo {
+  flex: none;
+  width: clamp(104px, 28vw, 168px);
+  aspect-ratio: 1;
+}
+
+.compact .body {
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+}
+
+.compact .name {
+  font-size: clamp(24px, 2.4vw, 30px);
+}
+
+/* Variante grande: la sala protagonista ocupa más y habla más alto. */
+.featured .photo {
+  aspect-ratio: 4 / 3;
+}
+
+.featured .symbol {
+  width: 88px;
+  height: 88px;
+}
+
+.featured .name {
+  font-size: clamp(36px, 4.4vw, 60px);
+}
+
+.featured .meta {
+  font-size: var(--text-lead);
 }
 
 .body {
@@ -62,8 +106,28 @@
   font-weight: 600;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-2px);
+  }
+
+  .card:hover .photo {
+    border-color: var(--crema-suave);
+  }
+
+  .card:hover .symbol {
+    transform: scale(1.1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .card {
+  .card,
+  .symbol {
     transition: none;
+  }
+
+  .card:hover,
+  .card:hover .symbol {
+    transform: none;
   }
 }

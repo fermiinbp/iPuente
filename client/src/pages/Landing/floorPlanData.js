@@ -29,6 +29,7 @@ export const FLOOR_PLAN = {
   rooms: [
     {
       id: '2.01',
+      tipo: 'sala', // ejemplo: sala (reuniones), box (privado) o comun (zona común)
       name: 'Sala 2.01',
       status: 'free',
       x: 0,
@@ -42,6 +43,7 @@ export const FLOOR_PLAN = {
     },
     {
       id: '2.02',
+      tipo: 'sala', // ejemplo: sala (reuniones), box (privado) o comun (zona común)
       name: 'Sala 2.02',
       status: 'occupied',
       x: 178,
@@ -55,6 +57,7 @@ export const FLOOR_PLAN = {
     },
     {
       id: '2.03',
+      tipo: 'box', // ejemplo: sala (reuniones), box (privado) o comun (zona común)
       name: 'Sala 2.03',
       status: 'free',
       x: 408,
@@ -68,6 +71,7 @@ export const FLOOR_PLAN = {
     },
     {
       id: '2.04',
+      tipo: 'comun', // ejemplo: sala (reuniones), box (privado) o comun (zona común)
       name: 'Sala 2.04',
       status: 'off',
       x: 0,
@@ -81,6 +85,7 @@ export const FLOOR_PLAN = {
     },
     {
       id: '2.05',
+      tipo: 'sala', // ejemplo: sala (reuniones), box (privado) o comun (zona común)
       name: 'Sala 2.05',
       status: 'free',
       x: 248,
@@ -94,6 +99,7 @@ export const FLOOR_PLAN = {
     },
     {
       id: '2.06',
+      tipo: 'box', // ejemplo: sala (reuniones), box (privado) o comun (zona común)
       name: 'Sala 2.06',
       status: 'occupied',
       x: 420,

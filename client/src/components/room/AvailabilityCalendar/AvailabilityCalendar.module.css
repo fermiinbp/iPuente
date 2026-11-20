@@ -1,1 +1,58 @@
-/* Estilos de AvailabilityCalendar (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de AvailabilityCalendar (CSS Module). Mobile first. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.hour {
+  min-height: var(--campo-alto);
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-plano);
+  background: transparent;
+  color: var(--crema);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.hour:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.selected {
+  border-color: var(--lima);
+  background: var(--lima);
+  color: var(--bosque-profundo);
+  font-weight: 600;
+}
+
+/* Ocupada: tachada, no solo de otro color; el aria-label dice «ocupada». */
+.taken {
+  border-color: var(--linea);
+  color: var(--campo-desactivado-texto);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+@media (min-width: 600px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (hover: hover) {
+  .hour:not(:disabled):not(.selected):hover {
+    border-color: var(--lima);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hour {
+    transition: none;
+  }
+}

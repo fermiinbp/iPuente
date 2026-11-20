@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>iPuente · 01 Landing · Bosque</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#24331f}
+a{color:#f3ecdc}
+a:hover{color:#cfe36a}
+button{font-family:inherit}
+input::placeholder{color:#c4c9b4;opacity:1}
+input{color-scheme:dark}
+:focus-visible{outline:3px solid #cfe36a;outline-offset:3px}
+.ipl-links{display:flex}
+.ipl-menu{display:none}
+@media (max-width:900px){.ipl-links{display:none}.ipl-menu{display:inline-flex}.ipl-cta{display:none}}
+@media (prefers-reduced-motion: reduce){*{transition:none !important}}
+</style>
+</helmet>
+<div style="font-family: 'Hanken Grotesk', system-ui, sans-serif; font-size: 17px; line-height: 1.5; color: #f3ecdc; background: #24331f; font-variant-numeric: tabular-nums">
+
+<header style="border-bottom: 1px solid #506a49; background: #24331f">
+<div style="max-width: 1280px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 56px); min-height: 80px; display: flex; align-items: center; gap: 24px; position: relative">
+<a href="#" aria-label="iPuente, inicio" style="display: inline-flex; align-items: center; gap: 9px; min-height: 44px; font: 400 30px/1 'Newsreader', Georgia, serif; letter-spacing: -0.015em; color: #f3ecdc; text-decoration: none"><svg viewBox="0 0 48 48" width="30" height="30" aria-hidden="true" focusable="false" style="display: block; flex: none"><rect x="18" y="3" width="12" height="12" fill="#b8894a"/><path d="M4 20H44V25H40V45H31V36a7 7 0 0 0-14 0V45H8V25H4Z" fill="currentColor"/></svg><span><em style="font-style: italic">i</em>Puente</span></a>
+<nav aria-label="Principal" class="ipl-links" style="flex: 1; justify-content: center; gap: 4px 28px; flex-wrap: wrap">
+<a href="#salas" style="min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; font-size: 15px; font-weight: 500">Espacios</a>
+<a href="#empresas" style="min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; font-size: 15px; font-weight: 500">Para empresas</a>
+<a href="#como" style="min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; font-size: 15px; font-weight: 500">Cómo funciona</a>
+<a href="#pie" style="min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; font-size: 15px; font-weight: 500">Contacto</a>
+</nav>
+<div style="margin-left: auto; display: flex; align-items: center; gap: 12px">
+<a href="#" class="ipl-cta" style="min-height: 44px; display: inline-flex; align-items: center; padding: 0 8px; text-decoration: none; font-size: 15px; font-weight: 500">Iniciar sesión</a>
+<a href="#empresas" class="ipl-cta" style="min-height: 44px; display: inline-flex; align-items: center; padding: 0 20px; border-radius: 999px; background: #f3ecdc; color: #24331f; text-decoration: none; font-size: 15px; font-weight: 600">Publica tu oficina</a>
+<button type="button" class="ipl-menu" aria-expanded="{{menuStr}}" aria-controls="ipl-menu" onClick="{{toggleMenu}}" style="min-height: 44px; align-items: center; padding: 0 18px; border: 1px solid #506a49; border-radius: 999px; background: #2f4329; color: #f3ecdc; font-size: 15px; font-weight: 500; cursor: pointer">Menú</button>
+</div>
+<sc-if value="{{menu}}" hint-placeholder-val="{{ false }}">
+<div id="ipl-menu" style="position: absolute; z-index: 20; top: 72px; right: clamp(20px, 4vw, 56px); min-width: 240px; background: #2f4329; border: 1px solid #506a49; border-radius: 16px; padding: 8px; display: flex; flex-direction: column">
+<a href="#salas" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; text-decoration: none">Espacios</a>
+<a href="#empresas" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; text-decoration: none">Para empresas</a>
+<a href="#como" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; text-decoration: none">Cómo funciona</a>
+<a href="#pie" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; text-decoration: none">Contacto</a>
+<a href="#" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; text-decoration: none">Iniciar sesión</a>
+<a href="#empresas" style="min-height: 44px; display: flex; align-items: center; padding: 0 12px; text-decoration: none; font-weight: 600">Publica tu oficina</a>
+</div>
+</sc-if>
+</div>
+</header>
+
+<section aria-labelledby="hero-t" style="background: #24331f">
+<div style="max-width: 1280px; margin: 0 auto; padding: clamp(48px, 7vw, 96px) clamp(20px, 4vw, 56px) clamp(56px, 7vw, 104px); display: flex; flex-wrap: wrap; gap: 56px 64px; align-items: center">
+<div style="flex: 1 1 480px; min-width: 0">
+<h1 id="hero-t" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(52px, 7vw, 104px); line-height: .96; letter-spacing: -0.015em; color: #f3ecdc">Elige tu sala sin ir a ciegas.</h1>
+<p style="margin: 24px 0 0; font-size: 18px; line-height: 1.55; color: #c4c9b4; max-width: 30em">Mira el edificio, abre la planta y comprueba qué salas están libres. Reservas por horas y pagas online.</p>
+<form aria-label="Buscar salas" style="margin-top: 36px; background: #2f4329; border: 1px solid #506a49; border-radius: 18px; padding: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+<label style="flex: 2 1 160px; display: flex; flex-direction: column; gap: 2px; padding: 6px 14px; font-size: 13px; color: #c4c9b4">Ciudad<input type="text" placeholder="Sevilla" style="border: 0; font: 500 17px 'Hanken Grotesk', system-ui, sans-serif; color: #f3ecdc; padding: 4px 0; background: transparent; min-height: 28px; min-width: 0"></label>
+<label style="flex: 1 1 140px; display: flex; flex-direction: column; gap: 2px; padding: 6px 14px; font-size: 13px; color: #c4c9b4; border-left: 1px solid #506a49">Fecha<input type="date" style="border: 0; font: 500 16px 'Hanken Grotesk', system-ui, sans-serif; color: #f3ecdc; padding: 4px 0; background: transparent; min-height: 28px; min-width: 0"></label>
+<label style="flex: 1 1 100px; display: flex; flex-direction: column; gap: 2px; padding: 6px 14px; font-size: 13px; color: #c4c9b4; border-left: 1px solid #506a49">Personas<input type="number" min="1" placeholder="10" style="border: 0; font: 500 17px 'Hanken Grotesk', system-ui, sans-serif; color: #f3ecdc; padding: 4px 0; background: transparent; min-height: 28px; width: 100%; min-width: 0"></label>
+<button type="submit" style="flex: 1 1 130px; min-height: 56px; border: 0; border-radius: 999px; background: #f3ecdc; color: #24331f; font-size: 16px; font-weight: 600; cursor: pointer">Buscar</button>
+</form>
+<p style="margin: 12px 4px 0; font-size: 14px; color: #c4c9b4">Al buscar, ves la lista de edificios con salas para esa fecha.</p>
+</div>
+
+<div style="flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<div role="group" aria-label="Plantas del Edificio Puerta Sur" style="display: flex; flex-direction: column">
+<div aria-hidden="true" style="width: min(320px, 62%); height: 14px; margin-left: 16px; background: #8a6330"></div>
+<sc-for list="{{floors}}" as="f" hint-placeholder-count="4">
+<button type="button" aria-pressed="{{f.pressed}}" onClick="{{f.pick}}" onMouseEnter="{{f.pick}}" onFocus="{{f.pick}}" style="{{f.row}}"><span aria-hidden="true" style="{{f.slab}}"><span style="{{f.windows}}"></span></span><span style="{{f.label}}">{{f.name}}</span></button>
+</sc-for>
+<div aria-hidden="true" style="width: 100%; height: 1px; background: #c4c9b4; opacity: .5"></div>
+</div>
+<div aria-live="polite" style="border-top: 1px solid #506a49; padding-top: 18px; min-height: 96px">
+<p style="margin: 0; font: 400 32px/1.1 'Newsreader', Georgia, serif; letter-spacing: -0.015em; color: #f3ecdc">{{infoTitle}}</p>
+<p style="margin: 6px 0 0; font-size: 16px; color: #c4c9b4">{{infoText}}</p>
+<sc-if value="{{infoLink}}" hint-placeholder-val="{{ true }}"><a href="#" style="display: inline-flex; align-items: center; min-height: 44px; margin-top: 2px; font-size: 16px; font-weight: 600; text-underline-offset: 5px">{{infoLinkText}}</a></sc-if>
+</div>
+</div>
+</div>
+</section>
+
+<section id="salas" aria-labelledby="salas-t" style="background: #2f4329; border-top: 1px solid #506a49">
+<div style="max-width: 1280px; margin: 0 auto; padding: clamp(64px, 8vw, 104px) clamp(20px, 4vw, 56px)">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 20px 40px">
+<h2 id="salas-t" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(40px, 5vw, 68px); line-height: 1; letter-spacing: -0.015em">Salas destacadas</h2>
+<div role="group" aria-label="Filtrar por tipo de sala" style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{filters}}" as="t" hint-placeholder-count="5">
+<button type="button" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button>
+</sc-for>
+</div>
+</div>
+<ul style="list-style: none; margin: 40px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 32px 24px">
+<sc-for list="{{rooms}}" as="r" hint-placeholder-count="4">
+<li>
+<a href="#" style="display: flex; flex-direction: column; gap: 14px; text-decoration: none; color: #f3ecdc">
+<span style="aspect-ratio: 3 / 2; border-radius: 16px; background: #3d5535; border: 1px solid #506a49; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #f3ecdc">[Foto: {{r.name}}]</span>
+<span style="display: flex; flex-direction: column; gap: 4px">
+<span style="font: 400 30px/1.1 'Newsreader', Georgia, serif; letter-spacing: -0.015em">{{r.name}}</span>
+<span style="font-size: 15px; color: #c4c9b4">{{r.place}}</span>
+<span style="display: flex; justify-content: space-between; gap: 12px; margin-top: 4px; padding-top: 10px; border-top: 1px solid #506a49; font-size: 15px; font-weight: 600"><span>{{r.people}}</span><span>{{r.price}}</span></span>
+</span>
+</a>
+</li>
+</sc-for>
+</ul>
+<sc-if value="{{noRooms}}" hint-placeholder-val="{{ false }}"><p style="margin: 24px 0 0; color: #c4c9b4">No hay salas de este tipo todavía. Prueba con otro filtro.</p></sc-if>
+</div>
+</section>
+
+<section id="como" aria-labelledby="como-t" style="background: #24331f; border-top: 1px solid #506a49">
+<div style="max-width: 1280px; margin: 0 auto; padding: clamp(64px, 8vw, 104px) clamp(20px, 4vw, 56px)">
+<h2 id="como-t" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(40px, 5vw, 68px); line-height: 1; letter-spacing: -0.015em">Cómo funciona</h2>
+<ol style="list-style: none; margin: 48px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 32px 40px">
+<li style="border-top: 1px solid #506a49; padding-top: 20px; display: flex; flex-direction: column; gap: 10px"><span aria-hidden="true" style="font: italic 400 56px/1 'Newsreader', Georgia, serif; color: #b8894a">01</span><span style="font: 400 30px/1.1 'Newsreader', Georgia, serif; letter-spacing: -0.015em">Explora el edificio</span><span style="font-size: 16px; color: #c4c9b4; max-width: 24em">Pasa por las plantas y mira cuántas salas quedan libres en cada una.</span></li>
+<li style="border-top: 1px solid #506a49; padding-top: 20px; display: flex; flex-direction: column; gap: 10px"><span aria-hidden="true" style="font: italic 400 56px/1 'Newsreader', Georgia, serif; color: #b8894a">02</span><span style="font: 400 30px/1.1 'Newsreader', Georgia, serif; letter-spacing: -0.015em">Elige tu sala en el plano</span><span style="font-size: 16px; color: #c4c9b4; max-width: 24em">Cada sala muestra su precio, su capacidad y su equipamiento.</span></li>
+<li style="border-top: 1px solid #506a49; padding-top: 20px; display: flex; flex-direction: column; gap: 10px"><span aria-hidden="true" style="font: italic 400 56px/1 'Newsreader', Georgia, serif; color: #b8894a">03</span><span style="font: 400 30px/1.1 'Newsreader', Georgia, serif; letter-spacing: -0.015em">Reserva y paga online</span><span style="font-size: 16px; color: #c4c9b4; max-width: 24em">Eliges fecha y horas, pagas con tarjeta y recibes la confirmación por email.</span></li>
+</ol>
+</div>
+</section>
+
+<section id="empresas" aria-labelledby="emp-t" style="background: #18240f">
+<div style="max-width: 1280px; margin: 0 auto; padding: clamp(64px, 8vw, 104px) clamp(20px, 4vw, 56px); display: flex; flex-wrap: wrap; gap: 48px 64px; align-items: center">
+<div style="flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 22px">
+<h2 id="emp-t" style="margin: 0; font-family: 'Newsreader', Georgia, serif; font-weight: 400; font-size: clamp(42px, 5.4vw, 80px); line-height: .98; letter-spacing: -0.015em">¿Tienes oficinas?</h2>
+<p style="margin: 0; font-size: 18px; line-height: 1.6; color: #c4c9b4; max-width: 30em">Publícalas en minutos: sube tu plano y detectamos tus salas.</p>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; border-top: 1px solid #506a49">
+<li style="display: flex; gap: 16px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid #506a49"><span aria-hidden="true" style="font: italic 400 22px 'Newsreader', Georgia, serif; color: #b8894a">1</span><span>Sube tu plano</span></li>
+<li style="display: flex; gap: 16px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid #506a49"><span aria-hidden="true" style="font: italic 400 22px 'Newsreader', Georgia, serif; color: #b8894a">2</span><span>Revisa las salas</span></li>
+<li style="display: flex; gap: 16px; align-items: baseline; padding: 12px 0; border-bottom: 1px solid #506a49"><span aria-hidden="true" style="font: italic 400 22px 'Newsreader', Georgia, serif; color: #b8894a">3</span><span>Publica</span></li>
+</ol>
+<div><a href="#" style="display: inline-flex; align-items: center; min-height: 52px; padding: 0 26px; border-radius: 999px; background: #f3ecdc; color: #24331f; text-decoration: none; font-weight: 600">Publica tu oficina</a></div>
+</div>
+<div role="img" aria-label="Editor de mapas: plano de una planta con cuatro salas detectadas" style="flex: 1.2 1 440px; min-width: 0; border-radius: 16px; background: #2f4329; border: 1px solid #506a49; padding: 16px; box-sizing: border-box">
+<div aria-hidden="true" style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 4px 4px 14px; font-size: 14px; color: #c4c9b4"><span>Planta 2</span><span style="background: #b8894a; color: #18240f; font-weight: 600; padding: 2px 10px; border-radius: 4px">4 salas detectadas</span></div>
+<div aria-hidden="true" style="position: relative; aspect-ratio: 16 / 10; background: #f3ecdc; border-radius: 8px; overflow: hidden">
+<div style="position: absolute; left: 7%; top: 9%; right: 7%; bottom: 9%; border: 3px solid #24331f"></div>
+<div style="position: absolute; left: 7%; right: 7%; top: 50%; height: 3px; background: #24331f"></div>
+<div style="position: absolute; left: 37%; top: 9%; height: 41%; width: 3px; background: #24331f"></div>
+<div style="position: absolute; left: 53%; top: 50%; height: 41%; width: 3px; background: #24331f"></div>
+<div style="position: absolute; left: 9%; top: 12%; width: 26%; height: 35%; box-sizing: border-box; border: 2px dashed #8a5a24; background: rgba(138, 90, 36, .12); padding: 6px"><span style="background: #8a5a24; color: #ffffff; font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 4px">Sala 1</span></div>
+<div style="position: absolute; left: 40%; top: 12%; width: 51%; height: 35%; box-sizing: border-box; border: 2px dashed #8a5a24; background: rgba(138, 90, 36, .12); padding: 6px"><span style="background: #8a5a24; color: #ffffff; font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 4px">Sala 2</span></div>
+<div style="position: absolute; left: 9%; top: 53%; width: 42%; height: 35%; box-sizing: border-box; border: 2px dashed #8a5a24; background: rgba(138, 90, 36, .12); padding: 6px"><span style="background: #8a5a24; color: #ffffff; font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 4px">Sala 3</span></div>
+<div style="position: absolute; left: 56%; top: 53%; width: 35%; height: 35%; box-sizing: border-box; border: 2px dashed #8a5a24; background: rgba(138, 90, 36, .12); padding: 6px"><span style="background: #8a5a24; color: #ffffff; font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 4px">Sala 4</span></div>
+</div>
+</div>
+</div>
+</section>
+
+<footer id="pie" style="background: #18240f; border-top: 1px solid #506a49; color: #c4c9b4">
+<div style="max-width: 1280px; margin: 0 auto; padding: 56px clamp(20px, 4vw, 56px) 32px; display: flex; flex-wrap: wrap; gap: 40px 64px">
+<div style="flex: 1 1 220px">
+<span style="display: inline-flex; align-items: center; gap: 10px; font: 400 30px/1 'Newsreader', Georgia, serif; letter-spacing: -0.015em; color: #f3ecdc"><svg viewBox="0 0 48 48" width="32" height="32" aria-hidden="true" focusable="false" style="display: block; flex: none"><rect x="18" y="3" width="12" height="12" fill="#b8894a"/><path d="M4 20H44V25H40V45H31V36a7 7 0 0 0-14 0V45H8V25H4Z" fill="currentColor"/></svg><span><em style="font-style: italic">i</em>Puente</span></span>
+</div>
+<nav aria-label="Clientes" style="flex: 0 1 180px; display: flex; flex-direction: column"><p style="margin: 0 0 6px; font-weight: 600; color: #f3ecdc">Clientes</p><a href="#" style="color: #c4c9b4; min-height: 40px; display: inline-flex; align-items: center">Buscar salas</a><a href="#como" style="color: #c4c9b4; min-height: 40px; display: inline-flex; align-items: center">Cómo funciona</a><a href="#" style="color: #c4c9b4; min-height: 40px; display: inline-flex; align-items: center">Mis reservas</a></nav>
+<nav aria-label="Empresas" style="flex: 0 1 180px; display: flex; flex-direction: column"><p style="margin: 0 0 6px; font-weight: 600; color: #f3ecdc">Empresas</p><a href="#empresas" style="color: #c4c9b4; min-height: 40px; display: inline-flex; align-items: center">Publica tu oficina</a><a href="#" style="color: #c4c9b4; min-height: 40px; display: inline-flex; align-items: center">Panel de empresa</a><a href="#" style="color: #c4c9b4; min-height: 40px; display: inline-flex; align-items: center">Precios</a></nav>
+<nav aria-label="Legal" style="flex: 0 1 180px; display: flex; flex-direction: column"><p style="margin: 0 0 6px; font-weight: 600; color: #f3ecdc">Legal</p><a href="#" style="color: #c4c9b4; min-height: 40px; display: inline-flex; align-items: center">Privacidad</a><a href="#" style="color: #c4c9b4; min-height: 40px; display: inline-flex; align-items: center">Cookies</a><a href="#" style="color: #c4c9b4; min-height: 40px; display: inline-flex; align-items: center">Contacto</a></nav>
+</div>
+<div style="max-width: 1280px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 56px) 32px"><p style="margin: 0; padding-top: 20px; border-top: 1px solid #506a49; font-size: 14px">© 2026 iPuente</p></div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2900}}'>
+var FLOORS = [
+  { name: 'Planta 3', free: 2, total: 6 },
+  { name: 'Planta 2', free: 5, total: 12 },
+  { name: 'Planta 1', free: 3, total: 8 },
+  { name: 'Planta baja', free: 0, total: 0, off: true }
+];
+var FILTERS = ['Todas', 'Reuniones', 'Eventos y charlas', 'Formación', 'Boxes privados'];
+var ROOMS = [
+  { name: 'Black Room I', type: 'Reuniones', place: 'Edificio Puerta Sur, Sevilla', people: '12 personas', price: '25 €/h' },
+  { name: 'Sala Grande', type: 'Eventos y charlas', place: 'Edificio Puerta Sur, Sevilla', people: '[N] personas', price: '[PRECIO] €/h' },
+  { name: 'Zona Azul', type: 'Formación', place: 'Edificio Puerta Sur, Sevilla', people: '[N] personas', price: '[PRECIO] €/h' },
+  { name: 'Box22', type: 'Boxes privados', place: 'Edificio Puerta Sur, Sevilla', people: '[N] personas', price: '[PRECIO] €/h' }
+];
+var FB = "'Hanken Grotesk', system-ui, sans-serif";
+var FD = "'Newsreader', Georgia, serif";
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { floor: 1, filter: 0, menu: false };
+    this.toggleMenu = () => this.setState({ menu: !this.state.menu });
+  }
+  renderVals() {
+    var self = this, s = this.state;
+    var floors = FLOORS.map(function (f, i) {
+      var a = i === s.floor;
+      var ground = i === FLOORS.length - 1;
+      return {
+        name: f.name,
+        pressed: a ? 'true' : 'false',
+        pick: function () { if (self.state.floor !== i) self.setState({ floor: i }); },
+        row: 'display: flex; align-items: center; gap: 24px; width: 100%; min-height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; color: ' + (a ? '#cfe36a' : '#f3ecdc') + ';',
+        slab: 'position: relative; flex: none; display: block; width: min(352px, 68%); height: ' + (ground ? 96 : 84) + 'px; box-sizing: border-box; background: ' + (a ? '#dcb67a' : '#b8894a') + '; border-bottom: 2px solid #8a6330; outline: ' + (a ? '3px solid #cfe36a' : '0') + '; outline-offset: -3px; transition: background .2s;',
+        windows: 'position: absolute; left: 18px; right: 18px; top: 18px; bottom: ' + (ground ? 0 : 18) + 'px; background-image: ' + (ground ? 'linear-gradient(90deg, transparent 0 40%, #8a6330 40% 60%, transparent 60% 100%)' : 'repeating-linear-gradient(90deg, #6f4f26 0 34px, transparent 34px 50px)') + '; opacity: ' + (a ? 1 : .85) + ';',
+        label: 'font: ' + (a ? 'italic ' : '') + '400 28px/1.1 ' + FD + '; letter-spacing: -0.015em;'
+      };
+    });
+    var cur = FLOORS[s.floor];
+    var filters = FILTERS.map(function (t, i) {
+      var a = i === s.filter;
+      return {
+        label: t, pressed: a ? 'true' : 'false',
+        pick: function () { self.setState({ filter: i }); },
+        style: 'min-height: 44px; padding: 0 18px; border-radius: 999px; font: 500 15px ' + FB + '; cursor: pointer; border: 1px solid ' + (a ? '#cfe36a' : '#506a49') + '; background: ' + (a ? '#cfe36a' : 'transparent') + '; color: ' + (a ? '#18240f' : '#f3ecdc') + ';'
+      };
+    });
+    var ft = FILTERS[s.filter];
+    var rooms = ROOMS.filter(function (r) { return s.filter === 0 || r.type === ft; });
+    return {
+      menu: s.menu, menuStr: s.menu ? 'true' : 'false', toggleMenu: this.toggleMenu,
+      floors: floors,
+      infoTitle: cur.name,
+      infoText: cur.off ? 'Recepción. Esta planta no se alquila.' : cur.free + ' salas libres hoy',
+      infoLink: !cur.off,
+      infoLinkText: 'Ver el plano de la ' + cur.name.toLowerCase(),
+      filters: filters, rooms: rooms, noRooms: rooms.length === 0
+    };
+  }
+}
+</script>
+</body>
+</html>

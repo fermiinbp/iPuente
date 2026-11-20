@@ -1,18 +1,16 @@
 .inner {
   display: flex;
-  flex-wrap: wrap-reverse;
+  flex-wrap: wrap;
   gap: 40px 56px;
   align-items: center;
 }
 
+/* Móvil: el mapa arriba (60vh) y la lista debajo. */
 .mapBox {
   flex: 1.35 1 320px;
   min-width: 0;
-  height: clamp(360px, 58vw, 560px);
-}
-
-.map {
-  height: 100%;
+  height: 60vh;
+  min-height: 360px;
 }
 
 .note {
@@ -47,6 +45,7 @@
 }
 
 .item,
+.itemHover,
 .itemActive {
   display: flex;
   align-items: center;
@@ -69,8 +68,35 @@
 }
 
 .item:active,
+.itemHover:active,
 .itemActive:active {
   transform: scale(0.97);
+}
+
+.item:focus-visible,
+.itemHover:focus-visible,
+.itemActive:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.number {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bronce);
+  color: var(--bosque-profundo);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.itemActive .number {
+  background: var(--lima);
 }
 
 /* Texto solo para lectores de pantalla: anuncia la selección hecha con clic o teclado. */
@@ -90,20 +116,30 @@
   color: var(--crema);
 }
 
+.itemHover {
+  color: var(--lima);
+}
+
 .itemActive {
   color: var(--lima);
   font-style: italic;
 }
 
+.name {
+  flex: 1;
+}
+
 .time {
   flex: none;
+  text-align: right;
   font-family: var(--font-body);
   font-size: var(--text-interfaz);
   font-style: normal;
   color: var(--crema-suave);
 }
 
-.itemActive .time {
+.itemActive .time,
+.itemHover .time {
   color: var(--lima);
 }
 
@@ -133,20 +169,36 @@
   }
 }
 
+@media (min-width: 900px) {
+  .mapBox {
+    height: clamp(440px, 40vw, 600px);
+  }
+}
+
 @media (max-width: 600px) {
   .item,
+  .itemHover,
   .itemActive {
+    flex-wrap: wrap;
     font-size: var(--text-lista-movil);
+  }
+
+  .time {
+    flex-basis: 100%;
+    padding-left: 40px;
+    text-align: left;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .item,
+  .itemHover,
   .itemActive {
     transition: none;
   }
 
   .item:active,
+  .itemHover:active,
   .itemActive:active {
     transform: none;
   }

@@ -2,12 +2,20 @@
 // El contenido se maqueta con `innerClassName` (flex, rejilla…); aquí solo va lo común.
 import styles from './Section.module.css';
 
-const TONES = { base: styles.toneBase, elevated: styles.toneElevated, deep: styles.toneDeep };
+const TONES = {
+  base: styles.toneBase,
+  elevated: styles.toneElevated,
+  deep: styles.toneDeep,
+  crema: styles.toneCrema, // superficie clara: texto bosque
+};
+// Decoración de fondo opcional: 'glow' (resplandor de bronce) o 'grid' (cuadrícula de plano que se desvanece).
+const DECORS = { glow: styles.decorGlow, grid: styles.decorGrid };
 
 export default function Section({
   id,
   titleId,
   tone = 'base',
+  decor = '',
   bordered = true,
   spacious = false,
   className = '',
@@ -18,6 +26,7 @@ export default function Section({
     styles.section,
     TONES[tone] || styles.toneBase,
     bordered ? styles.bordered : '',
+    DECORS[decor] || '',
     className,
   ]
     .filter(Boolean)

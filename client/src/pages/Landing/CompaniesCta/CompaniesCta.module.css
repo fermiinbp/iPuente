@@ -10,7 +10,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: var(--space-5);
 }
 
 .lead {
@@ -46,6 +46,7 @@
 }
 
 .editor {
+  position: relative;
   flex: 1.2 1 min(440px, 100%);
   min-width: 0;
   padding: var(--space-4);
@@ -155,4 +156,80 @@
   top: 53%;
   width: 35%;
   height: 35%;
+}
+
+/* Detección de salas: antes de empezar están ocultas; durante «play» una línea recorre el plano y cada sala aparece a su paso. */
+.scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: var(--bronce);
+  box-shadow: 0 0 18px 6px color-mix(in srgb, var(--bronce) 55%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.editor[data-phase='antes'] .room {
+  opacity: 0;
+}
+
+.editor[data-phase='play'] .scan {
+  animation: escaneo 1300ms var(--ease-in-out) both;
+}
+
+.editor[data-phase='play'] .room {
+  animation: salaDetectada 420ms var(--ease-out) both;
+}
+
+.editor[data-phase='play'] .room1 {
+  animation-delay: 250ms;
+}
+
+.editor[data-phase='play'] .room3 {
+  animation-delay: 550ms;
+}
+
+.editor[data-phase='play'] .room2 {
+  animation-delay: 800ms;
+}
+
+.editor[data-phase='play'] .room4 {
+  animation-delay: 1050ms;
+}
+
+/* Resplandor pegado al plano: va con él en móvil y en escritorio, sin quedar lejos. */
+.editor::before {
+  content: '';
+  position: absolute;
+  inset: -22% -14%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--foto-hueco) 80%, transparent),
+    transparent
+  );
+}
+
+@keyframes escaneo {
+  0% {
+    left: 7%;
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    left: 93%;
+    opacity: 0;
+  }
+}
+
+@keyframes salaDetectada {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
 }

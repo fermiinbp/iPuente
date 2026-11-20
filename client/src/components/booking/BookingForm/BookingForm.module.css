@@ -1,1 +1,16 @@
-/* Estilos de BookingForm (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de BookingForm (CSS Module). */
+.form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.legend,
+.loginHint {
+  margin: 0;
+  font-size: var(--text-pequeno);
+  color: var(--crema-suave);
+}
+
+.loginHint {
+  text-align: center;
+}

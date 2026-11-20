@@ -1,188 +1,210 @@
-// Escena 3D de «Alrededor del edificio»: mapa inclinado con el edificio en verde libre y los puntos cercanos.
-// Cámara fija: es el grupo el que se inclina y se gira, como el mockup (rotateX y rotateZ). Se importa con React.lazy.
-import { useEffect, useMemo } from 'react';
-import {
-  BoxGeometry,
-  BufferGeometry,
-  CylinderGeometry,
-  EdgesGeometry,
-  Float32BufferAttribute,
-  LineBasicMaterial,
-  MeshBasicMaterial,
-  PlaneGeometry,
-  RingGeometry,
-  SphereGeometry,
-} from 'three';
-import { Html } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
-import { useCssColors } from '@/hooks/useCssColors.js';
+// Mapa vectorial «Alrededor del edificio»: calles y edificios 3D (MapLibre + OpenFreeMap, sin API key).
+// El edificio iPuente destaca en bronce. Al elegir un lugar la cámara vuela hasta él y se dibuja su ruta.
+// Se importa con React.lazy desde NearbySection.
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import MapGL, { Layer, Marker, Source } from 'react-map-gl/maplibre';
+import { BUILDING, VIEW } from '@/config/nearby.js';
+import PoiMarker from './PoiMarker/PoiMarker.jsx';
+import { loadBosqueStyle, readMapColors } from './mapStyle.js';
 import styles from './NearbyMap.module.css';
 
-const TILT = 0.66; // unos 38 grados de elevación
-const TURN = -0.56; // unos -32 grados de giro
-const GROUND = [12, 8.6];
-const STREETS_X = [-3.7, -1.7, 1.7, 3.7];
-const STREETS_Z = [-3, -1.3, 1.3, 3];
-const STREET_HALF = 0.12;
-// Aspecto (ancho/alto) a partir del cual el mapa cabe entero sin reducirlo.
-const ASPECTO_REFERENCIA = 1.3;
-const NOMBRES = [
-  'bosque-elevado',
-  'linea-plano',
-  'bronce',
-  'libre',
-  'bosque-profundo',
-  'crema',
-  'lima',
-];
+const MOBILE = '(max-width: 599px)';
+const REDUCED = '(prefers-reduced-motion: reduce)';
 
-function streetsGeometry() {
-  const puntos = [];
-  const [ancho, fondo] = GROUND;
-  for (const x of STREETS_X) {
-    for (const lado of [-STREET_HALF, STREET_HALF]) {
-      puntos.push(x + lado, 0.01, -fondo / 2, x + lado, 0.01, fondo / 2);
-    }
-  }
-  for (const z of STREETS_Z) {
-    for (const lado of [-STREET_HALF, STREET_HALF]) {
-      puntos.push(-ancho / 2, 0.01, z + lado, ancho / 2, 0.01, z + lado);
-    }
-  }
-  const geometria = new BufferGeometry();
-  geometria.setAttribute('position', new Float32BufferAttribute(puntos, 3));
-  return geometria;
+// Mensajes del modo «gestos cooperativos» (móvil), en español.
+const LOCALE = {
+  'CooperativeGesturesHandler.WindowsHelpText': 'Usa Ctrl + rueda para mover el mapa',
+  'CooperativeGesturesHandler.MacHelpText': 'Usa ⌘ + rueda para mover el mapa',
+  'CooperativeGesturesHandler.MobileHelpText': 'Usa dos dedos para mover el mapa',
+};
+
+const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+
+const line = (coordinates) => ({
+  type: 'Feature',
+  geometry: { type: 'LineString', coordinates },
+  properties: {},
+});
+
+const footprint = {
+  type: 'Feature',
+  geometry: { type: 'Polygon', coordinates: [BUILDING.footprint] },
+  properties: {},
+};
+
+function boundsOf(puntos) {
+  const lngs = puntos.map((p) => p[0]);
+  const lats = puntos.map((p) => p[1]);
+  return [
+    [Math.min(...lngs), Math.min(...lats)],
+    [Math.max(...lngs), Math.max(...lats)],
+  ];
 }
 
-function linkGeometry([x, z]) {
-  const geometria = new BufferGeometry();
-  geometria.setAttribute('position', new Float32BufferAttribute([0, 0.05, 0, x, 0.05, z], 3));
-  return geometria;
-}
+export default function NearbyMap({
+  pois,
+  activeId,
+  hoverId,
+  onSelect,
+  onHover,
+  onReset,
+  onUnavailable,
+}) {
+  const mapRef = useRef(null);
+  const previoActivo = useRef(activeId);
+  const [style, setStyle] = useState(null);
+  const [mobile] = useState(() => window.matchMedia(MOBILE).matches);
+  const c = useMemo(() => readMapColors(), []);
+  const active = pois.find((poi) => poi.id === activeId) ?? null;
 
-// Con frameloop demand, repinta cuando cambia el punto activo.
-function Redraw({ activeId }) {
-  const invalidate = useThree((estado) => estado.invalidate);
   useEffect(() => {
-    invalidate();
-  }, [activeId, invalidate]);
-  return null;
-}
-
-export default function NearbyMap({ building, places, activeId }) {
-  const c = useCssColors(NOMBRES);
-  // Encuadre: con canvas vertical o casi cuadrado se reduce la escena para que no se recorte.
-  // `size` solo cambia al redimensionar, no por fotograma.
-  const tamanoCanvas = useThree((estado) => estado.size);
-  const aspecto = tamanoCanvas.width / Math.max(1, tamanoCanvas.height);
-  const escalaEncuadre = Math.min(1, Math.max(0.5, aspecto / ASPECTO_REFERENCIA));
-  const [bw, bh, bd] = building.size;
-
-  const geo = useMemo(() => {
-    const caja = new BoxGeometry(bw, bh, bd);
-    return {
-      ground: new PlaneGeometry(GROUND[0], GROUND[1]).rotateX(-Math.PI / 2),
-      streets: streetsGeometry(),
-      box: caja,
-      edges: new EdgesGeometry(caja),
-      pin: new CylinderGeometry(0.1, 0.1, 0.5, 16),
-      pinHead: new SphereGeometry(0.17, 20, 16),
-      ring: new RingGeometry(1.35, 1.45, 48).rotateX(-Math.PI / 2),
-      links: places.map((p) => linkGeometry(p.position)),
+    let vivo = true;
+    loadBosqueStyle()
+      .then((estilo) => vivo && setStyle(estilo))
+      .catch(() => vivo && onUnavailable?.());
+    return () => {
+      vivo = false;
     };
-  }, [bw, bh, bd, places]);
+  }, [onUnavailable]);
 
-  // Colores de las caras laterales: una sola vez por cambio de paleta (Color no ocupa GPU, no necesita dispose).
-  const lateralClaro = useMemo(() => c.libre.clone().lerp(c['bosque-profundo'], 0.25), [c]);
-  const lateralOscuro = useMemo(() => c.libre.clone().lerp(c['bosque-profundo'], 0.4), [c]);
+  // La cámara solo se mueve cuando cambia el lugar elegido. Con movimiento reducido, el cambio es instantáneo.
+  useEffect(() => {
+    if (previoActivo.current === activeId) return;
+    previoActivo.current = activeId;
+    const map = mapRef.current;
+    if (!map) return;
+    const pitch = mobile ? VIEW.pitchMobile : VIEW.pitch;
+    const duration = window.matchMedia(REDUCED).matches ? 0 : VIEW.flyMs;
+    if (!active) {
+      map.flyTo({
+        center: [BUILDING.lng, BUILDING.lat],
+        zoom: VIEW.zoom,
+        pitch,
+        bearing: VIEW.bearing,
+        duration,
+        easing: easeInOut,
+      });
+      return;
+    }
+    // Encuadra el recorrido entero: así la ruta se ve de principio a fin.
+    map.fitBounds(boundsOf(active.ruta), {
+      padding: mobile ? 50 : 90,
+      maxZoom: VIEW.poiZoomMax,
+      pitch,
+      bearing: VIEW.bearing,
+      duration,
+      easing: easeInOut,
+    });
+  }, [activeId, active, mobile]);
 
-  const mat = useMemo(
-    () => ({
-      ground: new MeshBasicMaterial({ color: c['bosque-elevado'] }),
-      street: new LineBasicMaterial({ color: c['linea-plano'] }),
-      // Orden de las caras de BoxGeometry: +x, -x, +y, -y, +z, -z.
-      // Tejado en --libre y laterales más oscuros (mezcla con --bosque-profundo) para dar volumen sin luces.
-      box: [
-        new MeshBasicMaterial({ color: lateralOscuro }),
-        new MeshBasicMaterial({ color: lateralOscuro }),
-        new MeshBasicMaterial({ color: c.libre }),
-        new MeshBasicMaterial({ color: lateralOscuro }),
-        new MeshBasicMaterial({ color: lateralClaro }),
-        new MeshBasicMaterial({ color: lateralClaro }),
-      ],
-      edge: new LineBasicMaterial({ color: c['bosque-profundo'] }),
-      here: new MeshBasicMaterial({ color: c['crema'] }),
-      pin: new MeshBasicMaterial({ color: c['bronce'] }),
-      pinActive: new MeshBasicMaterial({ color: c['lima'] }),
-      link: new LineBasicMaterial({ color: c['bronce'] }),
-      linkActive: new LineBasicMaterial({ color: c['lima'] }),
-    }),
-    [c, lateralClaro, lateralOscuro],
-  );
+  const habilitarRueda = () => mapRef.current?.scrollZoom.enable();
+  const deshabilitarRueda = () => mapRef.current?.scrollZoom.disable();
 
-  // Libera de la GPU lo creado cuando la escena se desmonta o se recrea.
-  useEffect(
-    () => () => {
-      for (const g of Object.values(geo)) {
-        if (Array.isArray(g)) g.forEach((x) => x.dispose());
-        else g.dispose();
-      }
-    },
-    [geo],
-  );
-  useEffect(
-    () => () => {
-      for (const m of Object.values(mat)) {
-        if (Array.isArray(m)) m.forEach((x) => x.dispose());
-        else m.dispose();
-      }
-    },
-    [mat],
-  );
+  if (!style) return <p className={styles.note}>Cargando el mapa…</p>;
 
   return (
-    <group scale={escalaEncuadre} rotation={[TILT, TURN, 0]}>
-      <Redraw activeId={activeId} />
-      <mesh geometry={geo.ground} material={mat.ground} />
-      <lineSegments geometry={geo.streets} material={mat.street} />
+    <div
+      className={styles.wrap}
+      role="region"
+      aria-label={`Mapa de los alrededores de ${BUILDING.name}`}
+      onMouseLeave={deshabilitarRueda}
+    >
+      <MapGL
+        ref={mapRef}
+        mapStyle={style}
+        initialViewState={{
+          longitude: BUILDING.lng,
+          latitude: BUILDING.lat,
+          zoom: VIEW.zoom,
+          pitch: mobile ? VIEW.pitchMobile : VIEW.pitch,
+          bearing: VIEW.bearing,
+        }}
+        maxPitch={70}
+        scrollZoom={false}
+        cooperativeGestures={mobile}
+        locale={LOCALE}
+        attributionControl={{ compact: false }}
+        onClick={habilitarRueda}
+        onError={(evento) => console.error('[NearbyMap]', evento.error?.message ?? evento)}
+        style={{ width: '100%', height: '100%' }}
+      >
+        <Layer
+          id="edificios-3d"
+          type="fill-extrusion"
+          source="openmaptiles"
+          source-layer="building"
+          minzoom={14}
+          paint={{
+            'fill-extrusion-color': c['bosque-elevado'],
+            'fill-extrusion-opacity': 0.85,
+            'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 6],
+            'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+          }}
+        />
 
-      <mesh geometry={geo.ring} material={mat.here} position={[0, 0.02, 0]} />
-      <mesh geometry={geo.box} material={mat.box} position={[0, bh / 2, 0]} />
-      <lineSegments geometry={geo.edges} material={mat.edge} position={[0, bh / 2, 0]} />
-      <Html position={[0, bh + 0.35, 0]} center zIndexRange={[10, 0]} className={styles.html}>
-        <div aria-hidden="true" className={styles.here}>
-          <span className={styles.hereTag}>Estás aquí</span>
-          <span className={styles.hereName}>{building.name}</span>
-        </div>
-      </Html>
+        <Source id="ipuente" type="geojson" data={footprint}>
+          <Layer
+            id="ipuente-halo"
+            type="line"
+            paint={{
+              'line-color': c['bronce-claro'],
+              'line-width': 14,
+              'line-blur': 10,
+              'line-opacity': 0.55,
+            }}
+          />
+          <Layer
+            id="ipuente-3d"
+            type="fill-extrusion"
+            paint={{
+              'fill-extrusion-color': c.bronce,
+              'fill-extrusion-opacity': 1,
+              'fill-extrusion-height': BUILDING.height,
+              'fill-extrusion-base': 0,
+            }}
+          />
+        </Source>
 
-      {places.map((p, i) => {
-        const activo = p.id === activeId;
-        const [x, z] = p.position;
-        return (
-          <group key={p.id}>
-            <lineSegments geometry={geo.links[i]} material={activo ? mat.linkActive : mat.link} />
-            <group position={[x, 0, z]}>
-              <mesh
-                geometry={geo.pin}
-                material={activo ? mat.pinActive : mat.pin}
-                position={[0, 0.25, 0]}
-              />
-              <mesh
-                geometry={geo.pinHead}
-                material={activo ? mat.pinActive : mat.pin}
-                position={[0, 0.6, 0]}
-              />
-              <Html position={[0, 1.05, 0]} center zIndexRange={[10, 0]} className={styles.html}>
-                <div aria-hidden="true" className={activo ? styles.chipActive : styles.chip}>
-                  <span className={styles.long}>{p.name} · </span>
-                  {p.shortTime}
-                </div>
-              </Html>
-            </group>
-          </group>
-        );
-      })}
-    </group>
+        {active && (
+          <Source id="ruta" type="geojson" data={line(active.ruta)}>
+            <Layer
+              id="ruta-linea"
+              type="line"
+              layout={{ 'line-cap': 'butt', 'line-join': 'round' }}
+              paint={{
+                'line-color': c.lima,
+                'line-width': 3.5,
+                'line-dasharray': [2, 1.5],
+              }}
+            />
+          </Source>
+        )}
+
+        <Marker longitude={BUILDING.lng} latitude={BUILDING.lat} anchor="bottom">
+          <div aria-hidden="true" className={styles.here}>
+            {BUILDING.name}
+          </div>
+        </Marker>
+
+        {pois.map((poi, i) => (
+          <PoiMarker
+            key={poi.id}
+            poi={poi}
+            number={i + 1}
+            active={poi.id === activeId}
+            highlighted={poi.id === hoverId}
+            onSelect={onSelect}
+            onHover={onHover}
+          />
+        ))}
+      </MapGL>
+
+      {active && (
+        <button type="button" className={styles.reset} onClick={onReset}>
+          <span aria-hidden="true">← </span>Volver al edificio
+        </button>
+      )}
+    </div>
   );
 }

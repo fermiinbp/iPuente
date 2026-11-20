@@ -1,6 +1,9 @@
 /* Estilos de Header (CSS Module). Mobile first: la navegación, el acceso y el menú de usuario aparecen desde 900 px;
    por debajo, el botón «Menú» abre MobileMenu. */
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
   border-bottom: 1px solid var(--linea);
   background: var(--bosque);
   color: var(--crema);

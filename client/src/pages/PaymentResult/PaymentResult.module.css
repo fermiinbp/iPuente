@@ -1,1 +1,86 @@
-/* Estilos de PaymentResult (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de PaymentResult (CSS Module). */
+.page {
+  display: grid;
+  place-items: center;
+  min-height: 60vh;
+  padding: var(--space-8) var(--gutter);
+  background: var(--bosque);
+  color: var(--crema);
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-5);
+  justify-items: center;
+  width: 100%;
+  max-width: 560px;
+  padding: clamp(24px, 5vw, 48px);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque-elevado);
+  text-align: center;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border: 2px solid var(--crema-suave);
+  border-radius: 50%;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--crema);
+}
+
+.iconOk {
+  border-color: var(--lima);
+  background: var(--lima);
+  color: var(--bosque);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-seccion);
+  font-weight: 400;
+  line-height: var(--leading-declaracion);
+}
+
+.title:focus {
+  outline: none;
+}
+
+.text {
+  margin: 0;
+  color: var(--crema-suave);
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-4);
+  width: 100%;
+  margin: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque-elevado);
+  text-align: left;
+}
+
+.facts dt {
+  font-size: var(--text-interfaz);
+  color: var(--crema-suave);
+}
+
+.facts dd {
+  margin: var(--space-1) 0 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}

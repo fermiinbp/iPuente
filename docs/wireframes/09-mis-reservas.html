@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mis reservas</title><link rel="stylesheet" href="wireframe.css"></head><body>
+<header class="hdr"><div class="wrap"><span class="logo">iPuente</span><nav class="nav"><span>Espacios</span><span>Para empresas</span><span>Cómo funciona</span><span>Contacto</span></nav><div class="acc"><span>Mis reservas</span><span><span class="avatar"></span> Ana ▾</span></div><span class="btn o menu-btn">Menú</span></div></header>
+
+<div class="wrap" style="max-width:900px">
+ <h1 style="margin-top:36px">Mis reservas</h1>
+ <div class="row" style="margin:18px 0 16px"><span class="chip on">Próximas (2)</span><span class="chip">Pasadas (1)</span></div>
+ <div class="card" style="margin-bottom:12px"><div class="row sp"><div><h3>Black Room I</h3><p class="mut" style="margin:0">Jueves 20 nov · 12:00 – 14:00 (2 horas)</p></div><div style="text-align:right"><span class="badge ok">Confirmada</span><br><b style="font-size:20px">50,00 €</b></div></div><div class="row" style="justify-content:flex-end;margin-top:8px"><u>Ver detalle</u><span class="btn g">Cancelar</span></div></div>
+ <div class="card" style="margin-bottom:12px"><div class="row sp"><div><h3>Sala Grande</h3><p class="mut" style="margin:0">Martes 25 nov · 09:00 – 13:00 (4 horas)</p></div><div style="text-align:right"><span class="badge ">Pendiente de pago</span><br><b style="font-size:20px">100,00 €</b></div></div><div class="row" style="justify-content:flex-end;margin-top:8px"><u>Ver detalle</u><span class="btn">Pagar ahora</span><span class="btn g">Cancelar</span></div></div>
+ <p class="hint">«Pasadas» enseña las completadas y canceladas; sin ninguna, «No tienes reservas pasadas».</p>
+ <div class="dash" style="margin-top:28px"><p class="tag">Variante: sin reservas</p><h3>Aún no tienes reservas</h3><p class="mut">Elige un edificio, una planta y una sala, y reserva las horas que necesites.</p><span class="btn">Buscar salas</span></div>
+ <div class="dash" style="margin-top:20px"><p class="tag">Modal: cancelar reserva</p>
+  <div class="modal"><h3>¿Cancelar esta reserva?</h3><p class="mut">Black Room I, jueves 20 de noviembre. Las horas quedarán libres para otras personas.</p>
+   <div class="row" style="justify-content:flex-end"><span class="btn o">Volver</span><span class="btn">Cancelar reserva</span></div></div></div>
+</div>
+<footer class="ftr"><div class="wrap"><span class="logo">iPuente</span><span>© 2026 iPuente</span></div></footer>
+<div class="notes"><p class="note"><b>1</b><span>Próximas y Pasadas van en pestañas con su recuento (se manejan con las flechas). Las pendientes de pago que ya han caducado no se muestran.</span></p><p class="note"><b>2</b><span>«Cancelar» solo aparece en reservas confirmadas que aún no han empezado; abre un modal y, tras cancelar, la lista se actualiza y se avisa del resultado.</span></p><p class="note"><b>3</b><span>Cada estado lleva su etiqueta con texto, no solo color. «Ver detalle» abre la pantalla 09b.</span></p><p class="note"><b>4</b><span>Pendiente: foto y edificio/planta en cada tarjeta (el listado de la API solo trae sala, fecha, importe y estado).</span></p></div>
+</body></html>

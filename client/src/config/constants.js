@@ -67,3 +67,13 @@ export const PAYOUT_ACCOUNT_STATUS = Object.freeze({
 });
 
 export const BOOKING_HOURS = Object.freeze({ start: 8, end: 20 });
+
+// Mínimo de caracteres de una contraseña nueva (registro, recuperar y cambiar contraseña).
+export const MIN_PASSWORD = 8;
+
+// Página a la que se va tras entrar si no se venía de otra: cliente a la home, empresa y admin a su panel.
+export const ROLE_HOME = Object.freeze({
+  [ROLES.CLIENT]: '/',
+  [ROLES.COMPANY]: '/company',
+  [ROLES.ADMIN]: '/admin',
+});
