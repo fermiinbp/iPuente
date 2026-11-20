@@ -119,12 +119,10 @@ export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
   try {
     let number;
     const id = await runTransaction(async (tx) => {
-      // Se vuelve a leer la sala dentro de la transacción: si la empresa cambia el precio
-      // o la oculta mientras tanto, la reserva usa los datos del momento del commit.
-      room = await roomModel.findById(roomId, { tx });
-      if (!room || room.status === 'INACTIVE') {
-        throw new HttpError(404, 'NOT_FOUND', 'La sala no existe');
-      }
+      // Se vuelven a leer la sala, su planta, su edificio y su empresa dentro de la transacción:
+      // si se cambia el precio, se oculta, se despublica o se suspende la empresa mientras
+      // tanto, la reserva usa los datos del momento del commit (404 si ya no son públicos).
+      ({ room } = await findPublicRoom(roomId, { tx }));
       assertBookable(room, inicio, fin);
       importe = room.price * horas;
       await assertSlotAvailable(roomId, fecha, inicio, fin, tx);

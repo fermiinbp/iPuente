@@ -3,6 +3,7 @@ import app from '../../src/app.js';
 import * as blockModel from '../../src/models/blockModel.js';
 import * as bookingModel from '../../src/models/bookingModel.js';
 import * as buildingModel from '../../src/models/buildingModel.js';
+import * as companyModel from '../../src/models/companyModel.js';
 import * as floorModel from '../../src/models/floorModel.js';
 import * as roomModel from '../../src/models/roomModel.js';
 
@@ -103,6 +104,8 @@ const booking = (roomId, status, start, end) => ({
 //  r-nobook: bookable false                       r-inactive: INACTIVE
 //  r-ghost: en el mapa de f-0 pero sin documento  r-up: libre en f-1
 export async function seedPublicData() {
+  // La empresa c1 debe estar aprobada para que sus edificios sean públicos.
+  await companyModel.upsert('c1', { name: 'Empresa c1', status: 'APPROVED', verified: true });
   await buildingModel.upsert('b-pub', building('Edificio publicado', 'PUBLISHED'));
   await buildingModel.upsert('b-draft', building('Edificio borrador', 'DRAFT'));
 

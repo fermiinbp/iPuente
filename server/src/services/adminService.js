@@ -33,9 +33,6 @@ const TRANSITIONS = {
   reactivate: { from: SUSPENDED, to: APPROVED, texto: 'reactivar', requiere: 'suspendida' },
 };
 
-// Nº máximo de edificios que se marcan dentro de la transacción (límite de 500 escrituras).
-const MAX_TX_BUILDINGS = 400;
-
 // Fila del listado de empresas.
 function listItem(c) {
   return {
@@ -117,14 +114,11 @@ function transitionFields(action, motivo, company) {
   return {};
 }
 
-// Cambia el estado de una empresa en una transacción (status, verified, reviewedAt, reviewedBy)
-// y, al suspender o reactivar, marca sus edificios con companySuspended. Si hay más de
-// MAX_TX_BUILDINGS edificios, estos se marcan aparte (después de la transacción, por lotes).
+// Cambia el estado de una empresa en una transacción (status, verified, reviewedAt, reviewedBy).
+// La API pública lee ese estado, así que no hay que tocar sus edificios.
 async function transition(action, id, adminUid, motivo) {
   const rule = TRANSITIONS[action];
-  const marks = action === 'suspend' ? true : action === 'reactivate' ? false : undefined;
-  let rest = [];
-  const company = await runTransaction(async (tx) => {
+  return runTransaction(async (tx) => {
     const current = await companyModel.findById(id, { tx });
     if (!current) throw new HttpError(404, 'NOT_FOUND', 'La empresa no existe');
     if (companyStatus(current) !== rule.from) {
@@ -134,9 +128,6 @@ async function transition(action, id, adminUid, motivo) {
         `No se puede ${rule.texto} una empresa que no está ${rule.requiere}`,
       );
     }
-    const buildings = marks === undefined ? [] : await buildingModel.listByCompany(id, { tx });
-    const inTx = buildings.slice(0, MAX_TX_BUILDINGS);
-    rest = buildings.slice(MAX_TX_BUILDINGS);
     const data = {
       status: rule.to,
       verified: rule.to === APPROVED,
@@ -145,18 +136,11 @@ async function transition(action, id, adminUid, motivo) {
       ...transitionFields(action, motivo, current),
     };
     await companyModel.update(id, data, { tx });
-    for (const b of inTx) await buildingModel.update(b.id, { companySuspended: marks }, { tx });
     return { ...current, ...data, reviewedAt: new Date() };
   });
-  for (let i = 0; i < rest.length; i += 50) {
-    await Promise.all(
-      rest.slice(i, i + 50).map((b) => buildingModel.update(b.id, { companySuspended: marks })),
-    );
-  }
-  return company;
 }
 
-// Vista tras una transición (con sus edificios ya actualizados).
+// Vista tras una transición.
 async function viewAfter(company) {
   return companyView(company);
 }
@@ -173,12 +157,19 @@ export async function reactivateCompany(id, adminUid) {
   return viewAfter(await transition('reactivate', id, adminUid));
 }
 
-// Suspende una empresa: sus edificios dejan de verse en la API pública. Las reservas futuras
+// Suspende una empresa: sus edificios dejan de verse en la API pública (por su estado). Las reservas futuras
 // no se tocan; la respuesta avisa de cuántas hay.
 export async function suspendCompany(id, adminUid, motivo) {
   const company = await transition('suspend', id, adminUid, motivo);
-  const rooms = await roomModel.listByCompany(id);
-  const reservasFuturas = await countFutureBookings(rooms.map((r) => r.id));
-  const aviso = futureBookingsNotice(reservasFuturas, 'esta empresa');
-  return { ...(await viewAfter(company)), reservasFuturas, ...(aviso && { aviso }) };
+  const view = await viewAfter(company);
+  // La empresa ya está suspendida: si el aviso falla, se responde sin él en vez de dar error.
+  try {
+    const rooms = await roomModel.listByCompany(id);
+    const reservasFuturas = await countFutureBookings(rooms.map((r) => r.id));
+    const aviso = futureBookingsNotice(reservasFuturas, 'esta empresa');
+    return { ...view, reservasFuturas, ...(aviso && { aviso }) };
+  } catch (err) {
+    console.error('No se pudo calcular el aviso de reservas futuras al suspender', err?.code);
+    return view;
+  }
 }

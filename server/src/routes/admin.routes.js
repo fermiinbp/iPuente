@@ -3,7 +3,7 @@ import { Router } from 'express';
 
 import { ROLES } from '../config/roles.js';
 import * as ctrl from '../controllers/adminController.js';
-import { auth } from '../middlewares/auth.js';
+import { authStrict } from '../middlewares/auth.js';
 import { requireRole } from '../middlewares/requireRole.js';
 import { validate } from '../middlewares/validate.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -17,7 +17,7 @@ const router = Router();
  *   get:
  *     tags: [Admin]
  *     summary: Lista las empresas, de la más reciente a la más antigua
- *     description: 'Devuelve `{ empresas: [{ id, nombre, cif, email, estado, fechaSolicitud, verificada }] }`. Solo admin.'
+ *     description: 'Devuelve `{ empresas: [{ id, nombre, cif, email, estado, fechaSolicitud, verificada }] }`. Solo admin; se comprueba además que el token no esté revocado (no hace falta nada nuevo en el cliente).'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -38,7 +38,7 @@ const router = Router();
  */
 router.get(
   '/admin/companies',
-  auth,
+  authStrict,
   requireRole(ROLES.ADMIN),
   adminValidator.list,
   validate,
@@ -51,7 +51,7 @@ router.get(
  *   get:
  *     tags: [Admin]
  *     summary: Detalle de una empresa
- *     description: 'Datos de la empresa, `estado`, `motivo`, `revisadaEn`, `dueno { nombre, email }` y `edificios [{ id, nombre, ciudad, publicado }]`. Solo admin.'
+ *     description: 'Datos de la empresa, `estado`, `motivo`, `revisadaEn`, `dueno { nombre, email }` y `edificios [{ id, nombre, ciudad, publicado }]`. Solo admin; se comprueba además que el token no esté revocado (no hace falta nada nuevo en el cliente).'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -74,7 +74,7 @@ router.get(
  */
 router.get(
   '/admin/companies/:id',
-  auth,
+  authStrict,
   requireRole(ROLES.ADMIN),
   adminValidator.idParam,
   validate,
@@ -110,7 +110,7 @@ router.get(
  */
 router.post(
   '/admin/companies/:id/approve',
-  auth,
+  authStrict,
   requireRole(ROLES.ADMIN),
   adminValidator.approve,
   validate,
@@ -158,7 +158,7 @@ router.post(
  */
 router.post(
   '/admin/companies/:id/reject',
-  auth,
+  authStrict,
   requireRole(ROLES.ADMIN),
   adminValidator.reject,
   validate,
@@ -206,7 +206,7 @@ router.post(
  */
 router.post(
   '/admin/companies/:id/suspend',
-  auth,
+  authStrict,
   requireRole(ROLES.ADMIN),
   adminValidator.suspend,
   validate,
@@ -242,7 +242,7 @@ router.post(
  */
 router.post(
   '/admin/companies/:id/reactivate',
-  auth,
+  authStrict,
   requireRole(ROLES.ADMIN),
   adminValidator.reactivate,
   validate,

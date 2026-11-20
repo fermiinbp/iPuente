@@ -237,7 +237,6 @@ Almacena los edificios publicados por las empresas.
 | `floorCount` | Número de plantas. |
 | `photos` | Lista de URLs de fotos del edificio. |
 | `status` | Estado del edificio: `DRAFT` (borrador) o `PUBLISHED` (publicado). |
-| `companySuspended` | `true` mientras la empresa está suspendida: el edificio no se ve en la API pública, pero conserva su `status`. |
 | `createdAt` | Fecha de creación. |
 | `updatedAt` | Última actualización. |
 

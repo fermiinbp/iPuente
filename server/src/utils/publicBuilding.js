@@ -1,6 +1,7 @@
-// Visibilidad pública de un edificio: publicado y con su empresa sin suspender.
+// Visibilidad pública de un edificio (parte pura): publicado y con su empresa aprobada.
 
-// ¿El edificio puede verse en la API pública? (status PUBLISHED y empresa no suspendida)
-export function isPublicBuilding(building) {
-  return building?.status === 'PUBLISHED' && !building.companySuspended;
+// ¿El edificio puede verse en la API pública? Recibe el estado de su empresa (PENDING,
+// APPROVED, REJECTED o SUSPENDED, ya derivado con companyStatus); sin empresa, undefined.
+export function isPublicBuilding(building, companyState) {
+  return building?.status === 'PUBLISHED' && companyState === 'APPROVED';
 }

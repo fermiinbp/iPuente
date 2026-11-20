@@ -6,18 +6,19 @@ import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
-import { isPublicBuilding } from '../utils/publicBuilding.js';
 import { freeSlots, getDayItems, isBookable } from './availabilityService.js';
+import { isBuildingPublic } from './publicCatalogService.js';
 
-// Devuelve { room, floor, building } si la sala es pública; si no, lanza 404.
-export async function findPublicRoom(id) {
+// Devuelve { room, floor, building } si la sala es pública (su empresa debe estar aprobada); si
+// no, lanza 404. Con { tx } lee todo dentro de una transacción.
+export async function findPublicRoom(id, { tx } = {}) {
   const notFound = () => new HttpError(404, 'NOT_FOUND', 'La sala no existe');
-  const room = await roomModel.findById(id);
+  const room = await roomModel.findById(id, { tx });
   if (!room || room.status === 'INACTIVE') throw notFound();
-  const floor = await floorModel.findById(room.floorId);
+  const floor = await floorModel.findById(room.floorId, { tx });
   if (!floor || floor.status !== 'PUBLISHED') throw notFound();
-  const building = await buildingModel.findById(floor.buildingId);
-  if (!isPublicBuilding(building)) throw notFound();
+  const building = await buildingModel.findById(floor.buildingId, { tx });
+  if (!(await isBuildingPublic(building, { tx }))) throw notFound();
   return { room, floor, building };
 }
 

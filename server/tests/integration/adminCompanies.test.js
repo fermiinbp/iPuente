@@ -1,12 +1,14 @@
 // Test de integración del panel de admin sobre empresas (/api/admin/companies/*) y de sus efectos:
 // la empresa suspendida pierde el panel y sus edificios desaparecen de la API pública.
 import assert from 'node:assert/strict';
-import { after, before, beforeEach, describe, it } from 'node:test';
+import { after, before, beforeEach, describe, it, mock } from 'node:test';
 
 import { setDbForTests } from '../../src/config/config.js';
 import { setTokenVerifier } from '../../src/middlewares/auth.js';
 import * as buildingModel from '../../src/models/buildingModel.js';
 import * as companyModel from '../../src/models/companyModel.js';
+import * as floorModel from '../../src/models/floorModel.js';
+import * as roomModel from '../../src/models/roomModel.js';
 import * as userModel from '../../src/models/userModel.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
 import { listen, seedPublicData } from '../helpers/publicData.js';
@@ -21,6 +23,7 @@ const FUTURA = '2030-03-12';
 describe('Panel de admin: empresas', () => {
   let server;
   let baseUrl;
+  let fakeDb;
 
   async function call(method, path, { token, body } = {}) {
     const headers = { 'Content-Type': 'application/json' };
@@ -38,18 +41,15 @@ describe('Panel de admin: empresas', () => {
 
   // Empresas con fecha de alta fija para comprobar el orden.
   async function mkCompany(id, status, createdAt, extra = {}) {
-    await companyModel.create(
-      {
-        name: `Empresa ${id}`,
-        taxId: `CIF-${id}`,
-        email: `${id}@x.com`,
-        status,
-        verified: status === 'APPROVED',
-        ownerUid: 'owner-1',
-        ...extra,
-      },
-      { id },
-    );
+    await companyModel.upsert(id, {
+      name: `Empresa ${id}`,
+      taxId: `CIF-${id}`,
+      email: `${id}@x.com`,
+      status,
+      verified: status === 'APPROVED',
+      ownerUid: 'owner-1',
+      ...extra,
+    });
     await companyModel.update(id, { createdAt: new Date(createdAt) });
   }
 
@@ -58,7 +58,8 @@ describe('Panel de admin: empresas', () => {
   });
 
   beforeEach(async () => {
-    setDbForTests(createFakeFirestore());
+    fakeDb = createFakeFirestore();
+    setDbForTests(fakeDb);
     setTokenVerifier(async (token) => tokens[token]);
     await seedPublicData();
     await userModel.create(
@@ -217,7 +218,7 @@ describe('Panel de admin: empresas', () => {
   });
 
   describe('suspender y reactivar', () => {
-    it('suspend: SUSPENDED con motivo, edificios marcados y aviso de reservas futuras', async () => {
+    it('suspend: SUSPENDED con motivo, edificios intactos y aviso de reservas futuras', async () => {
       const reserva = await call('POST', '/api/bookings', {
         token: 'cliente',
         body: { roomId: 'r-free', fecha: FUTURA, inicio: 10, fin: 12 },
@@ -236,10 +237,10 @@ describe('Panel de admin: empresas', () => {
       assert.equal(saved.verified, false);
       assert.equal(saved.suspensionReason, 'Impago de la cuota');
       assert.equal(saved.reviewedBy, 'admin-1');
+      // Los edificios no se tocan: conservan su status y no llevan marca alguna.
       const buildings = await buildingModel.listByCompany('c1');
       assert.ok(buildings.length >= 2);
-      assert.ok(buildings.every((b) => b.companySuspended === true));
-      // Los edificios conservan su status.
+      assert.ok(buildings.every((b) => !('companySuspended' in b)));
       assert.equal((await buildingModel.findById('b-pub')).status, 'PUBLISHED');
     });
 
@@ -250,7 +251,7 @@ describe('Panel de admin: empresas', () => {
       assert.equal('aviso' in body, false);
     });
 
-    it('reactivate: vuelve a APPROVED, desmarca edificios y conserva el motivo anterior', async () => {
+    it('reactivate: vuelve a APPROVED y conserva el motivo anterior', async () => {
       await suspender();
       const { status, body } = await admin('POST', '/api/admin/companies/c1/reactivate');
       assert.equal(status, 200);
@@ -261,8 +262,6 @@ describe('Panel de admin: empresas', () => {
       assert.equal(saved.verified, true);
       assert.equal(saved.suspensionReason, null);
       assert.equal(saved.lastSuspensionReason, 'Impago de la cuota');
-      const buildings = await buildingModel.listByCompany('c1');
-      assert.ok(buildings.every((b) => b.companySuspended === false));
     });
   });
 
@@ -284,6 +283,117 @@ describe('Panel de admin: empresas', () => {
         assert.equal((await companyModel.findById(id)).status, antes);
       });
     }
+  });
+
+  // Edificio PUBLISHED de una empresa con una planta publicada y una sala reservable.
+  async function mkPublicBuilding(id, companyId) {
+    await buildingModel.create(
+      { companyId, name: `Edificio ${id}`, city: 'Sevilla', status: 'PUBLISHED' },
+      { id },
+    );
+    await floorModel.create(
+      { companyId, buildingId: id, name: 'P0', level: 0, status: 'PUBLISHED', salas: [] },
+      { id: `f-${id}` },
+    );
+    await roomModel.create(
+      {
+        companyId,
+        buildingId: id,
+        floorId: `f-${id}`,
+        name: 'Sala',
+        price: 10,
+        capacity: 4,
+        bookable: true,
+        status: 'ACTIVE',
+      },
+      { id: `r-${id}` },
+    );
+  }
+  const enBuscador = async (id) =>
+    (await call('GET', '/api/buildings')).body.edificios.some((b) => b.id === id);
+
+  describe('visibilidad pública según el estado de la empresa', () => {
+    it('un edificio creado y publicado DESPUÉS de suspender no sale público; al reactivar, sí', async () => {
+      await suspender();
+      await mkPublicBuilding('b-nuevo', 'c1');
+      assert.equal(await enBuscador('b-nuevo'), false);
+      assert.equal((await call('GET', '/api/buildings/b-nuevo')).status, 404);
+      assert.equal((await call('GET', '/api/floors/f-b-nuevo')).status, 404);
+      assert.equal((await call('GET', '/api/rooms/r-b-nuevo')).status, 404);
+
+      await admin('POST', '/api/admin/companies/c1/reactivate');
+      assert.equal(await enBuscador('b-nuevo'), true);
+      assert.equal((await call('GET', '/api/buildings/b-nuevo')).status, 200);
+    });
+
+    it('empresas PENDING o REJECTED con edificio PUBLISHED (datos sembrados) no salen', async () => {
+      await mkPublicBuilding('b-pend', 'c-pend');
+      await mkPublicBuilding('b-rej', 'c-rej');
+      await mkPublicBuilding('b-sin-empresa', 'no-existe');
+      for (const id of ['b-pend', 'b-rej', 'b-sin-empresa']) {
+        assert.equal(await enBuscador(id), false, id);
+        assert.equal((await call('GET', `/api/buildings/${id}`)).status, 404, id);
+        assert.equal((await call('GET', `/api/rooms/r-${id}`)).status, 404, id);
+      }
+    });
+
+    it('una empresa sin status se deriva de verified', async () => {
+      await companyModel.upsert('c-old', { name: 'Vieja', taxId: 'V1', verified: true });
+      await mkPublicBuilding('b-old', 'c-old');
+      assert.equal(await enBuscador('b-old'), true);
+      await companyModel.update('c-old', { verified: false });
+      assert.equal(await enBuscador('b-old'), false);
+    });
+
+    it('createBooking en una sala de empresa suspendida: 404', async () => {
+      await suspender();
+      const res = await call('POST', '/api/bookings', {
+        token: 'cliente',
+        body: { roomId: 'r-free', fecha: FUTURA, inicio: 10, fin: 11 },
+      });
+      assert.equal(res.status, 404);
+    });
+  });
+
+  describe('suspender con fallo en el aviso', () => {
+    it('si falla el recuento de reservas futuras responde 200 sin reservasFuturas', async () => {
+      const silencio = mock.method(console, 'error', () => {});
+      try {
+        const collection = (name) => {
+          if (name !== 'rooms') return fakeDb.collection(name);
+          return {
+            ...fakeDb.collection(name),
+            where: () => {
+              throw new Error('fallo simulado');
+            },
+          };
+        };
+        setDbForTests({ ...fakeDb, collection });
+        const { status, body } = await suspender();
+        assert.equal(status, 200);
+        assert.equal(body.estado, 'suspendida');
+        assert.equal('reservasFuturas' in body, false);
+        assert.equal('aviso' in body, false);
+        assert.equal((await companyModel.findById('c1')).status, 'SUSPENDED');
+      } finally {
+        silencio.mock.restore();
+      }
+    });
+  });
+
+  describe('token revocado', () => {
+    it('las rutas de admin comprueban la revocación (401) y las demás no', async () => {
+      setTokenVerifier(async (token, checkRevoked) => {
+        if (checkRevoked) {
+          throw Object.assign(new Error('revocado'), { code: 'auth/id-token-revoked' });
+        }
+        return tokens[token];
+      });
+      const res = await admin('GET', '/api/admin/companies');
+      assert.equal(res.status, 401);
+      assert.equal(res.body.error.code, 'INVALID_TOKEN');
+      assert.equal((await call('GET', '/api/bookings/me', { token: 'cliente' })).status, 200);
+    });
   });
 
   describe('empresa suspendida', () => {

@@ -1,6 +1,7 @@
 // Doble de Firestore en memoria para los tests unitarios de los models.
 // Implementa solo lo que usan los models: doc, collection, where, orderBy, limit, get, set, create, update, delete y runTransaction.
 // Uso: setDbForTests(createFakeFirestore()) antes de llamar a un model.
+import { FieldPath } from 'firebase-admin/firestore';
 
 const COMPARATORS = {
   '==': (a, b) => a === b,
@@ -68,10 +69,11 @@ export function createFakeFirestore() {
             return parent === path;
           })
           .map(([docPath, data]) => ({ id: docPath.split('/').pop(), data }))
-          .filter(({ data }) =>
+          .filter(({ id, data }) =>
             filters.every(({ field, op, value }) =>
               COMPARATORS[op](
-                comparable(data[field]),
+                // FieldPath.documentId() filtra por el id del documento.
+                field instanceof FieldPath ? id : comparable(data[field]),
                 Array.isArray(value) ? value : comparable(value),
               ),
             ),
