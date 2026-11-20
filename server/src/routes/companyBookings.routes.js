@@ -1,4 +1,4 @@
-// Rutas del panel de empresa para reservas y bloqueos de horas: listar y cancelar reservas, y
+// Rutas del panel de empresa para reservas y bloqueos de horas: listar, ver el detalle y cancelar reservas, y
 // crear, listar y quitar bloqueos. Solo empresas aprobadas; cada una ve únicamente lo suyo.
 import { Router } from 'express';
 
@@ -53,6 +53,9 @@ const guard = [auth, requireRole(ROLES.COMPANY), requireApprovedCompany];
  *                     properties:
  *                       id:
  *                         type: string
+ *                       codigo:
+ *                         type: string
+ *                         nullable: true
  *                       roomId:
  *                         type: string
  *                       sala:
@@ -112,11 +115,93 @@ router.get(
 
 /**
  * @openapi
+ * /company/bookings/{id}:
+ *   get:
+ *     tags: [Empresa]
+ *     summary: Detalle de una reserva de una sala de la empresa
+ *     description: 'Solo reservas de salas de la empresa del token (una reserva ajena responde 404 NOT_FOUND como una inexistente). Igual que el detalle del cliente más nombre y email del cliente; nunca su id ni más datos personales.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Detalle de la reserva con los datos del cliente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id: {type: string}
+ *                 codigo: {type: string, nullable: true, example: IP-1000}
+ *                 roomId: {type: string}
+ *                 sala:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     id: {type: string}
+ *                     codigo: {type: string, nullable: true}
+ *                     nombre: {type: string, nullable: true}
+ *                 planta:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     id: {type: string}
+ *                     nombre: {type: string, nullable: true}
+ *                     nivel: {type: integer, nullable: true}
+ *                 edificio:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     id: {type: string}
+ *                     nombre: {type: string, nullable: true}
+ *                     direccion: {type: string, nullable: true}
+ *                     ciudad: {type: string, nullable: true}
+ *                 fecha: {type: string, format: date, example: '2030-03-12'}
+ *                 inicio: {type: integer}
+ *                 fin: {type: integer}
+ *                 horas: {type: integer}
+ *                 precioHora: {type: number}
+ *                 importe: {type: number}
+ *                 estado:
+ *                   type: string
+ *                   enum: [PENDING_PAYMENT, CONFIRMED, CANCELLED, EXPIRED, COMPLETED]
+ *                 motivoCancelacion: {type: string, nullable: true, description: Solo si está cancelada}
+ *                 canceladaPor: {type: string, enum: [cliente, empresa], nullable: true, description: Solo si está cancelada}
+ *                 cliente:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     nombre: {type: string, nullable: true}
+ *                     email: {type: string, nullable: true}
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.get(
+  '/company/bookings/:id',
+  ...guard,
+  ...validator.detail,
+  validate,
+  asyncHandler(ctrl.getBooking),
+);
+
+/**
+ * @openapi
  * /company/bookings/{id}/cancel:
  *   patch:
  *     tags: [Empresa]
  *     summary: Cancela una reserva de una sala de la empresa
- *     description: 'Solo reservas CONFIRMED que no hayan empezado. Libera las horas y guarda el motivo. No gestiona reembolsos: todavía no hay pago online.'
+ *     description: 'Solo reservas CONFIRMED que no hayan empezado. Una reserva de otra empresa responde 404 como una inexistente. Libera las horas y guarda el motivo. No gestiona reembolsos: todavía no hay pago online.'
  *     security:
  *       - bearerAuth: []
  *     parameters:

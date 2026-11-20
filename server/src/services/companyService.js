@@ -1,32 +1,48 @@
-// Reglas de empresas: estado (PENDING, APPROVED, REJECTED) y su nombre en español, y consulta de la empresa propia.
+// Reglas de empresas: estado (PENDING, APPROVED, REJECTED, SUSPENDED) y su nombre en español, y consulta de la empresa propia.
 import * as buildingModel from '../models/buildingModel.js';
 import * as companyModel from '../models/companyModel.js';
 import { runTransaction } from '../models/baseModel.js';
 import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { HttpError } from '../utils/httpError.js';
+import { countFutureBookings, futureBookingsNotice } from './futureBookingsService.js';
 import { getOwnedBuilding, getOwnedFloor, getOwnedRoom } from './ownershipService.js';
 
 export const COMPANY_STATUS = Object.freeze({
   PENDING: 'PENDING',
   APPROVED: 'APPROVED',
   REJECTED: 'REJECTED',
+  SUSPENDED: 'SUSPENDED',
 });
 
 const STATUS_ES = {
   [COMPANY_STATUS.PENDING]: 'pendiente',
   [COMPANY_STATUS.APPROVED]: 'aprobada',
   [COMPANY_STATUS.REJECTED]: 'rechazada',
+  [COMPANY_STATUS.SUSPENDED]: 'suspendida',
 };
+
+// Estado de una empresa en Firestore. Si es antigua y no tiene status, se deriva de verified.
+export function companyStatus(company) {
+  if (COMPANY_STATUS[company?.status]) return company.status;
+  return company?.verified === true ? COMPANY_STATUS.APPROVED : COMPANY_STATUS.PENDING;
+}
+
+// Motivo vigente: de rechazo o de suspensión según el estado; null si no hay.
+export function companyMotivo(company) {
+  const status = companyStatus(company);
+  if (status === COMPANY_STATUS.REJECTED) return company.rejectionReason ?? null;
+  if (status === COMPANY_STATUS.SUSPENDED) return company.suspensionReason ?? null;
+  return null;
+}
 
 // Estado en español de una empresa. Si es antigua y no tiene status, se deriva de verified.
 export function companyEstado(company) {
-  if (STATUS_ES[company?.status]) return STATUS_ES[company.status];
-  return company?.verified === true ? 'aprobada' : 'pendiente';
+  return STATUS_ES[companyStatus(company)];
 }
 
 // Convierte un timestamp de Firestore (o fecha) a ISO; si no hay, undefined.
-function toIso(value) {
+export function toIso(value) {
   if (!value) return undefined;
   const date = typeof value.toDate === 'function' ? value.toDate() : new Date(value);
   return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
@@ -53,6 +69,7 @@ function floorView(f) {
     numero: f.level,
     nombre: f.name,
     publicado: f.status === 'PUBLISHED',
+    mapImageUrl: f.mapImageUrl ?? null,
   };
 }
 
@@ -109,9 +126,127 @@ async function assertLevelFree(buildingId, level, exceptFloorId, tx) {
   }
 }
 
-// Edificios de la empresa.
+// Estado calculado de una sala: sin_precio, publicada (reservable) u oculta.
+export function roomEstado(room) {
+  if (!(typeof room.price === 'number' && room.price > 0)) return 'sin_precio';
+  return room.bookable === true ? 'publicada' : 'oculta';
+}
+
+// Lanza 400 si la sala quedaría reservable sin un precio mayor que 0.
+function assertPriceIfBookable(room) {
+  if (room.bookable === true && roomEstado(room) === 'sin_precio') {
+    throw new HttpError(400, 'ROOM_WITHOUT_PRICE', 'Pon un precio a la sala antes de mostrarla');
+  }
+}
+
+// Sala con su estado calculado.
+function roomWithEstado(room) {
+  return { ...roomView(room), estado: roomEstado(room) };
+}
+
+// Edificios de la empresa, cada uno con sus plantas (ordenadas por número) y nº de salas activas.
 export async function listBuildings(companyId) {
-  return (await buildingModel.listByCompany(companyId)).map(buildingView);
+  const [buildings, floors, rooms] = await Promise.all([
+    buildingModel.listByCompany(companyId),
+    floorModel.listByCompany(companyId),
+    roomModel.listByCompany(companyId),
+  ]);
+  const roomCount = new Map();
+  for (const r of rooms) {
+    if (r.status === 'ACTIVE') roomCount.set(r.floorId, (roomCount.get(r.floorId) ?? 0) + 1);
+  }
+  const byBuilding = new Map();
+  for (const f of floors) {
+    const item = {
+      id: f.id,
+      numero: f.level,
+      nombre: f.name,
+      publicado: f.status === 'PUBLISHED',
+      salas: roomCount.get(f.id) ?? 0,
+    };
+    byBuilding.set(f.buildingId, [...(byBuilding.get(f.buildingId) ?? []), item]);
+  }
+  return buildings.map((b) => ({
+    ...buildingView(b),
+    plantas: (byBuilding.get(b.id) ?? []).sort((a, c) => a.numero - c.numero),
+  }));
+}
+
+// Publica un edificio propio si tiene al menos una planta publicada (idempotente).
+export async function publishBuilding(companyId, id) {
+  const building = await getOwnedBuilding(id, companyId);
+  await runTransaction(async (tx) => {
+    const floors = await floorModel.listByBuilding(id, { tx });
+    if (!floors.some((f) => f.companyId === companyId && f.status === 'PUBLISHED')) {
+      throw new HttpError(
+        400,
+        'NO_PUBLISHED_FLOORS',
+        'Publica al menos una planta antes de publicar el edificio',
+      );
+    }
+    if (building.status !== 'PUBLISHED') {
+      await buildingModel.update(id, { status: 'PUBLISHED' }, { tx });
+    }
+  });
+  return buildingView({ ...building, status: 'PUBLISHED' });
+}
+
+// Vuelve un edificio propio a borrador (idempotente). Avisa de las reservas futuras, sin bloquear.
+export async function unpublishBuilding(companyId, id) {
+  const building = await getOwnedBuilding(id, companyId);
+  if (building.status !== 'DRAFT') await buildingModel.update(id, { status: 'DRAFT' });
+  const rooms = await roomModel.listByBuilding(id);
+  const reservasFuturas = await countFutureBookings(rooms.map((r) => r.id));
+  const aviso = futureBookingsNotice(reservasFuturas, 'este edificio');
+  return {
+    ...buildingView({ ...building, status: 'DRAFT' }),
+    reservasFuturas,
+    ...(aviso && { aviso }),
+  };
+}
+
+// Salas activas de la empresa con su estado, filtradas por edificio, planta y estado.
+// Orden: nombre del edificio, número de planta y código.
+export async function listRooms(companyId, { buildingId, floorId, estado } = {}) {
+  if (buildingId) await getOwnedBuilding(buildingId, companyId);
+  if (floorId) await getOwnedFloor(floorId, companyId);
+  const [buildings, floors, rooms] = await Promise.all([
+    buildingModel.listByCompany(companyId),
+    floorModel.listByCompany(companyId),
+    roomModel.listByCompany(companyId),
+  ]);
+  const buildingName = new Map(buildings.map((b) => [b.id, b.name ?? '']));
+  const level = new Map(floors.map((f) => [f.id, f.level ?? 0]));
+  return rooms
+    .filter((r) => r.status === 'ACTIVE')
+    .filter((r) => !buildingId || r.buildingId === buildingId)
+    .filter((r) => !floorId || r.floorId === floorId)
+    .map(roomWithEstado)
+    .filter((r) => !estado || r.estado === estado)
+    .sort(
+      (a, b) =>
+        (buildingName.get(a.buildingId) ?? '').localeCompare(
+          buildingName.get(b.buildingId) ?? '',
+        ) ||
+        (level.get(a.floorId) ?? 0) - (level.get(b.floorId) ?? 0) ||
+        String(a.codigo ?? '').localeCompare(String(b.codigo ?? '')),
+    );
+}
+
+// Muestra (reservable) u oculta una sala propia; sin precio no se puede mostrar.
+export async function setRoomVisibility(companyId, id, visible) {
+  const room = await getOwnedRoom(id, companyId);
+  if (room.status === 'INACTIVE') {
+    throw new HttpError(400, 'ROOM_INACTIVE', 'La sala ya no está en el mapa');
+  }
+  const updated = { ...room, bookable: visible };
+  if (visible) assertPriceIfBookable(updated);
+  await roomModel.update(id, { bookable: visible });
+  const result = roomWithEstado(updated);
+  if (visible) return result;
+  result.reservasFuturas = await countFutureBookings([id]);
+  const aviso = futureBookingsNotice(result.reservasFuturas, 'esta sala');
+  return aviso ? { ...result, aviso } : result;
 }
 
 // Crea un edificio de la empresa en borrador.
@@ -156,8 +291,12 @@ export async function updateFloor(companyId, id, body) {
 // Edita los datos comerciales de una sala propia (el periodo de precio sigue siendo por hora).
 export async function updateRoom(companyId, id, body) {
   const room = await getOwnedRoom(id, companyId);
+  if (room.status === 'INACTIVE') {
+    throw new HttpError(400, 'ROOM_INACTIVE', 'La sala ya no está en el mapa');
+  }
   const data = pick(body, ROOM_MAP);
   if (data.price !== undefined) data.pricePeriod = 'HOUR';
+  assertPriceIfBookable({ ...room, ...data });
   await roomModel.update(id, data);
   return roomView({ ...room, ...data });
 }
@@ -174,6 +313,7 @@ export async function getMyCompany(companyId) {
     phone: company.phone ?? null,
     email: company.email ?? null,
     estado: companyEstado(company),
+    motivo: companyMotivo(company),
     createdAt: toIso(company.createdAt),
   };
 }

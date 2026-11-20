@@ -7,9 +7,6 @@ import * as bookingModel from '../models/bookingModel.js';
 import { dayRange } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 
-// Horario reservable acordado: de 8:00 a 20:00 (la última hora libre empieza a las 19).
-export const BOOKING_HOURS = { desde: 8, hasta: 20 };
-
 // Estado de una sala en un día (los mismos que el front, client/src/config/constants.js).
 export const ROOM_STATUS = { FREE: 'FREE', OCCUPIED: 'OCCUPIED', UNAVAILABLE: 'UNAVAILABLE' };
 
@@ -86,9 +83,43 @@ export async function getDayItems(
   ];
 }
 
-// Una sala se puede reservar si existe, es reservable y está activa.
+// Como getDayItems pero para varias salas con una consulta por lote: Map<roomId, franjas>.
+export async function getDayItemsForRooms(
+  roomIds,
+  fecha,
+  { bookings = bookingModel, blocks = blockModel } = {},
+) {
+  const map = new Map(roomIds.map((id) => [id, []]));
+  if (roomIds.length === 0) return map;
+  const { from, to } = dayRange(fecha);
+  const [reservas, bloqueos] = await Promise.all([
+    bookings.listByRooms(roomIds, { from, to }),
+    blocks.listByRooms(roomIds, { from, to }),
+  ]);
+  for (const doc of reservas) map.get(doc.roomId)?.push(toSlot(doc, 'reserva'));
+  for (const doc of bloqueos) map.get(doc.roomId)?.push(toSlot(doc, 'bloqueo'));
+  return map;
+}
+
+// Una sala se puede reservar si existe, es reservable, está activa y tiene precio mayor que 0.
 export function isBookable(room) {
-  return Boolean(room) && room.bookable === true && room.status === 'ACTIVE';
+  return (
+    Boolean(room) &&
+    room.bookable === true &&
+    room.status === 'ACTIVE' &&
+    typeof room.price === 'number' &&
+    room.price > 0
+  );
+}
+
+// Estado de una sala en una hora concreta: UNAVAILABLE si no es reservable, OCCUPIED si algún
+// item activo solapa con [hora, hora + 1), si no FREE.
+export function roomStatusAtHour(room, items, hora) {
+  if (!isBookable(room)) return ROOM_STATUS.UNAVAILABLE;
+  const slot = { inicio: hora, fin: hora + 1 };
+  return items.filter(isActive).some((item) => overlaps(slot, item))
+    ? ROOM_STATUS.OCCUPIED
+    : ROOM_STATUS.FREE;
 }
 
 // Estado de una sala un día: UNAVAILABLE si no es reservable, OCCUPIED si hay algo activo, si no FREE.

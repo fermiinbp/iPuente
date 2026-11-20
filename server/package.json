@@ -8,9 +8,10 @@
     "start": "node --env-file-if-exists=.env src/server.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "node --test",
+    "test": "node --import ./tests/setup.js --test",
     "seed": "node --env-file=.env scripts/seed.js",
     "make-admin": "node --env-file=.env scripts/makeAdmin.js",
+    "sync-company-claims": "node --env-file=.env scripts/syncCompanyClaims.js",
     "get-token": "node --env-file=.env scripts/getToken.js"
   },
   "devDependencies": {
@@ -22,6 +23,7 @@
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.3.0",
+    "express-rate-limit": "^8.7.5",
     "express-validator": "^7.3.2",
     "firebase-admin": "^14.5.1",
     "swagger-jsdoc": "^6.3.0",

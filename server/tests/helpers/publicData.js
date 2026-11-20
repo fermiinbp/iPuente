@@ -1,15 +1,25 @@
 // Datos de prueba para los endpoints públicos: siembra el Firestore falso con edificios, plantas, salas, reservas y un bloqueo.
 import app from '../../src/app.js';
+import { setStorageBucketForTests } from '../../src/config/config.js';
 import * as blockModel from '../../src/models/blockModel.js';
 import * as bookingModel from '../../src/models/bookingModel.js';
 import * as buildingModel from '../../src/models/buildingModel.js';
+import * as companyModel from '../../src/models/companyModel.js';
 import * as floorModel from '../../src/models/floorModel.js';
 import * as roomModel from '../../src/models/roomModel.js';
 
 export const FECHA = '2026-06-15';
 export const PRIVATE_WORDS = ['cliente-secreto', 'userId', 'email', 'bookingId'];
 
+export const TEST_BUCKET = 'ipuente-test.firebasestorage.app';
+
+// URL de descarga de Firebase Storage de un archivo de prueba (path sin codificar).
+export function storageUrl(path, bucket = TEST_BUCKET) {
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media&token=t`;
+}
+
 export async function listen() {
+  setStorageBucketForTests(TEST_BUCKET);
   const server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
   return { server, baseUrl: `http://127.0.0.1:${server.address().port}` };
@@ -103,6 +113,8 @@ const booking = (roomId, status, start, end) => ({
 //  r-nobook: bookable false                       r-inactive: INACTIVE
 //  r-ghost: en el mapa de f-0 pero sin documento  r-up: libre en f-1
 export async function seedPublicData() {
+  // La empresa c1 debe estar aprobada para que sus edificios sean públicos.
+  await companyModel.upsert('c1', { name: 'Empresa c1', status: 'APPROVED', verified: true });
   await buildingModel.upsert('b-pub', building('Edificio publicado', 'PUBLISHED'));
   await buildingModel.upsert('b-draft', building('Edificio borrador', 'DRAFT'));
 
@@ -139,4 +151,49 @@ export async function seedPublicData() {
     endDate: at(16),
     reason: 'Mantenimiento',
   });
+}
+
+// Añade para el buscador (todo con companyId c1):
+//  b-mal «Centro Málaga» (PUBLISHED, con foto), planta f-mal PUBLISHED con
+//    r-mal-box (box, 2 pers., 10 €, wifi), r-mal-big (sala, 40 pers., 60 €, wifi+pantalla+proyector)
+//    y r-mal-full (sala, 4 pers., 15 €, wifi, CONFIRMED el 15/06 de 8 a 20);
+//  f-mal-draft (DRAFT) con r-mal-draft de 1 € que nunca debe contar;
+//  b-empty (PUBLISHED, planta PUBLISHED) con solo una sala no reservable.
+export async function seedSearchData() {
+  await buildingModel.upsert('b-mal', {
+    ...building('Centro Málaga', 'PUBLISHED'),
+    city: 'Málaga',
+    photos: ['https://example.com/malaga.jpg'],
+  });
+  await buildingModel.upsert('b-empty', {
+    ...building('Edificio vacío', 'PUBLISHED'),
+    city: 'Cádiz',
+  });
+  await floorModel.upsert('f-mal', floor('b-mal', 'Planta Málaga', 0, 'PUBLISHED', ['r-mal-box']));
+  await floorModel.upsert(
+    'f-mal-draft',
+    floor('b-mal', 'Planta Málaga borrador', 1, 'DRAFT', ['r-mal-draft']),
+  );
+  await floorModel.upsert('f-empty', floor('b-empty', 'Planta vacía', 0, 'PUBLISHED', ['r-empty']));
+  const mal = (id, extra) => roomModel.upsert(id, room('f-mal', 'b-mal', id, extra));
+  await mal('r-mal-box', { type: 'box', capacity: 2, price: 10, amenities: ['wifi'], photos: [] });
+  await mal('r-mal-big', {
+    capacity: 40,
+    price: 60,
+    amenities: ['wifi', 'pantalla', 'proyector'],
+  });
+  await mal('r-mal-full', { capacity: 4, price: 15, amenities: ['wifi'] });
+  await roomModel.upsert(
+    'r-mal-draft',
+    room('f-mal-draft', 'b-mal', 'r-mal-draft', { price: 1, capacity: 100 }),
+  );
+  await roomModel.upsert('r-empty', room('f-empty', 'b-empty', 'r-empty', { bookable: false }));
+  await bookingModel.upsert('bk-mal', booking('r-mal-full', 'CONFIRMED', 8, 20));
+}
+
+// Añade a f-0 una sala reservable y activa pero sin precio (r-noprice), para probar que no cuenta.
+export async function seedRoomWithoutPrice() {
+  const f0 = await floorModel.findById('f-0');
+  await floorModel.update('f-0', { salas: [...f0.salas, sala('r-noprice', 840)] });
+  await roomModel.upsert('r-noprice', room('f-0', 'b-pub', 'r-noprice', { price: null }));
 }

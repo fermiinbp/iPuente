@@ -50,6 +50,22 @@ describe('seed', () => {
     }
   });
 
+  it('da a las reservas un código fijo IP-9xx y no toca el contador', async () => {
+    const codes = fake
+      .dump('bookings')
+      .map((b) => b.code)
+      .sort();
+    assert.equal(new Set(codes).size, codes.length);
+    for (const code of codes) assert.match(code, /^IP-9\d\d$/);
+    assert.deepEqual(fake.dump('counters'), []);
+  });
+
+  it('todos los códigos del seed son menores que IP-1000 (no chocan con el contador)', () => {
+    for (const { code } of fake.dump('bookings')) {
+      assert.ok(Number(code.replace('IP-', '')) < 1000, `${code} debe ser < IP-1000`);
+    }
+  });
+
   it('ejecutarlo dos veces no duplica nada, aunque cambie el día', async () => {
     const before = count();
     await seed({ today: new Date(2026, 10, 18, 7) });

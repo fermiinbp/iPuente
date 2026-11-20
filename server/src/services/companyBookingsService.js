@@ -8,9 +8,16 @@ import * as roomModel from '../models/roomModel.js';
 import * as userModel from '../models/userModel.js';
 import { addDays, resolveRange, todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
-import { BOOKING_HOURS, assertSlotAvailable, toDate, toSlot } from './availabilityService.js';
-import { atHour, toItem, translateConflict } from './bookingsService.js';
-import { assertOwnedBy, getOwnedRoom } from './ownershipService.js';
+import { BOOKING_HOURS } from '../config/bookingHours.js';
+import { assertSlotAvailable, toDate, toSlot } from './availabilityService.js';
+import {
+  atHour,
+  buildBookingDetail,
+  toCancellation,
+  toItem,
+  translateConflict,
+} from './bookingsService.js';
+import { assertBookingOwned, assertOwnedBy, getOwnedRoom } from './ownershipService.js';
 
 // Lee las salas indicadas una sola vez cada una y devuelve un Map id -> sala.
 async function loadRooms(ids) {
@@ -21,6 +28,10 @@ async function loadRooms(ids) {
 
 // Datos mínimos de una sala para las respuestas.
 const toSala = (room) => (room ? { nombre: room.name, codigo: room.code } : null);
+
+// Nombre y email del cliente (sin id ni más datos personales).
+const toCliente = (user) =>
+  user ? { nombre: user.name ?? null, email: user.email ?? null } : null;
 
 // Rango [from, to) en Date para la consulta, a partir de desde y hasta (inclusive) con sus
 // valores por defecto (desde = hoy - 30 días, hasta = desde + 90 días).
@@ -55,16 +66,24 @@ export async function listBookings(companyId, { desde, hasta, roomId } = {}) {
   return items
     .map(({ booking, item }) => {
       const user = usersById.get(booking.userId);
-      const result = {
+      return {
         ...item,
         sala: toSala(rooms.get(booking.roomId)),
-        cliente: user ? { nombre: user.name ?? null, email: user.email ?? null } : null,
+        cliente: toCliente(user),
+        ...toCancellation(booking),
       };
-      if (booking.cancelReason) result.motivoCancelacion = booking.cancelReason;
-      if (booking.cancelledBy) result.canceladaPor = booking.cancelledBy;
-      return result;
     })
     .sort(byDate);
+}
+
+// Detalle de una reserva de la empresa: 404 NOT_FOUND si no existe o es de otra empresa (la reserva
+// o su sala), sin distinguir los casos. Incluye nombre y email del cliente, nunca su id.
+export async function getBooking(companyId, id) {
+  const booking = assertBookingOwned(await bookingModel.findById(id), companyId);
+  const room = await roomModel.findById(booking.roomId);
+  if (room) assertBookingOwned(room, companyId);
+  const user = booking.userId ? await userModel.findById(booking.userId) : null;
+  return { ...(await buildBookingDetail(booking, { room })), cliente: toCliente(user) };
 }
 
 // Formato público de un bloqueo.
@@ -166,9 +185,9 @@ export async function removeBlock(companyId, id) {
 // sus horas. No gestiona reembolsos: todavía no hay pago online.
 export async function cancelBooking(companyId, id, motivo) {
   await runTransaction(async (tx) => {
-    const booking = assertOwnedBy(await bookingModel.findById(id, { tx }), companyId);
+    const booking = assertBookingOwned(await bookingModel.findById(id, { tx }), companyId);
     // Defensa en profundidad: la sala de la reserva también debe ser de la empresa.
-    assertOwnedBy(await roomModel.findById(booking.roomId, { tx }), companyId);
+    assertBookingOwned(await roomModel.findById(booking.roomId, { tx }), companyId);
     if (booking.status !== 'CONFIRMED') {
       throw new HttpError(
         400,

@@ -3,9 +3,10 @@
 import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 
-import { setDbForTests } from '../../src/config/config.js';
+import { db, setDbForTests } from '../../src/config/config.js';
 import { setTokenVerifier } from '../../src/middlewares/auth.js';
 import * as companyModel from '../../src/models/companyModel.js';
+import * as companyTaxIdModel from '../../src/models/companyTaxIdModel.js';
 import * as userModel from '../../src/models/userModel.js';
 import { setAuthClientForTests } from '../../src/services/authService.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
@@ -36,6 +37,12 @@ describe('Registro de clientes y empresas', () => {
       deleted: [],
       failCreate: null,
       failClaims: null,
+      existing: {},
+      async getUserByEmail(email) {
+        const user = fake.existing[email];
+        if (!user) throw Object.assign(new Error('no existe'), { code: 'auth/user-not-found' });
+        return user;
+      },
       async createUser(data) {
         if (fake.failCreate) throw fake.failCreate;
         const uid = `uid${fake.created.length + 1}`;
@@ -170,7 +177,11 @@ describe('Registro de clientes y empresas', () => {
       assert.equal(body.uid, 'uid1');
       assert.equal(body.estado, 'pendiente');
       assert.ok(body.companyId);
-      assert.deepEqual(fakeAuth.claims.uid1, { role: 'COMPANY', companyId: body.companyId });
+      assert.deepEqual(fakeAuth.claims.uid1, {
+        role: 'COMPANY',
+        companyId: body.companyId,
+        companyApproved: false,
+      });
       const company = await companyModel.findById(body.companyId);
       assert.equal(company.status, 'PENDING');
       assert.equal(company.verified, false);
@@ -216,6 +227,77 @@ describe('Registro de clientes y empresas', () => {
       assert.equal(status, 409);
       assert.equal(body.error.code, 'COMPANY_EXISTS');
       assert.equal(fakeAuth.created.length, 1);
+    });
+
+    it('crea el índice companyTaxIds/{cif} con el id de la empresa', async () => {
+      const { body } = await registrarEmpresa(EMPRESA);
+      const index = await companyTaxIdModel.findById('B12345674');
+      assert.equal(index.companyId, body.companyId);
+    });
+
+    it('dos registros simultáneos con el mismo CIF: uno 201 y otro 409 COMPANY_EXISTS', async () => {
+      const [a, b] = await Promise.all([
+        registrarEmpresa(EMPRESA),
+        registrarEmpresa({ ...EMPRESA, email: 'otra@ejemplo.com' }),
+      ]);
+      assert.deepEqual([a.status, b.status].sort(), [201, 409]);
+      const perdedor = a.status === 409 ? a : b;
+      assert.equal(perdedor.body.error.code, 'COMPANY_EXISTS');
+      assert.equal(fakeAuth.created.length, 1);
+      assert.equal((await companyModel.listByVerified(false)).length, 1);
+    });
+
+    it('CIF huérfano sin companyId y de hace más de 10 minutos: se sobrescribe y registra', async () => {
+      const old = new Date(Date.now() - 11 * 60 * 1000);
+      await db()
+        .collection('companyTaxIds')
+        .doc('B12345674')
+        .set({ taxId: 'B12345674', createdAt: old });
+      const { status, body } = await registrarEmpresa(EMPRESA);
+      assert.equal(status, 201);
+      assert.equal((await companyTaxIdModel.findById('B12345674')).companyId, body.companyId);
+    });
+
+    it('CIF reservado hace menos de 10 minutos sin companyId: 409 COMPANY_EXISTS', async () => {
+      await companyTaxIdModel.overwrite('B12345674', { taxId: 'B12345674' });
+      const { status, body } = await registrarEmpresa(EMPRESA);
+      assert.equal(status, 409);
+      assert.equal(body.error.code, 'COMPANY_EXISTS');
+    });
+
+    it('CIF cuyo companyId apunta a una empresa inexistente: se sobrescribe y registra', async () => {
+      await companyTaxIdModel.overwrite('B12345674', { taxId: 'B12345674', companyId: 'fantasma' });
+      const { status, body } = await registrarEmpresa(EMPRESA);
+      assert.equal(status, 201);
+      assert.equal((await companyTaxIdModel.findById('B12345674')).companyId, body.companyId);
+    });
+
+    it('409 EMAIL_IS_CLIENT si el email es de un cliente (claim) y no crea nada', async () => {
+      fakeAuth.existing[EMPRESA.email] = { uid: 'cli1', customClaims: { role: 'CLIENT' } };
+      const { status, body } = await registrarEmpresa(EMPRESA);
+      assert.equal(status, 409);
+      assert.equal(body.error.code, 'EMAIL_IS_CLIENT');
+      assert.match(body.error.message, /cuenta de cliente/);
+      assert.equal(fakeAuth.created.length, 0);
+      assert.equal(await companyTaxIdModel.findById('B12345674'), null);
+    });
+
+    it('409 EMAIL_IS_CLIENT si users dice que es cliente', async () => {
+      fakeAuth.existing[EMPRESA.email] = { uid: 'cli1' };
+      await userModel.create({ name: 'x', email: EMPRESA.email, role: 'CLIENT' }, { id: 'cli1' });
+      const { status, body } = await registrarEmpresa(EMPRESA);
+      assert.equal(status, 409);
+      assert.equal(body.error.code, 'EMAIL_IS_CLIENT');
+    });
+
+    it('rollback: si falla Auth o Firestore se borra el índice de CIF', async () => {
+      fakeAuth.failCreate = Object.assign(new Error('x'), { code: 'auth/email-already-exists' });
+      await registrarEmpresa(EMPRESA);
+      assert.equal(await companyTaxIdModel.findById('B12345674'), null);
+      fakeAuth.failCreate = null;
+      fakeAuth.failClaims = new Error('claims rotos');
+      await registrarEmpresa(EMPRESA);
+      assert.equal(await companyTaxIdModel.findById('B12345674'), null);
     });
 
     it('rollback: si falla Firestore borra empresa, miembro y usuario; 500 sin detalles', async () => {

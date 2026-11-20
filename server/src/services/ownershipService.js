@@ -13,6 +13,15 @@ export function assertOwnedBy(resource, companyId) {
   return resource;
 }
 
+// Reserva (o su sala) de la empresa: si no existe o es ajena lanza el mismo 404 que una inexistente,
+// para no revelar que la reserva existe.
+export function assertBookingOwned(resource, companyId) {
+  if (!resource || !companyId || resource.companyId !== companyId) {
+    throw new HttpError(404, 'NOT_FOUND', 'La reserva no existe');
+  }
+  return resource;
+}
+
 // Edificio de la empresa o error 404/403.
 export async function getOwnedBuilding(id, companyId) {
   return assertOwnedBy(await buildingModel.findById(id), companyId);

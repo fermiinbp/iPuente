@@ -10,7 +10,11 @@ import * as companyModel from '../../src/models/companyModel.js';
 import * as floorModel from '../../src/models/floorModel.js';
 import * as roomModel from '../../src/models/roomModel.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
-import { listen } from '../helpers/publicData.js';
+import { setStorageBucketForTests } from '../../src/config/config.js';
+import { listen, storageUrl, TEST_BUCKET } from '../helpers/publicData.js';
+
+const foto = (company = 'c-a', file = 'buildings/b-a/photos/f.jpg') =>
+  storageUrl(`companies/${company}/${file}`);
 
 const tokens = {
   a: { uid: 'ua', role: 'COMPANY', companyId: 'c-a' },
@@ -152,6 +156,10 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
         descripcion: '',
         fotos: [],
         publicado: false,
+        plantas: [
+          { id: 'f-a0', numero: 0, nombre: 'Baja', publicado: false, salas: 0 },
+          { id: 'f-a1', numero: 1, nombre: 'Primera', publicado: false, salas: 0 },
+        ],
       });
     });
   });
@@ -164,7 +172,7 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
           nombre: ' Nuevo ',
           direccion: 'Calle 3',
           ciudad: 'Sevilla',
-          fotos: ['https://ejemplo.com/f.jpg'],
+          fotos: [foto()],
           companyId: 'c-b',
           status: 'PUBLISHED',
           publicado: true,
@@ -173,10 +181,25 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
       assert.equal(r.status, 201);
       assert.equal(r.body.nombre, 'Nuevo');
       assert.equal(r.body.publicado, false);
-      assert.deepEqual(r.body.fotos, ['https://ejemplo.com/f.jpg']);
+      assert.deepEqual(r.body.fotos, [foto()]);
       const doc = await buildingModel.findById(r.body.id);
       assert.equal(doc.companyId, 'c-a');
       assert.equal(doc.status, 'DRAFT');
+    });
+
+    it('400 si no hay bucket de Storage configurado', async () => {
+      setStorageBucketForTests(undefined);
+      try {
+        const r = await call('POST', '/api/company/buildings', {
+          token: 'a',
+          body: { nombre: 'x', direccion: 'y', ciudad: 'z', fotos: [foto()] },
+        });
+        assert.equal(r.status, 400);
+        assert.equal(r.body.error.code, 'VALIDATION_ERROR');
+        assert.match(JSON.stringify(r.body), /no está configurado/);
+      } finally {
+        setStorageBucketForTests(TEST_BUCKET);
+      }
     });
 
     it('400 VALIDATION_ERROR con nombre vacío, ausente o fotos no https', async () => {
@@ -186,7 +209,8 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
         { ...base, nombre: '   ' },
         { direccion: 'y', ciudad: 'z' },
         { ...base, fotos: ['http://ejemplo.com/f.jpg'] },
-        { ...base, fotos: 'https://ejemplo.com/f.jpg' },
+        { ...base, fotos: foto() },
+        { ...base, fotos: [foto('c-b')] },
       ];
       for (const body of casos) {
         const r = await call('POST', '/api/company/buildings', { token: 'a', body });
@@ -395,7 +419,7 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
       precioHora: 25,
       equipamiento: ['proyector', 'wifi'],
       reservable: true,
-      fotos: ['https://ejemplo.com/s.jpg'],
+      fotos: [foto('c-a', 'rooms/r-a/photos/s.jpg')],
     };
 
     it('200: edita los datos comerciales con el formato en español', async () => {
@@ -457,6 +481,14 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
         'equipamiento no array': { equipamiento: 'wifi' },
         'equipamiento con no-string': { equipamiento: ['wifi', 3] },
         'fotos no https': { fotos: ['http://ejemplo.com/s.jpg'] },
+        'foto de otra empresa': { fotos: [foto('c-b')] },
+        'foto de otro bucket': { fotos: [storageUrl('companies/c-a/x.jpg', 'otro.appspot.com')] },
+        'foto en storage.googleapis.com': {
+          fotos: [
+            'https://storage.googleapis.com/ipuente-test.firebasestorage.app/companies/c-a/x.jpg',
+          ],
+        },
+        'foto con .. sin codificar': { fotos: [foto('c-a', '../c-b/x.jpg')] },
         'reservable string': { reservable: 'true' },
         'nombre vacío': { nombre: '' },
         'capacidad array': { capacidad: [5] },
@@ -464,7 +496,7 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
         'precioHora array': { precioHora: [10] },
         'reservable array': { reservable: [true] },
         'nombre array': { nombre: ['x'] },
-        'foto > 2048': { fotos: [`https://ejemplo.com/${'a'.repeat(2050)}.jpg`] },
+        'foto > 2048': { fotos: [foto('c-a', `${'a'.repeat(2050)}.jpg`)] },
       };
       for (const [nombre, body] of Object.entries(casos)) {
         const r = await call('PATCH', '/api/company/rooms/r-a', { token: 'a', body });

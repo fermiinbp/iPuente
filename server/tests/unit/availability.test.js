@@ -6,7 +6,9 @@ import {
   assertSlotAvailable,
   freeSlots,
   isActive,
+  isBookable,
   overlaps,
+  roomStatusAtHour,
   toSlot,
 } from '../../src/services/availabilityService.js';
 
@@ -201,5 +203,45 @@ describe('assertSlotAvailable', () => {
       assert.equal(options.to.getTime(), new Date(2026, 10, 20, 0).getTime());
       assert.equal(options.tx, tx);
     }
+  });
+});
+
+describe('roomStatusAtHour', () => {
+  const sala = { bookable: true, status: 'ACTIVE', price: 25 };
+  const items = [reserva(10, 12), bloqueo(14, 15), reserva(16, 18, 'CANCELLED')];
+
+  it('OCCUPIED dentro de una reserva confirmada y de un bloqueo', () => {
+    assert.equal(roomStatusAtHour(sala, items, 10), 'OCCUPIED');
+    assert.equal(roomStatusAtHour(sala, items, 11), 'OCCUPIED');
+    assert.equal(roomStatusAtHour(sala, items, 14), 'OCCUPIED');
+  });
+
+  it('FREE en los bordes: justo antes de empezar y justo al terminar', () => {
+    assert.equal(roomStatusAtHour(sala, items, 9), 'FREE');
+    assert.equal(roomStatusAtHour(sala, items, 12), 'FREE');
+    assert.equal(roomStatusAtHour(sala, items, 15), 'FREE');
+  });
+
+  it('una reserva cancelada o pendiente no ocupa', () => {
+    assert.equal(roomStatusAtHour(sala, items, 16), 'FREE');
+    assert.equal(roomStatusAtHour(sala, [reserva(10, 12, 'PENDING_PAYMENT')], 10), 'FREE');
+  });
+
+  it('UNAVAILABLE si no es reservable, está inactiva, no existe o no tiene precio', () => {
+    assert.equal(roomStatusAtHour({ ...sala, bookable: false }, [], 10), 'UNAVAILABLE');
+    assert.equal(roomStatusAtHour({ ...sala, status: 'INACTIVE' }, [], 10), 'UNAVAILABLE');
+    assert.equal(roomStatusAtHour(undefined, [], 10), 'UNAVAILABLE');
+    assert.equal(roomStatusAtHour({ ...sala, price: null }, [], 10), 'UNAVAILABLE');
+    assert.equal(roomStatusAtHour({ ...sala, price: 0 }, [], 10), 'UNAVAILABLE');
+  });
+});
+
+describe('isBookable', () => {
+  it('exige reservable, activa y precio numérico mayor que 0', () => {
+    const base = { bookable: true, status: 'ACTIVE', price: 10 };
+    assert.equal(isBookable(base), true);
+    assert.equal(isBookable({ ...base, price: undefined }), false);
+    assert.equal(isBookable({ ...base, price: '10' }), false);
+    assert.equal(isBookable({ ...base, price: 0 }), false);
   });
 });

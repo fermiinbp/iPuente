@@ -1,0 +1,24 @@
+rules_version = '2';
+
+// Reglas de Firebase Storage: lectura pública de planos y fotos (solo por ruta, sin listar carpetas);
+// solo escribe la empresa dueña de la carpeta (rol COMPANY, mismo companyId y companyApproved en el
+// token), imágenes PNG, JPEG, WebP o GIF (nada de SVG) de entre 1 byte y 5 MB.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isOwner(companyId) {
+      return request.auth != null
+        && request.auth.token.role == 'COMPANY'
+        && request.auth.token.companyId == companyId
+        && request.auth.token.companyApproved == true;
+    }
+
+    match /companies/{companyId}/{allPaths=**} {
+      allow get: if true;
+      allow create, update: if isOwner(companyId)
+        && request.resource.size > 0
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(png|jpeg|webp|gif)');
+      allow delete: if isOwner(companyId);
+    }
+  }
+}

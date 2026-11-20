@@ -10,3 +10,8 @@ export async function saveMap(req, res) {
 export async function publishFloor(req, res) {
   res.json(await mapsService.publishFloor(req.user.companyId, req.params.id));
 }
+
+// POST /api/company/floors/:id/unpublish: vuelve una planta propia a borrador.
+export async function unpublishFloor(req, res) {
+  res.json(await mapsService.unpublishFloor(req.user.companyId, req.params.id));
+}

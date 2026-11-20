@@ -10,7 +10,8 @@ import * as companyModel from '../../src/models/companyModel.js';
 import * as floorModel from '../../src/models/floorModel.js';
 import * as roomModel from '../../src/models/roomModel.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
-import { listen } from '../helpers/publicData.js';
+import { setStorageBucketForTests } from '../../src/config/config.js';
+import { listen, storageUrl, TEST_BUCKET } from '../helpers/publicData.js';
 
 const tokens = {
   a: { uid: 'ua', role: 'COMPANY', companyId: 'c-a' },
@@ -105,6 +106,82 @@ describe('Mapa de planta: guardar y publicar', () => {
         assert.equal(r.body.error.code, 'COMPANY_NOT_APPROVED');
       });
     }
+  });
+
+  describe('mapImageUrl', () => {
+    const own = storageUrl('companies/c-a/floors/f-a/plan.png');
+
+    it('200: guarda la URL propia en la planta y la devuelve', async () => {
+      const r = await put('f-a', mapa([sala('r1')], { mapImageUrl: own }));
+      assert.equal(r.status, 200);
+      assert.equal(r.body.mapImageUrl, own);
+      assert.equal((await floorModel.findById('f-a')).mapImageUrl, own);
+    });
+
+    it('400 con URL ajena, otro bucket, http, .., storage.googleapis.com o demasiado larga', async () => {
+      const bad = [
+        storageUrl('companies/c-b/floors/f-b/plan.png'),
+        storageUrl('companies/c-a/plan.png', 'otro.appspot.com'),
+        own.replace('https:', 'http:'),
+        storageUrl('companies/c-a/x/../../c-b/plan.png').replace(/%2E/g, '.'),
+        'https://storage.googleapis.com/ipuente-test.firebasestorage.app/companies/c-a/p.png',
+        storageUrl(`companies/c-a/${'a'.repeat(2100)}.png`),
+        'https://ejemplo.com/plano.png',
+      ];
+      for (const url of bad) {
+        const r = await put('f-a', mapa([sala('r1')], { mapImageUrl: url }));
+        assert.equal(r.status, 400, url.slice(0, 80));
+        assert.equal(r.body.error.code, 'VALIDATION_ERROR');
+      }
+      assert.equal((await floorModel.findById('f-a')).mapImageUrl, undefined);
+    });
+
+    it('null quita el plano: 200 y se guarda null', async () => {
+      await put('f-a', mapa([sala('r1')], { mapImageUrl: own }));
+      const r = await put('f-a', mapa([sala('r1')], { mapImageUrl: null }));
+      assert.equal(r.status, 200);
+      assert.equal(r.body.mapImageUrl, null);
+      assert.equal((await floorModel.findById('f-a')).mapImageUrl, null);
+    });
+
+    it('400 con fragmento o parámetros extra', async () => {
+      for (const url of [
+        `${own}#x`,
+        `${own}&export=1`,
+        `${own}&alt=json`,
+        `${own}&token=a&token=b`,
+      ]) {
+        const r = await put('f-a', mapa([sala('r1')], { mapImageUrl: url }));
+        assert.equal(r.status, 400, url.slice(-30));
+      }
+    });
+
+    it('guarda la URL normalizada (host en mayúsculas, parámetros en otro orden)', async () => {
+      const raw = own.replace(
+        'https://firebasestorage.googleapis.com',
+        'HTTPS://FirebaseStorage.GoogleAPIs.com',
+      );
+      const messy = raw.replace('?alt=media&token=t', '?token=t&alt=media');
+      const r = await put('f-a', mapa([sala('r1')], { mapImageUrl: messy }));
+      assert.equal(r.status, 200);
+      assert.equal((await floorModel.findById('f-a')).mapImageUrl, own);
+    });
+
+    it('400 con %2E%2E codificado en el path', async () => {
+      const url = `https://firebasestorage.googleapis.com/v0/b/${TEST_BUCKET}/o/companies%2Fc-a%2F%2E%2E%2Fc-b%2Fp.png?alt=media`;
+      const r = await put('f-a', mapa([sala('r1')], { mapImageUrl: url }));
+      assert.equal(r.status, 400);
+    });
+
+    it('400 si no hay bucket configurado', async () => {
+      setStorageBucketForTests(undefined);
+      try {
+        const r = await put('f-a', mapa([sala('r1')], { mapImageUrl: own }));
+        assert.equal(r.status, 400);
+      } finally {
+        setStorageBucketForTests(TEST_BUCKET);
+      }
+    });
   });
 
   describe('PUT /api/company/floors/:id/map', () => {
@@ -224,13 +301,49 @@ describe('Mapa de planta: guardar y publicar', () => {
       assert.equal(r.body.error.code, 'ROOM_ID_TAKEN');
     });
 
-    it('no reactiva una room INACTIVE al volver a guardar', async () => {
+    it('una room INACTIVE que vuelve al mapa se reactiva sin tocar sus datos comerciales', async () => {
       await put('f-a', mapa([sala('r1')]));
-      await roomModel.update('r1', { status: 'INACTIVE' });
+      await roomModel.update('r1', { status: 'INACTIVE', price: 25, bookable: false });
       await put('f-a', mapa([sala('r1', { nombre: 'Otro' })]));
       const room = await roomModel.findById('r1');
-      assert.equal(room.status, 'INACTIVE');
+      assert.equal(room.status, 'ACTIVE');
+      assert.equal(room.bookable, false);
+      assert.equal(room.price, 25);
       assert.equal(room.name, 'Otro');
+    });
+
+    it('sala quitada sin ser reservable: INACTIVE; ya INACTIVE no cuenta como desactivada', async () => {
+      await put('f-a', mapa([sala('r1'), sala('r2')]));
+      const r = await put('f-a', mapa([sala('r2')]));
+      assert.equal(r.body.salasDesactivadas, 1);
+      assert.equal((await roomModel.findById('r1')).status, 'INACTIVE');
+      assert.equal((await roomModel.findById('r1')).bookable, false);
+      const again = await put('f-a', mapa([sala('r2')]));
+      assert.equal(again.body.salasDesactivadas, 0);
+    });
+
+    it('sala quitada del mapa: fuera del panel, 400 ROOM_INACTIVE, 404 público y se reactiva', async () => {
+      await seedBookable('r1');
+      await put('f-a', mapa([sala('r1'), sala('r2')]));
+      await put('f-a', mapa([sala('r2')]));
+      assert.equal((await roomModel.findById('r1')).status, 'INACTIVE');
+      const list = await call('GET', '/api/company/rooms', { token: 'a' });
+      assert.ok(!list.body.some((x) => x.id === 'r1'));
+      const vis = await call('PATCH', '/api/company/rooms/r1/visibility', {
+        token: 'a',
+        body: { visible: true },
+      });
+      assert.equal(vis.status, 400);
+      assert.equal(vis.body.error.code, 'ROOM_INACTIVE');
+      const patch = await call('PATCH', '/api/company/rooms/r1', {
+        token: 'a',
+        body: { nombre: 'X' },
+      });
+      assert.equal(patch.status, 400);
+      assert.equal(patch.body.error.code, 'ROOM_INACTIVE');
+      assert.equal((await fetch(`${baseUrl}/api/rooms/r1`)).status, 404);
+      await put('f-a', mapa([sala('r1'), sala('r2')]));
+      assert.equal((await roomModel.findById('r1')).status, 'ACTIVE');
     });
 
     it('planta publicada sin salas reservables: 200 con aviso y sigue PUBLISHED', async () => {

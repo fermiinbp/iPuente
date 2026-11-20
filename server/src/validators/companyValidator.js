@@ -1,7 +1,7 @@
 // Validación del panel de empresa: alta, edificios, plantas, datos de sala y bloqueos.
-import { body } from 'express-validator';
+import { body, query } from 'express-validator';
 
-import { idParam } from './commonValidator.js';
+import { idParam, normalizeStorageUrl, storageImageUrl } from './commonValidator.js';
 
 // Exige un valor escalar (no array ni objeto) para que express-validator no valide por elemento.
 const scalarNumber = (field) => (v) => {
@@ -42,12 +42,7 @@ const fotos = body('fotos')
   .isArray({ max: 20 })
   .withMessage('fotos debe ser una lista de hasta 20 URLs');
 
-const fotosItems = body('fotos.*')
-  .isLength({ max: 2048 })
-  .withMessage('cada foto admite como máximo 2048 caracteres')
-  .bail()
-  .isURL({ protocols: ['https'], require_protocol: true })
-  .withMessage('cada foto debe ser una URL https');
+const fotosItems = body('fotos.*').custom(storageImageUrl).customSanitizer(normalizeStorageUrl);
 
 const numero = (required) => {
   const chain = body('numero');
@@ -154,4 +149,32 @@ export const updateRoom = [
     .withMessage('reservable debe ser true o false'),
   fotos,
   fotosItems,
+];
+
+export const buildingIdOnly = [idParam];
+
+const idQuery = (field) =>
+  query(field)
+    .optional()
+    .isString()
+    .bail()
+    .matches(/^[A-Za-z0-9_-]{1,128}$/)
+    .withMessage(`${field} no es válido`);
+
+export const listRooms = [
+  idQuery('buildingId'),
+  idQuery('floorId'),
+  query('estado')
+    .optional()
+    .isString()
+    .bail()
+    .isIn(['publicada', 'sin_precio', 'oculta'])
+    .withMessage('estado debe ser publicada, sin_precio u oculta'),
+];
+
+export const setRoomVisibility = [
+  idParam,
+  body('visible')
+    .custom((v) => typeof v === 'boolean')
+    .withMessage('visible debe ser true o false'),
 ];

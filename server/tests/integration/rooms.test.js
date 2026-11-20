@@ -4,7 +4,14 @@ import { after, before, beforeEach, describe, it } from 'node:test';
 
 import { setDbForTests } from '../../src/config/config.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
-import { FECHA, getJson, listen, privateWordsIn, seedPublicData } from '../helpers/publicData.js';
+import {
+  FECHA,
+  getJson,
+  listen,
+  privateWordsIn,
+  seedPublicData,
+  seedRoomWithoutPrice,
+} from '../helpers/publicData.js';
 
 const HORAS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
 
@@ -47,14 +54,9 @@ describe('Salas públicas', () => {
       assert.deepEqual(privateWordsIn(text), []);
     });
 
-    it('marca reservable false si la sala no es reservable', async () => {
-      const { status, body } = await getJson(baseUrl, '/api/rooms/r-nobook');
-      assert.equal(status, 200);
-      assert.equal(body.reservable, false);
-    });
-
     for (const [titulo, id] of [
       ['inexistente', 'no-existe'],
+      ['no reservable (oculta)', 'r-nobook'],
       ['INACTIVE', 'r-inactive'],
       ['de una planta DRAFT', 'r-draftfloor'],
       ['de un edificio DRAFT', 'r-in-draft'],
@@ -100,17 +102,20 @@ describe('Salas públicas', () => {
       );
     });
 
-    it('devuelve una lista vacía si la sala no es reservable', async () => {
-      const { status, body } = await getJson(
-        baseUrl,
-        `/api/rooms/r-nobook/availability?fecha=${FECHA}`,
-      );
-      assert.equal(status, 200);
-      assert.deepEqual(body.horasLibres, []);
+    it('responde 404 en la ficha y la disponibilidad de una sala reservable sin precio', async () => {
+      await seedRoomWithoutPrice();
+      for (const path of [
+        '/api/rooms/r-noprice',
+        `/api/rooms/r-noprice/availability?fecha=${FECHA}`,
+      ]) {
+        const { status, body } = await getJson(baseUrl, path);
+        assert.equal(status, 404, path);
+        assert.equal(body.error.code, 'NOT_FOUND');
+      }
     });
 
-    it('responde 404 si la sala no existe o no es pública', async () => {
-      for (const id of ['no-existe', 'r-inactive', 'r-draftfloor']) {
+    it('responde 404 si la sala no existe, no es pública o no es reservable', async () => {
+      for (const id of ['no-existe', 'r-nobook', 'r-inactive', 'r-draftfloor']) {
         const { status, body } = await getJson(
           baseUrl,
           `/api/rooms/${id}/availability?fecha=${FECHA}`,

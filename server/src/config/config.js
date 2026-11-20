@@ -36,7 +36,15 @@ export const config = {
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey,
   },
+  // Bucket de Firebase Storage (mismo valor que VITE_FIREBASE_STORAGE_BUCKET del front). Opcional:
+  // si falta, el validator de URLs de imágenes rechaza cualquier URL.
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET?.trim() || undefined,
 };
+
+// Fija el bucket de Storage en los tests (undefined simula que no está configurado).
+export function setStorageBucketForTests(bucket) {
+  config.storageBucket = bucket;
+}
 
 // Inicializa firebase-admin una sola vez (Netlify reutiliza el proceso entre peticiones).
 function getFirebaseApp() {
