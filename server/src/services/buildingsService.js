@@ -6,6 +6,7 @@ import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
+import { isDeleted, notDeleted } from '../utils/softDelete.js';
 import { normalizeText } from '../utils/text.js';
 import {
   freeSlots,
@@ -79,7 +80,9 @@ export async function searchPublished(filtros = {}) {
     published.filter((b) => normalizeText(b.city).includes(ciudad)),
   );
   const buildingsById = new Map(buildings.map((b) => [b.id, b]));
-  const floorIds = new Set(floors.filter((f) => buildingsById.has(f.buildingId)).map((f) => f.id));
+  const floorIds = new Set(
+    floors.filter((f) => notDeleted(f) && buildingsById.has(f.buildingId)).map((f) => f.id),
+  );
   const allRooms = await roomModel.listByBuildings([...buildingsById.keys()]);
   let rooms = allRooms.filter(
     (r) => floorIds.has(r.floorId) && isBookable(r) && matchesRoom(r, { ...filtros, equipamiento }),
@@ -117,7 +120,7 @@ export async function getPublished(id, fecha = todayString()) {
     throw new HttpError(404, 'NOT_FOUND', 'El edificio no existe');
   }
   const floors = (await floorModel.listByBuilding(id))
-    .filter((f) => f.status === 'PUBLISHED')
+    .filter((f) => f.status === 'PUBLISHED' && !isDeleted(f))
     .sort((a, b) => a.level - b.level);
   const plantas = await Promise.all(
     floors.map(async (f) => ({

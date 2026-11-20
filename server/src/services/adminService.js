@@ -7,6 +7,7 @@ import * as roomModel from '../models/roomModel.js';
 import * as userModel from '../models/userModel.js';
 import { addDays, resolveRange } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
+import { notDeleted } from '../utils/softDelete.js';
 import { normalizeText } from '../utils/text.js';
 import { authClient } from './authService.js';
 import { atHour, buildBookingDetail, toCancellation, toItem } from './bookingsService.js';
@@ -88,7 +89,7 @@ async function companyView(company) {
           email: owner.email ?? null,
         }
       : null,
-    edificios: buildings.map((b) => ({
+    edificios: buildings.filter(notDeleted).map((b) => ({
       id: b.id,
       nombre: b.name,
       ciudad: b.city,
