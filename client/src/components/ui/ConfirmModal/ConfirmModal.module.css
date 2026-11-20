@@ -1,0 +1,13 @@
+/* Estilos de ConfirmModal (CSS Module). */
+.text {
+  margin: 0;
+  line-height: var(--leading-cuerpo);
+  color: var(--crema-suave);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}

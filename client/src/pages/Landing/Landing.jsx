@@ -40,7 +40,7 @@ export default function Landing() {
   // Con tres salas o más, la primera va grande y las demás en fila; con menos, tarjetas iguales.
   const featuredLayout = rooms.length >= 3;
 
-  // De momento no hay ruta con el listado de edificios: se lleva al edificio de ejemplo con la búsqueda.
+  // La búsqueda lleva a /search con la ciudad, la fecha y las personas elegidas.
   function handleSearch(event) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -50,7 +50,7 @@ export default function Landing() {
       if (value) params.set(key, value);
     });
     const query = params.toString();
-    navigate(`/buildings/${BUILDING.id}${query ? `?${query}` : ''}`);
+    navigate(`/search${query ? `?${query}` : ''}`);
   }
 
   return (

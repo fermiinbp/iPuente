@@ -1,0 +1,54 @@
+/* Estilos de Search (CSS Module). Mobile first. */
+.page {
+  min-height: 60vh;
+  background: var(--bosque);
+  color: var(--crema);
+}
+
+.inner {
+  display: grid;
+  gap: var(--space-6);
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: clamp(32px, 5vw, 72px) var(--gutter) var(--espacio-seccion);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-seccion);
+  font-weight: 400;
+  line-height: var(--leading-declaracion);
+  letter-spacing: var(--tracking-titular);
+}
+
+.count {
+  margin: 0;
+  color: var(--crema-suave);
+}
+
+.demoNote {
+  margin: 0;
+  font-size: var(--text-pequeno);
+  color: var(--aviso);
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-5);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 720px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1040px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

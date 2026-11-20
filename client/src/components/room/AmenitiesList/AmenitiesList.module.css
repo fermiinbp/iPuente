@@ -1,0 +1,31 @@
+/* Estilos de AmenitiesList (CSS Module). */
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-pildora);
+  font-size: var(--text-interfaz);
+}
+
+.mark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lima);
+}
+
+.empty {
+  margin: 0;
+  color: var(--crema-suave);
+}

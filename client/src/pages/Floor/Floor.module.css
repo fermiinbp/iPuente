@@ -1,1 +1,202 @@
-/* Estilos de Floor (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de la página de Planta (CSS Module). Mobile first. */
+.page {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  background: var(--bosque-profundo);
+  color: var(--crema);
+}
+
+.status {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-5);
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: var(--space-9) var(--gutter);
+}
+
+/* Fondo vivo: dos manchas que derivan despacio detrás del plano. */
+.aurora {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.aurora span {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  will-change: transform;
+}
+
+.blobA {
+  top: 6%;
+  right: -8%;
+  width: min(60vw, 700px);
+  aspect-ratio: 1;
+  background: color-mix(in srgb, var(--foto-hueco) 85%, transparent);
+  animation: deriva 24s ease-in-out infinite alternate;
+}
+
+.blobB {
+  bottom: -10%;
+  left: -10%;
+  width: min(46vw, 520px);
+  aspect-ratio: 1;
+  background: color-mix(in srgb, var(--bronce) 26%, transparent);
+  animation: deriva 30s ease-in-out infinite alternate-reverse;
+}
+
+.inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6) var(--space-8);
+  align-items: flex-start;
+  max-width: var(--ancho-max);
+  margin: 0 auto;
+  padding: clamp(32px, 5vw, 72px) var(--gutter) var(--espacio-seccion);
+}
+
+.info {
+  display: grid;
+  flex: 1 1 380px;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.back {
+  justify-self: start;
+  color: var(--crema-suave);
+  font-size: var(--text-pequeno);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--lima);
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 3px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-seccion);
+  font-weight: 400;
+  line-height: var(--leading-declaracion);
+  letter-spacing: var(--tracking-titular);
+}
+
+.summary {
+  margin: 0;
+  font-size: var(--text-lead);
+  color: var(--crema-suave);
+}
+
+.date {
+  max-width: 260px;
+}
+
+.demoNote {
+  margin: 0;
+  font-size: var(--text-pequeno);
+  color: var(--aviso);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.room {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--campo-alto);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-plano);
+  background: transparent;
+  color: var(--crema);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.room:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.roomActive {
+  border-color: var(--lima);
+  background: var(--bosque-elevado);
+}
+
+.roomName {
+  font-weight: 600;
+}
+
+.legend {
+  margin: 0;
+}
+
+.stage {
+  position: relative;
+  flex: 1.35 1 540px;
+  min-width: 0;
+  height: clamp(380px, 56vw, 620px);
+}
+
+.canvas {
+  height: 100%;
+}
+
+.note {
+  max-width: 34em;
+  margin: 0;
+  font-size: var(--text-interfaz);
+  color: var(--crema-suave);
+}
+
+/* En móvil el plano va primero, encima de la lista. */
+@media (max-width: 899px) {
+  .stage {
+    order: -1;
+    flex-basis: 100%;
+    height: clamp(260px, 70vw, 340px);
+  }
+}
+
+@media (hover: hover) {
+  .room:hover {
+    border-color: var(--lima);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora span {
+    animation: none;
+  }
+
+  .room {
+    transition: none;
+  }
+}
+
+@keyframes deriva {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(6%, 8%, 0) scale(1.15);
+  }
+}

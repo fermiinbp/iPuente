@@ -1,1 +1,9 @@
-/* Estilos de PaymentResult (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de PaymentResult (CSS Module). */
+.page {
+  display: grid;
+  place-items: center;
+  min-height: 60vh;
+  padding: var(--space-8) var(--gutter);
+  background: var(--bosque);
+  color: var(--crema);
+}

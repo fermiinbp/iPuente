@@ -1,1 +1,11 @@
-/* Estilos de Register (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de Register (CSS Module). */
+.form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.divider {
+  margin: 0;
+  text-align: center;
+  color: var(--crema-suave);
+}

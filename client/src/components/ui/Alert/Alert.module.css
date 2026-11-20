@@ -1,0 +1,25 @@
+/* Estilos de Alert (CSS Module). Texto y borde con el color de interfaz; fondo bosque elevado. */
+.alert {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid currentcolor;
+  border-radius: var(--radio-plano);
+  background: var(--bosque-elevado);
+  font-size: var(--text-interfaz);
+  line-height: var(--leading-cuerpo);
+}
+
+.info {
+  color: var(--info);
+}
+
+.error {
+  color: var(--error);
+}
+
+.warning {
+  color: var(--aviso);
+}
+
+.success {
+  color: var(--exito);
+}

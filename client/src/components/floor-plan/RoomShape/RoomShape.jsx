@@ -118,7 +118,7 @@ export default function RoomShape({
             className={`${styles.chip} ${styles[room.status]} ${selected ? styles.selected : ''} ${encima ? styles.hover : ''}`}
             aria-hidden="true"
           >
-            {room.id}
+            {room.label ?? room.id}
             <span className={styles.long}> · {statusLabel}</span>
           </span>
         </Html>

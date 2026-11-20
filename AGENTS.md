@@ -50,6 +50,8 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/hooks/useMapEditor.js` | Estado y acciones del editor de mapas: salas, selección, dibujar, mover, redimensionar, borrar, deshacer y cargar el borrador de la IA. |
 | `client/src/hooks/useFetch.js` | Hook genérico para llamar a un service y gestionar `data`, `loading` y `error` en las pantallas. |
 | `client/src/services/apiClient.js` | Cliente HTTP único: añade el token de Firebase a cada petición y convierte los errores de la API (`{ error: { code, message } }`) en excepciones. |
+| `client/src/services/authService.js` | Sesión con Firebase Auth: entrar con email o Google, registrarse, salir y recuperar la contraseña. Devuelve los errores ya en español (`authErrorMessage`). |
+| `client/src/components/auth/AuthLayout/AuthLayout.jsx` + `.module.css` | Marco de las pantallas de acceso (entrar, crear cuenta, recuperar contraseña): fondo vivo y tarjeta centrada. |
 | `client/src/services/healthService.js` | Lectura de comprobación: llama a `/api/health` a través de `apiClient`. |
 | `client/src/services/buildingsService.js` | Llamadas públicas de edificios: listado y detalle con sus plantas. |
 | `client/src/services/floorsService.js` | Llamada pública del mapa de una planta con el estado de cada sala en una fecha. |
@@ -93,6 +95,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/building/Building3D/Building3D.jsx` + `.module.css` | Extra: edificio 3D (muro cortina, núcleo, cubierta, plaza) generado a partir de las plantas; la planta seleccionada se abre en vista despiece (Three.js). |
 | `client/src/components/building/Building3D/building3dModel.js` | Medidas en metros y constructores de geometría del edificio 3D (forjados, fachada en instancias, interiores, cubierta, encuadre de cámara). Sin React. |
 | `client/src/components/building/FloorSelector/FloorSelector.jsx` + `.module.css` | Selector compacto de plantas (columna tipo ascensor, tira horizontal en móvil) con indicador deslizante, salas libres por planta y teclado ↑/↓. |
+| `client/src/components/building/FloorList/FloorList.jsx` + `.module.css` | Plantas de un edificio de la más alta a la más baja, cada una con su enlace al plano y sus salas libres en la fecha elegida. |
 | `client/src/components/building/NearbyMap/NearbyMap.jsx` + `.module.css` | Sección «Alrededor»: mapa vectorial (MapLibre + OpenFreeMap, sin API key) con calles, edificios 3D, iPuente en bronce, vuelo de cámara y ruta al elegir un lugar. |
 | `client/src/components/building/NearbyMap/mapStyle.js` | Descarga el estilo positron de OpenFreeMap y lo recolorea con la paleta Bosque leyendo las variables de `:root`. |
 | `client/src/components/building/NearbyMap/PoiMarker/PoiMarker.jsx` + `.module.css` | Pin de un lugar sobre el mapa: número y, si está activo, nombre (lima). Decorativo; la lista es el equivalente accesible. |

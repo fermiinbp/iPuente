@@ -1,7 +1,9 @@
 // Cabecera: logo, navegación centrada, acceso y CTA. Debajo de 900 px la navegación pasa a un panel «Menú».
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import Button from '@/components/ui/Button/Button.jsx';
+import { useAuth } from '@/hooks/useAuth.js';
+import { signOutUser } from '@/services/authService.js';
 import logo from '@/assets/images/ipuente-logo-sobre-oscuro.svg';
 import styles from './Header.module.css';
 
@@ -12,17 +14,25 @@ const NAV_LINKS = [
   { to: '/#pie', label: 'Contacto' },
 ];
 
-// Enlaces por rol, sin renderizar hasta que el AuthProvider exponga el rol.
-// eslint-disable-next-line no-unused-vars
-const ROLE_LINKS = [
-  { to: '/my-bookings', label: 'Mis reservas', role: 'CLIENT' },
-  { to: '/company', label: 'Empresa', role: 'COMPANY' },
-  { to: '/admin', label: 'Admin', role: 'ADMIN' },
+// Enlaces de la cuenta con sesión iniciada: «Mis reservas» para todos y el panel que corresponda al rol.
+const ACCOUNT_LINKS = [
+  { to: '/my-bookings', label: 'Mis reservas', roles: ['CLIENT', 'COMPANY', 'ADMIN'] },
+  { to: '/company', label: 'Panel de empresa', roles: ['COMPANY'] },
+  { to: '/admin', label: 'Administración', roles: ['ADMIN'] },
 ];
 
 export default function Header() {
   const [openPath, setOpenPath] = useState(null);
   const { pathname, hash } = useLocation();
+  const navigate = useNavigate();
+  const { user, role, loading } = useAuth();
+  const accountLinks = user ? ACCOUNT_LINKS.filter((link) => link.roles.includes(role)) : [];
+
+  async function handleLogout() {
+    setOpenPath(null);
+    await signOutUser();
+    navigate('/');
+  }
   const buttonRef = useRef(null);
   const routeKey = `${pathname}${hash}`;
   // El panel solo está abierto en la ruta en la que se abrió: al cambiar de ruta se cierra.
@@ -73,9 +83,26 @@ export default function Header() {
         </nav>
 
         <div className={styles.actions}>
-          <Link to="/login" className={`${styles.navLink} ${styles.login}`}>
-            Iniciar sesión
-          </Link>
+          {!loading && user ? (
+            <>
+              {accountLinks.map((link) => (
+                <Link key={link.to} to={link.to} className={`${styles.navLink} ${styles.login}`}>
+                  {link.label}
+                </Link>
+              ))}
+              <button
+                type="button"
+                className={`${styles.navLink} ${styles.login} ${styles.logout}`}
+                onClick={handleLogout}
+              >
+                Cerrar sesión
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className={`${styles.navLink} ${styles.login}`}>
+              Iniciar sesión
+            </Link>
+          )}
           <Button to="/company/register" className={styles.cta}>
             Publica tu oficina
           </Button>
@@ -98,9 +125,26 @@ export default function Header() {
                 {renderLink(link, styles.panelLink)}
               </span>
             ))}
-            <Link to="/login" className={styles.panelLink} onClick={close}>
-              Iniciar sesión
-            </Link>
+            {!loading && user ? (
+              <>
+                {accountLinks.map((link) => (
+                  <Link key={link.to} to={link.to} className={styles.panelLink} onClick={close}>
+                    {link.label}
+                  </Link>
+                ))}
+                <button
+                  type="button"
+                  className={`${styles.panelLink} ${styles.logout}`}
+                  onClick={handleLogout}
+                >
+                  Cerrar sesión
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className={styles.panelLink} onClick={close}>
+                Iniciar sesión
+              </Link>
+            )}
             <Link
               to="/company/register"
               className={`${styles.panelLink} ${styles.panelCta}`}

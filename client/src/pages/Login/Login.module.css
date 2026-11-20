@@ -1,1 +1,23 @@
-/* Estilos de Login (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de Login (CSS Module). */
+.form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.forgot {
+  justify-self: start;
+  font-size: var(--text-pequeno);
+  color: var(--crema-suave);
+  text-underline-offset: 3px;
+}
+
+.forgot:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 3px;
+}
+
+.divider {
+  margin: 0;
+  text-align: center;
+  color: var(--crema-suave);
+}
