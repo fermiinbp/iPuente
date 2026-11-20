@@ -1,80 +1,249 @@
-/* Estilos de DashboardLayout (CSS Module). Provisionales hasta el diseño final. */
+/* Estilos de DashboardLayout (CSS Module). Mobile first: el menú lateral aparece desde 900 px; por debajo,
+   el botón «Menú» de la barra lo abre como panel deslizante. */
 .dashboard {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-4);
+  min-height: 100vh;
 }
 
 .sidebar {
-  padding: var(--space-4);
-  border: 1px solid var(--linea);
+  display: none;
 }
 
-.title {
-  font-weight: 600;
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--campo-alto);
+  text-decoration: none;
+}
+
+.logo img {
+  display: block;
+  height: 32px;
+  width: auto;
+}
+
+.nav {
+  margin-top: var(--space-5);
 }
 
 .menu {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
+  flex-direction: column;
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.menuLink {
-  display: inline-flex;
+.menuLink,
+.logout {
+  display: flex;
   align-items: center;
+  width: 100%;
   min-height: var(--campo-alto);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radio-plano);
+  background: transparent;
   color: var(--crema-suave);
+  font-family: inherit;
+  font-size: var(--text-menu);
+  font-weight: 500;
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
   transition:
     color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
     transform var(--dur-fast) var(--ease-out);
 }
 
-.menuLink:active {
+.menuLink:active,
+.logout:active,
+.menuButton:active {
   transform: scale(0.97);
 }
 
 .active {
+  background: var(--bosque-elevado);
   color: var(--lima);
-  font-weight: 600;
+}
+
+.logout {
+  margin-top: auto;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  position: sticky;
+  z-index: var(--z-cabecera);
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 80px;
+  padding-inline: var(--gutter);
+  border-bottom: 1px solid var(--linea);
+  background: var(--bosque);
+  color: var(--crema);
+}
+
+.topbarBrand {
+  display: flex;
+  min-width: 0;
+}
+
+.account {
+  margin-left: auto;
+}
+
+.menuButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  min-height: var(--campo-alto);
+  padding: 0 18px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-pildora);
+  background: var(--bosque-elevado);
+  color: var(--crema);
+  font-family: inherit;
+  font-size: var(--text-menu);
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
 }
 
 .content {
   flex: 1;
 }
 
+.drawerLayer {
+  position: fixed;
+  z-index: var(--z-menu);
+  inset: 0;
+  font-family: var(--font-body);
+}
+
+.veil {
+  position: absolute;
+  inset: 0;
+  background: var(--velo-modal);
+  animation: aparecer var(--dur-media) var(--ease-out);
+}
+
+.drawer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(320px, 85vw);
+  padding: 0 var(--space-4) var(--space-5);
+  overflow-y: auto;
+  border-right: 1px solid var(--linea);
+  background: var(--bosque-profundo);
+  color: var(--crema);
+  box-shadow: var(--sombra-flotante);
+  animation: entrarPanel var(--dur-media) var(--ease-out);
+}
+
+.drawerTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 80px;
+}
+
 @media (hover: hover) and (pointer: fine) {
-  .menuLink:hover {
+  .menuLink:hover,
+  .logout:hover {
+    background: var(--bosque-elevado);
     color: var(--crema);
   }
 
   .active:hover {
     color: var(--lima);
   }
+
+  .menuButton:hover {
+    border-color: var(--crema-suave);
+  }
 }
 
-@media (min-width: 48rem) {
-  .dashboard {
-    flex-direction: row;
-  }
-
+@media (min-width: 900px) {
   .sidebar {
-    flex: 0 0 12rem;
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex: 0 0 240px;
+    flex-direction: column;
+    height: 100vh;
+    padding: var(--space-5) var(--space-4);
+    overflow-y: auto;
+    border-right: 1px solid var(--linea);
+    background: var(--bosque-profundo);
   }
 
-  .menu {
-    flex-direction: column;
-    gap: var(--space-2);
+  .menuButton,
+  .topbarBrand,
+  .drawerLayer {
+    display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .menuLink {
+  .veil,
+  .drawer {
+    animation: none;
+  }
+
+  .menuLink,
+  .logout,
+  .menuButton {
     transition: none;
+  }
+
+  .menuLink:active,
+  .logout:active,
+  .menuButton:active {
+    transform: none;
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes entrarPanel {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
   }
 }

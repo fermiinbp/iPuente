@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router';
 import Button from '@/components/ui/Button/Button.jsx';
 import MobileMenu from '@/components/layout/MobileMenu/MobileMenu.jsx';
 import UserMenu from '@/components/layout/UserMenu/UserMenu.jsx';
+import { ACCOUNT_ITEMS, LOGOUT, displayName } from '@/config/accountMenu.js';
 import { ROLES } from '@/config/constants.js';
 import { useAuth } from '@/hooks/useAuth.js';
 import logo from '@/assets/images/ipuente-logo-sobre-oscuro.svg';
@@ -23,27 +24,6 @@ const ROLE_LINKS = {
   [ROLES.COMPANY]: { to: '/company', label: 'Empresa' },
   [ROLES.ADMIN]: { to: '/admin', label: 'Admin' },
 };
-
-// Opciones sin destino todavía: se pintan como botones que solo cierran el menú.
-// TODO(CLI001): «Cerrar sesión» debe llamar a logout() de services/authService.js (signOut de Firebase).
-const LOGOUT = { label: 'Cerrar sesión', separated: true };
-
-// Opciones de cuenta por rol (wireframes 24). En empresa y admin el menú solo lleva «Mi cuenta» y «Cerrar sesión».
-// TODO(CLI013): enlazar «Mis datos», «Cambiar contraseña» y «Mi cuenta» a la página de cuenta (p. ej. /account).
-const ACCOUNT_ITEMS = {
-  [ROLES.CLIENT]: [
-    { to: '/my-bookings', label: 'Mis reservas' },
-    { label: 'Mis datos' },
-    { label: 'Cambiar contraseña', desktopOnly: true },
-  ],
-  [ROLES.COMPANY]: [{ label: 'Mi cuenta' }],
-  [ROLES.ADMIN]: [{ label: 'Mi cuenta' }],
-};
-
-// Nombre visible: el de Firebase o, si no lo hay, la parte del email antes de la @.
-function displayName(user) {
-  return user.displayName?.trim() || user.email?.split('@')[0] || 'Mi cuenta';
-}
 
 export default function Header() {
   const { user, role, loading } = useAuth();
