@@ -24,7 +24,25 @@
 
 .count {
   margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-cuerpo);
+  font-weight: 400;
   color: var(--crema-suave);
+}
+
+.filters {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.filterFields {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.more {
+  display: flex;
+  justify-content: center;
 }
 
 .demoNote {
@@ -42,6 +60,15 @@
 }
 
 @media (min-width: 720px) {
+  .filters {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+
+  .filterFields {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
+
   .grid {
     grid-template-columns: repeat(2, 1fr);
   }
