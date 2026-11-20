@@ -1,19 +1,24 @@
 // Guarda de ruta por rol (COMPANY o ADMIN): si el usuario no lo tiene, vuelve a la home.
-// Sin sesión va a /login. Solo oculta pantallas; la seguridad real está en la API.
-import { Navigate, Outlet, useLocation } from 'react-router';
+// Solo oculta pantallas; la seguridad real está en la API. Se usa como ruta de diseño: `<RoleRoute role={ROLES.ADMIN} />`.
+import { Navigate, Outlet } from 'react-router';
+import PageContainer from '@/components/ui/PageContainer/PageContainer.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { useAuth } from '@/hooks/useAuth.js';
 
-export default function RoleRoute({ roles }) {
-  const { user, role, loading } = useAuth();
-  const location = useLocation();
+export default function RoleRoute({ role }) {
+  const { role: userRole, loading } = useAuth();
 
-  if (loading) return <Spinner label="Comprobando tu sesión…" />;
-  if (!user) {
+  if (loading) {
     return (
-      <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />
+      <PageContainer>
+        <Spinner />
+      </PageContainer>
     );
   }
-  if (!roles.includes(role)) return <Navigate to="/" replace />;
+
+  if (userRole !== role) {
+    return <Navigate to="/" replace />;
+  }
+
   return <Outlet />;
 }

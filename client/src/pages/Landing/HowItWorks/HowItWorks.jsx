@@ -1,7 +1,7 @@
 // Sección «Cómo funciona»: tres pasos numerados, cada uno con un mini-visual hecho con HTML y CSS.
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
-import { HOW_IT_WORKS_STEPS } from './data.js';
+import { HOW_IT_WORKS_STEPS } from '../data.js';
 import styles from './HowItWorks.module.css';
 
 // Paso 1: las plantas del edificio, con la elegida resaltada. Datos de ejemplo.

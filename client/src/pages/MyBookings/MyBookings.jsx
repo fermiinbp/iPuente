@@ -97,7 +97,7 @@ export default function MyBookings() {
     <div className={styles.page}>
       <div className={styles.inner}>
         <h1 className={styles.title}>Mis reservas</h1>
-        {notice && <Alert tone="success">{notice}</Alert>}
+        {notice && <Alert type="success">{notice}</Alert>}
         {content}
       </div>
 

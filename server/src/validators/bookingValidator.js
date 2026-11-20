@@ -5,7 +5,7 @@ import { isValidDateString, todayString } from '../utils/dates.js';
 import { idParam } from './commonValidator.js';
 
 // Id de la sala en el body, con el mismo formato que idParam.
-const roomIdBody = body('roomId')
+export const roomIdBody = body('roomId')
   .isString()
   .trim()
   .notEmpty()
@@ -16,14 +16,14 @@ const roomIdBody = body('roomId')
   .withMessage('roomId no es válido');
 
 // Fecha real AAAA-MM-DD que no sea anterior a hoy.
-const fechaBody = body('fecha')
+export const fechaBody = body('fecha')
   .custom((value) => isValidDateString(value))
   .withMessage('fecha debe ser AAAA-MM-DD')
   .bail()
   .custom((value) => value >= todayString())
   .withMessage('fecha no puede ser anterior a hoy');
 
-const inicioBody = body('inicio')
+export const inicioBody = body('inicio')
   .isInt({ min: 0, max: 23 })
   .withMessage('inicio debe ser un entero entre 0 y 23')
   .bail()
@@ -33,7 +33,7 @@ const inicioBody = body('inicio')
   )
   .withMessage('No se puede reservar una franja que ya ha empezado');
 
-const finBody = body('fin')
+export const finBody = body('fin')
   .isInt({ min: 1, max: 24 })
   .withMessage('fin debe ser un entero entre 1 y 24')
   .bail()

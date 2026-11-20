@@ -22,3 +22,14 @@ export function listByRoom(roomId, { from, to, tx } = {}) {
   if (to) query = query.where('startDate', '<', to);
   return runQuery(query, { orderBy: 'startDate', tx });
 }
+
+// Reservas de una empresa que empiezan en [from, to), las más recientes primero (índice
+// companyId + startDate DESC). Máximo `limit` resultados.
+export function listByCompanyInRange(companyId, { from, to, limit = 500 }) {
+  const query = base
+    .collection()
+    .where('companyId', '==', companyId)
+    .where('startDate', '>=', from)
+    .where('startDate', '<', to);
+  return runQuery(query, { orderBy: 'startDate', direction: 'desc', limit });
+}

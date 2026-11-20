@@ -27,6 +27,14 @@ describe('Documentación de la API (Swagger)', () => {
     assert.ok(op.responses['401'], 'falta la respuesta 401');
   });
 
+  it('los registros y /companies/me aparecen documentados', () => {
+    assert.ok(swaggerSpec.paths['/auth/register/client']?.post, 'falta register/client');
+    assert.ok(swaggerSpec.paths['/auth/register/company']?.post, 'falta register/company');
+    const me = swaggerSpec.paths['/companies/me']?.get;
+    assert.ok(me, 'GET /companies/me no está en la especificación');
+    assert.deepEqual(me.security, [{ bearerAuth: [] }]);
+  });
+
   describe('GET /api/docs', () => {
     let server;
     let baseUrl;

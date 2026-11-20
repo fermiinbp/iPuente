@@ -25,7 +25,7 @@ export default function BookingForm({
   onSubmit,
 }) {
   if (!bookable) {
-    return <Alert tone="info">Esta sala no se puede reservar online.</Alert>;
+    return <Alert type="info">Esta sala no se puede reservar online.</Alert>;
   }
 
   function handleSubmit(event) {
@@ -48,9 +48,9 @@ export default function BookingForm({
       {loadingHours ? (
         <Spinner label="Cargando las horas libres…" />
       ) : hoursError ? (
-        <Alert tone="error">{hoursError}</Alert>
+        <Alert type="error">{hoursError}</Alert>
       ) : freeHours.length === 0 ? (
-        <Alert tone="info">No quedan horas libres este día. Prueba con otra fecha.</Alert>
+        <Alert type="info">No quedan horas libres este día. Prueba con otra fecha.</Alert>
       ) : (
         <AvailabilityCalendar
           freeHours={freeHours}
@@ -62,7 +62,7 @@ export default function BookingForm({
 
       <BookingSummary fecha={fecha} selection={selection} pricePerHour={pricePerHour} />
 
-      {error && <Alert tone="error">{error}</Alert>}
+      {error && <Alert type="error">{error}</Alert>}
 
       <Button type="submit" loading={submitting} disabled={!selection}>
         {loggedIn ? 'Reservar' : 'Inicia sesión para reservar'}

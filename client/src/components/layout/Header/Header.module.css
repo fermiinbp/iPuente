@@ -22,7 +22,7 @@
 .logo {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--campo-alto);
   text-decoration: none;
 }
 
@@ -52,7 +52,7 @@
 .panelLink {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--campo-alto);
   color: var(--crema);
   font-size: var(--text-menu);
   font-weight: 500;
@@ -119,7 +119,7 @@
 .menuButton {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
+  min-height: var(--campo-alto);
   padding: 0 18px;
   border: 1px solid var(--linea);
   border-radius: var(--radio-pildora);

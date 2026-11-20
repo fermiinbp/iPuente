@@ -1,0 +1,23 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-plano);
+  color: var(--crema);
+}
+
+.value {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-titulo-paso);
+  line-height: 1.1;
+}
+
+.label {
+  margin: 0;
+  font-size: var(--text-pequeno);
+  color: var(--crema-suave);
+}

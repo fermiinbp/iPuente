@@ -1,0 +1,68 @@
+/* Móvil primero: los pasos en columna; desde 768 px, en fila. */
+.stepper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--crema-suave);
+  font-size: var(--text-cuerpo);
+}
+
+.marker {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--borde-control);
+  border-radius: var(--radio-pildora);
+  font-size: var(--text-pequeno);
+  font-weight: 600;
+}
+
+.done {
+  color: var(--crema);
+}
+
+.done .marker {
+  border-color: var(--crema);
+}
+
+.current {
+  color: var(--crema);
+  font-weight: 600;
+}
+
+.current .marker {
+  border-color: var(--lima);
+  background: var(--lima);
+  color: var(--bosque-profundo);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 768px) {
+  .stepper {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+  }
+}

@@ -8,16 +8,16 @@ import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
-import CompaniesCta from './CompaniesCta.jsx';
+import CompaniesCta from './CompaniesCta/CompaniesCta.jsx';
 import { BUILDING, FEATURED_ROOMS, ROOM_FILTERS } from './data.js';
-import FloorSection from './FloorSection.jsx';
+import FloorSection from './FloorSection/FloorSection.jsx';
 import HeroStory from './HeroStory.jsx';
-import HowItWorks from './HowItWorks.jsx';
+import HowItWorks from './HowItWorks/HowItWorks.jsx';
 import styles from './Landing.module.css';
-import LandingLoader from './LandingLoader.jsx';
+import LandingLoader from './LandingLoader/LandingLoader.jsx';
 import { heroEntranceDelay } from './loaderSession.js';
-import NearbySection from './NearbySection.jsx';
-import RoomFilters from './RoomFilters.jsx';
+import NearbySection from './NearbySection/NearbySection.jsx';
+import CategoryFilters from '@/components/search/CategoryFilters/CategoryFilters.jsx';
 
 export default function Landing() {
   usePageTitle('Salas por horas');
@@ -102,7 +102,7 @@ export default function Landing() {
       <Section id="salas" titleId="salas-titulo" decor="grid">
         <div className={styles.roomsHead}>
           <SectionTitle id="salas-titulo">Salas destacadas</SectionTitle>
-          <RoomFilters filters={ROOM_FILTERS} active={filter} onChange={setFilter} />
+          <CategoryFilters filters={ROOM_FILTERS} active={filter} onChange={setFilter} />
         </div>
         {rooms.length > 0 ? (
           <ul className={`${styles.grid} ${featuredLayout ? styles.gridFeatured : ''}`}>

@@ -1,7 +1,7 @@
 // Filtro de salas por tipo: grupo de botones con aria-pressed (solo uno activo).
-import styles from './RoomFilters.module.css';
+import styles from './CategoryFilters.module.css';
 
-export default function RoomFilters({ filters, active, onChange }) {
+export default function CategoryFilters({ filters, active, onChange }) {
   return (
     <div role="group" aria-label="Filtrar por tipo de sala" className={styles.group}>
       {filters.map((filter) => {

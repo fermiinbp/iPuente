@@ -80,7 +80,7 @@ export default function Login() {
         <Link className={styles.forgot} to="/forgot-password">
           ¿Has olvidado la contraseña?
         </Link>
-        {error && <Alert tone="error">{error}</Alert>}
+        {error && <Alert type="error">{error}</Alert>}
         <Button type="submit" loading={submitting}>
           Entrar
         </Button>

@@ -26,5 +26,9 @@
 }
 
 .action {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
   margin-top: var(--space-2);
 }

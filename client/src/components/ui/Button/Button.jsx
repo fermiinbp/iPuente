@@ -1,11 +1,15 @@
 // Botón en píldora. Con `to` se pinta como enlace (<a href>); sin `to`, como <button>.
 // Variantes: primary (por defecto), secondary y ghost. `loading` muestra un spinner y bloquea el clic.
+// Tamaños: md (44 px) y lg (52 px). Sin `size`, primary es lg y el resto md.
 import { Link } from 'react-router';
 import Spinner from '../Spinner/Spinner';
 import styles from './Button.module.css';
 
+const SIZES = { md: styles.md, lg: styles.lg };
+
 export default function Button({
   variant = 'primary',
+  size,
   to,
   loading = false,
   disabled = false,
@@ -15,7 +19,9 @@ export default function Button({
   ...rest
 }) {
   const inactive = disabled || loading;
-  const classes = [styles.button, styles[variant] || styles.primary, className]
+  const variantClass = styles[variant] ? variant : 'primary';
+  const sizeClass = SIZES[size] || (variantClass === 'primary' ? styles.lg : styles.md);
+  const classes = [styles.button, styles[variantClass], sizeClass, className]
     .filter(Boolean)
     .join(' ');
   const content = (

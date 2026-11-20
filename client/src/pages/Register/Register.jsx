@@ -103,7 +103,7 @@ export default function Register() {
           autoComplete="new-password"
           error={fieldErrors.repeat}
         />
-        {error && <Alert tone="error">{error}</Alert>}
+        {error && <Alert type="error">{error}</Alert>}
         <Button type="submit" loading={submitting}>
           Crear cuenta
         </Button>

@@ -1,0 +1,99 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* Toda la fila es clicable y mide 44 px de alto como mínimo (objetivo táctil). */
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--campo-alto);
+  color: var(--crema);
+  font-size: var(--text-cuerpo);
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+/* Casilla dibujada con CSS: marcada en lima, el color de lo seleccionado. */
+.box {
+  appearance: none;
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 1px solid var(--campo-borde);
+  border-radius: var(--radio-chip);
+  background: var(--campo-fondo);
+  cursor: inherit;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+/* Marca de verificación: oculta hasta que la casilla está marcada. */
+.box::before {
+  content: '';
+  width: 6px;
+  height: 11px;
+  border-right: 2px solid var(--bosque-profundo);
+  border-bottom: 2px solid var(--bosque-profundo);
+  transform: translateY(-1px) rotate(45deg) scale(0);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.box:checked {
+  border-color: var(--lima);
+  background: var(--lima);
+}
+
+.box:checked::before {
+  transform: translateY(-1px) rotate(45deg) scale(1);
+}
+
+.box:focus-visible {
+  border-color: var(--campo-borde-foco);
+}
+
+.box.invalid {
+  border-color: var(--error);
+}
+
+.box:disabled {
+  border-color: var(--campo-desactivado-texto);
+  background: var(--campo-desactivado-fondo);
+}
+
+.box:disabled::before {
+  border-color: var(--campo-desactivado-texto);
+}
+
+.disabled {
+  color: var(--campo-desactivado-texto);
+  cursor: not-allowed;
+}
+
+.label a {
+  text-decoration: underline;
+}
+
+.hint,
+.error {
+  margin: 0;
+  font-size: var(--text-pequeno);
+  line-height: 1.4;
+}
+
+.hint {
+  color: var(--crema-suave);
+}
+
+.error {
+  color: var(--error);
+  border-left: 3px solid var(--error);
+  padding-left: var(--space-2);
+}

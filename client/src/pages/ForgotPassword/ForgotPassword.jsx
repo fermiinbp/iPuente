@@ -47,7 +47,7 @@ export default function ForgotPassword() {
       footer={<Link to="/login">Volver a iniciar sesión</Link>}
     >
       {sent ? (
-        <Alert tone="success">
+        <Alert type="success">
           Si hay una cuenta con ese correo, te hemos enviado el enlace. Revisa también la carpeta de
           spam.
         </Alert>
@@ -61,7 +61,7 @@ export default function ForgotPassword() {
             autoComplete="email"
             error={emailError}
           />
-          {error && <Alert tone="error">{error}</Alert>}
+          {error && <Alert type="error">{error}</Alert>}
           <Button type="submit" loading={submitting}>
             Enviar enlace
           </Button>

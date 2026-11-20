@@ -18,7 +18,7 @@ export default function ConfirmModal({
   return (
     <Modal open={open} title={title} onClose={loading ? () => {} : onCancel}>
       {text && <p className={styles.text}>{text}</p>}
-      {error && <Alert tone="error">{error}</Alert>}
+      {error && <Alert type="error">{error}</Alert>}
       <div className={styles.actions}>
         <Button variant="ghost" onClick={onCancel} disabled={loading}>
           {cancelLabel}
