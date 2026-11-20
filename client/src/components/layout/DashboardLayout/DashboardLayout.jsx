@@ -71,7 +71,7 @@ export default function DashboardLayout({ title, links = [] }) {
     return () => query.removeEventListener('change', onChange);
   }, [open, closeMenu]);
 
-  const companyName = role === ROLES.COMPANY && company?.uid === uid ? company.name : null;
+  const companyName = role === ROLES.COMPANY && company?.uid === uid ? company.nombreEmpresa : null;
   const name = companyName || displayName(user);
   const badge = ROLE_BADGES[role];
   const navigate = useNavigate();

@@ -113,7 +113,9 @@ function Welcome() {
   return (
     <section className={styles.welcome} aria-labelledby="bienvenida">
       <h2 id="bienvenida" className={styles.welcomeTitle}>
-        {company?.name ? `Te damos la bienvenida, ${company.name}` : 'Te damos la bienvenida'}
+        {company?.nombreEmpresa
+          ? `Te damos la bienvenida, ${company.nombreEmpresa}`
+          : 'Te damos la bienvenida'}
       </h2>
       <p className={styles.welcomeText}>Tres pasos para publicar tus primeras salas.</p>
       <ol className={styles.steps}>

@@ -102,6 +102,7 @@ export default function CompanyRegister() {
       await registerCompany({
         email: account.email.trim(),
         password: account.password,
+        condiciones: account.condiciones,
         ...companyPayload(company),
       });
       setSent(true);
