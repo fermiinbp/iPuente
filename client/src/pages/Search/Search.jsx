@@ -1,7 +1,9 @@
 // Resultados de búsqueda: edificios con salas libres según ciudad, fecha y personas, con filtros de tipo, precio y orden.
 // Todos los filtros viven en la URL (se puede compartir o recargar). El servidor filtra y ordena; aquí solo se pintan.
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
+import { BUILDING as NEARBY_BUILDING } from '@/config/nearby.js';
+import ErrorBoundary from '@/components/three/ErrorBoundary/ErrorBoundary.jsx';
 import BuildingCard from '@/components/search/BuildingCard/BuildingCard.jsx';
 import CategoryFilters from '@/components/search/CategoryFilters/CategoryFilters.jsx';
 import SearchBar from '@/components/search/SearchBar/SearchBar.jsx';
@@ -15,7 +17,11 @@ import { useFetch } from '@/hooks/useFetch.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import { BUILDING } from '@/pages/Landing/data.js';
 import { getBuildings } from '@/services/buildingsService.js';
+import { hasWebGL } from '@/utils/webgl.js';
 import styles from './Search.module.css';
+
+// El mapa (MapLibre) solo se descarga cuando hay resultados con posición.
+const SearchMap = lazy(() => import('@/components/search/SearchMap/SearchMap.jsx'));
 
 const PAGE_SIZE = 6;
 const MAX_LIMIT = 50; // máximo que acepta la API por petición
@@ -43,6 +49,8 @@ const DEMO_BUILDINGS = [
     direccion: '',
     ciudad: BUILDING.city,
     foto: null,
+    latitud: NEARBY_BUILDING.lat,
+    longitud: NEARBY_BUILDING.lng,
   },
 ];
 
@@ -54,6 +62,11 @@ export default function Search() {
   usePageTitle('Buscar salas');
   const [searchParams, setSearchParams] = useSearchParams();
   const barRef = useRef(null);
+  // Edificio resaltado (tarjeta y pin se iluminan a la vez) y, en móvil, si se ve el mapa en lugar de la lista.
+  const [activeId, setActiveId] = useState(null);
+  const [showMap, setShowMap] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
+  const handleMapUnavailable = useCallback(() => setMapFailed(true), []);
   const city = searchParams.get('city') ?? '';
   const date = searchParams.get('date') ?? '';
   const people = searchParams.get('people') ?? '';
@@ -124,6 +137,11 @@ export default function Search() {
   const hasFilters = Boolean(city || date || people || tipo || precioMax || orden);
   const activeType = TYPES.find((type) => type.value === tipo)?.label ?? TYPES[0].label;
 
+  const mapAvailable =
+    !mapFailed &&
+    hasWebGL() &&
+    buildings.some((b) => Number.isFinite(b.latitud) && Number.isFinite(b.longitud));
+
   let results;
   if (loading && !shown) {
     results = <Spinner label="Buscando edificios…" />;
@@ -162,7 +180,14 @@ export default function Search() {
         </h2>
         <ul className={styles.grid} aria-busy={loading}>
           {buildings.map((building) => (
-            <li key={building.id}>
+            <li
+              key={building.id}
+              className={building.id === activeId ? styles.cardActive : undefined}
+              onMouseEnter={() => setActiveId(building.id)}
+              onMouseLeave={() => setActiveId(null)}
+              onFocus={() => setActiveId(building.id)}
+              onBlur={() => setActiveId(null)}
+            >
               <BuildingCard building={building} date={date} people={people} />
             </li>
           ))}
@@ -234,7 +259,34 @@ export default function Search() {
             Estás viendo datos de ejemplo: la API no está disponible.
           </p>
         )}
-        {results}
+        {mapAvailable && (
+          <div className={styles.mapToggle}>
+            <Button
+              variant="secondary"
+              aria-pressed={showMap}
+              onClick={() => setShowMap((v) => !v)}
+            >
+              {showMap ? 'Ver lista' : 'Ver mapa'}
+            </Button>
+          </div>
+        )}
+        <div className={`${styles.layout} ${mapAvailable ? styles.withMap : ''}`}>
+          <div className={showMap ? styles.listHidden : styles.list}>{results}</div>
+          {mapAvailable && (
+            <div className={`${styles.mapPane} ${showMap ? styles.mapPaneOpen : ''}`}>
+              <ErrorBoundary fallback={null}>
+                <Suspense fallback={<p className={styles.mapNote}>Cargando el mapa…</p>}>
+                  <SearchMap
+                    buildings={buildings}
+                    activeId={activeId}
+                    onActivate={setActiveId}
+                    onUnavailable={handleMapUnavailable}
+                  />
+                </Suspense>
+              </ErrorBoundary>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

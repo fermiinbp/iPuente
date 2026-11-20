@@ -1,0 +1,55 @@
+/* Estilos de SearchMap (CSS Module). El contenedor ocupa el alto que le dé la página. */
+.map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  overflow: hidden;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque-profundo);
+}
+
+.pinWrap {
+  position: relative;
+  display: grid;
+  justify-items: center;
+}
+
+.pin {
+  position: relative;
+  display: block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--crema);
+  border-radius: 50% 50% 50% 0;
+  background: var(--bronce);
+  transform: rotate(-45deg);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.pinActive {
+  background: var(--lima);
+  transform: rotate(-45deg) scale(1.35);
+}
+
+.pinName {
+  position: absolute;
+  bottom: 140%;
+  padding: 3px 9px;
+  border-radius: var(--radio-chip);
+  background: var(--crema);
+  color: var(--bosque);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pin {
+    transition: none;
+  }
+}
