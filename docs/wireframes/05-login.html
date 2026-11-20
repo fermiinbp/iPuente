@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Iniciar sesión</title><link rel="stylesheet" href="wireframe.css"></head><body>
+
+<div class="wrap" style="display:grid;place-items:center;min-height:640px;padding:40px 20px">
+ <div class="card" style="width:min(100%,440px);padding:32px">
+  <span class="logo">iPuente</span>
+  <h1 style="margin-top:18px;font-size:34px">Iniciar sesión</h1>
+  <p class="mut">Entra para reservar salas y ver tus reservas.</p>
+  <div class="field"><label>Correo</label><div class="input">tu@email.com</div></div>
+  <div class="field"><label>Contraseña</label><div class="input">••••••••</div></div>
+  <p style="text-decoration:underline">¿Has olvidado la contraseña?</p>
+  <span class="btn block">Entrar</span>
+  <p class="center mut" style="margin:14px 0">o</p>
+  <span class="btn o block">Continuar con Google</span>
+  <p class="mut center" style="margin-top:18px">¿No tienes cuenta? <u>Crea una</u></p>
+ </div></div>
+<div class="notes"><p class="note"><b>1</b><span>Pantalla sin cabecera ni pie (AuthLayout): el logo vuelve al inicio. Un solo acceso para cliente, empresa y admin.</span></p><p class="note"><b>2</b><span>Tras entrar se va a la página de la que se venía; si no, según el rol: cliente a la home, empresa a /company y admin a /admin.</span></p><p class="note"><b>3</b><span>Los errores salen en español bajo cada campo o en un aviso (credenciales incorrectas, demasiados intentos, sin conexión). El botón no se pulsa dos veces.</span></p><p class="note"><b>4</b><span>Pendiente de diseño: imagen del edificio a un lado. «Continuar con Google» depende de la configuración de Google Cloud.</span></p></div>
+</body></html>

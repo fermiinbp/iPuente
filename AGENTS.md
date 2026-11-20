@@ -366,6 +366,8 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | Archivo | Para qué sirve |
 | --- | --- |
 | `docs/images/` | Capturas, diagramas exportados y material para la presentación. |
+| `docs/images/wireframes-v2/` | PNG de los wireframes de cliente (versión 2), en escritorio y móvil, generados desde `docs/wireframes/`. |
+| `docs/wireframes/` | Wireframes de cliente en HTML (reflejan lo implementado, con notas de lo pendiente), su estilo `wireframe.css`, el `README.md` y `exportar.py`, que los pasa a PNG con Chrome. |
  
 ### Claude Code: `.claude/` y `CLAUDE.md`
  

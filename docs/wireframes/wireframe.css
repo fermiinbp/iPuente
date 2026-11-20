@@ -1,0 +1,514 @@
+/* Estilo común de los wireframes de cliente (versión 2). Blanco, grises y negro, como los originales;
+   las notas en azul explican lo que hace la pantalla tal y como está implementada. */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #fff;
+  color: #222;
+  font: 16px/1.45 'Segoe UI', Inter, Arial, sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+.wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Cabecera y pie */
+.hdr {
+  border-bottom: 1px solid #ddd;
+}
+
+.hdr .wrap {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  height: 72px;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.nav {
+  display: flex;
+  gap: 32px;
+  margin-left: auto;
+  color: #555;
+}
+
+.hdr .acc {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.hdr .menu-btn {
+  display: none;
+  margin-left: auto;
+}
+
+.avatar {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #bbb;
+  border-radius: 50%;
+  background: #eee;
+  vertical-align: middle;
+}
+
+.ftr {
+  margin-top: 64px;
+  padding: 36px 0;
+  background: #eee;
+  color: #555;
+  font-size: 14px;
+}
+
+.ftr .wrap {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+/* Botones, chips y etiquetas */
+.btn {
+  display: inline-block;
+  padding: 11px 20px;
+  border: 1px solid #222;
+  border-radius: 6px;
+  background: #222;
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+}
+
+.btn.o {
+  background: #fff;
+  color: #222;
+}
+
+.btn.g {
+  border-color: transparent;
+  background: transparent;
+  color: #444;
+}
+
+.btn.off {
+  border-color: #ddd;
+  background: #f3f3f3;
+  color: #999;
+}
+
+.btn.block {
+  display: block;
+  width: 100%;
+}
+
+.chip {
+  display: inline-block;
+  padding: 5px 13px;
+  border: 1px solid #aaa;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 14px;
+}
+
+.chip.on {
+  border-color: #222;
+  background: #222;
+  color: #fff;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #e6e6e6;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge.ok {
+  background: #222;
+  color: #fff;
+}
+
+.badge.line {
+  border: 1px solid #222;
+  background: #fff;
+}
+
+/* Contenedores */
+.card {
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.card.dark {
+  border-color: #222;
+  border-width: 1.5px;
+}
+
+.grey {
+  padding: 14px 18px;
+  border-radius: 8px;
+  background: #eee;
+}
+
+.dash {
+  padding: 20px;
+  border: 2px dashed #bbb;
+  border-radius: 10px;
+}
+
+.tag {
+  margin: 0 0 6px;
+  color: #666;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Placeholder de imagen con aspa, como en los wireframes originales */
+.ph {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 120px;
+  border: 1px solid #bbb;
+  background:
+    linear-gradient(to top right, transparent calc(50% - 0.5px), #c9c9c9, transparent calc(50% + 0.5px)),
+    linear-gradient(to bottom right, transparent calc(50% - 0.5px), #c9c9c9, transparent calc(50% + 0.5px)),
+    #ececec;
+}
+
+.ph span {
+  padding: 3px 12px;
+  border: 1px solid #bbb;
+  border-radius: 999px;
+  background: #fff;
+  color: #555;
+  font-size: 13px;
+}
+
+/* Formularios */
+.field {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 14px;
+}
+
+.field label,
+.lbl {
+  color: #555;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.input {
+  padding: 10px 12px;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  background: #fff;
+  color: #888;
+}
+
+.input.err {
+  border-color: #c0392b;
+}
+
+.errtxt {
+  color: #c0392b;
+  font-size: 13px;
+}
+
+.hint {
+  color: #777;
+  font-size: 13px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.sp {
+  justify-content: space-between;
+}
+
+.hours {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+
+.hours i {
+  padding: 8px 0;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  font-size: 13px;
+  font-style: normal;
+  text-align: center;
+}
+
+.hours i.t {
+  border-color: #ddd;
+  background: #eee;
+  color: #999;
+}
+
+.hours i.s {
+  border-color: #222;
+  background: #222;
+  color: #fff;
+}
+
+dl.kv {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+dl.kv div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+dl.kv dt {
+  color: #666;
+}
+
+dl.kv dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Titulares */
+h1 {
+  margin: 0 0 8px;
+  font-size: 40px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  margin: 0 0 6px;
+  font-size: 19px;
+}
+
+p {
+  margin: 0 0 10px;
+}
+
+.mut {
+  color: #666;
+}
+
+.sec {
+  padding: 40px 0;
+}
+
+.crumbs {
+  margin: 28px 0 14px;
+  color: #666;
+  font-size: 14px;
+}
+
+.back {
+  display: inline-block;
+  margin: 28px 0 10px;
+  color: #555;
+  font-size: 14px;
+}
+
+/* Rejillas */
+.g2,
+.g3,
+.g4,
+.side {
+  display: grid;
+  gap: 24px;
+}
+
+.g2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.g3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.g4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.side {
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 720px;
+}
+
+.split .vis {
+  min-height: 100%;
+}
+
+.split .panel {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  padding: 48px;
+}
+
+.split .panel > div {
+  width: min(100%, 440px);
+}
+
+/* Notas numeradas en azul */
+.notes {
+  margin: 40px auto 0;
+  padding: 0 20px;
+  max-width: 1200px;
+}
+
+.note {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 10px;
+  color: #1d4ed8;
+  font-size: 14px;
+}
+
+.note b {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  font-size: 12px;
+}
+
+.big {
+  margin: 0 0 8px;
+  color: #b3b3b3;
+  font-size: 120px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-align: center;
+}
+
+.center {
+  text-align: center;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 14px;
+  border: 1px solid #222;
+  border-radius: 50%;
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.icon.ok {
+  background: #222;
+  color: #fff;
+}
+
+.icon.warn {
+  background: #eee;
+}
+
+.modal {
+  width: min(100%, 460px);
+  margin: 0 auto;
+  padding: 24px;
+  border: 1.5px solid #222;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.18);
+}
+
+@media (max-width: 800px) {
+  h1 {
+    font-size: 30px;
+  }
+
+  .nav,
+  .hdr .acc {
+    display: none;
+  }
+
+  .hdr .menu-btn {
+    display: inline-block;
+  }
+
+  .g2,
+  .g3,
+  .g4,
+  .side,
+  .split {
+    grid-template-columns: 1fr;
+  }
+
+  .split .vis {
+    display: none;
+  }
+
+  .split .panel {
+    padding: 28px 20px;
+  }
+
+  .ftr .wrap {
+    flex-direction: column;
+  }
+
+  .big {
+    font-size: 80px;
+  }
+
+  .hours {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .stick {
+    position: static;
+  }
+}

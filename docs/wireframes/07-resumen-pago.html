@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Revisa tu reserva</title><link rel="stylesheet" href="wireframe.css"></head><body>
+<header class="hdr"><div class="wrap"><span class="logo">iPuente</span><nav class="nav"><span>Espacios</span><span>Para empresas</span><span>Cómo funciona</span><span>Contacto</span></nav><div class="acc"><span>Mis reservas</span><span><span class="avatar"></span> Ana ▾</span></div><span class="btn o menu-btn">Menú</span></div></header>
+
+<div class="wrap" style="max-width:760px">
+ <span class="back">← Volver a la sala</span>
+ <h1>Revisa tu reserva</h1>
+ <div class="card"><dl class="kv">
+  <div><dt>Sala</dt><dd><u>Black Room I</u></dd></div>
+  <div><dt>Planta y edificio</dt><dd>Planta 2 · Edificio Puerta Sur</dd></div>
+  <div><dt>Fecha</dt><dd>Jueves 20 de noviembre de 2026</dd></div>
+  <div><dt>Horario</dt><dd>12:00 – 14:00 (2 horas)</dd></div>
+  <div><dt>Precio</dt><dd>25,00 € × 2 horas</dd></div>
+  <div><dt><b>Total</b></dt><dd style="font-size:22px">50,00 €</dd></div></dl></div>
+ <p class="mut" style="margin-top:16px">Puedes cancelar mientras la reserva no haya empezado. Tienes 15 minutos para pagar: después las horas vuelven a quedar libres.</p>
+ <span class="btn" style="padding:14px 28px">Ir a pagar</span>
+ <p class="hint" style="margin-top:8px">Pago seguro con Stripe</p>
+ <div class="dash" style="margin-top:36px"><p class="tag">Variante: tiempo agotado</p>
+  <h2>Tiempo agotado</h2><p class="mut">Pasaron 15 minutos sin pagar y las horas han vuelto a quedar libres.</p>
+  <span class="btn">Reservar de nuevo</span> <span class="btn o">Ver otras horas</span></div>
+</div>
+<footer class="ftr"><div class="wrap"><span class="logo">iPuente</span><span>© 2026 iPuente</span></div></footer>
+<div class="notes"><p class="note"><b>1</b><span>Solo se ve el resumen si la reserva es del usuario y está pendiente de pago. Una ya pagada dice «Esta reserva ya está pagada»; una que no existe, «No encontramos esta reserva».</span></p><p class="note"><b>2</b><span>«Ir a pagar» pide a la API la URL de Stripe y redirige solo a páginas https. No se puede pulsar dos veces. El importe es el que devuelve la API.</span></p><p class="note"><b>3</b><span>«Reservar de nuevo» solo aparece si la franja caducada sigue libre.</span></p><p class="note"><b>4</b><span>Pendiente de back: la API aún no tiene endpoint de pago; hasta entonces «Ir a pagar» avisa de que no está disponible. Sin foto ni asistentes (la reserva no los guarda).</span></p></div>
+</body></html>
