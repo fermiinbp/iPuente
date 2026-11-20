@@ -5,11 +5,12 @@
 // atrapado y cierre con ×, Escape, al elegir una opción o al pasar a escritorio (como MobileMenu).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import UserMenu from '@/components/layout/UserMenu/UserMenu.jsx';
 import Chip from '@/components/ui/Chip/Chip.jsx';
 import IconButton from '@/components/ui/IconButton/IconButton.jsx';
 import { ACCOUNT_ITEMS, LOGOUT, displayName } from '@/config/accountMenu.js';
+import { signOutUser } from '@/services/authService.js';
 import { ROLES } from '@/config/constants.js';
 import { useAuth } from '@/hooks/useAuth.js';
 import { getMyCompany } from '@/services/companyService.js';
@@ -103,7 +104,15 @@ export default function DashboardLayout({ title, links = [] }) {
   const companyName = role === ROLES.COMPANY && company?.uid === uid ? company.name : null;
   const name = companyName || displayName(user);
   const badge = ROLE_BADGES[role];
-  const accountItems = [...(ACCOUNT_ITEMS[role] ?? []), LOGOUT];
+  const navigate = useNavigate();
+  const logoutItem = {
+    ...LOGOUT,
+    onSelect: async () => {
+      await signOutUser();
+      navigate('/');
+    },
+  };
+  const accountItems = [...(ACCOUNT_ITEMS[role] ?? []), logoutItem];
 
   const brand = (
     <div className={styles.brand}>
@@ -136,8 +145,14 @@ export default function DashboardLayout({ title, links = [] }) {
           ))}
         </ul>
       </nav>
-      {/* TODO(CLI001): «Cerrar sesión» debe llamar a logout() de services/authService.js. */}
-      <button type="button" className={styles.logout} onClick={onNavigate}>
+      <button
+        type="button"
+        className={styles.logout}
+        onClick={() => {
+          logoutItem.onSelect();
+          onNavigate?.();
+        }}
+      >
         {LOGOUT.label}
       </button>
     </>

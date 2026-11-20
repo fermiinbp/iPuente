@@ -2,11 +2,14 @@
 // Los componentes no llaman a Firebase: pasan por aquí. Los errores salen ya en español.
 import {
   createUserWithEmailAndPassword,
+  EmailAuthProvider,
   GoogleAuthProvider,
+  reauthenticateWithCredential,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updatePassword,
   updateProfile,
 } from 'firebase/auth';
 import { auth } from '../config/firebase.js';
@@ -22,9 +25,11 @@ const MESSAGES = {
   'auth/too-many-requests': 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
   'auth/network-request-failed': 'No hay conexión. Revisa tu red e inténtalo de nuevo.',
   'auth/user-disabled': 'Esta cuenta está desactivada.',
+  'auth/requires-recent-login': 'Por seguridad, vuelve a iniciar sesión e inténtalo de nuevo.',
   'auth/operation-not-allowed': 'El acceso con Google no está activado en Firebase.',
   'auth/unauthorized-domain': 'Este dominio no está autorizado en Firebase Authentication.',
-  'auth/popup-blocked': 'El navegador ha bloqueado la ventana de Google. Permite las ventanas emergentes.',
+  'auth/popup-blocked':
+    'El navegador ha bloqueado la ventana de Google. Permite las ventanas emergentes.',
   'auth/account-exists-with-different-credential':
     'Ya existe una cuenta con este correo. Entra con tu contraseña.',
 };
@@ -65,4 +70,25 @@ export function signOutUser() {
 
 export function sendResetEmail(email) {
   return sendPasswordResetEmail(auth, email);
+}
+
+// ¿La cuenta entra con correo y contraseña? (las de Google no tienen contraseña propia.)
+export function hasPasswordLogin(user) {
+  return Boolean(user?.providerData?.some((provider) => provider.providerId === 'password'));
+}
+
+// Cambia el nombre que se enseña en la cuenta.
+export async function updateDisplayName(name) {
+  if (!auth.currentUser) throw new Error('No hay sesión iniciada.');
+  await updateProfile(auth.currentUser, { displayName: name });
+  // Fuerza que la app lea el nombre nuevo (el token no cambia, pero sí el usuario).
+  await auth.currentUser.reload();
+}
+
+// Cambia la contraseña. Firebase pide confirmar antes la actual (reautenticar).
+export async function changePassword(current, next) {
+  const user = auth.currentUser;
+  if (!user?.email) throw new Error('No hay sesión iniciada.');
+  await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, current));
+  await updatePassword(user, next);
 }

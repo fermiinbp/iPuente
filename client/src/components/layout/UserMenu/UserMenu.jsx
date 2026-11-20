@@ -73,14 +73,21 @@ export default function UserMenu({ name, email, photoUrl, items = [] }) {
             {email && <p className={styles.email}>{email}</p>}
           </div>
           <ul className={styles.list}>
-            {items.map(({ label, to, separated }) => (
+            {items.map(({ label, to, separated, onSelect }) => (
               <li key={label} className={separated ? styles.separated : undefined}>
                 {to ? (
                   <Link to={to} className={styles.item} onClick={close}>
                     {label}
                   </Link>
                 ) : (
-                  <button type="button" className={styles.item} onClick={close}>
+                  <button
+                    type="button"
+                    className={styles.item}
+                    onClick={() => {
+                      onSelect?.();
+                      close();
+                    }}
+                  >
                     {label}
                   </button>
                 )}

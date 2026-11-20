@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router';
 import DashboardLayout from '@/components/layout/DashboardLayout/DashboardLayout.jsx';
 import Layout from '@/components/layout/Layout/Layout.jsx';
 import { ROLES } from '@/config/constants.js';
+import Account from '@/pages/Account/Account.jsx';
 import AdminBookings from '@/pages/admin/AdminBookings/AdminBookings.jsx';
 import AdminCompanies from '@/pages/admin/AdminCompanies/AdminCompanies.jsx';
 import AdminCompanyDetail from '@/pages/admin/AdminCompanyDetail/AdminCompanyDetail.jsx';
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="my-bookings" element={<MyBookings />} />
           <Route path="my-bookings/:bookingId" element={<BookingDetailPage />} />
           <Route path="payment/result" element={<PaymentResult />} />
+          <Route path="account" element={<Account />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />
