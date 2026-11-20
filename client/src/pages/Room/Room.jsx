@@ -5,7 +5,6 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs/Breadcrumbs.jsx';
 import BookingForm from '@/components/booking/BookingForm/BookingForm.jsx';
 import AmenitiesList from '@/components/room/AmenitiesList/AmenitiesList.jsx';
 import RoomGallery from '@/components/room/RoomGallery/RoomGallery.jsx';
-import Button from '@/components/ui/Button/Button.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { useAuth } from '@/hooks/useAuth.js';
@@ -120,6 +119,8 @@ export default function Room() {
     return (
       <div className={styles.status}>
         <ErrorState
+          error={roomFetch.error}
+          home
           title={notFound ? 'No encontramos esta sala' : undefined}
           onRetry={notFound ? undefined : roomFetch.reload}
         >
@@ -127,9 +128,6 @@ export default function Room() {
             ? 'Puede que ya no esté publicada o que el enlace sea incorrecto.'
             : roomFetch.error?.message}
         </ErrorState>
-        <Button to="/" variant="secondary">
-          Volver al inicio
-        </Button>
       </div>
     );
   }

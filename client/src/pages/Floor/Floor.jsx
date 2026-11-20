@@ -147,6 +147,8 @@ export default function Floor() {
     return (
       <div className={styles.status}>
         <ErrorState
+          error={error}
+          home
           title={notFound ? 'No encontramos esta planta' : undefined}
           onRetry={notFound ? undefined : reload}
         >

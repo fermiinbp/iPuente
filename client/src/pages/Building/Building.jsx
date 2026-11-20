@@ -5,7 +5,6 @@ import BuildingHero from '@/components/building/BuildingHero/BuildingHero.jsx';
 import FloorList from '@/components/building/FloorList/FloorList.jsx';
 import FloorSelector from '@/components/building/FloorSelector/FloorSelector.jsx';
 import Breadcrumbs from '@/components/ui/Breadcrumbs/Breadcrumbs.jsx';
-import Button from '@/components/ui/Button/Button.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
@@ -95,6 +94,8 @@ export default function Building() {
     return (
       <div className={styles.status}>
         <ErrorState
+          error={error}
+          home
           title={notFound ? 'No encontramos este edificio' : undefined}
           onRetry={notFound ? undefined : reload}
         >
@@ -102,7 +103,6 @@ export default function Building() {
             ? 'Puede que ya no esté publicado o que el enlace sea incorrecto.'
             : error.message}
         </ErrorState>
-        {notFound && <Button to="/">Volver al inicio</Button>}
       </div>
     );
   }

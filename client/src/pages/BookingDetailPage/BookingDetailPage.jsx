@@ -60,6 +60,8 @@ export default function BookingDetailPage() {
     const notFound = error.status === 404;
     content = (
       <ErrorState
+        error={error}
+        home
         title={notFound ? 'No encontramos esta reserva' : undefined}
         onRetry={notFound ? undefined : reload}
       >

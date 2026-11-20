@@ -128,7 +128,11 @@ export default function Search() {
   if (loading && !shown) {
     results = <Spinner label="Buscando edificios…" />;
   } else if (error && !isDemo) {
-    results = <ErrorState onRetry={reload}>{error.message}</ErrorState>;
+    results = (
+      <ErrorState error={error} home onRetry={reload}>
+        {error.message}
+      </ErrorState>
+    );
   } else if (buildings.length === 0) {
     results = (
       <EmptyState

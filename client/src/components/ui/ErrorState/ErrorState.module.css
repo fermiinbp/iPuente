@@ -14,6 +14,11 @@
   font-size: var(--text-titulo-paso);
 }
 
+.title:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 4px;
+}
+
 .text {
   max-width: 44ch;
   margin: 0;

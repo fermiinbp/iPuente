@@ -45,7 +45,11 @@ export default function MyBookings() {
   if (loading) {
     content = <Spinner label="Cargando tus reservas…" />;
   } else if (error) {
-    content = <ErrorState onRetry={reload}>{error.message}</ErrorState>;
+    content = (
+      <ErrorState error={error} home onRetry={reload}>
+        {error.message}
+      </ErrorState>
+    );
   } else if (data.proximas.length === 0 && data.pasadas.length === 0) {
     content = (
       <EmptyState
