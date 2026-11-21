@@ -10,6 +10,7 @@ import companyRoutes from './company.routes.js';
 import floorsRoutes from './floors.routes.js';
 import healthRoutes from './health.routes.js';
 import mapsRoutes from './maps.routes.js';
+import paymentsRoutes from './payments.routes.js';
 import roomsRoutes from './rooms.routes.js';
 import usersRoutes from './users.routes.js';
 
@@ -24,6 +25,7 @@ router.use(companyBookingsRoutes);
 router.use(companyRoutes);
 router.use(floorsRoutes);
 router.use(mapsRoutes);
+router.use(paymentsRoutes);
 router.use(roomsRoutes);
 router.use(usersRoutes);
 

@@ -2,7 +2,11 @@
 // opción interna `pendingPayment` nacen PENDING_PAYMENT con expiresAt a +15 min (salvo las de 0 €).
 // El servidor calcula pricePeriod y totalAmount a partir del price de la sala; occupancy bloquea
 // cada hora. Una pendiente vencida se muestra como EXPIRED y se expira al reservar sobre ella.
-import { BOOKING_HOURS, PENDING_MINUTES } from '../config/bookingHours.js';
+import {
+  BOOKING_HOURS,
+  PENDING_MAX_HOLD_MINUTES,
+  PENDING_MINUTES,
+} from '../config/bookingHours.js';
 import { now, runTransaction } from '../models/baseModel.js';
 import * as bookingModel from '../models/bookingModel.js';
 import * as buildingModel from '../models/buildingModel.js';
@@ -289,7 +293,8 @@ export async function cancelBooking(uid, id) {
 // Alarga expiresAt de una reserva en una transacción, solo si sigue PENDING_PAYMENT y vigente
 // (la usará el pago al crear la sesión de Checkout). Nunca lo acorta (si ya es posterior, no
 // escribe) y no toca su occupancy. 404 si no existe, 409 BOOKING_NOT_PENDING si ya no está
-// pendiente y 409 BOOKING_EXPIRED si venció. Devuelve el expiresAt resultante (Date).
+// pendiente y 409 BOOKING_EXPIRED si venció o si no tiene createdAt válido. Nunca pasa de
+// createdAt + PENDING_MAX_HOLD_MINUTES (tope absoluto: se recorta). Devuelve el expiresAt resultante.
 export async function extendPendingExpiry(id, expiresAt, { clock = Date.now } = {}) {
   return runTransaction(async (tx) => {
     const booking = await bookingModel.findById(id, { tx });
@@ -300,10 +305,20 @@ export async function extendPendingExpiry(id, expiresAt, { clock = Date.now } = 
     if (isPendingExpired(booking, clock())) {
       throw new HttpError(409, 'BOOKING_EXPIRED', 'La reserva ha caducado');
     }
+    const created = toMillis(booking.createdAt);
+    if (!Number.isFinite(created)) {
+      throw new HttpError(
+        409,
+        'BOOKING_EXPIRED',
+        'Esta reserva no se puede ampliar; reserva de nuevo',
+      );
+    }
+    const target = Math.min(expiresAt.getTime(), created + PENDING_MAX_HOLD_MINUTES * 60 * 1000);
     const current = toMillis(booking.expiresAt);
-    if (Number.isFinite(current) && current >= expiresAt.getTime()) return new Date(current);
-    await bookingModel.update(id, { expiresAt }, { tx });
-    return expiresAt;
+    if (Number.isFinite(current) && current >= target) return new Date(current);
+    const next = new Date(target);
+    await bookingModel.update(id, { expiresAt: next }, { tx });
+    return next;
   });
 }
 

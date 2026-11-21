@@ -37,6 +37,11 @@ const DEFAULTS = {
     windowMs: HOUR,
     message: 'Has editado la solicitud demasiadas veces. Inténtalo de nuevo más tarde.',
   },
+  checkout: {
+    limit: 20,
+    windowMs: HOUR,
+    message: 'Has iniciado demasiados pagos. Inténtalo de nuevo más tarde.',
+  },
 };
 
 let overrides = null;
@@ -72,6 +77,7 @@ function storeFor(name) {
   if (name === 'register') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'profile') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'companyEdit') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
+  if (name === 'checkout') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'ai') return new FirestoreRateLimitStore({ prefix: name, failOpen: false });
   return undefined; // general: memoria por defecto
 }
@@ -88,7 +94,8 @@ function build(name) {
     legacyHeaders: false,
     store: storeFor(name),
     keyGenerator: (req) =>
-      ((name === 'ai' || name === 'companyEdit' || name === 'profile') && req.user?.uid) ||
+      ((name === 'ai' || name === 'companyEdit' || name === 'profile' || name === 'checkout') &&
+        req.user?.uid) ||
       clientIp(req),
     handler: (req, res, next) => next(new HttpError(429, 'RATE_LIMITED', message)),
     // Se crea en la primera petición (para poder cambiarlo en tests) y se reutiliza: el aviso
@@ -111,3 +118,5 @@ export const registerLimiter = limiter('register');
 export const aiDetectLimiter = limiter('ai');
 export const profileEditLimiter = limiter('profile');
 export const companyEditLimiter = limiter('companyEdit');
+// Iniciar un pago (20 por hora por uid, falla abierto): va después de `auth`.
+export const checkoutLimiter = limiter('checkout');

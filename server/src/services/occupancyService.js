@@ -78,3 +78,62 @@ export async function writeSlotClaims(plan, { companyId, roomId, fecha, inicio, 
     else await occupancyModel.create(data, { id, tx });
   }
 }
+
+// Lecturas previas para recuperar las horas de una reserva ya vencida o expirada que se ha pagado
+// tarde. Cada hora debe estar libre, ser de la propia reserva o tener una ficha sustituible con la
+// misma regla que readSlotPlan: de otra reserva que existe (mismo id) y ya no ocupa (estado efectivo
+// distinto de CONFIRMED y de PENDING_PAYMENT vigente). Un bloqueo, una reserva viva o una que no
+// existe dan 409 SLOT_TAKEN. Devuelve { fecha, missing, replace, stale } (fichas por crear, por
+// sustituir y reservas viejas a expirar o limpiar).
+export async function readReclaimPlan(booking, { tx, nowMs = Date.now() }) {
+  const fecha = todayString(toDate(booking.startDate));
+  const { inicio, fin } = toSlot(booking, 'reserva');
+  const ids = slotIds(booking.roomId, fecha, inicio, fin);
+  const docs = await Promise.all(ids.map((id) => occupancyModel.findById(id, { tx })));
+  const missing = [];
+  const replace = [];
+  const otherIds = new Set();
+  docs.forEach((doc, i) => {
+    const slot = { id: ids[i], hour: inicio + i };
+    if (!doc) missing.push(slot);
+    else if (doc.bookingId === booking.id) return;
+    else if (!doc.bookingId) throw new HttpError(409, 'SLOT_TAKEN', 'Esa franja ya está ocupada');
+    else {
+      replace.push(slot);
+      otherIds.add(doc.bookingId);
+    }
+  });
+  const stale = [];
+  for (const otherId of otherIds) {
+    const other = await bookingModel.findById(otherId, { tx });
+    const status = effectiveStatus(other, nowMs);
+    if (other?.id !== otherId || status === 'CONFIRMED' || status === 'PENDING_PAYMENT') {
+      throw new HttpError(409, 'SLOT_TAKEN', 'Esa franja ya está ocupada');
+    }
+    const own = await readOwnSlots(other, tx);
+    stale.push({
+      id: other.id,
+      expire: other.status === 'PENDING_PAYMENT',
+      release: own.filter((id) => !ids.includes(id)),
+    });
+  }
+  return { fecha, missing, replace, stale };
+}
+
+// Escrituras del plan de readReclaimPlan: expira las pendientes vencidas que ocupaban, libera sus
+// otras fichas, sustituye las de la franja y crea las que faltan, todo a nombre de la reserva.
+export async function writeReclaimClaims(plan, booking, tx) {
+  for (const old of plan.stale) {
+    if (old.expire) await bookingModel.update(old.id, { status: 'EXPIRED' }, { tx });
+    for (const id of old.release) await occupancyModel.remove(id, { tx });
+  }
+  const data = (hour) => ({
+    companyId: booking.companyId,
+    roomId: booking.roomId,
+    date: plan.fecha,
+    hour,
+    bookingId: booking.id,
+  });
+  for (const { id, hour } of plan.replace) occupancyModel.overwrite(data(hour), { id, tx });
+  for (const { id, hour } of plan.missing) await occupancyModel.create(data(hour), { id, tx });
+}
