@@ -116,11 +116,16 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 
 ## EMP013 · Reservas y bloqueos
 
-- **Ya cubierto (DAT016):** listar reservas con filtros de fechas (`desde`, `hasta`) y sala (`roomId`); crear, listar y borrar bloqueos (`409` si pisa una reserva).
-- **Falta:**
-  - Que el listado de reservas y el de bloqueos se puedan mostrar juntos (o un endpoint que los una) con el estado «Bloqueada».
-  - Bloqueos que se repiten (campo de repetición).
-  - Filtro por edificio, además de sala y fecha.
+- **Ya cubierto (DAT016):** listar reservas con filtros de fechas (`desde`, `hasta`) y sala (`roomId`); crear, listar y borrar bloqueos (`409 SLOT_TAKEN` si pisa una reserva u otro bloqueo).
+- **Resuelto en el front (EMP013):**
+  - Reservas y bloqueos en una sola tabla: se piden los dos listados a la vez y se unen; los bloqueos salen como «Bloqueada».
+  - Filtro por edificio: se aplica en el front con el edificio de cada sala (`GET /company/rooms`).
+  - Aviso de choque con el nombre del cliente: el modal lee las reservas y bloqueos de ese día y sala antes de enviar; el `409` queda como red de seguridad.
+- **Descartado:** bloqueos que se repiten. Decisión del equipo: no hace falta.
+- **Mejoras recomendadas (no bloquean):**
+  - Filtro `buildingId` en `GET /company/bookings` y `/company/blocks`, para no depender del tope de 500 al filtrar por edificio.
+  - Que el `409 SLOT_TAKEN` de `POST /company/blocks` diga con qué reservas o bloqueos choca (`details`).
+  - Indicar en la respuesta si el listado se ha recortado al tope de 500 (`truncado`), como en el listado de admin.
 
 ## EMP014 · Detalle de reserva
 
