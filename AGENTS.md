@@ -45,7 +45,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/main.jsx` | Punto de entrada de React: monta `<App />` dentro del router y del `AuthProvider`. |
 | `client/src/App.jsx` | Componente raíz y mapa de rutas de la web (React Router): públicas, de cliente, de empresa y de admin, anidadas en `Layout` (y las de empresa y admin, además, en `DashboardLayout`). |
 | `client/src/config/firebase.js` | Conexión del navegador con Firebase: inicializa la app y exporta `auth` (login) y `storage` (subida de planos y fotos). |
-| `client/src/config/constants.js` | Constantes compartidas del front: URL de la API, roles (`CLIENT`, `COMPANY`, `ADMIN`), estados de sala (en el plano y en el panel), de edificio y planta, de reserva (los de la API y los que calcula la pantalla), de pago, de empresa y de cuenta de cobro, y horario reservable. |
+| `client/src/config/constants.js` | Constantes compartidas del front: URL de la API, roles (`CLIENT`, `COMPANY`, `ADMIN`), estados de sala (en el plano y en el panel), de edificio y planta, de reserva (los de la API y los que calcula la pantalla), de pago, de empresa y de cuenta de cobro, horario reservable e `IMAGE_UPLOAD` (tipos y tamaño máximo de las imágenes, los mismos que `storage.rules`). |
 | `client/src/config/accountMenu.js` | Opciones del menú de cuenta por rol, «Cerrar sesión» y nombre visible de la cuenta (`displayName`), compartidos por `Header` y `DashboardLayout`. |
 | `client/src/router/PrivateRoute.jsx` | Guarda de ruta: si no hay sesión, redirige a `/login`. Solo oculta pantallas; la seguridad real está en la API. |
 | `client/src/router/RoleRoute.jsx` | Guarda de ruta por rol (`COMPANY` o `ADMIN`): si el usuario no lo tiene, vuelve a la home. |
@@ -68,7 +68,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/services/authService.js` | Sesión con Firebase Auth: entrar con correo o Google, registro de cliente, cerrar sesión, recuperar y cambiar la contraseña, `reloadUser` (relee el usuario tras editar el perfil), rol de la cuenta, `refreshSession` (renueva el token para leer los claims actuales) y `registerCompany` (alta de empresa en la API e inicio de sesión). |
 | `client/src/services/usersService.js` | Perfil del usuario: `getMe` y `updateMe` (nombre, apellidos y teléfono) sobre `/users/me`. |
 | `client/src/services/adminService.js` | Panel de admin: empresas (`listCompanies(estado)`, `approveCompany`, `rejectCompany(id, motivo)`, `suspendCompany(id, motivo)` y `reactivateCompany`); usuarios, reservas, pagos y reembolsos irán aquí. |
-| `client/src/services/uploadService.js` | Sube planos y fotos directamente a Firebase Storage y devuelve su URL y su ruta. |
+| `client/src/services/uploadService.js` | `uploadImage(file, { companyId, folder })`: sube una imagen a Firebase Storage en `companies/{companyId}/{folder}/{uuid}.{ext}` y devuelve `{ url, path }` (la URL es la que acepta la API en `fotos` y `mapImageUrl`). Comprueba el archivo antes con `fileError` y traduce los errores de Storage a `ApiError` en español. |
 | `client/src/services/mapStyleService.js` | Descarga una sola vez el estilo base del mapa (OpenFreeMap) y devuelve una copia. Es un servidor externo, no nuestra API, así que no pasa por `apiClient`. |
 | `client/src/components/ui/Button/Button.jsx` + `.module.css` | Botón reutilizable con variantes primario, secundario y fantasma, tamaños `md` (44 px) y `lg` (52 px), `loading` y `disabled`; con `to` funciona como enlace. |
 | `client/src/components/ui/IconButton/IconButton.jsx` + `.module.css` | Botón solo con icono y `aria-label` obligatorio (barra del editor, cerrar paneles y modales, menú móvil). |
@@ -97,7 +97,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/ui/ConfirmModal/ConfirmModal.jsx` + `.module.css` | Modal de confirmación sobre `Modal`: título, texto, contenido libre (avisos, campos, casillas, opciones o tablas), acción principal que se puede desactivar y con estado de carga, cancelar y una acción secundaria opcional (cancelar reserva, rechazar o suspender empresa, reembolsar, eliminar sala o edificio, salir sin guardar). |
 | `client/src/components/ui/DataTable/DataTable.jsx` + `.module.css` | Tabla de los paneles: columnas, acciones por fila y estado vacío; en móvil pasa a tarjetas. |
 | `client/src/components/ui/FilterBar/FilterBar.jsx` + `.module.css` | Fila de filtros (edificio, planta, estado, fechas) encima de las tablas. |
-| `client/src/components/ui/FileDropzone/FileDropzone.jsx` + `.module.css` | Zona para arrastrar o seleccionar archivos; la usan `PlanUploader` y las fotos de sala. |
+| `client/src/components/ui/FileDropzone/FileDropzone.jsx` + `.module.css` | Zona para arrastrar o seleccionar archivos (plano, fotos de sala y fachada): botón «Seleccionar archivo» accesible con teclado (el `input` está oculto y fuera del tabulado), arrastrar y soltar como atajo, `multiple` y `compact`; antes de `onFiles` comprueba tipo y tamaño con `fileError` (por defecto, las reglas de Storage) y muestra el error en español con `role="alert"`. |
 | `client/src/components/ui/CookieBanner/CookieBanner.jsx` + `.module.css` | Aviso de cookies que recuerda la elección del usuario. |
 | `client/src/components/ui/ErrorState/ErrorState.jsx` + `.module.css` | Error del servidor o sin conexión, con botón de reintentar. |
 | `client/src/components/layout/Header/Header.jsx` + `.module.css` | Cabecera: logo, navegación, acceso y menú según el rol. |
@@ -193,6 +193,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/utils/formatPrice.js` | Formatea importes en euros (`25` → `25,00 €`). `priceLabel(importe, { gratis, perHour })` devuelve «Gratis» si la sala es gratis o el importe es 0 (un precio `null` no lo es: `—`). |
 | `client/src/utils/dates.js` | Utilidades de fechas: formato `AAAA-MM-DD`, horas y rangos para el calendario. |
 | `client/src/utils/mapGeometry.js` | Cálculos del editor: escalar coordenadas, ajustar a la rejilla y limitar las salas al plano. |
+| `client/src/utils/files.js` | `fileError(file, { types, maxBytes, typesLabel })` (mensaje en español o `null`; por defecto las reglas de Storage, `IMAGE_UPLOAD`) y `formatBytes`. Lo usan `FileDropzone` y `uploadService`. |
 | `client/src/utils/cif.js` | CIF español en el front: `normalizeCif` e `isValidCif` (formato y dígito de control), la misma regla que `server/src/utils/cif.js`. |
 | `client/src/utils/companyForm.js` | Formulario de alta de empresa: pasos del `Stepper`, valores iniciales, validación de la cuenta y de los datos de la empresa, traducción de los errores de la API a cada campo y conversión desde `GET /companies/me`. |
 | `client/src/assets/icons/` | Iconos SVG importados desde componentes (equipamiento, estación, metro…). |
