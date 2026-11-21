@@ -50,6 +50,8 @@ function createAuth(checkRevoked) {
     req.user = {
       uid: decoded.uid,
       email: decoded.email ?? null,
+      // Nombre del token (cuentas de Google): solo es el valor inicial de la ficha.
+      name: typeof decoded.name === 'string' && decoded.name.trim() ? decoded.name.trim() : null,
       role,
       // Solo se acepta un companyId de texto: cualquier otro valor del claim se ignora.
       companyId:

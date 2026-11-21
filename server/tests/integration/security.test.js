@@ -4,7 +4,11 @@ import { after, afterEach, before, describe, it } from 'node:test';
 
 import { config, db, setDbForTests } from '../../src/config/config.js';
 import { setTokenVerifier } from '../../src/middlewares/auth.js';
-import { aiDetectLimiter, setRateLimitForTests } from '../../src/middlewares/rateLimit.js';
+import {
+  aiDetectLimiter,
+  profileEditLimiter,
+  setRateLimitForTests,
+} from '../../src/middlewares/rateLimit.js';
 import { setAuthClientForTests } from '../../src/services/authService.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
 import { listen } from '../helpers/publicData.js';
@@ -86,6 +90,21 @@ describe('Seguridad de la API: rate limit y CORS', () => {
       assert.equal(await run({}), 'pasa');
       assert.equal(await run({}), 'RATE_LIMITED');
     });
+  });
+
+  it('profileEditLimiter cuenta por uid', async () => {
+    setRateLimitForTests({ profile: { limit: 1, windowMs: 60_000 } });
+    const run = (req) =>
+      new Promise((resolve) => {
+        profileEditLimiter(
+          { ip: '1.2.3.4', app: { get: () => false }, headers: {}, ...req },
+          { setHeader() {}, getHeader() {}, set() {}, append() {}, headersSent: false },
+          (err) => resolve(err ? err.code : 'pasa'),
+        );
+      });
+    assert.equal(await run({ user: { uid: 'a' } }), 'pasa');
+    assert.equal(await run({ user: { uid: 'a' } }), 'RATE_LIMITED');
+    assert.equal(await run({ user: { uid: 'b' } }), 'pasa');
   });
 
   describe('PATCH /companies/me', () => {

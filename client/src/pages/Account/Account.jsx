@@ -1,25 +1,32 @@
-// Mi cuenta: «Mis datos» (nombre) y «Cambiar contraseña». El correo se enseña pero no se cambia aquí.
+// Mi cuenta: «Mis datos» (nombre, apellidos y teléfono, con la API) y «Cambiar contraseña». El correo se enseña pero no se cambia aquí.
 // Los enlaces del menú de usuario llevan a cada sección con #datos y #password.
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router';
 import Alert from '@/components/ui/Alert/Alert.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
+import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
+import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { MIN_PASSWORD } from '@/config/constants.js';
 import { useAuth } from '@/hooks/useAuth.js';
+import { useFetch } from '@/hooks/useFetch.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
-import {
-  authErrorMessage,
-  changePassword,
-  hasPasswordLogin,
-  updateDisplayName,
-} from '@/services/authService.js';
+import { authErrorMessage, changePassword, hasPasswordLogin } from '@/services/authService.js';
+import { getMe, updateMe } from '@/services/usersService.js';
 import styles from './Account.module.css';
+
+// Como la API: sin caracteres de control ni de dirección de texto (bidi).
+const INVALID_CHARS = /[\p{Cc}\u202A-\u202E\u2066-\u2069]/u;
 
 export default function Account() {
   usePageTitle('Mi cuenta');
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { hash } = useLocation();
+
+  const profile = useFetch((signal) => getMe({ signal }), user?.uid);
+  // Tras guardar se usa la respuesta de la API; antes, lo cargado.
+  const [saved, setSaved] = useState(null);
+  const me = saved ?? profile.data ?? {};
 
   const [dataErrors, setDataErrors] = useState({});
   const [dataNotice, setDataNotice] = useState('');
@@ -43,20 +50,55 @@ export default function Account() {
 
   async function handleSaveData(event) {
     event.preventDefault();
-    const name = String(new FormData(event.currentTarget).get('name') ?? '').trim();
+    const form = new FormData(event.currentTarget);
+    const nombre = String(form.get('nombre') ?? '').trim();
+    const apellidos = String(form.get('apellidos') ?? '').trim();
+    const telefono = String(form.get('telefono') ?? '').replace(/\s/g, '');
     setDataNotice('');
     setDataFailure('');
-    if (!name) {
-      setDataErrors({ name: 'Escribe tu nombre.' });
-      return;
+
+    // Mismas reglas que la API: nombre 1–100, apellidos hasta 100, teléfono de 9 dígitos que empieza por 6–9.
+    const errors = {};
+    if (!nombre) errors.nombre = 'Escribe tu nombre.';
+    else if (nombre.length > 100) errors.nombre = 'El nombre admite como máximo 100 caracteres.';
+    if (!errors.nombre && INVALID_CHARS.test(nombre)) {
+      errors.nombre = 'El nombre contiene caracteres no válidos.';
     }
-    setDataErrors({});
+    if (apellidos.length > 100)
+      errors.apellidos = 'Los apellidos admiten como máximo 100 caracteres.';
+    else if (INVALID_CHARS.test(apellidos)) {
+      errors.apellidos = 'Los apellidos contienen caracteres no válidos.';
+    }
+    if (telefono && !/^[6-9]\d{8}$/.test(telefono)) {
+      errors.telefono = 'Escribe un teléfono de 9 dígitos que empiece por 6, 7, 8 o 9.';
+    }
+    setDataErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     setSavingData(true);
     try {
-      await updateDisplayName(name);
-      setDataNotice('Datos guardados.');
+      const result = await updateMe({
+        nombre,
+        apellidos: apellidos || null,
+        telefono: telefono || null,
+      });
+      setSaved(result);
+      // La API ya cambió el displayName de Firebase: se relee para que la cabecera enseñe el nombre nuevo.
+      await refreshUser().catch(() => {});
+      setDataNotice(result?.aviso ? `Datos guardados. ${result.aviso}` : 'Datos guardados.');
     } catch (error) {
-      setDataFailure(authErrorMessage(error));
+      if (error?.code === 'VALIDATION_ERROR' && Array.isArray(error.details)) {
+        const fieldErrors = {};
+        for (const detail of error.details) {
+          if (['nombre', 'apellidos', 'telefono'].includes(detail?.field)) {
+            fieldErrors[detail.field] = detail.message;
+          }
+        }
+        setDataErrors(fieldErrors);
+        if (Object.keys(fieldErrors).length === 0) setDataFailure(error.message);
+      } else {
+        setDataFailure(error?.message ?? 'No se han podido guardar los datos. Inténtalo de nuevo.');
+      }
     } finally {
       setSavingData(false);
     }
@@ -105,32 +147,68 @@ export default function Account() {
           <h2 className={styles.subtitle} id="datos-titulo" tabIndex={-1}>
             Mis datos
           </h2>
-          <form className={styles.form} onSubmit={handleSaveData} noValidate>
-            <Input
-              label="Nombre"
-              name="name"
-              variant="boxed"
-              autoComplete="name"
-              defaultValue={user?.displayName ?? ''}
-              error={dataErrors.name}
-            />
-            <Input
-              label="Correo electrónico"
-              name="email"
-              type="email"
-              variant="boxed"
-              value={user?.email ?? ''}
-              readOnly
-              hint="El correo no se puede cambiar desde aquí."
-            />
-            {dataFailure && <Alert type="error">{dataFailure}</Alert>}
-            {dataNotice && <Alert type="success">{dataNotice}</Alert>}
-            <div>
-              <Button type="submit" loading={savingData}>
-                Guardar
-              </Button>
-            </div>
-          </form>
+          {profile.loading ? (
+            <Spinner label="Cargando tus datos…" />
+          ) : profile.error || !profile.data ? (
+            <ErrorState error={profile.error} onRetry={profile.reload}>
+              No hemos podido cargar tus datos.
+            </ErrorState>
+          ) : (
+            <form
+              key={`${me.nombre}|${me.apellidos}|${me.telefono}`}
+              className={styles.form}
+              onSubmit={handleSaveData}
+              noValidate
+            >
+              <Input
+                label="Nombre"
+                name="nombre"
+                variant="boxed"
+                autoComplete="given-name"
+                maxLength={100}
+                defaultValue={me.nombre ?? ''}
+                error={dataErrors.nombre}
+              />
+              <Input
+                label="Apellidos"
+                name="apellidos"
+                variant="boxed"
+                autoComplete="family-name"
+                maxLength={100}
+                defaultValue={me.apellidos ?? ''}
+                error={dataErrors.apellidos}
+              />
+              <Input
+                label="Teléfono"
+                name="telefono"
+                type="tel"
+                variant="boxed"
+                autoComplete="tel-national"
+                inputMode="numeric"
+                defaultValue={me.telefono ?? ''}
+                hint="Opcional. 9 dígitos, empieza por 6, 7, 8 o 9."
+                error={dataErrors.telefono}
+              />
+              <Input
+                label="Correo electrónico"
+                name="email"
+                type="email"
+                variant="boxed"
+                value={me.email ?? user?.email ?? ''}
+                readOnly
+                hint="El correo no se puede cambiar."
+              />
+              <div aria-live="polite">
+                {dataFailure && <Alert type="error">{dataFailure}</Alert>}
+                {dataNotice && <Alert type="success">{dataNotice}</Alert>}
+              </div>
+              <div>
+                <Button type="submit" loading={savingData}>
+                  Guardar
+                </Button>
+              </div>
+            </form>
+          )}
         </section>
 
         <section className={styles.card} id="password" aria-labelledby="password-titulo">

@@ -3,10 +3,14 @@ import { body } from 'express-validator';
 
 import { isValidCif, normalizeCif } from '../utils/cif.js';
 
+// Caracteres de control y de dirección de texto (bidi), que no son válidos en un nombre.
+const INVALID_CHARS = /\p{Cc}|[\u202A-\u202E\u2066-\u2069]/u;
+
 // Aplica .optional() a una cadena de validación si hace falta.
 const maybe = (chain, optional) => (optional ? chain.optional() : chain);
 
-const text = (field, max = 100, { optional = false } = {}) =>
+// Texto obligatorio, recortado y con máximo de caracteres (lo reutiliza userValidator).
+export const text = (field, max = 100, { optional = false } = {}) =>
   maybe(body(field), optional)
     .isString()
     .withMessage(`${field} es obligatorio`)
@@ -15,7 +19,10 @@ const text = (field, max = 100, { optional = false } = {}) =>
     .notEmpty()
     .withMessage(`${field} es obligatorio`)
     .isLength({ max })
-    .withMessage(`${field} es demasiado largo`);
+    .withMessage(`${field} es demasiado largo`)
+    .not()
+    .matches(INVALID_CHARS)
+    .withMessage(`${field} contiene caracteres no válidos`);
 
 const emailField = (field, { optional = false } = {}) =>
   maybe(body(field), optional)
@@ -49,14 +56,17 @@ const cifField = ({ optional = false } = {}) =>
     .custom(isValidCif)
     .withMessage('cif no es válido');
 
-const telefonoField = ({ optional = false } = {}) =>
-  maybe(body('telefono'), optional)
+// Teléfono español de 9 dígitos (lo reutiliza userValidator).
+export const phone = (field = 'telefono', { optional = false } = {}) =>
+  maybe(body(field), optional)
     .isString()
-    .withMessage('telefono es obligatorio')
+    .withMessage(`${field} es obligatorio`)
     .bail()
     .customSanitizer((value) => value.replace(/\s/g, ''))
     .matches(/^[6-9]\d{8}$/)
-    .withMessage('telefono debe tener 9 dígitos y empezar por 6, 7, 8 o 9');
+    .withMessage(`${field} debe tener 9 dígitos y empezar por 6, 7, 8 o 9`);
+
+const telefonoField = ({ optional = false } = {}) => phone('telefono', { optional });
 
 // Ciudad: texto de 2 a 100 caracteres tras recortar.
 const ciudadField = ({ optional = false } = {}) =>

@@ -5,10 +5,12 @@ import { after, before, describe, it } from 'node:test';
 import express from 'express';
 
 import app from '../../src/app.js';
+import { setDbForTests } from '../../src/config/config.js';
 import { ROLES } from '../../src/config/roles.js';
 import { auth, setTokenVerifier } from '../../src/middlewares/auth.js';
 import { errorHandler } from '../../src/middlewares/errorHandler.js';
 import { requireRole } from '../../src/middlewares/requireRole.js';
+import { createFakeFirestore } from '../helpers/fakeFirestore.js';
 
 // Doble de verifyIdToken: no habla con Firebase.
 async function fakeVerifier(token) {
@@ -35,6 +37,7 @@ describe('Autenticación y roles', () => {
 
   before(async () => {
     setTokenVerifier(fakeVerifier);
+    setDbForTests(createFakeFirestore());
     ({ server, baseUrl } = await listen(app));
 
     // Mini app solo para probar requireRole.
@@ -48,6 +51,7 @@ describe('Autenticación y roles', () => {
 
   after(async () => {
     setTokenVerifier(null);
+    setDbForTests(null);
     await new Promise((resolve) => server.close(resolve));
     await new Promise((resolve) => roleServer.close(resolve));
   });
@@ -99,6 +103,9 @@ describe('Autenticación y roles', () => {
         email: 'c@c.com',
         role: 'CLIENT',
         companyId: null,
+        nombre: null,
+        apellidos: null,
+        telefono: null,
       });
     });
 
