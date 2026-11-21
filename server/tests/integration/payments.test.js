@@ -17,6 +17,7 @@ import * as paymentModel from '../../src/models/paymentModel.js';
 import * as bookingsService from '../../src/services/bookingsService.js';
 import { reprocessRefund, toCents } from '../../src/services/paymentsService.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
+import { createStripeDouble } from '../helpers/stripeDouble.js';
 import { listen, seedPublicData } from '../helpers/publicData.js';
 
 const FUT = '2030-03-12';
@@ -27,60 +28,6 @@ const at = (fecha, hour) => {
   const [y, m, d] = fecha.split('-').map(Number);
   return new Date(y, m - 1, d, hour);
 };
-
-// Doble de Stripe: guarda las llamadas, respeta la clave de idempotencia (misma clave, misma sesión)
-// y puede fallar a demanda.
-function createStripeDouble() {
-  const calls = { create: [], retrieve: [], refunds: [] };
-  const sessions = new Map();
-  const keys = new Map();
-  const double = {
-    calls,
-    sessions,
-    failCreate: false,
-    failRefund: false,
-    createError: null,
-    refundError: null,
-    checkout: {
-      sessions: {
-        async create(params, options) {
-          calls.create.push({ params, options });
-          if (double.failCreate) {
-            throw Object.assign(new Error('detalle-secreto-de-stripe'), {
-              type: 'StripeAPIError',
-              ...double.createError,
-            });
-          }
-          if (keys.has(options.idempotencyKey)) return keys.get(options.idempotencyKey);
-          const id = `cs_test_${sessions.size + 1}`;
-          const session = {
-            id,
-            url: `https://checkout.stripe.com/c/pay/${id}`,
-            status: 'open',
-            expires_at: params.expires_at,
-          };
-          sessions.set(id, session);
-          keys.set(options.idempotencyKey, session);
-          return session;
-        },
-        async retrieve(id) {
-          calls.retrieve.push(id);
-          return sessions.get(id);
-        },
-      },
-    },
-    refunds: {
-      async create(params, options) {
-        calls.refunds.push({ params, options });
-        if (double.failRefund) {
-          throw Object.assign(new Error('detalle-secreto-del-reembolso'), double.refundError);
-        }
-        return { id: `re_${calls.refunds.length}` };
-      },
-    },
-  };
-  return double;
-}
 
 describe('Pagos con Stripe (checkout y webhook)', () => {
   let server;
@@ -306,7 +253,7 @@ describe('Pagos con Stripe (checkout y webhook)', () => {
       assert.equal(params.client_reference_id, 'bk-a');
       assert.equal(params.metadata.bookingId, 'bk-a');
       assert.equal(params.success_url, 'http://localhost:5173/payment/result?booking=bk-a');
-      assert.equal(params.cancel_url, params.success_url);
+      assert.equal(params.cancel_url, `${params.success_url}&cancelado=1`);
       assert.equal(options.idempotencyKey, 'checkout:bk-a:1');
       const ms = params.expires_at * 1000 - antes;
       assert.ok(ms >= 30 * MINUTE && ms <= 31 * MINUTE + 5000, `expires_at a ${ms} ms`);
@@ -533,7 +480,7 @@ describe('Pagos con Stripe (checkout y webhook)', () => {
       assert.equal(pago.refundReason, 'AMOUNT_MISMATCH');
       assert.equal(pago.refundPending, false);
       assert.equal(stripe.calls.refunds.length, 1);
-      assert.equal(stripe.calls.refunds[0].options.idempotencyKey, 'refund:cs_test_paid');
+      assert.equal(stripe.calls.refunds[0].options.idempotencyKey, 'refund:cs_test_paid:1');
       assert.equal(stripe.calls.refunds[0].params.payment_intent, 'pi_test_1');
     });
 
@@ -592,7 +539,130 @@ describe('Pagos con Stripe (checkout y webhook)', () => {
       assert.equal(hecho.refundPending, false);
       assert.equal((await paymentModel.listByBooking('bk-a')).length, 1);
       const keys = stripe.calls.refunds.map((c) => c.options.idempotencyKey);
-      assert.deepEqual(keys, ['refund:cs_test_paid', 'refund:cs_test_paid']);
+      assert.deepEqual(keys, ['refund:cs_test_paid:1', 'refund:cs_test_paid:2']);
+    });
+  });
+
+  describe('clave de idempotencia del reembolso', () => {
+    const seedPending = () =>
+      paymentModel.create(
+        {
+          bookingId: 'bk-a',
+          amount: 50,
+          currency: 'EUR',
+          provider: 'STRIPE',
+          providerPaymentId: 'pi_x',
+          status: 'SUCCEEDED',
+          refundPending: true,
+          refundReason: 'SLOT_TAKEN',
+        },
+        { id: 'cs_x' },
+      );
+    const keys = () => stripe.calls.refunds.map((c) => c.options.idempotencyKey);
+
+    it('tras un fallo definitivo de Stripe el siguiente intento usa una clave nueva', async () => {
+      await seedPending();
+      stripe.failRefund = true;
+      stripe.refundError = { type: 'StripeInvalidRequestError', code: 'parameter_invalid' };
+      await assert.rejects(reprocessRefund('cs_x'), (e) => e.code === 'REFUND_FAILED');
+      assert.equal((await paymentModel.findById('cs_x')).refundAttempt, 2);
+      stripe.failRefund = false;
+      assert.deepEqual(await reprocessRefund('cs_x'), { id: 'cs_x', estado: 'REFUNDED' });
+      assert.deepEqual(keys(), ['refund:cs_x:1', 'refund:cs_x:2']);
+    });
+
+    it('con un error de conexión o clave en uso reutiliza la misma clave', async () => {
+      await seedPending();
+      stripe.failRefund = true;
+      for (const err of [
+        { type: 'StripeConnectionError' },
+        { type: 'StripeIdempotencyError', code: 'idempotency_key_in_use' },
+      ]) {
+        stripe.refundError = err;
+        await assert.rejects(reprocessRefund('cs_x'), (e) => e.code === 'REFUND_FAILED');
+      }
+      assert.equal((await paymentModel.findById('cs_x')).refundAttempt, undefined);
+      stripe.failRefund = false;
+      await reprocessRefund('cs_x');
+      assert.deepEqual(new Set(keys()), new Set(['refund:cs_x:1']));
+      assert.equal(stripe.calls.refunds.length, 3);
+    });
+
+    it('un 5xx (StripeAPIError) o StripeIdempotencyError avanza el intento y el reintento completa', async () => {
+      for (const err of [
+        { type: 'StripeAPIError', statusCode: 500 },
+        { type: 'StripeIdempotencyError' },
+      ]) {
+        await paymentModel.remove('cs_x');
+        stripe.calls.refunds.length = 0;
+        stripe.existingRefunds.length = 0;
+        await seedPending();
+        stripe.failRefund = true;
+        stripe.refundError = err;
+        await assert.rejects(reprocessRefund('cs_x'), (e) => e.code === 'REFUND_FAILED');
+        assert.equal((await paymentModel.findById('cs_x')).refundAttempt, 2);
+        stripe.failRefund = false;
+        await reprocessRefund('cs_x');
+        assert.deepEqual(keys(), ['refund:cs_x:1', 'refund:cs_x:2']);
+        assert.equal((await paymentModel.findById('cs_x')).status, 'REFUNDED');
+      }
+    });
+
+    it('adopta un reembolso ya existente (succeeded o pending) sin crear otro', async () => {
+      for (const status of ['succeeded', 'pending']) {
+        await paymentModel.remove('cs_x');
+        stripe.calls.refunds.length = 0;
+        stripe.existingRefunds.length = 0;
+        await seedPending();
+        stripe.existingRefunds.push({ id: `re_old_${status}`, payment_intent: 'pi_x', status });
+        assert.deepEqual(await reprocessRefund('cs_x'), { id: 'cs_x', estado: 'REFUNDED' });
+        assert.equal(stripe.calls.refunds.length, 0, 'no crea otro');
+        const pago = await paymentModel.findById('cs_x');
+        assert.equal(pago.refundId, `re_old_${status}`);
+        assert.equal(pago.refundPending, false);
+      }
+    });
+
+    it('un reembolso existente fallido o cancelado no se adopta: se crea uno', async () => {
+      await seedPending();
+      stripe.existingRefunds.push({ id: 're_f', payment_intent: 'pi_x', status: 'failed' });
+      await reprocessRefund('cs_x');
+      assert.equal(stripe.calls.refunds.length, 1);
+    });
+
+    it('un 5xx que sí creó el reembolso se adopta en el reintento sin duplicar', async () => {
+      await seedPending();
+      stripe.failRefund = true;
+      stripe.createdDespiteError = true;
+      stripe.refundError = { type: 'StripeAPIError', statusCode: 500 };
+      await assert.rejects(reprocessRefund('cs_x'), (e) => e.code === 'REFUND_FAILED');
+      stripe.failRefund = false;
+      await reprocessRefund('cs_x');
+      assert.equal(stripe.calls.refunds.length, 1, 'el reintento no crea otro');
+      assert.equal((await paymentModel.findById('cs_x')).refundId, 're_real_1');
+    });
+
+    it('si refunds.list falla no crea el reembolso y deja refundPending', async () => {
+      await seedPending();
+      stripe.failList = true;
+      await assert.rejects(reprocessRefund('cs_x'), (e) => e.code === 'REFUND_FAILED');
+      assert.equal(stripe.calls.refunds.length, 0);
+      const pago = await paymentModel.findById('cs_x');
+      assert.equal(pago.refundPending, true);
+      assert.equal(pago.status, 'SUCCEEDED');
+      stripe.failList = false;
+      await reprocessRefund('cs_x');
+      assert.equal(stripe.calls.refunds.length, 1);
+    });
+
+    it('charge_already_refunded cuenta como reembolsado sin avanzar el intento', async () => {
+      await seedPending();
+      stripe.failRefund = true;
+      stripe.refundError = { type: 'StripeInvalidRequestError', code: 'charge_already_refunded' };
+      assert.deepEqual(await reprocessRefund('cs_x'), { id: 'cs_x', estado: 'REFUNDED' });
+      const pago = await paymentModel.findById('cs_x');
+      assert.equal(pago.status, 'REFUNDED');
+      assert.equal(pago.refundAttempt, undefined);
     });
   });
 
@@ -824,7 +894,7 @@ describe('Pagos con Stripe (checkout y webhook)', () => {
       assert.equal((await paymentModel.findById('cs_test_paid')).refundPending, true);
     });
 
-    it('reprocessRefund reprocesa un pago pendiente con la clave refund:{id} y es idempotente', async () => {
+    it('reprocessRefund reprocesa un pago pendiente con la clave refund:{id}:1 y es idempotente', async () => {
       await paymentModel.create(
         {
           bookingId: 'bk-a',
@@ -840,7 +910,7 @@ describe('Pagos con Stripe (checkout y webhook)', () => {
       );
       assert.deepEqual(await reprocessRefund('cs_x'), { id: 'cs_x', estado: 'REFUNDED' });
       assert.equal(stripe.calls.refunds.length, 1);
-      assert.equal(stripe.calls.refunds[0].options.idempotencyKey, 'refund:cs_x');
+      assert.equal(stripe.calls.refunds[0].options.idempotencyKey, 'refund:cs_x:1');
       assert.equal(stripe.calls.refunds[0].params.payment_intent, 'pi_x');
       assert.equal((await paymentModel.findById('cs_x')).refundPending, false);
       await reprocessRefund('cs_x');

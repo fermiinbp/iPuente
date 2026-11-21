@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 
 import { setDbForTests } from '../../src/config/config.js';
+import { setStripeForTests } from '../../src/config/stripe.js';
 import { setTokenVerifier } from '../../src/middlewares/auth.js';
 import * as blockModel from '../../src/models/blockModel.js';
 import * as bookingModel from '../../src/models/bookingModel.js';
@@ -20,6 +21,7 @@ import { deleteRoom } from '../../src/services/deletionService.js';
 import { countFutureBookings } from '../../src/services/futureBookingsService.js';
 import { addDays, todayString } from '../../src/utils/dates.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
+import { createStripeDouble } from '../helpers/stripeDouble.js';
 import { FECHA, getJson, listen, seedPublicData, seedSearchData } from '../helpers/publicData.js';
 
 const FUT = '2030-03-12';
@@ -70,6 +72,8 @@ describe('Reservas pendientes de pago y caducidad', () => {
   });
 
   beforeEach(async () => {
+    delete process.env.STRIPE_SECRET_KEY;
+    setStripeForTests({ client: createStripeDouble(), webhookSecret: 'whsec_test' });
     setDbForTests(createFakeFirestore());
     setTokenVerifier(async (token) => ({ uid: token }));
     await seedPublicData();
@@ -77,6 +81,7 @@ describe('Reservas pendientes de pago y caducidad', () => {
   });
 
   after(async () => {
+    setStripeForTests(null);
     setTokenVerifier(null);
     setDbForTests(null);
     await new Promise((resolve) => server.close(resolve));
