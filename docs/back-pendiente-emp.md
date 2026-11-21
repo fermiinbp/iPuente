@@ -150,11 +150,13 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 
 ## EMP014 · Detalle de reserva
 
-- **Ya cubierto:** `GET /api/company/bookings/:id` (DAT021), cancelar con motivo y borrar bloqueo (DAT016).
-- **Falta:**
-  - Asistentes de la reserva: no existen en la API. El detalle común (`BookingDetail`, UI014) ya trae código, sala, planta y email del cliente, y no muestra los asistentes hasta que existan.
-  - Mensaje opcional para el cliente al cancelar.
+- **Ya cubierto:** `GET /api/company/bookings/:id` (DAT021), cancelar con motivo (`PATCH /api/company/bookings/:id/cancel`) y borrar bloqueo (DAT016).
+- **Hecho en el front (EMP014):** panel lateral con el detalle sobre Reservas, cancelar con motivo obligatorio y quitar bloqueo. Un bloqueo se abre con los datos de su fila (`?bloqueo=id`), porque no hay `GET /api/company/blocks/:id`.
+- **Falta (no se muestra hasta que exista):**
+  - Asistentes de la reserva.
+  - Mensaje opcional para el cliente al cancelar (y el email de cancelación).
   - Desglose de comisiones y reembolso al cancelar (decisión 2).
+- **Mejora opcional:** `GET /api/company/blocks/:id`, para que el enlace a un bloqueo funcione aunque quede fuera del rango de fechas del filtro.
 
 ## EMP015 · Ajustes
 
