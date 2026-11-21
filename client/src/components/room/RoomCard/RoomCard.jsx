@@ -1,7 +1,7 @@
 // Tarjeta resumen de una sala (foto, nombre, lugar, capacidad y precio). Toda la tarjeta es un enlace a la ficha.
 import { Link } from 'react-router';
 import symbol from '@/assets/images/ipuente-simbolo.svg';
-import { formatPrice } from '@/utils/formatPrice.js';
+import { priceLabel } from '@/utils/formatPrice.js';
 import styles from './RoomCard.module.css';
 
 // variant: 'default' (tarjeta vertical), 'featured' (grande, con la sala protagonista) o 'compact' (en fila).
@@ -18,7 +18,7 @@ export default function RoomCard({ room, variant = 'default' }) {
         <span className={styles.place}>{room.place}</span>
         <span className={styles.meta}>
           <span>hasta {room.people} personas</span>
-          <span>{`${formatPrice(room.price)}/h`}</span>
+          <span>{priceLabel(room.price, { gratis: room.gratis, perHour: true })}</span>
         </span>
       </span>
     </Link>

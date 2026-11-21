@@ -3,7 +3,7 @@
 import Button from '@/components/ui/Button/Button.jsx';
 import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
 import { formatLongDate, hasStarted } from '@/utils/dates.js';
-import { formatPrice } from '@/utils/formatPrice.js';
+import { priceLabel } from '@/utils/formatPrice.js';
 import styles from './BookingDetail.module.css';
 
 const pad = (hour) => String(hour).padStart(2, '0');
@@ -96,13 +96,15 @@ export default function BookingDetail({ booking, onCancel }) {
             <dl className={styles.prices}>
               <div>
                 <dt>
-                  {formatPrice(booking.precioHora)} × {hours}
+                  {booking.precioHora === 0
+                    ? `${hours} h`
+                    : `${priceLabel(booking.precioHora)} × ${hours}`}
                 </dt>
-                <dd>{formatPrice(booking.importe)}</dd>
+                <dd>{priceLabel(booking.importe)}</dd>
               </div>
               <div className={styles.total}>
                 <dt>Total</dt>
-                <dd>{formatPrice(booking.importe)}</dd>
+                <dd>{priceLabel(booking.importe)}</dd>
               </div>
             </dl>
             <Button variant="secondary" disabled aria-describedby="factura-nota">

@@ -14,7 +14,7 @@ import { getBooking } from '@/services/bookingsService.js';
 import { createCheckout } from '@/services/paymentsService.js';
 import { getAvailability } from '@/services/roomsService.js';
 import { formatLongDate } from '@/utils/dates.js';
-import { formatPrice } from '@/utils/formatPrice.js';
+import { priceLabel } from '@/utils/formatPrice.js';
 import styles from './BookingCheckout.module.css';
 
 const pad = (hour) => String(hour).padStart(2, '0');
@@ -189,14 +189,14 @@ export default function BookingCheckout() {
             <dl className={styles.prices}>
               <div>
                 <dt>
-                  {formatPrice(booking.precioHora)} × {booking.horas}{' '}
-                  {booking.horas === 1 ? 'hora' : 'horas'}
+                  {booking.precioHora === 0 ? '' : `${priceLabel(booking.precioHora)} × `}
+                  {booking.horas} {booking.horas === 1 ? 'hora' : 'horas'}
                 </dt>
-                <dd>{formatPrice(booking.importe)}</dd>
+                <dd>{priceLabel(booking.importe)}</dd>
               </div>
               <div className={styles.total}>
                 <dt>Total</dt>
-                <dd>{formatPrice(booking.importe)}</dd>
+                <dd>{priceLabel(booking.importe)}</dd>
               </div>
             </dl>
 

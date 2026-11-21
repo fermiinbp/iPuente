@@ -2,7 +2,7 @@
 // Toda ella es un enlace al edificio, que recibe la fecha y las personas elegidas en la URL.
 import { Link } from 'react-router';
 import symbol from '@/assets/images/ipuente-simbolo.svg';
-import { formatPrice } from '@/utils/formatPrice.js';
+import { priceLabel } from '@/utils/formatPrice.js';
 import styles from './BuildingCard.module.css';
 
 export default function BuildingCard({ building, date = '', people = '' }) {
@@ -32,7 +32,11 @@ export default function BuildingCard({ building, date = '', people = '' }) {
         <span className={styles.name}>{building.nombre}</span>
         {place && <span className={styles.place}>{place}</span>}
         {typeof building.precioDesde === 'number' && (
-          <span className={styles.price}>desde {formatPrice(building.precioDesde)}/h</span>
+          <span className={styles.price}>
+            {building.precioDesde === 0
+              ? 'Desde gratis'
+              : `desde ${priceLabel(building.precioDesde, { perHour: true })}`}
+          </span>
         )}
         {freeText && <span className={styles.free}>{freeText}</span>}
         <span className={styles.meta}>
