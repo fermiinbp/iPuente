@@ -76,13 +76,17 @@ function rangeQuery({ desde, hasta, roomId } = {}) {
 
 // Reservas de las salas de la empresa (como mucho 500). Cada una: { id, codigo, roomId, fecha, inicio, fin, horas,
 // precioHora, importe, estado, sala: { nombre, codigo }, cliente: { nombre, email }, motivoCancelacion?, canceladaPor? }.
-export function getBookings(filtros, options) {
-  return get(`/company/bookings${rangeQuery(filtros)}`, options);
+// La API responde { reservas: [...] }; aquí se devuelve solo la lista.
+export async function getBookings(filtros, options) {
+  const data = await get(`/company/bookings${rangeQuery(filtros)}`, options);
+  return Array.isArray(data?.reservas) ? data.reservas : [];
 }
 
 // Bloqueos de horas de la empresa (como mucho 500). Cada uno: { id, roomId, sala, fecha, inicio, fin, motivo }.
-export function getBlocks(filtros, options) {
-  return get(`/company/blocks${rangeQuery(filtros)}`, options);
+// La API responde { bloqueos: [...] }; aquí se devuelve solo la lista.
+export async function getBlocks(filtros, options) {
+  const data = await get(`/company/blocks${rangeQuery(filtros)}`, options);
+  return Array.isArray(data?.bloqueos) ? data.bloqueos : [];
 }
 
 // Bloquea horas de una sala propia: { roomId, fecha (no pasada), inicio, fin (8–20, inicio < fin), motivo (1–200) }.
