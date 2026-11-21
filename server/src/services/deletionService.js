@@ -13,7 +13,7 @@ import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 import { isDeleted, notDeleted } from '../utils/softDelete.js';
 import { isBookable, toDate, toSlot } from './availabilityService.js';
-import { slotIds } from './companyBookingsService.js';
+import { slotIds } from './occupancyService.js';
 import { isActiveFuture } from './futureBookingsService.js';
 import { getOwnedBuilding, getOwnedFloor, getOwnedRoom } from './ownershipService.js';
 

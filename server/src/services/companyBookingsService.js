@@ -10,6 +10,7 @@ import { addDays, resolveRange, todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 import { BOOKING_HOURS } from '../config/bookingHours.js';
 import { assertSlotAvailable, toDate, toSlot } from './availabilityService.js';
+import { readSlotPlan, releaseSlots, slotIds, writeSlotClaims } from './occupancyService.js';
 import { isActiveFuture } from './futureBookingsService.js';
 import {
   atHour,
@@ -155,6 +156,8 @@ export async function createBlock(companyId, { roomId, fecha, inicio, fin, motiv
     const id = await runTransaction(async (tx) => {
       room = assertOwnedBy(await roomModel.findById(roomId, { tx }), companyId);
       await assertSlotAvailable(roomId, fecha, inicio, fin, tx);
+      // Lecturas de occupancy antes de escribir; una pendiente vencida se expira y se sustituye.
+      const plan = await readSlotPlan(roomId, fecha, inicio, fin, { tx });
       const blockId = await blockModel.create(
         {
           companyId,
@@ -165,31 +168,12 @@ export async function createBlock(companyId, { roomId, fecha, inicio, fin, motiv
         },
         { tx },
       );
-      for (let hour = inicio; hour < fin; hour++) {
-        await occupancyModel.create(
-          { companyId, roomId, date: fecha, hour, blockId },
-          { id: occupancyModel.slotId(roomId, fecha, hour), tx },
-        );
-      }
+      await writeSlotClaims(plan, { companyId, roomId, fecha, inicio, owner: { blockId } }, tx);
       return blockId;
     });
     return { id, roomId, sala: toSala(room), fecha, inicio, fin, motivo };
   } catch (err) {
     throw translateConflict(err);
-  }
-}
-
-// Ids de las fichas de occupancy de una sala, fecha y franja [inicio, fin).
-export function slotIds(roomId, fecha, inicio, fin) {
-  const ids = [];
-  for (let hour = inicio; hour < fin; hour++) ids.push(occupancyModel.slotId(roomId, fecha, hour));
-  return ids;
-}
-
-// Borra solo las fichas leídas que pertenecen a este bloqueo o reserva (campo === id).
-async function releaseSlots(ids, slots, field, id, tx) {
-  for (let i = 0; i < ids.length; i++) {
-    if (slots[i]?.[field] === id) await occupancyModel.remove(ids[i], { tx });
   }
 }
 
