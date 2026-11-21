@@ -147,7 +147,7 @@ function Welcome() {
             </div>
             <p className={styles.stepText}>Datos, foto de la fachada y plantas.</p>
           </div>
-          <Button to="/company/buildings" variant="secondary">
+          <Button to="/company/buildings/new" variant="secondary">
             Nuevo edificio
           </Button>
         </li>
