@@ -12,6 +12,7 @@ import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { useFetch } from '@/hooks/useFetch.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import { cancelBooking, getBooking } from '@/services/bookingsService.js';
+import { cancelNotice } from '@/utils/bookingDetail.js';
 import { formatLongDate } from '@/utils/dates.js';
 import styles from './BookingDetailPage.module.css';
 
@@ -31,7 +32,7 @@ export default function BookingDetailPage() {
   const [toCancel, setToCancel] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState('');
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useState(null);
 
   function closeModal() {
     setToCancel(null);
@@ -42,8 +43,8 @@ export default function BookingDetailPage() {
     setCancelling(true);
     setCancelError('');
     try {
-      await cancelBooking(toCancel.id);
-      setNotice(`Reserva del ${formatLongDate(toCancel.fecha)} cancelada.`);
+      const result = await cancelBooking(toCancel.id);
+      setNotice(cancelNotice(formatLongDate(toCancel.fecha), result));
       setToCancel(null);
       reload();
     } catch (err) {
@@ -76,7 +77,7 @@ export default function BookingDetailPage() {
         {location.state?.created && !notice && (
           <Alert type="success">Reserva confirmada. Te esperamos.</Alert>
         )}
-        {notice && <Alert type="success">{notice}</Alert>}
+        {notice && <Alert type={notice.type}>{notice.text}</Alert>}
         <BookingDetail booking={booking} onCancel={setToCancel} />
       </>
     );
