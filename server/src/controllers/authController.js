@@ -8,6 +8,12 @@ export async function registerClient(req, res) {
   res.status(201).json(result);
 }
 
+// POST /api/auth/google: alta de quien entra con Google (201 si crea la ficha, 200 si ya existía).
+export async function googleSignIn(req, res) {
+  const result = await authService.googleSignIn(req.user);
+  res.status(result.creado ? 201 : 200).json(result);
+}
+
 // POST /api/auth/register/company: crea una empresa pendiente de aprobación.
 export async function registerCompany(req, res) {
   const { email, password, nombre, nombreEmpresa, cif, contacto, telefono } = req.body;
