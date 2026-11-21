@@ -78,4 +78,5 @@ export const get = (path, options) => apiClient(path, { ...options, method: 'GET
 export const post = (path, body, options) => apiClient(path, { ...options, method: 'POST', body });
 export const patch = (path, body, options) =>
   apiClient(path, { ...options, method: 'PATCH', body });
+export const put = (path, body, options) => apiClient(path, { ...options, method: 'PUT', body });
 export const del = (path, options) => apiClient(path, { ...options, method: 'DELETE' });

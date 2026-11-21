@@ -1,1 +1,53 @@
-/* Estilos de MapEditor (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de MapEditor (CSS Module). El lienzo ocupa el ancho disponible y mantiene la proporción del plano. */
+.frame {
+  padding: var(--space-4);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque-elevado);
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: calc(100vh - var(--alto-cabecera) - 2 * var(--space-6));
+  touch-action: none;
+  user-select: none;
+}
+
+.drawing {
+  cursor: crosshair;
+}
+
+/* Al dibujar, las salas no capturan el puntero: se puede empezar una sala nueva encima de otra. */
+.drawing g {
+  pointer-events: none;
+}
+
+.paper {
+  fill: var(--bosque-profundo);
+}
+
+.plan {
+  opacity: 0.45;
+}
+
+.gridLine {
+  fill: none;
+  stroke: var(--linea);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.preview {
+  fill: rgb(207 227 106 / 0.15);
+  stroke: var(--lima);
+  stroke-dasharray: 6 4;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.tooSmall {
+  stroke: var(--error);
+}
