@@ -118,3 +118,46 @@ export async function getFloorMap(floorId, options) {
 export function saveFloorMap(floorId, mapa, options) {
   return put(`/company/floors/${encodeURIComponent(floorId)}/map`, mapa, options);
 }
+
+// Salas activas de la empresa (GET /company/rooms), ordenadas por edificio, planta y código. Cada una:
+// { id, buildingId, floorId, codigo, nombre, capacidad, precioHora, gratis, reservable, estado, … }.
+export function getRooms(options) {
+  return get('/company/rooms', options);
+}
+
+// Filtros comunes de reservas y bloqueos: `desde` y `hasta` (AAAA-MM-DD, inclusive; máximo 366 días; sin ellos,
+// de hoy − 30 días a 90 días después) y `roomId`. Los vacíos no se envían.
+function rangeQuery({ desde, hasta, roomId } = {}) {
+  const params = new URLSearchParams();
+  if (desde) params.set('desde', desde);
+  if (hasta) params.set('hasta', hasta);
+  if (roomId) params.set('roomId', roomId);
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
+// Reservas de las salas de la empresa (como mucho 500). Cada una: { id, codigo, roomId, fecha, inicio, fin, horas,
+// precioHora, importe, estado, sala: { nombre, codigo }, cliente: { nombre, email }, motivoCancelacion?, canceladaPor? }.
+// La API responde { reservas: [...] }; aquí se devuelve solo la lista.
+export async function getBookings(filtros, options) {
+  const data = await get(`/company/bookings${rangeQuery(filtros)}`, options);
+  return Array.isArray(data?.reservas) ? data.reservas : [];
+}
+
+// Bloqueos de horas de la empresa (como mucho 500). Cada uno: { id, roomId, sala, fecha, inicio, fin, motivo }.
+// La API responde { bloqueos: [...] }; aquí se devuelve solo la lista.
+export async function getBlocks(filtros, options) {
+  const data = await get(`/company/blocks${rangeQuery(filtros)}`, options);
+  return Array.isArray(data?.bloqueos) ? data.bloqueos : [];
+}
+
+// Bloquea horas de una sala propia: { roomId, fecha (no pasada), inicio, fin (8–20, inicio < fin), motivo (1–200) }.
+// 409 SLOT_TAKEN si choca con una reserva u otro bloqueo; 409 BUSY si hay mucha actividad (reintentar).
+export function createBlock(datos, options) {
+  return post('/company/blocks', datos, options);
+}
+
+// Quita un bloqueo propio y libera sus horas.
+export function deleteBlock(id, options) {
+  return del(`/company/blocks/${encodeURIComponent(id)}`, options);
+}

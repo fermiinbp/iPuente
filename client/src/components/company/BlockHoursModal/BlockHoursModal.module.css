@@ -1,0 +1,32 @@
+/* Estilos de BlockHoursModal (CSS Module). Mobile first: un campo por fila; desde 600 px, dos columnas. */
+.grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.status:empty {
+  display: none;
+}
+
+.checking {
+  margin: 0;
+  color: var(--crema-suave);
+  font-size: var(--text-pequeno);
+}
+
+@media (min-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .full {
+    grid-column: 1 / -1;
+  }
+}
