@@ -108,13 +108,15 @@ export default function App() {
                 <Route path="company/request" element={<CompanyRequestStatus />} />
               </Route>
 
+              {/* Editor de mapas: pantalla completa con cabecera propia, sin el menú del panel (EMP007) */}
+              <Route path="company/floors/:floorId/editor" element={<MapEditorPage />} />
+
               <Route
                 path="company"
                 element={<DashboardLayout title="Panel de empresa" links={COMPANY_LINKS} />}
               >
                 <Route index element={<CompanyDashboard />} />
                 <Route path="buildings" element={<CompanyBuildings />} />
-                <Route path="floors/:floorId/editor" element={<MapEditorPage />} />
                 <Route path="rooms" element={<CompanyRooms />} />
                 {/* El detalle es un panel lateral sobre la lista (EMP014) */}
                 <Route path="bookings" element={<CompanyBookings />} />
