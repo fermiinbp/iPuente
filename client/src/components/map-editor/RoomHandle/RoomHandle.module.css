@@ -1,1 +1,57 @@
-/* Estilos de RoomHandle (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de RoomHandle (CSS Module). Las medidas de trazo no escalan con el plano (vector-effect), así se ven igual
+   en un plano de 1000 que de 5000 unidades. */
+.room {
+  cursor: move;
+  outline: none;
+}
+
+.body {
+  fill: rgb(243 236 220 / 0.12);
+  stroke: var(--crema-suave);
+  stroke-dasharray: 6 4;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.room:hover .body {
+  fill: rgb(243 236 220 / 0.2);
+}
+
+.selected .body {
+  fill: rgb(207 227 106 / 0.18);
+  stroke: var(--lima);
+  stroke-dasharray: none;
+  stroke-width: 2.5;
+}
+
+.room:focus-visible .body {
+  stroke: var(--foco);
+  stroke-dasharray: none;
+  stroke-width: 3;
+}
+
+.code {
+  fill: var(--crema);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+}
+
+.corner {
+  fill: var(--bosque-profundo);
+  stroke: var(--lima);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.nw,
+.se {
+  cursor: nwse-resize;
+}
+
+.ne,
+.sw {
+  cursor: nesw-resize;
+}
