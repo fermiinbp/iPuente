@@ -1,4 +1,4 @@
-// Estado y acciones del editor de mapas: salas, selección, dibujar, mover, redimensionar, borrar, deshacer y cargar el borrador de la IA.
+// Estado y acciones del editor de mapas: salas, selección, dibujar, mover, redimensionar, editar código, nombre y tipo, borrar y deshacer.
 // Las salas van en el formato de la API (`{ id, codigo, nombre, tipo, x, y, w, h }`, coordenadas del plano).
 // Deshacer guarda una copia de las salas antes de cada cambio terminado: un arrastre entero es un solo paso (se llama
 // a `checkpoint()` al empezar y a `changeRoom(..., { record: false })` mientras dura), y cada pulsación de teclado es
@@ -115,6 +115,10 @@ export function useMapEditor() {
       addRoom: (rect) => dispatch({ type: 'add', rect }),
       changeRoom: (id, rect, { record: rec = true } = {}) =>
         dispatch({ type: 'change', id, rect, record: rec }),
+      // Código, nombre o tipo de una sala (panel de sala). Igual que changeRoom: al escribir, `checkpoint()` al
+      // empezar y `{ record: false }` en cada tecla, para que deshacer quite el texto entero de una vez.
+      updateRoomInfo: (id, fields, { record: rec = true } = {}) =>
+        dispatch({ type: 'change', id, rect: fields, record: rec }),
       deleteRoom: (id) => dispatch({ type: 'delete', id }),
       undo: () => dispatch({ type: 'undo' }),
       markSaved: () => dispatch({ type: 'saved' }),
