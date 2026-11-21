@@ -9,6 +9,7 @@ import {
   listMyBookings,
 } from '../controllers/bookingsController.js';
 import { auth } from '../middlewares/auth.js';
+import { bookingCancelLimiter, bookingCreateLimiter } from '../middlewares/rateLimit.js';
 import { requireRole } from '../middlewares/requireRole.js';
 import { validate } from '../middlewares/validate.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -22,7 +23,7 @@ const router = Router();
  *   post:
  *     tags: [Cliente]
  *     summary: Crea una reserva
- *     description: 'Solo rol CLIENT. Reserva una franja de horas enteras (8-20) de una sala. Sin pago online: la reserva nace CONFIRMED. El importe lo calcula el servidor. Si otra reserva o un bloqueo ocupa la franja, responde 409 SLOT_TAKEN.'
+ *     description: 'Solo rol CLIENT. Reserva una franja de horas enteras (8-20) de una sala. El importe lo calcula el servidor. Con importe > 0 la reserva nace PENDING_PAYMENT (retiene las horas 15 min y devuelve `expiraEn`; hay que pagarla con POST /payments/checkout/{bookingId}) y sin Stripe responde 503 PAYMENTS_UNAVAILABLE sin retener horas; una sala gratis (0 €) nace CONFIRMED. Si otra reserva o un bloqueo ocupa la franja, responde 409 SLOT_TAKEN.'
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -109,11 +110,14 @@ const router = Router();
  *               error:
  *                 code: SLOT_TAKEN
  *                 message: Esa franja ya está ocupada
+ *       429:
+ *         description: Demasiadas peticiones seguidas (RATE_LIMITED).
  */
 router.post(
   '/bookings',
   auth,
   requireRole(ROLES.CLIENT),
+  bookingCreateLimiter,
   ...bookingValidator.create,
   validate,
   asyncHandler(createBooking),
@@ -223,7 +227,7 @@ router.get('/bookings/me', auth, requireRole(ROLES.CLIENT), asyncHandler(listMyB
  *                   type: string
  *                   enum: [PENDING_PAYMENT, CONFIRMED, CANCELLED, EXPIRED, COMPLETED]
  *                 motivoCancelacion: {type: string, nullable: true, description: Solo si está cancelada}
- *                 canceladaPor: {type: string, enum: [cliente, empresa], nullable: true, description: Solo si está cancelada}
+ *                 canceladaPor: {type: string, enum: [cliente, empresa, admin], nullable: true, description: Solo si está cancelada}
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -248,7 +252,7 @@ router.get(
  *   patch:
  *     tags: [Cliente]
  *     summary: Cancela una reserva propia
- *     description: 'Solo el cliente dueño (rol CLIENT) puede cancelar una reserva CONFIRMED (o PENDING_PAYMENT vigente) que no haya empezado; una pendiente vencida responde 400 BOOKING_NOT_CANCELLABLE. Libera las horas de la sala. Una reserva de otro usuario responde 404 como una inexistente.'
+ *     description: 'Solo el cliente dueño (rol CLIENT) puede cancelar una reserva CONFIRMED (o PENDING_PAYMENT vigente) que no haya empezado; una pendiente vencida responde 400 BOOKING_NOT_CANCELLABLE. Libera las horas de la sala y, si estaba pagada, la reembolsa: la respuesta lleva `reembolso` (REFUNDED o PENDING) y, si Stripe falla, la cancelación se mantiene y añade `aviso`; una pendiente expira su sesión de Checkout. Una reserva de otro usuario responde 404 como una inexistente.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -282,11 +286,14 @@ router.get(
  *         $ref: '#/components/responses/Forbidden'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       429:
+ *         description: Demasiadas peticiones seguidas (RATE_LIMITED).
  */
 router.patch(
   '/bookings/:id/cancel',
   auth,
   requireRole(ROLES.CLIENT),
+  bookingCancelLimiter,
   ...bookingValidator.cancel,
   validate,
   asyncHandler(cancelBooking),

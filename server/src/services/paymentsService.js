@@ -21,7 +21,11 @@ import {
   toSlot,
 } from './availabilityService.js';
 import { extendPendingExpiry } from './bookingsService.js';
+import { reprocessRefund } from './refundService.js';
 import { readReclaimPlan, releaseSlots, slotIds, writeReclaimClaims } from './occupancyService.js';
+
+// Reembolso de pagos pendientes (vive en refundService para que lo usen también cancelar y admin).
+export { reprocessRefund };
 
 const MINUTE = 60 * 1000;
 // Stripe exige que la sesión dure como mínimo 30 minutos: se piden 31 para dejar margen.
@@ -188,7 +192,7 @@ export async function createCheckout(uid, bookingId) {
         payment_intent_data: { metadata: { bookingId } },
         expires_at: Math.floor(plan.expiresAt.getTime() / 1000),
         success_url: returnUrl,
-        cancel_url: returnUrl,
+        cancel_url: `${returnUrl}&cancelado=1`,
         line_items: [
           {
             quantity: 1,
@@ -342,44 +346,6 @@ async function onPaid(event, session) {
   if (!outcome.refund) return outcome;
   await reprocessRefund(session.id);
   return { accion: 'reembolsado' };
-}
-
-// Reembolsa un pago con refundPending (también lo usará la reconciliación de admin). Clave de
-// idempotencia `refund:{paymentId}`: reintentar no duplica el reembolso. `charge_already_refunded`
-// cuenta como éxito. Con cualquier otro fallo el pago conserva refundPending y se lanza 500 para que
-// Stripe reenvíe el evento (el pago ya está guardado, así que el reintento solo repite el reembolso).
-// Sin refundPending no hace nada. Devuelve { id, estado }.
-export async function reprocessRefund(paymentId) {
-  const payment = await paymentModel.findById(paymentId);
-  if (!payment?.refundPending) return { id: paymentId, estado: payment?.status ?? null };
-  const stripe = getStripe();
-  if (!stripe) throw unavailable();
-  if (!payment.providerPaymentId) {
-    throw new HttpError(500, 'REFUND_FAILED', 'No se ha podido reembolsar el pago');
-  }
-  let refundId = null;
-  try {
-    const refund = await stripe.refunds.create(
-      {
-        payment_intent: payment.providerPaymentId,
-        metadata: { bookingId: payment.bookingId, motivo: payment.refundReason ?? '' },
-      },
-      { idempotencyKey: `refund:${paymentId}` },
-    );
-    refundId = refund?.id ?? null;
-  } catch (err) {
-    if (err?.code !== 'charge_already_refunded') {
-      console.error('Reembolso fallido:', err?.type ?? err?.name ?? 'desconocido', err?.code ?? '');
-      throw new HttpError(500, 'REFUND_FAILED', 'No se ha podido reembolsar el pago');
-    }
-  }
-  await paymentModel.update(paymentId, {
-    status: 'REFUNDED',
-    refundPending: false,
-    refundId,
-    refundedAt: now(),
-  });
-  return { id: paymentId, estado: 'REFUNDED' };
 }
 
 // Sesión caducada: si la reserva sigue pendiente y la sesión es de su intento actual, pasa a

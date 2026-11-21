@@ -1,6 +1,6 @@
 // Reservas y bloqueos del panel de empresa: listar reservas, crear y quitar bloqueos de horas y
 // cancelar reservas de sus salas. El companyId siempre sale del token; nada se confía al body.
-import { now, runTransaction } from '../models/baseModel.js';
+import { runTransaction } from '../models/baseModel.js';
 import * as blockModel from '../models/blockModel.js';
 import * as bookingModel from '../models/bookingModel.js';
 import * as occupancyModel from '../models/occupancyModel.js';
@@ -9,6 +9,7 @@ import * as userModel from '../models/userModel.js';
 import { addDays, resolveRange, todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 import { BOOKING_HOURS } from '../config/bookingHours.js';
+import { cancelBooking as cancelBookingCommon } from './cancellationService.js';
 import { assertSlotAvailable, toDate, toSlot } from './availabilityService.js';
 import { readSlotPlan, releaseSlots, slotIds, writeSlotClaims } from './occupancyService.js';
 import { isActiveFuture } from './futureBookingsService.js';
@@ -191,37 +192,33 @@ export async function removeBlock(companyId, id) {
   return { id, borrado: true };
 }
 
-// Cancela una reserva de una sala de la empresa (solo CONFIRMED y que no haya empezado) y libera
-// sus horas. No gestiona reembolsos: todavía no hay pago online.
+// Cancela una reserva de una sala de la empresa (solo CONFIRMED y que no haya empezado; una
+// PENDING_PAYMENT no la cancela la empresa) con cancellationService: libera sus horas y, si estaba
+// pagada, la reembolsa (si el reembolso falla se mantiene la cancelación y la respuesta lleva `aviso`).
 export async function cancelBooking(companyId, id, motivo) {
-  await runTransaction(async (tx) => {
-    const booking = assertBookingOwned(await bookingModel.findById(id, { tx }), companyId);
-    // Defensa en profundidad: la sala de la reserva también debe ser de la empresa.
-    assertBookingOwned(await roomModel.findById(booking.roomId, { tx }), companyId);
-    if (booking.status !== 'CONFIRMED') {
-      throw new HttpError(
-        400,
-        'BOOKING_NOT_CANCELLABLE',
-        'Solo se pueden cancelar reservas confirmadas',
-      );
-    }
-    if (toDate(booking.startDate).getTime() <= Date.now()) {
-      throw new HttpError(
-        400,
-        'BOOKING_STARTED',
-        'No se puede cancelar una reserva que ya ha empezado',
-      );
-    }
-    const fecha = todayString(toDate(booking.startDate));
-    const { inicio, fin } = toSlot(booking, 'reserva');
-    const ids = slotIds(booking.roomId, fecha, inicio, fin);
-    const slots = await Promise.all(ids.map((slot) => occupancyModel.findById(slot, { tx })));
-    await bookingModel.update(
-      id,
-      { status: 'CANCELLED', cancelledAt: now(), cancelledBy: 'COMPANY', cancelReason: motivo },
-      { tx },
-    );
-    await releaseSlots(ids, slots, 'bookingId', id, tx);
+  const result = await cancelBookingCommon({
+    id,
+    cancelledBy: 'COMPANY',
+    motivo,
+    verify: async (booking, tx) => {
+      assertBookingOwned(booking, companyId);
+      // Defensa en profundidad: la sala de la reserva también debe ser de la empresa.
+      assertBookingOwned(await roomModel.findById(booking.roomId, { tx }), companyId);
+      if (booking.status !== 'CONFIRMED') {
+        throw new HttpError(
+          400,
+          'BOOKING_NOT_CANCELLABLE',
+          'Solo se pueden cancelar reservas confirmadas',
+        );
+      }
+      if (toDate(booking.startDate).getTime() <= Date.now()) {
+        throw new HttpError(
+          400,
+          'BOOKING_STARTED',
+          'No se puede cancelar una reserva que ya ha empezado',
+        );
+      }
+    },
   });
-  return { id, estado: 'CANCELLED', motivo };
+  return { ...result, motivo };
 }
