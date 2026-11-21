@@ -4,7 +4,7 @@ import { body } from 'express-validator';
 import { isValidCif, normalizeCif } from '../utils/cif.js';
 
 // Caracteres de control y de dirección de texto (bidi), que no son válidos en un nombre.
-const INVALID_CHARS = /\p{Cc}|[\u202A-\u202E\u2066-\u2069]/u;
+export const INVALID_CHARS = /\p{Cc}|[\u202A-\u202E\u2066-\u2069]/u;
 
 // Aplica .optional() a una cadena de validación si hace falta.
 const maybe = (chain, optional) => (optional ? chain.optional() : chain);
@@ -111,6 +111,19 @@ export const registerCompany = [
   body('aceptaCondiciones')
     .custom((value) => value === true)
     .withMessage('Debes aceptar las condiciones'),
+];
+
+// POST /auth/google: el body debe estar vacío (el rol nunca se elige).
+export const googleSignIn = [
+  body().custom((value) => {
+    // Sin body (undefined en Express 5) o un objeto vacío: vale. Cualquier otra cosa, no.
+    if (value === undefined) return true;
+    const isObject = value !== null && typeof value === 'object' && !Array.isArray(value);
+    if (!isObject || Object.keys(value).length > 0) {
+      throw new Error('Esta petición no admite body');
+    }
+    return true;
+  }),
 ];
 
 // PATCH /companies/me: todos opcionales, al menos uno y solo los de la lista blanca.
