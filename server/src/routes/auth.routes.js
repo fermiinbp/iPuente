@@ -1,8 +1,9 @@
-// Rutas públicas de registro de clientes y empresas. El rol y el estado los fija el servidor.
+// Rutas de registro de clientes y empresas (públicas) y alta con Google (con token). El rol y el estado los fija el servidor.
 import { Router } from 'express';
 
-import { registerClient, registerCompany } from '../controllers/authController.js';
-import { registerLimiter } from '../middlewares/rateLimit.js';
+import { googleSignIn, registerClient, registerCompany } from '../controllers/authController.js';
+import { authStrict } from '../middlewares/auth.js';
+import { googleAuthLimiter, registerLimiter } from '../middlewares/rateLimit.js';
 import { validate } from '../middlewares/validate.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import * as authValidator from '../validators/authValidator.js';
@@ -148,6 +149,79 @@ router.post(
   authValidator.registerCompany,
   validate,
   asyncHandler(registerCompany),
+);
+
+/**
+ * @openapi
+ * /auth/google:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Da de alta a quien entra con Google
+ *     description: Crea su ficha en `users` y le asigna el rol `CLIENT` solo si aún no tiene rol. Si ya lo tiene no cambia nada (idempotente) y nunca se puede elegir rol. Exige un token de Google con el correo verificado y un body vacío. Si `refrescarToken` es `true`, hay que renovar el token para leer el rol.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: La cuenta ya estaba dada de alta (o solo se ha reparado el rol).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [uid, rol, creado, refrescarToken]
+ *               properties:
+ *                 uid:
+ *                   type: string
+ *                 rol:
+ *                   type: string
+ *                   example: CLIENT
+ *                 creado:
+ *                   type: boolean
+ *                 refrescarToken:
+ *                   type: boolean
+ *       201:
+ *         description: Ficha creada.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [uid, rol, creado, refrescarToken]
+ *               properties:
+ *                 uid:
+ *                   type: string
+ *                 rol:
+ *                   type: string
+ *                   example: CLIENT
+ *                 creado:
+ *                   type: boolean
+ *                   example: true
+ *                 refrescarToken:
+ *                   type: boolean
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         description: El acceso no es con Google (`GOOGLE_REQUIRED`) o el correo no está verificado (`EMAIL_NOT_VERIFIED`).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: La cuenta tiene un estado inconsistente (`ACCOUNT_INCONSISTENT`).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       429:
+ *         $ref: '#/components/responses/TooManyRequests'
+ */
+router.post(
+  '/auth/google',
+  authStrict,
+  googleAuthLimiter,
+  authValidator.googleSignIn,
+  validate,
+  asyncHandler(googleSignIn),
 );
 
 export default router;

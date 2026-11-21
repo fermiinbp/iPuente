@@ -32,6 +32,11 @@ const DEFAULTS = {
     windowMs: HOUR,
     message: 'Has editado tu perfil demasiadas veces. Inténtalo de nuevo más tarde.',
   },
+  googleAuth: {
+    limit: 60,
+    windowMs: HOUR,
+    message: 'Demasiados intentos de acceso con Google. Inténtalo de nuevo más tarde.',
+  },
   companyEdit: {
     limit: 20,
     windowMs: HOUR,
@@ -76,6 +81,7 @@ export function setRateLimitForTests(options) {
 function storeFor(name) {
   if (name === 'register') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'profile') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
+  if (name === 'googleAuth') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'companyEdit') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'checkout') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'ai') return new FirestoreRateLimitStore({ prefix: name, failOpen: false });
@@ -94,7 +100,7 @@ function build(name) {
     legacyHeaders: false,
     store: storeFor(name),
     keyGenerator: (req) =>
-      ((name === 'ai' || name === 'companyEdit' || name === 'profile' || name === 'checkout') &&
+      (['ai', 'companyEdit', 'profile', 'googleAuth', 'checkout'].includes(name) &&
         req.user?.uid) ||
       clientIp(req),
     handler: (req, res, next) => next(new HttpError(429, 'RATE_LIMITED', message)),
@@ -118,5 +124,7 @@ export const registerLimiter = limiter('register');
 export const aiDetectLimiter = limiter('ai');
 export const profileEditLimiter = limiter('profile');
 export const companyEditLimiter = limiter('companyEdit');
+// POST /auth/google: 60 por hora por uid, falla abierto; va después de authStrict.
+export const googleAuthLimiter = limiter('googleAuth');
 // Iniciar un pago (20 por hora por uid, falla abierto): va después de `auth`.
 export const checkoutLimiter = limiter('checkout');

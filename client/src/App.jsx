@@ -25,6 +25,7 @@ const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers/AdminUsers.jsx'))
 const BookingCheckout = lazy(() => import('@/pages/BookingCheckout/BookingCheckout.jsx'));
 const BookingDetailPage = lazy(() => import('@/pages/BookingDetailPage/BookingDetailPage.jsx'));
 const Building = lazy(() => import('@/pages/Building/Building.jsx'));
+const BuildingForm = lazy(() => import('@/pages/company/BuildingForm/BuildingForm.jsx'));
 const CompanyBookings = lazy(() => import('@/pages/company/CompanyBookings/CompanyBookings.jsx'));
 const CompanyBuildings = lazy(
   () => import('@/pages/company/CompanyBuildings/CompanyBuildings.jsx'),
@@ -108,13 +109,18 @@ export default function App() {
                 <Route path="company/request" element={<CompanyRequestStatus />} />
               </Route>
 
+              {/* Editor de mapas: pantalla completa con cabecera propia, sin el menú del panel (EMP007) */}
+              <Route path="company/floors/:floorId/editor" element={<MapEditorPage />} />
+
               <Route
                 path="company"
                 element={<DashboardLayout title="Panel de empresa" links={COMPANY_LINKS} />}
               >
                 <Route index element={<CompanyDashboard />} />
                 <Route path="buildings" element={<CompanyBuildings />} />
-                <Route path="floors/:floorId/editor" element={<MapEditorPage />} />
+                {/* Crear y editar usan la misma página (EMP004) */}
+                <Route path="buildings/new" element={<BuildingForm />} />
+                <Route path="buildings/:buildingId/edit" element={<BuildingForm />} />
                 <Route path="rooms" element={<CompanyRooms />} />
                 {/* El detalle es un panel lateral sobre la lista (EMP014) */}
                 <Route path="bookings" element={<CompanyBookings />} />
