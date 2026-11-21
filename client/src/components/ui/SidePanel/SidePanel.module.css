@@ -1,0 +1,131 @@
+/* Estilos de SidePanel (CSS Module). Mobile first: capa a pantalla completa con el panel entrando por la derecha;
+   desde 900 px, panel en su sitio (al lado de la lista) que se queda fijo al hacer scroll. */
+.layer {
+  position: fixed;
+  z-index: var(--z-panel);
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  font-family: var(--font-body);
+}
+
+.veil {
+  position: absolute;
+  inset: 0;
+  background: var(--velo-modal);
+  animation: aparecer var(--dur-media) var(--ease-out);
+}
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(100%, 480px);
+  height: 100dvh;
+  padding: var(--space-5);
+  border-left: 1px solid var(--linea);
+  background: var(--bosque-elevado);
+  color: var(--crema);
+  box-shadow: var(--sombra-flotante);
+  animation: entrarPanel var(--dur-media) var(--ease-out);
+}
+
+.panel:focus {
+  outline: none;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  min-width: 0;
+  padding-top: var(--space-2);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-lista-movil);
+  line-height: var(--leading-declaracion);
+  overflow-wrap: anywhere;
+}
+
+/* El título recibe el foco por programa al abrir (escritorio): no necesita anillo, pero sí si llega con teclado. */
+.title:focus {
+  outline: none;
+}
+
+.title:focus-visible {
+  outline: 3px solid var(--foco);
+  outline-offset: 3px;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  font-size: var(--text-interfaz);
+  line-height: var(--leading-cuerpo);
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.footer > * {
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .panel {
+    position: sticky;
+    top: calc(var(--alto-cabecera) + var(--space-5));
+    width: 100%;
+    height: auto;
+    max-height: calc(100dvh - var(--alto-cabecera) - 2 * var(--space-5));
+    padding: var(--space-6);
+    border: 1px solid var(--linea);
+    border-radius: var(--radio-tarjeta);
+    box-shadow: none;
+    animation: aparecer var(--dur-media) var(--ease-out);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .veil,
+  .panel {
+    animation: none;
+  }
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes entrarPanel {
+  from {
+    transform: translateX(var(--space-6));
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
