@@ -1,0 +1,48 @@
+/* Estilos de BuildingPhotoField (CSS Module). */
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.image {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radio-plano);
+  background: var(--bosque-profundo);
+  object-fit: cover;
+}
+
+.uploading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  border: 2px dashed var(--crema-suave);
+  border-radius: var(--radio-tarjeta);
+}
+
+.hint,
+.error {
+  margin: 0;
+  font-size: var(--text-pequeno);
+}
+
+.hint {
+  color: var(--crema-suave);
+}
+
+.error {
+  color: var(--error);
+  font-weight: 600;
+}
+
+/* El input real no se ve ni se tabula: lo abre «Cambiar imagen». */
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

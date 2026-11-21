@@ -69,8 +69,17 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 ## EMP004 · Formulario de edificio
 
 - **Ya cubierto:** eliminar planta con `DELETE /api/company/floors/:id`, bloqueado con `409 HAS_FUTURE_BOOKINGS` (DAT028; el orden de las plantas es su `numero`); crear y editar edificio y plantas (DAT014); el edificio se crea en borrador (`publicado: false`) y se publica aparte (DAT018); fotos del edificio (`fotos`, URLs de Storage) y reglas de Storage (DAT024).
+- **Front (EMP004):** `BuildingForm` usa la API real (`createBuilding`, `updateBuilding`, `createFloor`, `updateFloor`, `deleteFloor` y `uploadService.uploadImage` para la fachada). Por ahora la fachada es la **primera** de `fotos`.
+- **Por qué «Guardar edificio» no publica:** `POST /company/buildings/:id/publish` exige al menos una planta publicada (`400 NO_PUBLISHED_FLOORS`), y una planta solo se publica desde el editor con su plano y salas reservables (`MAP_REQUIRED`, `NO_BOOKABLE_ROOMS`). Un edificio recién creado nunca cumple eso, así que el formulario siempre guarda en borrador y lo explica en pantalla; se publica después desde «Mis edificios».
 - **Falta:**
-  - Distinguir la foto de la fachada entre las `fotos` del edificio (p. ej. la primera).
+  - Distinguir la foto de la fachada entre las `fotos` del edificio (p. ej. un campo `fotoFachada`, o documentar que es la primera).
+  - Campo «tiene salas» de la planta (lo pide el wireframe 12b; el formulario no lo muestra hasta que exista).
+- **Mejoras recomendadas** (el front funciona sin ellas, pero con más llamadas o con riesgo si algo falla a medias):
+  - **Reordenar plantas en una sola petición**, p. ej. `PUT /api/company/buildings/:id/floors/order` con `[{ id, numero }]` en una transacción. Hoy el front mueve cada planta a un número libre temporal y luego al final (2 `PATCH` por planta, `utils/buildingFloors.js`), porque `numero` es único; si una llamada falla a medias, el orden queda a medias.
+  - **`GET /api/company/buildings/:id`** con sus plantas. Hoy `getBuilding` lee todo el listado y lo busca.
+  - **Crear el edificio con sus plantas en una petición** (p. ej. `plantas: [{ numero, nombre }]` en `POST /company/buildings`), para no dejar un edificio a medias si falla una planta.
+  - **Saber antes de eliminar si una planta tiene reservas futuras** (p. ej. `reservasFuturas` en cada planta de `GET /company/buildings`), para avisar en el formulario antes de guardar en vez de con el `409` (igual que en EMP003 con el edificio).
+  - **Borrar de Storage las imágenes que se dejan de usar** al cambiar la fachada (ahora la anterior se queda en `companies/{companyId}/buildings/`).
 
 ## EMP005 · Zonas de la fachada
 
@@ -82,7 +91,11 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 
 ## EMP007 · Editor I: lienzo
 
-- **Ya cubierto (DAT015):** guardar el mapa. El lienzo es solo front.
+- **Ya cubierto (DAT015):** guardar el mapa (`PUT /api/company/floors/:id/map`).
+- **Falta (necesario):** **leer el mapa de una planta propia aunque esté en borrador**, p. ej. `GET /api/company/floors/:id` → `{ id, buildingId, numero, nombre, publicado, ancho, alto, origen, salas, mapImageUrl }` (con su validator, `@openapi` y test de permisos; 404 si no existe, es ajena o está eliminada). Hoy no hay ninguna forma: `GET /floors/:id` es público y da 404 en las plantas sin publicar, y `GET /company/buildings` no trae el mapa.
+  - **Qué hace el front mientras tanto (EMP007):** `companyService.getFloorMap` lo llama y, si la API responde que la ruta no existe, el editor avisa de que «la carga del mapa guardado se implementará más adelante» y empieza en blanco. Como guardar **sustituye el mapa entero** (las salas que faltan quedan no reservables), si la planta ya tiene salas «Guardar borrador» se desactiva para no borrarlas. En cuanto exista el endpoint, el editor lo usa sin más cambios.
+- **Mejoras recomendadas:**
+  - Que `PUT .../map` acepte una comprobación de versión (p. ej. `updatedAt` leído) y responda `409 STALE_DATA` si otra persona guardó la planta entretanto, para no pisar cambios.
 
 ## EMP008 · Editor II: plano e IA
 
