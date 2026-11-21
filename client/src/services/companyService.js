@@ -183,3 +183,10 @@ export function createBlock(datos, options) {
 export function deleteBlock(id, options) {
   return del(`/company/blocks/${encodeURIComponent(id)}`, options);
 }
+
+// Muestra u oculta una sala propia (PATCH /company/rooms/:id/visibility, body { visible }). Responde la sala con su
+// `estado` y, al ocultar con reservas futuras, `reservasFuturas` y un `aviso` (no se cancelan).
+// 400 ROOM_WITHOUT_PRICE si se quiere mostrar sin precio ni «gratis»; 400 ROOM_INACTIVE si ya no está en el mapa.
+export function setRoomVisibility(id, visible, options) {
+  return patch(`/company/rooms/${encodeURIComponent(id)}/visibility`, { visible }, options);
+}
