@@ -1,0 +1,112 @@
+/* Estilos de ActionMenu (CSS Module). Menú flotante bajo el botón «···», alineado a su derecha (o izquierda). */
+.actionMenu {
+  position: relative;
+  display: inline-flex;
+}
+
+.menu {
+  position: absolute;
+  z-index: var(--z-menu);
+  top: calc(100% + var(--space-2));
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 2 * var(--gutter)));
+  margin: 0;
+  padding: var(--space-2);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque-elevado);
+  box-shadow: var(--sombra-flotante);
+  list-style: none;
+  animation: abrirMenu var(--dur-fast) var(--ease-out);
+}
+
+.alignEnd {
+  right: 0;
+  transform-origin: top right;
+}
+
+.alignStart {
+  left: 0;
+  transform-origin: top left;
+}
+
+.separated {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--linea);
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: var(--campo-alto);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radio-plano);
+  background: transparent;
+  color: var(--crema);
+  font-family: inherit;
+  font-size: var(--text-menu);
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+/* El foco se ve también como fondo: con las flechas se sabe siempre en qué opción se está. */
+.item:focus-visible {
+  background: var(--bosque);
+  outline-offset: -3px;
+}
+
+.danger {
+  color: var(--error);
+}
+
+.item[aria-disabled='true'] {
+  color: var(--campo-desactivado-texto);
+  cursor: not-allowed;
+}
+
+.hint {
+  color: var(--crema-suave);
+  font-size: var(--text-etiqueta);
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .item:hover {
+    background: var(--bosque);
+  }
+
+  .item[aria-disabled='true']:hover {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu {
+    animation: none;
+  }
+
+  .item {
+    transition: none;
+  }
+}
+
+@keyframes abrirMenu {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
