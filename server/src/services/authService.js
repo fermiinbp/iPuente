@@ -1,11 +1,12 @@
 // Registro de clientes y empresas: crea el usuario en Firebase Auth, su ficha en Firestore y su rol (custom claim).
 import { adminAuth, isProductionEnv } from '../config/config.js';
-import { ROLES } from '../config/roles.js';
+import { ROLE_VALUES, ROLES } from '../config/roles.js';
 import { now, runTransaction } from '../models/baseModel.js';
 import * as companyModel from '../models/companyModel.js';
 import * as companyTaxIdModel from '../models/companyTaxIdModel.js';
 import * as userModel from '../models/userModel.js';
 import { HttpError } from '../utils/httpError.js';
+import { INVALID_CHARS } from '../validators/authValidator.js';
 
 import { COMPANY_STATUS } from './companyService.js';
 
@@ -81,6 +82,105 @@ export async function registerClient({ email, password, nombre }) {
     await rollback(uid);
     throw err;
   }
+}
+
+const isAlreadyExists = (err) =>
+  err?.code === 6 || err?.code === 'already-exists' || /ALREADY_EXISTS/.test(err?.message ?? '');
+
+const inconsistent = () =>
+  new HttpError(
+    409,
+    'ACCOUNT_INCONSISTENT',
+    'Tu cuenta tiene un estado inconsistente. Contacta con soporte.',
+  );
+
+// Nombre del token de Google listo para la ficha: sin control ni bidi, espacios colapsados, recortado
+// y de hasta 100 caracteres (por puntos de código, sin partir pares sustitutos). null si queda vacío.
+function cleanName(name) {
+  if (typeof name !== 'string') return null;
+  const spaced = name.replace(new RegExp(INVALID_CHARS.source, 'gu'), ' ');
+  const clean = spaced.replace(/\s+/g, ' ').trim();
+  const cut = Array.from(clean).slice(0, 100).join('').trim();
+  return cut || null;
+}
+
+// Un intento del alta con Google: lee el claim fresco y, en una transacción, crea la ficha si falta
+// sin tocar nunca un rol existente. Devuelve { rol, creado, repararClaim, claims } sin escribir claims.
+async function googleSignInAttempt(user) {
+  const record = await authClient().getUser(user.uid);
+  const claims = record?.customClaims ?? {};
+  const claimRole = ROLE_VALUES.includes(claims.role) ? claims.role : null;
+  // Un claim con rol inválido se trata como sin rol (no escala); solo se avisa con el uid.
+  if (claims.role !== undefined && !claimRole) {
+    console.warn(`Alta con Google: la cuenta ${user.uid} tiene un claim de rol no válido`);
+  }
+  // Sin claim, quien es dueño de una empresa no puede pasar por cliente.
+  if (!claimRole && (await companyModel.findByOwnerUids([user.uid])).length > 0) {
+    throw inconsistent();
+  }
+  const outcome = await runTransaction(async (tx) => {
+    const profile = await userModel.findById(user.uid, { tx });
+    if (profile) {
+      if (claimRole) return { rol: claimRole, creado: false, repararClaim: false };
+      if (profile.role !== ROLES.CLIENT) throw inconsistent();
+      return { rol: ROLES.CLIENT, creado: false, repararClaim: true };
+    }
+    // El claim manda: la ficha nueva refleja su rol (no concede nada) y, sin claim, es CLIENT.
+    const rol = claimRole ?? ROLES.CLIENT;
+    const data = { email: user.email, role: rol };
+    const name = cleanName(user.name);
+    if (name) data.name = name;
+    await userModel.create(data, { id: user.uid, tx });
+    return { rol, creado: true, repararClaim: !claimRole };
+  });
+  return { ...outcome, claims };
+}
+
+// Alta con Google (POST /auth/google). Idempotente: crea users/{uid} y el claim CLIENT solo si faltan
+// y nunca cambia un rol existente. Devuelve { uid, rol, creado, refrescarToken }.
+export async function googleSignIn(user) {
+  if (user.signInProvider !== 'google.com') {
+    throw new HttpError(403, 'GOOGLE_REQUIRED', 'Esta operación solo está disponible con Google');
+  }
+  if (user.emailVerified !== true) {
+    throw new HttpError(
+      403,
+      'EMAIL_NOT_VERIFIED',
+      'El correo de tu cuenta de Google no está verificado',
+    );
+  }
+  let outcome;
+  try {
+    outcome = await googleSignInAttempt(user);
+  } catch (err) {
+    // Dos llamadas simultáneas: la otra creó la ficha entre medias; se repite y ya la encuentra.
+    if (!isAlreadyExists(err)) throw err;
+    outcome = await googleSignInAttempt(user);
+  }
+  if (outcome.repararClaim) {
+    try {
+      // Auth no tiene compare-and-swap: releer reduce la ventana con make-admin, pero no la elimina.
+      const fresh = (await authClient().getUser(user.uid))?.customClaims ?? {};
+      if (ROLE_VALUES.includes(fresh.role)) {
+        return { uid: user.uid, rol: fresh.role, creado: outcome.creado, refrescarToken: true };
+      }
+      await authClient().setCustomUserClaims(user.uid, { ...fresh, role: ROLES.CLIENT });
+    } catch (err) {
+      // La ficha ya existe: la siguiente llamada repara el claim. No se filtran detalles.
+      console.error('Alta con Google: no se pudo asignar el rol', err?.code);
+      throw new HttpError(
+        500,
+        'ROLE_ASSIGN_FAILED',
+        'No se ha podido completar el alta. Inténtalo de nuevo.',
+      );
+    }
+  }
+  return {
+    uid: user.uid,
+    rol: outcome.rol,
+    creado: outcome.creado,
+    refrescarToken: outcome.repararClaim,
+  };
 }
 
 // Corta con 409 EMAIL_IS_CLIENT si el email ya es de un cliente (Auth o users).
