@@ -1,21 +1,156 @@
-// Detalle de una reserva del cliente: código, sala, fecha y franja, importe, estado, cómo llegar y política de cancelación.
-// No habla con la API: la página le pasa la reserva y `onCancel`. Cada rol verá aquí sus propias acciones.
+// Detalle de una reserva, común a cliente, empresa y admin (UI014). El rol (`role`) decide los datos y las acciones;
+// no habla con la API: quien lo usa le pasa la reserva y las acciones, y pone el contenedor (página o SidePanel).
+// - Cliente (por defecto, página `/bookings/:id`): código, sala, fecha y franja, planta y edificio, cómo llegar, pago
+//   y política de cancelación. Acciones: cancelar (`onCancel`, solo reservas confirmadas que no han empezado) y
+//   «Pagar ahora» (pendiente de pago, lleva a `/checkout/:id`).
+// - Empresa (wireframe 15b): sala y planta, fecha, horario, cliente, su email e importe. Acciones: «Cancelar reserva»
+//   (`onCancel`, mismas condiciones) y «Escribir al cliente» (correo). Un bloqueo (`tipo: 'bloqueo'`) enseña sala,
+//   fecha, horario y motivo, con «Quitar bloqueo» (`onRemoveBlock`).
+// - Admin (wireframe 19b): sala y planta, edificio, empresa, cliente, fecha y horario e importe. Acción: «Ver empresa».
+// Una acción sin su función no se pinta. Lo que la API no tiene no se muestra (asistentes, desglose de comisiones,
+// historial y reembolso). Dentro de un SidePanel: `showHeader={false}`, y el título y el estado los pone el panel con
+// `detailTitle` y `detailStatus` (utils/bookingDetail.js).
 import Button from '@/components/ui/Button/Button.jsx';
 import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
+import { BOOKING_STATUS, ROLES } from '@/config/constants.js';
+import { cancellationText, detailStatus, detailTitle, isBlock } from '@/utils/bookingDetail.js';
 import { formatLongDate, hasStarted } from '@/utils/dates.js';
 import { priceLabel } from '@/utils/formatPrice.js';
 import styles from './BookingDetail.module.css';
 
 const pad = (hour) => String(hour).padStart(2, '0');
+const slot = (booking) => `${pad(booking.inicio)}:00 – ${pad(booking.fin)}:00`;
+const join = (...parts) => parts.filter(Boolean).join(' · ');
+const roomLine = (booking) =>
+  join(booking.sala?.codigo, booking.sala?.nombre, booking.planta?.nombre);
 
-// Estado que se enseña: una reserva cancelada distingue si la canceló la persona o el espacio.
-function badgeStatus(booking) {
-  if (booking.estado !== 'CANCELLED') return booking.estado;
-  return booking.canceladaPor === 'empresa' ? 'CANCELLED_BY_SPACE' : 'CANCELLED_BY_CLIENT';
+// Se puede cancelar una reserva confirmada que todavía no ha empezado.
+const isCancellable = (booking) =>
+  booking.estado === BOOKING_STATUS.CONFIRMED && !hasStarted(booking);
+
+// Filas «Etiqueta … valor» de empresa y admin. Las que no tienen valor no se pintan.
+function Rows({ rows }) {
+  return (
+    <dl className={styles.rows}>
+      {rows
+        .filter((row) => row.value)
+        .map((row) => (
+          <div key={row.label} className={styles.row}>
+            <dt>{row.label}</dt>
+            <dd>{row.value}</dd>
+          </div>
+        ))}
+    </dl>
+  );
 }
 
-export default function BookingDetail({ booking, onCancel }) {
-  const canCancel = booking.estado === 'CONFIRMED' && !hasStarted(booking);
+function PanelHeader({ booking, role }) {
+  return (
+    <div className={styles.panelHead}>
+      <h2 className={styles.panelTitle}>{detailTitle(booking)}</h2>
+      <StatusBadge status={detailStatus(booking, role)} kind="booking" />
+    </div>
+  );
+}
+
+function Cancelled({ booking, role }) {
+  if (booking.estado !== BOOKING_STATUS.CANCELLED) return null;
+  return (
+    <p className={styles.cancelled} role="status">
+      {cancellationText(booking, role)}
+    </p>
+  );
+}
+
+function BlockDetail({ booking, showHeader, onRemoveBlock }) {
+  return (
+    <div className={styles.panel}>
+      {showHeader && <PanelHeader booking={booking} role={ROLES.COMPANY} />}
+      <Rows
+        rows={[
+          { label: 'Sala', value: roomLine(booking) },
+          { label: 'Fecha', value: formatLongDate(booking.fecha) },
+          { label: 'Horario', value: slot(booking) },
+          { label: 'Motivo', value: booking.motivo },
+        ]}
+      />
+      <p className={styles.note}>Los clientes no pueden reservar la sala en este horario.</p>
+      {onRemoveBlock && (
+        <div className={styles.actions}>
+          <Button variant="secondary" onClick={() => onRemoveBlock(booking)}>
+            Quitar bloqueo
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CompanyDetail({ booking, showHeader, onCancel }) {
+  const email = booking.cliente?.email;
+  const canCancel = Boolean(onCancel) && isCancellable(booking);
+  return (
+    <div className={styles.panel}>
+      {showHeader && <PanelHeader booking={booking} role={ROLES.COMPANY} />}
+      <Cancelled booking={booking} role={ROLES.COMPANY} />
+      <Rows
+        rows={[
+          { label: 'Sala', value: roomLine(booking) },
+          { label: 'Fecha', value: formatLongDate(booking.fecha) },
+          { label: 'Horario', value: slot(booking) },
+          { label: 'Cliente', value: booking.cliente?.nombre },
+          { label: 'Email del cliente', value: email },
+          { label: 'Importe', value: priceLabel(booking.importe) },
+        ]}
+      />
+      {(canCancel || email) && (
+        <div className={styles.actions}>
+          {canCancel && (
+            <Button variant="secondary" onClick={() => onCancel(booking)}>
+              Cancelar reserva
+            </Button>
+          )}
+          {email && (
+            <a className={styles.link} href={`mailto:${email}`}>
+              Escribir al cliente
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminDetail({ booking, showHeader }) {
+  const empresa = booking.empresa;
+  return (
+    <div className={styles.panel}>
+      {showHeader && <PanelHeader booking={booking} role={ROLES.ADMIN} />}
+      <Cancelled booking={booking} role={ROLES.ADMIN} />
+      <Rows
+        rows={[
+          { label: 'Sala', value: roomLine(booking) },
+          { label: 'Edificio', value: booking.edificio?.nombre },
+          { label: 'Empresa', value: empresa?.nombre },
+          { label: 'Cliente', value: join(booking.cliente?.nombre, booking.cliente?.email) },
+          { label: 'Fecha', value: `${formatLongDate(booking.fecha)} · ${slot(booking)}` },
+          { label: 'Importe', value: priceLabel(booking.importe) },
+        ]}
+      />
+      {empresa?.id && (
+        <div className={styles.actions}>
+          <Button variant="secondary" to={`/admin/companies/${encodeURIComponent(empresa.id)}`}>
+            Ver empresa
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ClientDetail({ booking, showHeader, onCancel }) {
+  const canCancel = Boolean(onCancel) && isCancellable(booking);
+  const canPay = booking.estado === BOOKING_STATUS.PENDING_PAYMENT && !hasStarted(booking);
   const place = [booking.edificio?.direccion, booking.edificio?.ciudad].filter(Boolean).join(', ');
   const mapsQuery = `${booking.edificio?.nombre ?? ''} ${place}`.trim();
   const mapsUrl = place
@@ -25,22 +160,17 @@ export default function BookingDetail({ booking, onCancel }) {
 
   return (
     <div className={styles.detail}>
-      <div className={styles.head}>
-        <div>
-          {booking.codigo && <p className={styles.code}>Reserva {booking.codigo}</p>}
-          <h1 className={styles.title}>{booking.sala?.nombre ?? 'Sala'}</h1>
+      {showHeader && (
+        <div className={styles.head}>
+          <div>
+            {booking.codigo && <p className={styles.code}>Reserva {booking.codigo}</p>}
+            <h1 className={styles.title}>{booking.sala?.nombre ?? 'Sala'}</h1>
+          </div>
+          <StatusBadge status={detailStatus(booking, ROLES.CLIENT)} kind="booking" />
         </div>
-        <StatusBadge status={badgeStatus(booking)} kind="booking" />
-      </div>
-
-      {booking.estado === 'CANCELLED' && (
-        <p className={styles.cancelled} role="status">
-          {booking.canceladaPor === 'empresa'
-            ? 'El espacio ha cancelado esta reserva.'
-            : 'Has cancelado esta reserva.'}
-          {booking.motivoCancelacion ? ` Motivo: ${booking.motivoCancelacion}` : ''}
-        </p>
       )}
+
+      <Cancelled booking={booking} role={ROLES.CLIENT} />
 
       <div className={styles.layout}>
         <div className={styles.main}>
@@ -52,21 +182,16 @@ export default function BookingDetail({ booking, onCancel }) {
             <div>
               <dt>Horario</dt>
               <dd>
-                {pad(booking.inicio)}:00 – {pad(booking.fin)}:00 ({hours})
+                {slot(booking)} ({hours})
               </dd>
             </div>
             <div>
               <dt>Sala</dt>
-              <dd>
-                {[booking.sala?.codigo, booking.sala?.nombre].filter(Boolean).join(' · ') || '—'}
-              </dd>
+              <dd>{join(booking.sala?.codigo, booking.sala?.nombre) || '—'}</dd>
             </div>
             <div>
               <dt>Planta y edificio</dt>
-              <dd>
-                {[booking.planta?.nombre, booking.edificio?.nombre].filter(Boolean).join(' · ') ||
-                  '—'}
-              </dd>
+              <dd>{join(booking.planta?.nombre, booking.edificio?.nombre) || '—'}</dd>
             </div>
           </dl>
 
@@ -107,6 +232,9 @@ export default function BookingDetail({ booking, onCancel }) {
                 <dd>{priceLabel(booking.importe)}</dd>
               </div>
             </dl>
+            {canPay && (
+              <Button to={`/checkout/${encodeURIComponent(booking.id)}`}>Pagar ahora</Button>
+            )}
             <Button variant="secondary" disabled aria-describedby="factura-nota">
               Descargar factura
             </Button>
@@ -118,7 +246,9 @@ export default function BookingDetail({ booking, onCancel }) {
                 Cancelar reserva
               </Button>
             )}
-            {booking.estado === 'CANCELLED' && <Button to="/search">Buscar otra sala</Button>}
+            {booking.estado === BOOKING_STATUS.CANCELLED && (
+              <Button to="/search">Buscar otra sala</Button>
+            )}
             {booking.sala?.id && (
               <Button variant="ghost" to={`/rooms/${booking.sala.id}`}>
                 Ver la sala
@@ -133,4 +263,21 @@ export default function BookingDetail({ booking, onCancel }) {
       </div>
     </div>
   );
+}
+
+export default function BookingDetail({
+  booking,
+  role = ROLES.CLIENT,
+  showHeader = true,
+  onCancel,
+  onRemoveBlock,
+}) {
+  if (role === ROLES.COMPANY && isBlock(booking)) {
+    return <BlockDetail booking={booking} showHeader={showHeader} onRemoveBlock={onRemoveBlock} />;
+  }
+  if (role === ROLES.COMPANY) {
+    return <CompanyDetail booking={booking} showHeader={showHeader} onCancel={onCancel} />;
+  }
+  if (role === ROLES.ADMIN) return <AdminDetail booking={booking} showHeader={showHeader} />;
+  return <ClientDetail booking={booking} showHeader={showHeader} onCancel={onCancel} />;
 }

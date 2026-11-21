@@ -1,5 +1,5 @@
 // Panel de empresa: alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos.
-import { del, get, patch, post } from './apiClient.js';
+import { ApiError, del, get, patch, post, put } from './apiClient.js';
 
 // Empresa del usuario autenticado (la API la saca del token):
 // { id, nombreEmpresa, cif, contacto, telefono, emailContacto, ciudad, estado, motivo, fechaSolicitud }.
@@ -55,4 +55,109 @@ export function deleteBuilding(id, options) {
 // Responde { id, buildingId, numero, nombre, publicado }; 409 FLOOR_EXISTS si ese número ya está ocupado.
 export function createFloor(buildingId, datos, options) {
   return post(`/company/buildings/${encodeURIComponent(buildingId)}/floors`, datos, options);
+}
+
+// Un edificio propio con sus plantas, la misma forma que cada elemento de getBuildings. La API no tiene
+// GET /company/buildings/:id, así que se busca en el listado; si no está (no existe, es de otra empresa o se
+// eliminó) responde como la API: ApiError 404 NOT_FOUND.
+// TODO(back): usar GET /company/buildings/:id cuando exista (docs/back-pendiente-emp.md, EMP004).
+export async function getBuilding(id, options) {
+  const buildings = await getBuildings(options);
+  const building = buildings.find((b) => b.id === id);
+  if (!building) throw new ApiError(404, 'NOT_FOUND', 'No encontramos este edificio.');
+  return building;
+}
+
+// Crea un edificio en borrador. `datos`: { nombre, direccion, ciudad, descripcion?, fotos? } (fotos: URLs de
+// Storage de la empresa, la primera es la fachada). Responde { id, nombre, direccion, ciudad, descripcion, fotos,
+// publicado: false }, sin plantas.
+export function createBuilding(datos, options) {
+  return post('/company/buildings', datos, options);
+}
+
+// Edita un edificio propio (cualquiera de los campos de createBuilding; al menos uno). No cambia si está publicado.
+export function updateBuilding(id, datos, options) {
+  return patch(`/company/buildings/${encodeURIComponent(id)}`, datos, options);
+}
+
+// Edita una planta propia: { numero?, nombre? } (al menos uno). 409 FLOOR_EXISTS si el número ya es de otra planta
+// del edificio.
+export function updateFloor(id, datos, options) {
+  return patch(`/company/floors/${encodeURIComponent(id)}`, datos, options);
+}
+
+// Elimina una planta propia con sus salas. 409 HAS_FUTURE_BOOKINGS (con `details.reservasFuturas`) si alguna sala
+// tiene reservas futuras: no borra nada.
+export function deleteFloor(id, options) {
+  return del(`/company/floors/${encodeURIComponent(id)}`, options);
+}
+
+// Mapa de una planta propia para el editor (aunque esté en borrador). Lo que se espera de la API:
+// GET /company/floors/:id → { id, buildingId, numero, nombre, publicado, ancho, alto, origen, salas, mapImageUrl }.
+// Ese endpoint TODAVÍA NO EXISTE (docs/back-pendiente-emp.md, EMP007): si la API responde que la ruta no existe,
+// devuelve `{ disponible: false }` en vez de fallar, y el editor avisa de que se implementará más adelante.
+// Con el endpoint: `{ disponible: true, ...planta }`. Una planta que no existe o es ajena sigue siendo un 404.
+const ROUTE_MISSING = /^No existe la ruta /;
+
+export async function getFloorMap(floorId, options) {
+  try {
+    const floor = await get(`/company/floors/${encodeURIComponent(floorId)}`, options);
+    if (!floor || typeof floor !== 'object') return { disponible: false };
+    return { disponible: true, ...floor };
+  } catch (error) {
+    if (error?.status === 404 && ROUTE_MISSING.test(error.message ?? ''))
+      return { disponible: false };
+    throw error;
+  }
+}
+
+// Guarda el mapa de una planta propia (PUT /company/floors/:id/map). `mapa`: { ancho, alto, origen ('manual' o
+// 'ia'), salas: [{ id, codigo, nombre, tipo, x, y, w, h }], mapImageUrl? }. Sustituye el mapa entero: las salas que
+// ya no están se marcan como no reservables. Errores: 400 VALIDATION_ERROR (con el campo de cada error) y
+// 409 ROOM_ID_TAKEN si un id de sala es de otra planta.
+export function saveFloorMap(floorId, mapa, options) {
+  return put(`/company/floors/${encodeURIComponent(floorId)}/map`, mapa, options);
+}
+
+// Salas activas de la empresa (GET /company/rooms), ordenadas por edificio, planta y código. Cada una:
+// { id, buildingId, floorId, codigo, nombre, capacidad, precioHora, gratis, reservable, estado, … }.
+export function getRooms(options) {
+  return get('/company/rooms', options);
+}
+
+// Filtros comunes de reservas y bloqueos: `desde` y `hasta` (AAAA-MM-DD, inclusive; máximo 366 días; sin ellos,
+// de hoy − 30 días a 90 días después) y `roomId`. Los vacíos no se envían.
+function rangeQuery({ desde, hasta, roomId } = {}) {
+  const params = new URLSearchParams();
+  if (desde) params.set('desde', desde);
+  if (hasta) params.set('hasta', hasta);
+  if (roomId) params.set('roomId', roomId);
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
+// Reservas de las salas de la empresa (como mucho 500). Cada una: { id, codigo, roomId, fecha, inicio, fin, horas,
+// precioHora, importe, estado, sala: { nombre, codigo }, cliente: { nombre, email }, motivoCancelacion?, canceladaPor? }.
+// La API responde { reservas: [...] }; aquí se devuelve solo la lista.
+export async function getBookings(filtros, options) {
+  const data = await get(`/company/bookings${rangeQuery(filtros)}`, options);
+  return Array.isArray(data?.reservas) ? data.reservas : [];
+}
+
+// Bloqueos de horas de la empresa (como mucho 500). Cada uno: { id, roomId, sala, fecha, inicio, fin, motivo }.
+// La API responde { bloqueos: [...] }; aquí se devuelve solo la lista.
+export async function getBlocks(filtros, options) {
+  const data = await get(`/company/blocks${rangeQuery(filtros)}`, options);
+  return Array.isArray(data?.bloqueos) ? data.bloqueos : [];
+}
+
+// Bloquea horas de una sala propia: { roomId, fecha (no pasada), inicio, fin (8–20, inicio < fin), motivo (1–200) }.
+// 409 SLOT_TAKEN si choca con una reserva u otro bloqueo; 409 BUSY si hay mucha actividad (reintentar).
+export function createBlock(datos, options) {
+  return post('/company/blocks', datos, options);
+}
+
+// Quita un bloqueo propio y libera sus horas.
+export function deleteBlock(id, options) {
+  return del(`/company/blocks/${encodeURIComponent(id)}`, options);
 }

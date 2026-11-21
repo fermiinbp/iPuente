@@ -32,6 +32,11 @@ const DEFAULTS = {
     windowMs: HOUR,
     message: 'Has editado tu perfil demasiadas veces. Inténtalo de nuevo más tarde.',
   },
+  googleAuth: {
+    limit: 60,
+    windowMs: HOUR,
+    message: 'Demasiados intentos de acceso con Google. Inténtalo de nuevo más tarde.',
+  },
   companyEdit: {
     limit: 20,
     windowMs: HOUR,
@@ -71,6 +76,7 @@ export function setRateLimitForTests(options) {
 function storeFor(name) {
   if (name === 'register') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'profile') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
+  if (name === 'googleAuth') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'companyEdit') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'ai') return new FirestoreRateLimitStore({ prefix: name, failOpen: false });
   return undefined; // general: memoria por defecto
@@ -88,7 +94,7 @@ function build(name) {
     legacyHeaders: false,
     store: storeFor(name),
     keyGenerator: (req) =>
-      ((name === 'ai' || name === 'companyEdit' || name === 'profile') && req.user?.uid) ||
+      (['ai', 'companyEdit', 'profile', 'googleAuth'].includes(name) && req.user?.uid) ||
       clientIp(req),
     handler: (req, res, next) => next(new HttpError(429, 'RATE_LIMITED', message)),
     // Se crea en la primera petición (para poder cambiarlo en tests) y se reutiliza: el aviso
@@ -111,3 +117,5 @@ export const registerLimiter = limiter('register');
 export const aiDetectLimiter = limiter('ai');
 export const profileEditLimiter = limiter('profile');
 export const companyEditLimiter = limiter('companyEdit');
+// POST /auth/google: 60 por hora por uid, falla abierto; va después de authStrict.
+export const googleAuthLimiter = limiter('googleAuth');
