@@ -7,7 +7,8 @@
 // `items`: [{ label, onSelect?, to?, danger?, separated?, disabled?, hint? }]. Con `to` es un enlace; si no, un botón
 // que llama a `onSelect`. `danger` la pinta como acción peligrosa (eliminar), `separated` dibuja una línea encima,
 // `disabled` la deja visible pero sin efecto y `hint` es una línea de ayuda debajo (p. ej. el motivo de desactivarla).
-// `align`: 'end' (por defecto, el menú se alinea a la derecha del botón) o 'start'.
+// `align`: 'auto' (por defecto: se abre hacia el lado con más sitio, para no salirse de la pantalla), 'end' (alineado
+// a la derecha del botón) o 'start' (a la izquierda).
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import IconButton from '@/components/ui/IconButton/IconButton.jsx';
@@ -25,10 +26,11 @@ function nextEnabled(items, from, step) {
 const firstEnabled = (items) => nextEnabled(items, -1, 1);
 const lastEnabled = (items) => nextEnabled(items, items.length, -1);
 
-export default function ActionMenu({ label, items = [], align = 'end', className = '' }) {
-  // Ruta en la que se abrió (al cambiar de ruta se cierra solo) y opción con el foco.
+export default function ActionMenu({ label, items = [], align = 'auto', className = '' }) {
+  // Ruta en la que se abrió (al cambiar de ruta se cierra solo), opción con el foco y lado hacia el que se abre.
   const [openPath, setOpenPath] = useState(null);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [side, setSide] = useState('end');
   const { pathname } = useLocation();
   const menuId = useId();
   const rootRef = useRef(null);
@@ -41,6 +43,13 @@ export default function ActionMenu({ label, items = [], align = 'end', className
   }
 
   const openAt = (index) => {
+    if (align === 'auto') {
+      // Botón en la mitad izquierda de la pantalla: el menú crece hacia la derecha, y al revés.
+      const rect = buttonRef.current?.getBoundingClientRect();
+      setSide(rect && rect.left + rect.width / 2 < window.innerWidth / 2 ? 'start' : 'end');
+    } else {
+      setSide(align);
+    }
     setActiveIndex(index);
     setOpenPath(pathname);
   };
@@ -115,7 +124,7 @@ export default function ActionMenu({ label, items = [], align = 'end', className
   };
 
   const rootClasses = [styles.actionMenu, className].filter(Boolean).join(' ');
-  const menuClasses = [styles.menu, align === 'start' ? styles.alignStart : styles.alignEnd].join(
+  const menuClasses = [styles.menu, side === 'start' ? styles.alignStart : styles.alignEnd].join(
     ' ',
   );
 

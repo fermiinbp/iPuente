@@ -43,10 +43,16 @@ export default function SidePanel({
   // Escritorio: foco al título al abrir y de vuelta al cerrar, sin atraparlo ni dejar la página inerte.
   useEffect(() => {
     if (!open || !desktop) return undefined;
-    const returnTo = document.activeElement;
+    let returnTo = document.activeElement;
     const node = panelRef.current;
     titleRef.current?.focus();
+    // La lista sigue usable: si se elige otra fila con el panel abierto, el foco volverá a esa.
+    const onFocusIn = (event) => {
+      if (!node?.contains(event.target)) returnTo = event.target;
+    };
+    document.addEventListener('focusin', onFocusIn);
     return () => {
+      document.removeEventListener('focusin', onFocusIn);
       // Solo si el foco sigue en el panel o se perdió (el panel ya no está): no se lo quita a otra cosa.
       const active = document.activeElement;
       const lost = !active || active === document.body;
