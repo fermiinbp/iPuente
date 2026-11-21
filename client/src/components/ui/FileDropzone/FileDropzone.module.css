@@ -1,0 +1,87 @@
+/* Estilos de FileDropzone (CSS Module). Zona discontinua centrada (wireframe 13c); al arrastrar encima se resalta
+   con el color de foco y con error el borde pasa a rojo (además del mensaje). */
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 280px;
+  padding: var(--space-6) var(--space-4);
+  border: 2px dashed var(--crema-suave);
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque);
+  color: var(--crema);
+  text-align: center;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.compact {
+  min-height: 0;
+  padding: var(--space-5) var(--space-4);
+}
+
+.dragging {
+  border-color: var(--foco);
+  background: var(--bosque-elevado);
+}
+
+.invalid {
+  border-color: var(--error);
+}
+
+.disabled {
+  opacity: 0.6;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  color: var(--crema-suave);
+}
+
+.compact .icon {
+  width: 28px;
+  height: 28px;
+}
+
+.title,
+.hint,
+.error {
+  margin: 0;
+}
+
+.title {
+  font-size: var(--text-lead);
+  font-weight: 700;
+}
+
+.hint {
+  color: var(--crema-suave);
+  font-size: var(--text-pequeno);
+}
+
+.error {
+  max-width: 48ch;
+  color: var(--error);
+  font-size: var(--text-pequeno);
+  font-weight: 600;
+}
+
+/* El input real no se ve ni se tabula: lo abre el botón. */
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropzone {
+    transition: none;
+  }
+}

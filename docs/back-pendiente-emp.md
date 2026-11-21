@@ -61,8 +61,10 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 ## EMP003 · Mis edificios
 
 - **Ya cubierto:** `DELETE /api/company/buildings/:id`, bloqueado con `409 HAS_FUTURE_BOOKINGS` si alguna sala tiene reservas futuras (DAT028); listar sus edificios con sus plantas (`plantas: [{ id, numero, nombre, publicado, salas }]`, ordenadas por número), crear plantas, el estado del edificio y publicarlo o despublicarlo (DAT014, DAT018).
+- **Front (EMP003):** usa ya la API real con `companyService` (`getBuildings`, `publishBuilding`, `unpublishBuilding`, `deleteBuilding` y `createFloor`), sin datos de prueba. Eliminar no sabe de antemano si hay reservas futuras: lo descubre con el `409` al confirmar y entonces lo explica y desactiva «Eliminar».
 - **Falta:**
-  - Campo «tiene salas» de la planta del modal «Añadir planta» (la posición es `numero`).
+  - Campo «tiene salas» de la planta del modal «Añadir planta» (la posición es `numero`). Hasta que exista, el modal solo pide nombre y posición.
+  - (Opcional) Saber antes de abrir el modal de eliminar si el edificio tiene reservas futuras (p. ej. `reservasFuturas` en `GET /company/buildings`), para desactivar «Eliminar edificio» en el menú con su motivo.
 
 ## EMP004 · Formulario de edificio
 

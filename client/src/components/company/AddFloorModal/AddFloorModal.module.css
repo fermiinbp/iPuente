@@ -1,0 +1,13 @@
+/* Estilos de AddFloorModal (CSS Module). */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.building,
+.note {
+  margin: 0;
+  color: var(--crema-suave);
+  font-size: var(--text-pequeno);
+}
