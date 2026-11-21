@@ -1,5 +1,5 @@
 // Panel de empresa: alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos.
-import { del, get, patch, post } from './apiClient.js';
+import { del, get, patch, post, put } from './apiClient.js';
 
 // Empresa del usuario autenticado (la API la saca del token):
 // { id, nombreEmpresa, cif, contacto, telefono, emailContacto, ciudad, estado, motivo, fechaSolicitud }.
@@ -55,4 +55,31 @@ export function deleteBuilding(id, options) {
 // Responde { id, buildingId, numero, nombre, publicado }; 409 FLOOR_EXISTS si ese número ya está ocupado.
 export function createFloor(buildingId, datos, options) {
   return post(`/company/buildings/${encodeURIComponent(buildingId)}/floors`, datos, options);
+}
+
+// Mapa de una planta propia para el editor (aunque esté en borrador). Lo que se espera de la API:
+// GET /company/floors/:id → { id, buildingId, numero, nombre, publicado, ancho, alto, origen, salas, mapImageUrl }.
+// Ese endpoint TODAVÍA NO EXISTE (docs/back-pendiente-emp.md, EMP007): si la API responde que la ruta no existe,
+// devuelve `{ disponible: false }` en vez de fallar, y el editor avisa de que se implementará más adelante.
+// Con el endpoint: `{ disponible: true, ...planta }`. Una planta que no existe o es ajena sigue siendo un 404.
+const ROUTE_MISSING = /^No existe la ruta /;
+
+export async function getFloorMap(floorId, options) {
+  try {
+    const floor = await get(`/company/floors/${encodeURIComponent(floorId)}`, options);
+    if (!floor || typeof floor !== 'object') return { disponible: false };
+    return { disponible: true, ...floor };
+  } catch (error) {
+    if (error?.status === 404 && ROUTE_MISSING.test(error.message ?? ''))
+      return { disponible: false };
+    throw error;
+  }
+}
+
+// Guarda el mapa de una planta propia (PUT /company/floors/:id/map). `mapa`: { ancho, alto, origen ('manual' o
+// 'ia'), salas: [{ id, codigo, nombre, tipo, x, y, w, h }], mapImageUrl? }. Sustituye el mapa entero: las salas que
+// ya no están se marcan como no reservables. Errores: 400 VALIDATION_ERROR (con el campo de cada error) y
+// 409 ROOM_ID_TAKEN si un id de sala es de otra planta.
+export function saveFloorMap(floorId, mapa, options) {
+  return put(`/company/floors/${encodeURIComponent(floorId)}/map`, mapa, options);
 }
