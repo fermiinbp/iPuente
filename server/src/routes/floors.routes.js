@@ -95,6 +95,10 @@ const router = Router();
  *                       precioHora:
  *                         type: number
  *                         nullable: true
+ *                         description: 0 si la sala es gratis.
+ *                       gratis:
+ *                         type: boolean
+ *                         description: true si la sala es gratis (false en las no reservables).
  *             example:
  *               id: floor-0
  *               nombre: Planta baja

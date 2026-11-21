@@ -121,6 +121,7 @@ const router = Router();
  *                         type: integer
  *                       precioDesde:
  *                         type: number
+ *                         description: Precio mínimo por hora; 0 si hay alguna sala gratis.
  *                 total:
  *                   type: integer
  *                   description: Edificios que encajan antes de paginar.

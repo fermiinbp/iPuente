@@ -1,6 +1,6 @@
 // Acceso a la colección rooms (las salas). El id de cada documento es el id de la sala en floors.salas.
 // Campos: companyId, buildingId, floorId, name, code, type (sala | box | comun | cocina | pasillo), description, surface, capacity,
-// price, pricePeriod (HOUR), amenities, bookable, status (ACTIVE | INACTIVE), openingHours, deletedAt (borrado lógico: solo si tenía reservas), createdAt, updatedAt.
+// price, isFree (true = gratis a propósito: price null y se reserva con importe 0), pricePeriod (HOUR), amenities, bookable, status (ACTIVE | INACTIVE), openingHours, deletedAt (borrado lógico: solo si tenía reservas), createdAt, updatedAt.
 import { createModel, runQuery } from './baseModel.js';
 
 const base = createModel('rooms');

@@ -184,6 +184,7 @@ async function seedRoom(room, sala, building) {
     surface: room.m2,
     capacity: room.capacidad,
     price: room.precioHora,
+    isFree: room.gratis === true,
     pricePeriod: 'HOUR',
     amenities: room.equipamiento,
     bookable: room.reservable,
@@ -196,6 +197,7 @@ async function seedRoom(room, sala, building) {
 // Reservas de la sala (confirmadas o canceladas) con los datos comunes.
 function bookingData({ code, clientUid, companyId, room, day, hours, status }) {
   const [startHour, endHour] = hours;
+  const price = room.gratis ? 0 : room.precioHora;
   return {
     code,
     userId: clientUid,
@@ -203,9 +205,9 @@ function bookingData({ code, clientUid, companyId, room, day, hours, status }) {
     roomId: room.id,
     startDate: atHour(day, startHour),
     endDate: atHour(day, endHour),
-    price: room.precioHora,
+    price,
     pricePeriod: 'HOUR',
-    totalAmount: room.precioHora * (endHour - startHour),
+    totalAmount: price * (endHour - startHour),
     status,
     paymentId: null,
     demo: true,

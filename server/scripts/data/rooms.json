@@ -414,7 +414,8 @@
     "tipo": "box",
     "capacidad": 4,
     "m2": 20,
-    "precioHora": 15,
+    "precioHora": null,
+    "gratis": true,
     "equipamiento": ["wifi", "climatizacion", "enchufes"],
     "reservable": true,
     "demo": true
