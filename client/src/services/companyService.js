@@ -1,5 +1,5 @@
 // Panel de empresa: alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos.
-import { get, patch } from './apiClient.js';
+import { del, get, patch, post } from './apiClient.js';
 
 // Empresa del usuario autenticado (la API la saca del token):
 // { id, nombreEmpresa, cif, contacto, telefono, emailContacto, ciudad, estado, motivo, fechaSolicitud }.
@@ -25,4 +25,34 @@ export function getSummary(options) {
 // (400 FIELD_NOT_EDITABLE). Errores: 409 COMPANY_EXISTS y 400 VALIDATION_ERROR.
 export function updateMyCompany(datos, options) {
   return patch('/companies/me', datos, options);
+}
+
+// Edificios de la empresa con sus plantas (GET /company/buildings):
+// [{ id, nombre, direccion, ciudad, descripcion, fotos, publicado,
+//   plantas: [{ id, numero, nombre, publicado, salas }] }]. Las plantas llegan ordenadas por número; `salas` cuenta
+// las activas. No incluye lo eliminado.
+export function getBuildings(options) {
+  return get('/company/buildings', options);
+}
+
+// Publica un edificio (necesita al menos una planta publicada: si no, 400 NO_PUBLISHED_FLOORS).
+export function publishBuilding(id, options) {
+  return post(`/company/buildings/${encodeURIComponent(id)}/publish`, undefined, options);
+}
+
+// Despublica un edificio. No cancela reservas: si tiene reservas futuras la respuesta trae un `aviso` en texto.
+export function unpublishBuilding(id, options) {
+  return post(`/company/buildings/${encodeURIComponent(id)}/unpublish`, undefined, options);
+}
+
+// Elimina un edificio con sus plantas y salas. Si alguna sala tiene reservas futuras no borra nada y responde
+// 409 HAS_FUTURE_BOOKINGS con `details.reservasFuturas` (cuántas).
+export function deleteBuilding(id, options) {
+  return del(`/company/buildings/${encodeURIComponent(id)}`, options);
+}
+
+// Crea una planta en un edificio propio. `datos`: { numero (entero de -10 a 200, la posición), nombre }.
+// Responde { id, buildingId, numero, nombre, publicado }; 409 FLOOR_EXISTS si ese número ya está ocupado.
+export function createFloor(buildingId, datos, options) {
+  return post(`/company/buildings/${encodeURIComponent(buildingId)}/floors`, datos, options);
 }
