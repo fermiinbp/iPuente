@@ -92,12 +92,6 @@ export function deleteFloor(id, options) {
   return del(`/company/floors/${encodeURIComponent(id)}`, options);
 }
 
-// Salas activas de una planta propia (GET /company/rooms?floorId=…). Cada una: { id, codigo, nombre, capacidad, m2,
-// precioHora (null si es gratis o no tiene), gratis, equipamiento, reservable, fotos, estado }.
-export function getFloorRooms(floorId, options) {
-  return get(`/company/rooms?floorId=${encodeURIComponent(floorId)}`, options);
-}
-
 // Edita los datos para el cliente de una sala propia: { precioHora? (> 0) | gratis?, capacidad? (1–1000),
 // m2? (> 0), equipamiento? (lista de textos), reservable? }. `gratis` y `precioHora` no van juntos; un precio nuevo
 // quita «gratis». 400 ROOM_WITHOUT_PRICE si quedaría reservable sin precio. El código, el nombre y el tipo NO se
@@ -141,9 +135,16 @@ export function saveFloorMap(floorId, mapa, options) {
 }
 
 // Salas activas de la empresa (GET /company/rooms), ordenadas por edificio, planta y código. Cada una:
-// { id, buildingId, floorId, codigo, nombre, capacidad, precioHora, gratis, reservable, estado, … }.
-export function getRooms(options) {
-  return get('/company/rooms', options);
+// { id, buildingId, floorId, codigo, nombre, capacidad, m2, precioHora (null si es gratis o no tiene), gratis,
+// equipamiento, reservable, fotos, estado }. `filtros` (opcionales): { buildingId, floorId, estado } (estado:
+// publicada, sin_precio u oculta).
+export function getRooms(filtros = {}, options) {
+  const params = new URLSearchParams();
+  for (const key of ['buildingId', 'floorId', 'estado']) {
+    if (filtros[key]) params.set(key, filtros[key]);
+  }
+  const query = params.toString();
+  return get(`/company/rooms${query ? `?${query}` : ''}`, options);
 }
 
 // Filtros comunes de reservas y bloqueos: `desde` y `hasta` (AAAA-MM-DD, inclusive; máximo 366 días; sin ellos,

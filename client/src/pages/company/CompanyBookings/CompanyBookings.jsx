@@ -88,7 +88,10 @@ const COLUMNS = [
 
 // Edificios y salas de la empresa: opciones de los filtros y del modal.
 async function loadCatalog(signal) {
-  const [buildings, rooms] = await Promise.all([getBuildings({ signal }), getRooms({ signal })]);
+  const [buildings, rooms] = await Promise.all([
+    getBuildings({ signal }),
+    getRooms({}, { signal }),
+  ]);
   const buildingName = new Map(buildings.map((b) => [b.id, b.nombre]));
   const floorName = new Map(
     buildings.flatMap((b) => (b.plantas ?? []).map((p) => [p.id, p.nombre])),

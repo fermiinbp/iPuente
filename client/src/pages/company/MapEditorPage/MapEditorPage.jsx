@@ -35,8 +35,8 @@ import { usePageTitle } from '@/hooks/usePageTitle.js';
 import {
   getBuildings,
   getFloorMap,
-  getFloorRooms,
   getRoomFutureBookings,
+  getRooms,
   saveFloorMap,
   updateRoom,
 } from '@/services/companyService.js';
@@ -64,7 +64,7 @@ async function loadFloor(floorId, signal) {
   for (const building of buildings) {
     const floor = building.plantas?.find((p) => p.id === floorId);
     if (floor) {
-      const rooms = await getFloorRooms(floorId, { signal });
+      const rooms = await getRooms({ floorId }, { signal });
       return { building, floor, map, rooms: Array.isArray(rooms) ? rooms : [] };
     }
   }
