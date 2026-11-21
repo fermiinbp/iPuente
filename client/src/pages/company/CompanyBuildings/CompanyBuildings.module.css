@@ -22,17 +22,6 @@
   outline-offset: 4px;
 }
 
-.newBuilding {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.soon {
-  color: var(--crema-suave);
-  font-size: var(--text-etiqueta);
-}
-
 .content {
   display: flex;
   flex-direction: column;

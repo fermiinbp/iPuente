@@ -4,9 +4,10 @@
 // Despublicar y eliminar piden confirmación. Eliminar no se puede si alguna sala tiene reservas futuras: la API
 // responde 409 HAS_FUTURE_BOOKINGS y el modal lo explica y desactiva «Eliminar». Publicar no pide confirmación.
 // Tras publicar, despublicar o eliminar no se vuelve a pedir la lista: se actualiza aquí (sin perder el foco).
-// «+ Nuevo edificio» y «Editar edificio» esperan al formulario de edificio (EMP004).
+// «+ Nuevo edificio» y «Editar edificio» llevan al formulario de edificio (BuildingForm); al guardar, este vuelve
+// aquí con un aviso en el estado de la navegación (`notice`), que se enseña una vez.
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import Alert from '@/components/ui/Alert/Alert.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import ConfirmModal from '@/components/ui/ConfirmModal/ConfirmModal.jsx';
@@ -173,8 +174,16 @@ export default function CompanyBuildings() {
   const [published, setPublished] = useState({});
   const [removed, setRemoved] = useState([]);
   const [dialog, setDialog] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const location = useLocation();
+  const [notice, setNotice] = useState(() =>
+    location.state?.notice ? { type: 'success', text: location.state.notice } : null,
+  );
   const focusHeadingRef = useRef(false);
+
+  // El aviso que trae la navegación se enseña una vez: se quita del historial para que no vuelva al recargar.
+  useEffect(() => {
+    if (location.state?.notice) navigate(location.pathname, { replace: true, state: null });
+  }, [location, navigate]);
 
   // Tras eliminar, el botón «···» que abrió el modal ya no existe: el foco va al título de la página.
   // Corre después de que el modal devuelva el foco al cerrarse, así que el título gana.
@@ -242,6 +251,7 @@ export default function CompanyBuildings() {
         <EmptyState
           title="Aún no tienes edificios"
           text="Cuando crees tu primer edificio podrás añadir sus plantas, dibujar sus salas y publicarlas."
+          action={<Button to="/company/buildings/new">Crear mi primer edificio</Button>}
         />
       );
     }
@@ -266,15 +276,9 @@ export default function CompanyBuildings() {
         <h1 ref={headingRef} className={styles.title} tabIndex={-1}>
           Mis edificios
         </h1>
-        <div className={styles.newBuilding}>
-          {/* TODO(EMP004): abrir el formulario de edificio. */}
-          <Button size="md" disabled aria-describedby="nuevo-edificio-pronto">
-            + Nuevo edificio
-          </Button>
-          <span id="nuevo-edificio-pronto" className={styles.soon}>
-            Próximamente
-          </span>
-        </div>
+        <Button size="md" to="/company/buildings/new">
+          + Nuevo edificio
+        </Button>
       </div>
 
       <div className={styles.content}>
