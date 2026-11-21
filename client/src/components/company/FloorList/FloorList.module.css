@@ -1,0 +1,104 @@
+/* Estilos de FloorList (CSS Module). Mobile first: una planta por fila; desde 600 px, rejilla de tarjetas. */
+.floorList {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.floor,
+.add {
+  min-height: 72px;
+  border-radius: var(--radio-plano);
+}
+
+.floor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--linea);
+  background: var(--bosque);
+}
+
+.info {
+  min-width: 0;
+}
+
+.name,
+.state {
+  margin: 0;
+}
+
+.name {
+  color: var(--crema);
+  font-size: var(--text-interfaz);
+  font-weight: 600;
+}
+
+.state {
+  color: var(--crema-suave);
+  font-size: var(--text-etiqueta);
+}
+
+.editLink {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1); /* en flex se pierde el espacio entre el texto y la flecha */
+  min-height: var(--campo-alto);
+  color: var(--crema);
+  font-size: var(--text-pequeno);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.editLink:hover {
+  text-decoration: underline;
+}
+
+.addItem {
+  display: flex;
+}
+
+.add {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--crema-suave);
+  background: transparent;
+  color: var(--crema-suave);
+  font: inherit;
+  font-size: var(--text-interfaz);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.add:hover {
+  border-color: var(--crema);
+  color: var(--crema);
+}
+
+.editLink:focus-visible,
+.add:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (min-width: 600px) {
+  .floorList {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
