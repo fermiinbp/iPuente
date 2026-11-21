@@ -77,3 +77,12 @@ export const ROLE_HOME = Object.freeze({
   [ROLES.COMPANY]: '/company',
   [ROLES.ADMIN]: '/admin',
 });
+
+// Imágenes que se pueden subir a Firebase Storage (planos, fotos de edificio y de sala). Son las mismas reglas que
+// `storage.rules`: si cambian allí, se cambian aquí. El tamaño tiene que ser mayor que 0 y menor que `maxBytes`.
+export const IMAGE_UPLOAD = Object.freeze({
+  types: Object.freeze(['image/png', 'image/jpeg', 'image/webp', 'image/gif']),
+  maxBytes: 5 * 1024 * 1024,
+  typesLabel: 'PNG, JPG, WebP o GIF',
+  hint: 'PNG, JPG, WebP o GIF · menos de 5 MB',
+});
