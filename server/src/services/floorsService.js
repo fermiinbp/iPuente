@@ -7,6 +7,7 @@ import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 import { isDeleted } from '../utils/softDelete.js';
 import {
+  effectivePrice,
   getDayItemsForRooms,
   isBookable,
   ROOM_STATUS,
@@ -47,7 +48,8 @@ export async function getPublishedMap(id, fecha = todayString(), hora) {
       h: s.h,
       estado: room ? statusOf(room, itemsById.get(room.id) ?? []) : ROOM_STATUS.UNAVAILABLE,
       capacidad: visible ? (room.capacity ?? null) : null,
-      precioHora: visible ? room.price : null,
+      precioHora: visible ? effectivePrice(room) : null,
+      gratis: visible && room.isFree === true,
     };
   });
 

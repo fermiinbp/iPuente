@@ -71,6 +71,7 @@ const ROOM_FIELDS = [
   'capacidad',
   'm2',
   'precioHora',
+  'gratis',
   'equipamiento',
   'reservable',
   'fotos',
@@ -130,6 +131,17 @@ export const updateRoom = [
     .isFloat({ gt: 0, max: 10000 })
     .withMessage('precioHora debe ser un número mayor que 0 (máx. 10000)')
     .toFloat(),
+  body('gratis')
+    .optional()
+    .custom((v) => typeof v === 'boolean')
+    .withMessage('gratis debe ser true o false')
+    .bail()
+    .custom((value, { req }) => {
+      if (value === true && req.body.precioHora !== undefined) {
+        throw new Error('gratis y precioHora no pueden enviarse a la vez');
+      }
+      return true;
+    }),
   body('equipamiento')
     .optional()
     .isArray({ max: 30 })

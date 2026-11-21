@@ -76,7 +76,11 @@ describe('Datos de demo del seed', () => {
     for (const room of rooms) {
       if (room.reservable) {
         assert.ok(room.capacidad >= 4 && room.capacidad <= 30, `${room.id}: capacidad`);
-        assert.ok(room.precioHora >= 15 && room.precioHora <= 60, `${room.id}: precio`);
+        if (room.gratis === true) {
+          assert.equal(room.precioHora, null, `${room.id}: una sala gratis no lleva precio`);
+        } else {
+          assert.ok(room.precioHora >= 15 && room.precioHora <= 60, `${room.id}: precio`);
+        }
       } else {
         assert.equal(room.precioHora, null, `${room.id}: una zona común no tiene precio`);
       }

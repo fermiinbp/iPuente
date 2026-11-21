@@ -37,7 +37,13 @@ export default function RoomSidePanel({ room, fecha, people = '', onClose }) {
           </div>
           <div>
             <dt>Precio</dt>
-            <dd>{room.price != null ? `${formatPrice(room.price)} / hora` : '—'}</dd>
+            <dd>
+              {room.gratis || room.price === 0
+                ? 'Gratis'
+                : room.price != null
+                  ? `${formatPrice(room.price)} / hora`
+                  : '—'}
+            </dd>
           </div>
         </dl>
       ) : (

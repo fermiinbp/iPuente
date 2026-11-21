@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 import Button from '@/components/ui/Button/Button.jsx';
 import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
 import { formatLongDate, hasStarted } from '@/utils/dates.js';
-import { formatPrice } from '@/utils/formatPrice.js';
+import { priceLabel } from '@/utils/formatPrice.js';
 import styles from './BookingCard.module.css';
 
 const pad = (hour) => String(hour).padStart(2, '0');
@@ -26,7 +26,7 @@ export default function BookingCard({ booking, onCancel }) {
       </div>
       <div className={styles.side}>
         <StatusBadge status={booking.estado} kind="booking" />
-        <p className={styles.amount}>{formatPrice(booking.importe)}</p>
+        <p className={styles.amount}>{priceLabel(booking.importe)}</p>
         <Link className={styles.detail} to={`/my-bookings/${booking.id}`}>
           Ver detalle<span className={styles.srOnly}> de la reserva de {name}</span>
         </Link>

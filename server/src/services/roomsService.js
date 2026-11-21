@@ -7,7 +7,7 @@ import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 import { isDeleted } from '../utils/softDelete.js';
-import { freeSlots, getDayItems, isBookable } from './availabilityService.js';
+import { effectivePrice, freeSlots, getDayItems, isBookable } from './availabilityService.js';
 import { isBuildingPublic } from './publicCatalogService.js';
 
 // Devuelve { room, floor, building } si la sala es pública (su empresa debe estar aprobada); si
@@ -42,7 +42,8 @@ export async function getPublicRoom(id) {
     descripcion: room.description ?? '',
     capacidad: room.capacity,
     m2: room.surface,
-    precioHora: room.price,
+    precioHora: effectivePrice(room),
+    gratis: room.isFree === true,
     periodoPrecio: room.pricePeriod,
     equipamiento: room.amenities ?? [],
     fotos: room.photos ?? [],

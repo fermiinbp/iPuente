@@ -9,6 +9,7 @@ import { HttpError } from '../utils/httpError.js';
 import { isDeleted, notDeleted } from '../utils/softDelete.js';
 import { normalizeText } from '../utils/text.js';
 import {
+  effectivePrice,
   freeSlots,
   getDayItemsForRooms,
   isBookable,
@@ -47,7 +48,7 @@ const DEFAULT_LIMIT = 20;
 function matchesRoom(room, { personas, tipo, precioMax, equipamiento }) {
   if (personas !== undefined && !(room.capacity >= personas)) return false;
   if (tipo !== undefined && room.type !== tipo) return false;
-  if (precioMax !== undefined && !(room.price <= precioMax)) return false;
+  if (precioMax !== undefined && !(effectivePrice(room) <= precioMax)) return false;
   if (equipamiento.length > 0) {
     const have = new Set((room.amenities ?? []).map(normalizeText));
     if (!equipamiento.every((item) => have.has(item))) return false;
@@ -97,7 +98,7 @@ export async function searchPublished(filtros = {}) {
   const groups = new Map();
   for (const room of rooms) {
     const g = groups.get(room.buildingId) ?? { count: 0, min: Infinity };
-    groups.set(room.buildingId, { count: g.count + 1, min: Math.min(g.min, room.price) });
+    groups.set(room.buildingId, { count: g.count + 1, min: Math.min(g.min, effectivePrice(room)) });
   }
   const edificios = [...groups]
     .map(([id, g]) => {

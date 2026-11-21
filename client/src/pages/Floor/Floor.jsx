@@ -47,6 +47,7 @@ function toPlan(floor) {
       h: sala.h,
       people: sala.capacidad,
       price: sala.precioHora,
+      gratis: sala.gratis === true,
       equipment: [],
     })),
   };

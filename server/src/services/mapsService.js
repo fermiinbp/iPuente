@@ -6,6 +6,7 @@ import * as roomModel from '../models/roomModel.js';
 import { HttpError } from '../utils/httpError.js';
 import { isDeleted } from '../utils/softDelete.js';
 import { countFutureBookings, futureBookingsNotice, joinNotices } from './futureBookingsService.js';
+import { hasPrice } from './availabilityService.js';
 import { getOwnedFloor } from './ownershipService.js';
 
 // Datos de una sala nueva: sin datos comerciales y oculta hasta que la empresa le ponga precio.
@@ -21,6 +22,7 @@ function newRoomData(floor, sala) {
     surface: null,
     capacity: null,
     price: null,
+    isFree: false,
     pricePeriod: 'HOUR',
     amenities: [],
     photos: [],
@@ -48,7 +50,7 @@ function pickSalas(salas) {
 function hasBookableRoom(salas, roomsById) {
   return salas.some((s) => {
     const room = roomsById.get(s.id);
-    return room && room.bookable === true && room.status !== 'INACTIVE' && room.price > 0;
+    return room && room.bookable === true && room.status !== 'INACTIVE' && hasPrice(room);
   });
 }
 

@@ -101,15 +101,25 @@ export async function getDayItemsForRooms(
   return map;
 }
 
-// Una sala se puede reservar si existe, es reservable, está activa y tiene precio mayor que 0.
+// Una sala tiene precio si es gratis a propósito (isFree) o su precio es un número mayor que 0.
+export function hasPrice(room) {
+  return room?.isFree === true || (typeof room?.price === 'number' && room.price > 0);
+}
+
+// Precio por hora que se cobra: null si no tiene precio, 0 si es gratis y su price en otro caso.
+export function effectivePrice(room) {
+  if (!hasPrice(room)) return null;
+  return room.isFree === true ? 0 : Number(room.price);
+}
+
+// Una sala se puede reservar si existe, es reservable, está activa y tiene precio o es gratis.
 export function isBookable(room) {
   return (
     Boolean(room) &&
     room.bookable === true &&
     room.status === 'ACTIVE' &&
     !room.deletedAt &&
-    typeof room.price === 'number' &&
-    room.price > 0
+    hasPrice(room)
   );
 }
 

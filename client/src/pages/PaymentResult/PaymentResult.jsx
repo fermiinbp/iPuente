@@ -11,7 +11,7 @@ import { useFetch } from '@/hooks/useFetch.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import { getBooking } from '@/services/bookingsService.js';
 import { formatLongDate } from '@/utils/dates.js';
-import { formatPrice } from '@/utils/formatPrice.js';
+import { priceLabel } from '@/utils/formatPrice.js';
 import styles from './PaymentResult.module.css';
 
 const pad = (hour) => String(hour).padStart(2, '0');
@@ -87,7 +87,7 @@ export default function PaymentResult() {
           </div>
           <div>
             <dt>Total pagado</dt>
-            <dd>{formatPrice(booking.importe)}</dd>
+            <dd>{priceLabel(booking.importe)}</dd>
           </div>
         </dl>
         <div className={styles.actions}>

@@ -452,7 +452,7 @@ router.patch(
  *   patch:
  *     tags: [Empresa]
  *     summary: Edita los datos comerciales de una sala propia
- *     description: 'Campos opcionales (al menos uno): `nombre`, `capacidad`, `m2`, `precioHora`, `equipamiento`, `reservable`, `fotos`. Devuelve `{ id, floorId, buildingId, codigo, nombre, capacidad, m2, precioHora, equipamiento, reservable, fotos }`. Solo para empresas aprobadas; cada empresa solo accede a lo suyo (403 si es de otra, 404 si no existe). Una sala que ya no está en el mapa da `ROOM_INACTIVE` (400).'
+ *     description: 'Campos opcionales (al menos uno): `nombre`, `capacidad`, `m2`, `precioHora`, `gratis`, `equipamiento`, `reservable`, `fotos`. `gratis: true` (sala gratis, `isFree`) no puede ir con `precioHora` (400 VALIDATION_ERROR en `gratis`) y deja `precioHora` en `null`; enviar `precioHora` la desmarca como gratis; `gratis: false` sin precio la deja `sin_precio`. Devuelve `{ id, floorId, buildingId, codigo, nombre, capacidad, m2, precioHora, gratis, equipamiento, reservable, fotos }`. Solo para empresas aprobadas; cada empresa solo accede a lo suyo (403 si es de otra, 404 si no existe). Una sala que ya no está en el mapa da `ROOM_INACTIVE` (400).'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -582,7 +582,7 @@ router.post(
  *           enum: [publicada, sin_precio, oculta]
  *     responses:
  *       200:
- *         description: 'Lista de salas con `id, floorId, buildingId, codigo, nombre, capacidad, m2, precioHora, equipamiento, reservable, fotos, estado`.'
+ *         description: 'Lista de salas con `id, floorId, buildingId, codigo, nombre, capacidad, m2, precioHora, gratis, equipamiento, reservable, fotos, estado`.'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -608,7 +608,7 @@ router.get(
  *   patch:
  *     tags: [Empresa]
  *     summary: Muestra u oculta una sala propia
- *     description: 'Body `{ visible }` (booleano). Mostrar una sala sin precio mayor que 0 da `ROOM_WITHOUT_PRICE`; una sala que ya no está en el mapa da `ROOM_INACTIVE`. Con `visible: false` y reservas futuras (CONFIRMED o PENDING_PAYMENT) se devuelven `reservasFuturas` y un `aviso`; no se bloquea. Solo para empresas aprobadas; ajena 403, inexistente 404.'
+ *     description: 'Body `{ visible }` (booleano). Mostrar una sala sin precio mayor que 0 y sin `gratis` da `ROOM_WITHOUT_PRICE` (con precio o gratis se puede mostrar); una sala que ya no está en el mapa da `ROOM_INACTIVE`. Con `visible: false` y reservas futuras (CONFIRMED o PENDING_PAYMENT) se devuelven `reservasFuturas` y un `aviso`; no se bloquea. Solo para empresas aprobadas; ajena 403, inexistente 404.'
  *     security:
  *       - bearerAuth: []
  *     parameters:

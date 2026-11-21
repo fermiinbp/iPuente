@@ -430,6 +430,7 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
         floorId: 'f-a0',
         buildingId: 'b-a',
         codigo: 'A1',
+        gratis: false,
         ...valido,
       });
       const doc = await roomModel.findById('r-a');

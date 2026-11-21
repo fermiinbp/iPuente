@@ -7,6 +7,7 @@ import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { HttpError } from '../utils/httpError.js';
 import { notDeleted } from '../utils/softDelete.js';
+import { hasPrice } from './availabilityService.js';
 import { countFutureBookings, futureBookingsNotice } from './futureBookingsService.js';
 import { isOrphanTaxId } from './authService.js';
 import { assertOwnedBy, getOwnedBuilding, getOwnedFloor } from './ownershipService.js';
@@ -86,7 +87,8 @@ function roomView(r) {
     nombre: r.name,
     capacidad: r.capacity ?? null,
     m2: r.surface ?? null,
-    precioHora: r.price ?? null,
+    precioHora: r.isFree === true ? null : (r.price ?? null),
+    gratis: r.isFree === true,
     equipamiento: r.amenities ?? [],
     reservable: r.bookable === true,
     fotos: r.photos ?? [],
@@ -131,7 +133,7 @@ async function assertLevelFree(buildingId, level, exceptFloorId, tx) {
 
 // Estado calculado de una sala: sin_precio, publicada (reservable) u oculta.
 export function roomEstado(room) {
-  if (!(typeof room.price === 'number' && room.price > 0)) return 'sin_precio';
+  if (!hasPrice(room)) return 'sin_precio';
   return room.bookable === true ? 'publicada' : 'oculta';
 }
 
@@ -317,7 +319,16 @@ export async function updateFloor(companyId, id, body) {
 // Se lee y escribe en la misma transacción: una sala eliminada a la vez da 404.
 export async function updateRoom(companyId, id, body) {
   const data = pick(body, ROOM_MAP);
-  if (data.price !== undefined) data.pricePeriod = 'HOUR';
+  if (data.price !== undefined) {
+    data.pricePeriod = 'HOUR';
+    data.isFree = false;
+  }
+  if (body?.gratis === true) {
+    data.isFree = true;
+    data.price = null;
+  } else if (body?.gratis === false) {
+    data.isFree = false;
+  }
   const room = await runTransaction(async (tx) => {
     const current = assertOwnedBy(await roomModel.findById(id, { tx }), companyId);
     if (current.status === 'INACTIVE') {

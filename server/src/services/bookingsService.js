@@ -10,7 +10,13 @@ import * as occupancyModel from '../models/occupancyModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
-import { assertSlotAvailable, isBookable, toDate, toSlot } from './availabilityService.js';
+import {
+  assertSlotAvailable,
+  effectivePrice,
+  isBookable,
+  toDate,
+  toSlot,
+} from './availabilityService.js';
 import { findPublicRoom } from './roomsService.js';
 
 // Date local de una fecha AAAA-MM-DD a una hora (24 pasa al día siguiente a las 00:00).
@@ -124,7 +130,11 @@ export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
       // tanto, la reserva usa los datos del momento del commit (404 si ya no son públicos).
       ({ room } = await findPublicRoom(roomId, { tx }));
       assertBookable(room, inicio, fin);
-      importe = room.price * horas;
+      const precio = effectivePrice(room);
+      if (precio === null || !Number.isFinite(precio)) {
+        throw new HttpError(400, 'ROOM_NOT_BOOKABLE', 'Esta sala no se puede reservar');
+      }
+      importe = precio * horas;
       await assertSlotAvailable(roomId, fecha, inicio, fin, tx);
       // Todas las lecturas van antes que las escrituras: el contador se lee aquí.
       const last = await counterModel.getValue('bookings', { tx });
@@ -138,7 +148,7 @@ export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
           roomId,
           startDate: atHour(fecha, inicio),
           endDate: atHour(fecha, fin),
-          price: room.price,
+          price: effectivePrice(room),
           pricePeriod: 'HOUR',
           totalAmount: importe,
           status: 'CONFIRMED',
@@ -164,7 +174,7 @@ export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
       inicio,
       fin,
       horas,
-      precioHora: room.price,
+      precioHora: effectivePrice(room),
       importe,
       estado,
     };

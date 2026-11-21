@@ -1,7 +1,7 @@
 // Resumen de la reserva: día, franja, precio por hora y total. Es una previsión: el importe final
 // lo calcula la API al reservar (el precio que se muestra aquí no se envía).
 import { formatLongDate } from '@/utils/dates.js';
-import { formatPrice } from '@/utils/formatPrice.js';
+import { priceLabel } from '@/utils/formatPrice.js';
 import styles from './BookingSummary.module.css';
 
 const pad = (hour) => String(hour).padStart(2, '0');
@@ -26,11 +26,11 @@ export default function BookingSummary({ fecha, selection, pricePerHour }) {
       </div>
       <div>
         <dt>Precio por hora</dt>
-        <dd>{formatPrice(pricePerHour)}</dd>
+        <dd>{priceLabel(pricePerHour)}</dd>
       </div>
       <div className={styles.total}>
         <dt>Total</dt>
-        <dd>{formatPrice(pricePerHour * hours)}</dd>
+        <dd>{priceLabel(pricePerHour * hours)}</dd>
       </div>
     </dl>
   );

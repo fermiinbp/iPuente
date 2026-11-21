@@ -191,7 +191,13 @@ export default function Room() {
             ) : null}
             <div>
               <dt>Precio</dt>
-              <dd>{room.precioHora != null ? `${formatPrice(room.precioHora)} / hora` : '—'}</dd>
+              <dd>
+                {room.gratis || room.precioHora === 0
+                  ? 'Gratis'
+                  : room.precioHora != null
+                    ? `${formatPrice(room.precioHora)} / hora`
+                    : '—'}
+              </dd>
             </div>
           </dl>
 

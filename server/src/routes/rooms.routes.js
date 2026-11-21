@@ -47,6 +47,9 @@ const router = Router();
  *                 precioHora:
  *                   type: number
  *                   nullable: true
+ *                   description: 0 si la sala es gratis.
+ *                 gratis:
+ *                   type: boolean
  *                 periodoPrecio:
  *                   type: string
  *                   example: HOUR
