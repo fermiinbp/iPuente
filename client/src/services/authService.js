@@ -16,7 +16,7 @@ import {
   verifyPasswordResetCode,
 } from 'firebase/auth';
 import { auth } from '../config/firebase.js';
-import { post } from './apiClient.js';
+import { ApiError, post } from './apiClient.js';
 
 const MESSAGES = {
   'auth/invalid-credential': 'El correo o la contraseña no son correctos.',
@@ -40,7 +40,17 @@ const MESSAGES = {
     'Ya existe una cuenta con este correo. Entra con tu contraseña.',
 };
 
-// Convierte un error de Firebase en un mensaje para la persona. Cerrar la ventana de Google no es un error.
+// Mensajes fijos para los errores de POST /auth/google (nunca se muestra el texto del servidor).
+const API_MESSAGES = {
+  GOOGLE_REQUIRED: 'Esta operación solo está disponible al entrar con Google.',
+  EMAIL_NOT_VERIFIED: 'El correo de tu cuenta de Google no está verificado.',
+  ACCOUNT_INCONSISTENT: 'Tu cuenta tiene un problema. Contacta con soporte.',
+  RATE_LIMITED: 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
+  ROLE_ASSIGN_FAILED: 'No hemos podido completar tu alta. Inténtalo de nuevo.',
+  NETWORK_ERROR: 'No hay conexión con el servidor. Revisa tu red e inténtalo de nuevo.',
+};
+
+// Convierte un error de Firebase (o de la API de acceso con Google) en un mensaje para la persona. Cerrar la ventana de Google no es un error.
 export function authErrorMessage(error) {
   if (
     error?.code === 'auth/popup-closed-by-user' ||
@@ -48,6 +58,7 @@ export function authErrorMessage(error) {
   ) {
     return '';
   }
+  if (error instanceof ApiError && API_MESSAGES[error.code]) return API_MESSAGES[error.code];
   if (import.meta.env.DEV) console.error('[auth]', error?.code, error?.message);
   return MESSAGES[error?.code] ?? 'No se ha podido completar la operación. Inténtalo de nuevo.';
 }
@@ -67,6 +78,14 @@ export async function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   const { user } = await signInWithPopup(auth, provider);
+  // Da de alta la cuenta en la API (ficha y rol CLIENT). Si falla, no se deja la sesión a medias.
+  try {
+    const result = await post('/auth/google');
+    if (result?.refrescarToken) await refreshSession();
+  } catch (error) {
+    await signOut(auth).catch(() => {});
+    throw error;
+  }
   return user;
 }
 
