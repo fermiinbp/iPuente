@@ -9,6 +9,7 @@ import '../src/config/timezone.js';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
+import { now } from '../src/models/baseModel.js';
 import * as blockModel from '../src/models/blockModel.js';
 import * as bookingModel from '../src/models/bookingModel.js';
 import * as buildingModel from '../src/models/buildingModel.js';
@@ -126,6 +127,8 @@ async function seedCompany(company, ownerUid) {
     email: company.email,
     phone: company.telefono,
     address: company.direccion,
+    city: company.ciudad ?? 'Sevilla',
+    termsAcceptedAt: now(),
     ownerUid,
     status: SEED_STATUS[company.estado] ?? 'PENDING',
     verified: company.estado === 'aprobada',

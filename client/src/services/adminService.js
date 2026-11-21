@@ -12,13 +12,16 @@ export function listCompanies(estado, options) {
 // en Firebase Auth, `aviso`. Errores: 400 INVALID_TRANSITION (la empresa ya no está en el estado de partida) y
 // 400 VALIDATION_ERROR (motivo de 3 a 500 caracteres, con `details`).
 // pendiente → aprobada.
-export function approveCompany(id, options) {
-  return post(`/admin/companies/${encodeURIComponent(id)}/approve`, undefined, options);
+// `version` (opcional, la de la empresa cargada): si sus datos han cambiado desde entonces, 409 STALE_DATA.
+export function approveCompany(id, { version } = {}, options) {
+  const body = version ? { version } : undefined;
+  return post(`/admin/companies/${encodeURIComponent(id)}/approve`, body, options);
 }
 
-// pendiente → rechazada, con motivo (la empresa lo ve en el estado de su solicitud).
-export function rejectCompany(id, motivo, options) {
-  return post(`/admin/companies/${encodeURIComponent(id)}/reject`, { motivo }, options);
+// pendiente → rechazada, con motivo (la empresa lo ve en el estado de su solicitud). Mismo `version` que al aprobar.
+export function rejectCompany(id, motivo, { version } = {}, options) {
+  const body = version ? { motivo, version } : { motivo };
+  return post(`/admin/companies/${encodeURIComponent(id)}/reject`, body, options);
 }
 
 // aprobada → suspendida, con motivo. Sus edificios dejan de verse; las reservas futuras no se cancelan:

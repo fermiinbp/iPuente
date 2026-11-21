@@ -3,11 +3,13 @@ import { Router } from 'express';
 
 import { ROLES } from '../config/roles.js';
 import * as ctrl from '../controllers/companyController.js';
-import { auth } from '../middlewares/auth.js';
+import { auth, authStrict } from '../middlewares/auth.js';
+import { companyEditLimiter } from '../middlewares/rateLimit.js';
 import { requireApprovedCompany } from '../middlewares/requireApprovedCompany.js';
 import { requireRole } from '../middlewares/requireRole.js';
 import { validate } from '../middlewares/validate.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import * as authValidator from '../validators/authValidator.js';
 import * as companyValidator from '../validators/companyValidator.js';
 
 const router = Router();
@@ -31,24 +33,36 @@ const router = Router();
  *               properties:
  *                 id:
  *                   type: string
- *                 name:
+ *                 nombreEmpresa:
  *                   type: string
  *                   example: 'Oficinas Sevilla SL'
- *                 taxId:
+ *                 cif:
  *                   type: string
  *                   example: 'B12345674'
- *                 contactName:
+ *                 contacto:
  *                   type: string
- *                 phone:
+ *                   nullable: true
+ *                 telefono:
  *                   type: string
- *                 email:
+ *                   nullable: true
+ *                 emailContacto:
  *                   type: string
+ *                   nullable: true
+ *                 ciudad:
+ *                   type: string
+ *                   nullable: true
  *                 estado:
  *                   type: string
- *                   enum: [pendiente, aprobada, rechazada]
- *                 createdAt:
+ *                   enum: [pendiente, aprobada, rechazada, suspendida]
+ *                 motivo:
+ *                   type: string
+ *                   nullable: true
+ *                   description: Motivo de rechazo o suspensión vigente.
+ *                 fechaSolicitud:
  *                   type: string
  *                   format: date-time
+ *                   nullable: true
+ *                   description: Fecha del alta o, si se reenvió tras un rechazo, del reenvío.
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       403:
@@ -57,6 +71,61 @@ const router = Router();
  *         $ref: '#/components/responses/NotFound'
  */
 router.get('/companies/me', auth, requireRole(ROLES.COMPANY), asyncHandler(ctrl.getMyCompany));
+
+/**
+ * @openapi
+ * /companies/me:
+ *   patch:
+ *     tags: [Empresa]
+ *     summary: Edita los datos de la solicitud de la empresa propia
+ *     description: 'Todos los campos son opcionales (al menos uno). Con la empresa pendiente o rechazada se puede editar todo; si estaba rechazada vuelve a `pendiente`. Con la empresa aprobada o suspendida solo `contacto`, `telefono` y `emailContacto` (otro campo da 400 `FIELD_NOT_EDITABLE`). Cambiar el CIF reserva el nuevo y libera el viejo (409 `COMPANY_EXISTS` si ya existe). No exige empresa aprobada. Límite: 20 peticiones por hora por usuario (429 `RATE_LIMITED`). Responde con la misma forma que `GET /companies/me`.'
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombreEmpresa:
+ *                 type: string
+ *               cif:
+ *                 type: string
+ *                 example: 'B12345674'
+ *               contacto:
+ *                 type: string
+ *               telefono:
+ *                 type: string
+ *                 example: '954123456'
+ *               emailContacto:
+ *                 type: string
+ *                 format: email
+ *               ciudad:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Empresa actualizada (misma forma que `GET /companies/me`).
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       409:
+ *         description: Ya existe una empresa con ese CIF (`COMPANY_EXISTS`).
+ */
+router.patch(
+  '/companies/me',
+  authStrict,
+  requireRole(ROLES.COMPANY),
+  companyEditLimiter,
+  authValidator.updateMe,
+  validate,
+  asyncHandler(ctrl.updateMyCompany),
+);
 
 /**
  * @openapi

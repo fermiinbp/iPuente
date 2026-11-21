@@ -87,7 +87,7 @@ router.get(
  *   post:
  *     tags: [Admin]
  *     summary: Aprueba una empresa pendiente
- *     description: 'PENDING pasa a APPROVED. Cualquier otro estado devuelve 400 `INVALID_TRANSITION`. Devuelve la empresa actualizada.'
+ *     description: 'PENDING pasa a APPROVED. Cualquier otro estado devuelve 400 `INVALID_TRANSITION`. Devuelve la empresa actualizada. Si se envía `version` (la del detalle) y la empresa ha cambiado desde entonces, responde 409 `STALE_DATA`.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -96,11 +96,24 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               version:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Campo `version` del detalle de la empresa.
  *     responses:
  *       200:
  *         description: Empresa aprobada.
  *       400:
  *         $ref: '#/components/responses/BadRequest'
+ *       409:
+ *         description: La empresa cambió sus datos desde que se abrió (`STALE_DATA`).
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       403:
@@ -144,11 +157,17 @@ router.post(
  *                 type: string
  *                 minLength: 3
  *                 maxLength: 500
+ *               version:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Opcional. Campo `version` del detalle; si ya no coincide, 409 `STALE_DATA`.
  *     responses:
  *       200:
  *         description: Empresa rechazada.
  *       400:
  *         $ref: '#/components/responses/BadRequest'
+ *       409:
+ *         description: La empresa cambió sus datos desde que se abrió (`STALE_DATA`).
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       403:

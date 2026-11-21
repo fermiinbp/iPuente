@@ -47,7 +47,8 @@ function listItem(c) {
     cif: c.taxId,
     email: c.email ?? null,
     estado: companyEstado(c),
-    fechaSolicitud: toIso(c.createdAt) ?? null,
+    fechaSolicitud: toIso(c.resubmittedAt ?? c.createdAt) ?? null,
+    version: toIso(c.updatedAt) ?? null,
     verificada: companyStatus(c) === APPROVED,
   };
 }
@@ -81,7 +82,8 @@ async function companyView(company) {
     estado: companyEstado(company),
     verificada: companyStatus(company) === APPROVED,
     motivo: companyMotivo(company),
-    fechaSolicitud: toIso(company.createdAt) ?? null,
+    fechaSolicitud: toIso(company.resubmittedAt ?? company.createdAt) ?? null,
+    version: toIso(company.updatedAt) ?? null,
     revisadaEn: toIso(company.reviewedAt) ?? null,
     dueno: owner
       ? {
@@ -122,11 +124,19 @@ function transitionFields(action, motivo, company) {
 
 // Cambia el estado de una empresa en una transacción (status, verified, reviewedAt, reviewedBy).
 // La API pública lee ese estado, así que no hay que tocar sus edificios.
-async function transition(action, id, adminUid, motivo) {
+// Si llega `version` (ISO de updatedAt al abrir la empresa) y ya no coincide: 409 STALE_DATA.
+async function transition(action, id, adminUid, motivo, version) {
   const rule = TRANSITIONS[action];
   return runTransaction(async (tx) => {
     const current = await companyModel.findById(id, { tx });
     if (!current) throw new HttpError(404, 'NOT_FOUND', 'La empresa no existe');
+    if (version !== undefined && (toIso(current.updatedAt) ?? null) !== version) {
+      throw new HttpError(
+        409,
+        'STALE_DATA',
+        'La empresa ha cambiado sus datos desde que la abriste. Vuelve a cargarla antes de decidir.',
+      );
+    }
     if (companyStatus(current) !== rule.from) {
       throw new HttpError(
         400,
@@ -171,12 +181,12 @@ async function viewAfter(company, approved) {
   return aviso ? { ...view, aviso } : view;
 }
 
-export async function approveCompany(id, adminUid) {
-  return viewAfter(await transition('approve', id, adminUid), true);
+export async function approveCompany(id, adminUid, version) {
+  return viewAfter(await transition('approve', id, adminUid, undefined, version), true);
 }
 
-export async function rejectCompany(id, adminUid, motivo) {
-  return viewAfter(await transition('reject', id, adminUid, motivo), false);
+export async function rejectCompany(id, adminUid, motivo, version) {
+  return viewAfter(await transition('reject', id, adminUid, motivo, version), false);
 }
 
 export async function reactivateCompany(id, adminUid) {

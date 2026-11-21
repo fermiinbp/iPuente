@@ -22,6 +22,9 @@ const EMPRESA = {
   cif: 'b-1234 5674',
   contacto: 'Marta Ruiz',
   telefono: '954 123 456',
+  emailContacto: 'Contacto@Ejemplo.com',
+  ciudad: ' Sevilla ',
+  aceptaCondiciones: true,
 };
 
 describe('Registro de clientes y empresas', () => {
@@ -194,6 +197,15 @@ describe('Registro de clientes y empresas', () => {
       assert.ok(!(await dump()).includes(PASSWORD));
     });
 
+    it('guarda ciudad, email de contacto y termsAcceptedAt', async () => {
+      const { body } = await registrarEmpresa(EMPRESA);
+      const company = await companyModel.findById(body.companyId);
+      assert.equal(company.city, 'Sevilla');
+      assert.equal(company.email, 'contacto@ejemplo.com');
+      assert.ok(company.termsAcceptedAt);
+      assert.equal(fakeAuth.created[0].email, 'empresa@ejemplo.com');
+    });
+
     it('ignora status, verified, estado y role del body: sigue PENDING', async () => {
       const { status, body } = await registrarEmpresa({
         ...EMPRESA,
@@ -332,6 +344,12 @@ describe('Registro de clientes y empresas', () => {
         'CIF con dígito de control erróneo': { cif: 'B12345675' },
         'teléfono de 8 dígitos': { telefono: '95412345' },
         'teléfono que empieza por 5': { telefono: '554123456' },
+        'sin aceptar condiciones': { aceptaCondiciones: undefined },
+        'condiciones false': { aceptaCondiciones: false },
+        'condiciones como texto': { aceptaCondiciones: 'true' },
+        'email de contacto inválido': { emailContacto: 'nope' },
+        'ciudad de 1 letra': { ciudad: 'S' },
+        'sin ciudad': { ciudad: undefined },
       };
       for (const [nombre, cambio] of Object.entries(casos)) {
         const { status, body } = await registrarEmpresa({ ...EMPRESA, ...cambio });
@@ -348,18 +366,216 @@ describe('Registro de clientes y empresas', () => {
       pendiente: { uid: 'u2', role: 'COMPANY', companyId: 'c-pend' },
       aprobada: { uid: 'u3', role: 'COMPANY', companyId: 'c-ok' },
       fantasma: { uid: 'u4', role: 'COMPANY', companyId: 'c-no-existe' },
+      rechazada: { uid: 'u5', role: 'COMPANY', companyId: 'c-rej' },
+      suspendida: { uid: 'u6', role: 'COMPANY', companyId: 'c-susp' },
     };
+
+    async function patch(body, token) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const res = await fetch(`${baseUrl}/api/companies/me`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify(body),
+      });
+      return { status: res.status, body: await res.json() };
+    }
 
     beforeEach(async () => {
       setTokenVerifier(async (token) => tokens[token]);
       await companyModel.create(
-        { name: 'Pend SL', taxId: 'B12345674', status: 'PENDING', verified: false },
+        {
+          name: 'Pend SL',
+          taxId: 'B12345674',
+          city: 'Sevilla',
+          email: 'c@pend.com',
+          status: 'PENDING',
+          verified: false,
+        },
         { id: 'c-pend' },
       );
+      await db()
+        .collection('companies')
+        .doc('c-pend')
+        .update({ createdAt: new Date('2026-01-01T10:00:00Z') });
       await companyModel.create(
         { name: 'Ok SL', taxId: 'A58818501', status: 'APPROVED', verified: true },
         { id: 'c-ok' },
       );
+      await companyModel.create(
+        {
+          name: 'Rej SL',
+          taxId: 'A28015865',
+          status: 'REJECTED',
+          verified: false,
+          rejectionReason: 'CIF falso',
+          reviewedBy: 'admin1',
+          resubmittedAt: new Date('2026-02-02T10:00:00Z'),
+        },
+        { id: 'c-rej' },
+      );
+      await companyModel.create(
+        { name: 'Susp SL', taxId: 'A28017895', status: 'SUSPENDED', verified: false },
+        { id: 'c-susp' },
+      );
+      for (const [cif, companyId] of [
+        ['B12345674', 'c-pend'],
+        ['A58818501', 'c-ok'],
+        ['A28015865', 'c-rej'],
+        ['A28017895', 'c-susp'],
+      ]) {
+        await companyTaxIdModel.create({ taxId: cif, companyId }, { id: cif });
+      }
+    });
+
+    describe('PATCH', () => {
+      it('401 sin token y 403 con rol CLIENT', async () => {
+        assert.equal((await patch({ ciudad: 'Cádiz' })).status, 401);
+        assert.equal((await patch({ ciudad: 'Cádiz' }, 'cliente')).status, 403);
+      });
+
+      it('pendiente edita todo: 200 con la forma del GET', async () => {
+        const { status, body } = await patch(
+          {
+            nombreEmpresa: ' Nueva SL ',
+            contacto: 'Ana',
+            telefono: '954 000 111',
+            emailContacto: 'Nuevo@Pend.com',
+            ciudad: 'Cádiz',
+          },
+          'pendiente',
+        );
+        assert.equal(status, 200);
+        assert.equal(body.nombreEmpresa, 'Nueva SL');
+        assert.equal(body.telefono, '954000111');
+        assert.equal(body.emailContacto, 'nuevo@pend.com');
+        assert.equal(body.ciudad, 'Cádiz');
+        assert.equal(body.estado, 'pendiente');
+        assert.equal((await companyModel.findById('c-pend')).name, 'Nueva SL');
+      });
+
+      it('rechazada reenvía: pasa a pendiente y guarda el motivo anterior', async () => {
+        const { status, body } = await patch({ ciudad: 'Málaga' }, 'rechazada');
+        assert.equal(status, 200);
+        assert.equal(body.estado, 'pendiente');
+        assert.equal(body.motivo, null);
+        const company = await companyModel.findById('c-rej');
+        assert.equal(company.status, 'PENDING');
+        assert.equal(company.verified, false);
+        assert.equal(company.lastRejectionReason, 'CIF falso');
+        assert.equal(company.rejectionReason, null);
+        assert.ok(company.resubmittedAt);
+        assert.equal(company.reviewedBy, 'admin1');
+      });
+
+      it('aprobada con nombreEmpresa: 400 FIELD_NOT_EDITABLE y no cambia nada', async () => {
+        const { status, body } = await patch(
+          { nombreEmpresa: 'Otra', telefono: '954111222' },
+          'aprobada',
+        );
+        assert.equal(status, 400);
+        assert.equal(body.error.code, 'FIELD_NOT_EDITABLE');
+        assert.deepEqual(body.error.details.campos, ['nombreEmpresa']);
+        assert.equal((await companyModel.findById('c-ok')).name, 'Ok SL');
+      });
+
+      it('aprobada y suspendida editan teléfono y siguen igual de estado', async () => {
+        const a = await patch({ telefono: '954111222' }, 'aprobada');
+        assert.equal(a.status, 200);
+        assert.equal(a.body.estado, 'aprobada');
+        assert.equal(a.body.telefono, '954111222');
+        const s = await patch({ contacto: 'Luis' }, 'suspendida');
+        assert.equal(s.status, 200);
+        assert.equal(s.body.estado, 'suspendida');
+      });
+
+      it('aprobada que reenvía los protegidos sin cambiarlos y cambia el teléfono: 200', async () => {
+        await db().collection('companies').doc('c-ok').update({ city: 'Sevilla' });
+        const { status, body } = await patch(
+          {
+            nombreEmpresa: ' Ok SL ',
+            cif: 'a-5881 8501',
+            ciudad: 'Sevilla',
+            telefono: '954111222',
+          },
+          'aprobada',
+        );
+        assert.equal(status, 200);
+        assert.equal(body.telefono, '954111222');
+        assert.equal(body.nombreEmpresa, 'Ok SL');
+      });
+
+      it('aprobada no puede cambiar el CIF ni la ciudad', async () => {
+        for (const cambio of [{ cif: 'B12345674' }, { ciudad: 'Cádiz' }]) {
+          const { status, body } = await patch(cambio, 'aprobada');
+          assert.equal(status, 400);
+          assert.equal(body.error.code, 'FIELD_NOT_EDITABLE');
+        }
+      });
+
+      it('CIF de otra empresa: 409 COMPANY_EXISTS y no cambia nada', async () => {
+        const { status, body } = await patch({ cif: 'A58818501' }, 'pendiente');
+        assert.equal(status, 409);
+        assert.equal(body.error.code, 'COMPANY_EXISTS');
+        assert.equal((await companyModel.findById('c-pend')).taxId, 'B12345674');
+        assert.equal((await companyTaxIdModel.findById('B12345674')).companyId, 'c-pend');
+      });
+
+      it('cambiar de CIF libera el viejo y reserva el nuevo', async () => {
+        const { status, body } = await patch({ cif: 'b-0000 0000' }, 'pendiente');
+        assert.equal(status, 200);
+        assert.equal(body.cif, 'B00000000');
+        assert.equal(await companyTaxIdModel.findById('B12345674'), null);
+        assert.equal((await companyTaxIdModel.findById('B00000000')).companyId, 'c-pend');
+        // El CIF liberado ya lo puede coger otra empresa.
+        const otra = await patch({ cif: 'B12345674' }, 'rechazada');
+        assert.equal(otra.status, 200);
+      });
+
+      it('cambiar de CIF no borra un índice viejo que es de otra empresa', async () => {
+        await companyTaxIdModel.overwrite('B12345674', { taxId: 'B12345674', companyId: 'c-ok' });
+        const { status } = await patch({ cif: 'B00000000' }, 'pendiente');
+        assert.equal(status, 200);
+        assert.equal((await companyTaxIdModel.findById('B12345674')).companyId, 'c-ok');
+      });
+
+      it('un CIF nuevo reservado y huérfano se puede reclamar', async () => {
+        await companyTaxIdModel.overwrite('B00000000', {
+          taxId: 'B00000000',
+          companyId: 'fantasma',
+        });
+        const { status } = await patch({ cif: 'B00000000' }, 'pendiente');
+        assert.equal(status, 200);
+        assert.equal((await companyTaxIdModel.findById('B00000000')).companyId, 'c-pend');
+      });
+
+      it('el mismo CIF no cambia nada en el índice', async () => {
+        const { status } = await patch({ cif: 'B12345674', ciudad: 'Cádiz' }, 'pendiente');
+        assert.equal(status, 200);
+        assert.equal((await companyTaxIdModel.findById('B12345674')).companyId, 'c-pend');
+      });
+
+      it('400 con clave desconocida, body vacío o datos inválidos', async () => {
+        const casos = [
+          { status: 'APPROVED' },
+          { ciudad: 'Cádiz', companyId: 'c-ok' },
+          {},
+          { cif: 'B12345675' },
+          { telefono: '123' },
+          { emailContacto: 'nope' },
+          { ciudad: 'S' },
+        ];
+        for (const caso of casos) {
+          const { status, body } = await patch(caso, 'pendiente');
+          assert.equal(status, 400, JSON.stringify(caso));
+          assert.equal(body.error.code, 'VALIDATION_ERROR');
+        }
+      });
+
+      it('404 si la empresa no existe', async () => {
+        const { status } = await patch({ ciudad: 'Cádiz' }, 'fantasma');
+        assert.equal(status, 404);
+      });
     });
 
     it('401 sin token', async () => {
@@ -378,8 +594,38 @@ describe('Registro de clientes y empresas', () => {
       const { status, body } = await get('/api/companies/me', 'pendiente');
       assert.equal(status, 200);
       assert.equal(body.id, 'c-pend');
-      assert.equal(body.name, 'Pend SL');
+      assert.equal(body.nombreEmpresa, 'Pend SL');
       assert.equal(body.estado, 'pendiente');
+    });
+
+    it('responde solo en español, sin campos en inglés', async () => {
+      const { body } = await get('/api/companies/me', 'pendiente');
+      assert.deepEqual(
+        Object.keys(body).sort(),
+        [
+          'ciudad',
+          'cif',
+          'contacto',
+          'emailContacto',
+          'estado',
+          'fechaSolicitud',
+          'id',
+          'motivo',
+          'nombreEmpresa',
+          'telefono',
+        ].sort(),
+      );
+      assert.equal(body.cif, 'B12345674');
+      assert.equal(body.ciudad, 'Sevilla');
+      assert.equal(body.emailContacto, 'c@pend.com');
+      assert.equal(body.motivo, null);
+      assert.equal(body.fechaSolicitud, '2026-01-01T10:00:00.000Z');
+    });
+
+    it('fechaSolicitud usa resubmittedAt si existe', async () => {
+      const { body } = await get('/api/companies/me', 'rechazada');
+      assert.equal(body.fechaSolicitud, '2026-02-02T10:00:00.000Z');
+      assert.equal(body.motivo, 'CIF falso');
     });
 
     it('200 con la empresa aprobada', async () => {

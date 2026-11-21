@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it, mock } from 'node:test';
 
-import { setDbForTests } from '../../src/config/config.js';
+import { db, setDbForTests } from '../../src/config/config.js';
 import { setTokenVerifier } from '../../src/middlewares/auth.js';
 import * as buildingModel from '../../src/models/buildingModel.js';
 import * as companyModel from '../../src/models/companyModel.js';
@@ -18,6 +18,7 @@ const tokens = {
   admin: { uid: 'admin-1', role: 'ADMIN' },
   cliente: { uid: 'u1', role: 'CLIENT' },
   empresa: { uid: 'owner-1', role: 'COMPANY', companyId: 'c1' },
+  pend: { uid: 'owner-2', role: 'COMPANY', companyId: 'c-pend' },
 };
 const FUTURA = '2030-03-12';
 
@@ -147,6 +148,7 @@ describe('Panel de admin: empresas', () => {
         email: 'c-pend@x.com',
         estado: 'pendiente',
         fechaSolicitud: '2026-03-01T00:00:00.000Z',
+        version: null,
         verificada: false,
       });
       assert.equal(body.empresas[2].verificada, true);
@@ -463,6 +465,60 @@ describe('Panel de admin: empresas', () => {
       assert.equal(res.status, 401);
       assert.equal(res.body.error.code, 'INVALID_TOKEN');
       assert.equal((await call('GET', '/api/bookings/me', { token: 'cliente' })).status, 200);
+    });
+  });
+
+  describe('version (STALE_DATA)', () => {
+    const setUpdatedAt = (iso) =>
+      companyModel.update('c-pend', {}).then(() =>
+        db()
+          .collection('companies')
+          .doc('c-pend')
+          .update({ updatedAt: new Date(iso) }),
+      );
+
+    it('aprobar con una versión vieja tras un PATCH da 409 y con la actual 200', async () => {
+      await setUpdatedAt('2026-03-02T10:00:00Z');
+      const detalle = await admin('GET', '/api/admin/companies/c-pend');
+      assert.equal(detalle.body.version, '2026-03-02T10:00:00.000Z');
+      const editada = await call('PATCH', '/api/companies/me', {
+        token: 'pend',
+        body: { ciudad: 'Cádiz' },
+      });
+      assert.equal(editada.status, 200);
+      const viejo = await admin('POST', '/api/admin/companies/c-pend/approve', {
+        version: detalle.body.version,
+      });
+      assert.equal(viejo.status, 409);
+      assert.equal(viejo.body.error.code, 'STALE_DATA');
+      assert.equal((await companyModel.findById('c-pend')).status, 'PENDING');
+      await setUpdatedAt('2026-03-03T10:00:00Z');
+      const nuevo = await admin('GET', '/api/admin/companies/c-pend');
+      const ok = await admin('POST', '/api/admin/companies/c-pend/approve', {
+        version: nuevo.body.version,
+      });
+      assert.equal(ok.status, 200);
+      assert.equal(ok.body.estado, 'aprobada');
+    });
+
+    it('reject con versión vieja da 409; sin versión funciona; clave extra en approve 400', async () => {
+      await setUpdatedAt('2026-03-02T10:00:00Z');
+      const viejo = await admin('POST', '/api/admin/companies/c-pend/reject', {
+        motivo: 'Datos dudosos',
+        version: '2026-03-01T00:00:00.000Z',
+      });
+      assert.equal(viejo.status, 409);
+      const extra = await admin('POST', '/api/admin/companies/c-pend/approve', { motivo: 'x' });
+      assert.equal(extra.status, 400);
+      const sin = await admin('POST', '/api/admin/companies/c-pend/reject', {
+        motivo: 'Datos dudosos',
+      });
+      assert.equal(sin.status, 200);
+    });
+
+    it('el listado también trae version', async () => {
+      const { body } = await admin('GET', '/api/admin/companies');
+      assert.ok(body.empresas.every((c) => 'version' in c));
     });
   });
 
