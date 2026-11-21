@@ -132,8 +132,12 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 
 ## EMP012 · Fotos de sala
 
-- **Ya cubierto:** el campo de fotos de la sala (DAT014) y las reglas de Storage (DAT024).
-- **Falta:** foto de portada (o acordar que es la primera del array) y confirmar que se respeta el orden al guardar.
+- **Ya cubierto:** el campo de fotos de la sala (DAT014: `fotos` en `PATCH /api/company/rooms/:id`, hasta 20 URLs de Storage de la empresa, guardadas en el orden recibido) y las reglas de Storage (DAT024).
+- **Hecho en el front (EMP012):** subir, ordenar, quitar y elegir portada en el panel de sala (editor de mapas y Salas); se guardan con el resto de datos de la sala.
+  - **Decisión: la portada es la primera foto de `fotos`** (la misma regla que la fachada del edificio). No hace falta un campo nuevo.
+- **Mejoras opcionales:**
+  - Texto alternativo propio por foto (ahora se genera: «Foto 2 de Black Room I»), que obligaría a guardar objetos en vez de URLs.
+  - Borrar de Storage las fotos que se quitan (ahora se quedan allí sin usar).
 
 ## EMP013 · Reservas y bloqueos
 
