@@ -1,4 +1,4 @@
-// Verifica el token de Firebase de la cabecera Authorization y deja en req.user el uid, el email, el rol y el companyId.
+// Verifica el token de Firebase de la cabecera Authorization y deja en req.user el uid, el email, el rol, el companyId, el proveedor de acceso y si el correo está verificado.
 import { adminAuth, isProductionEnv } from '../config/config.js';
 import { ROLE_VALUES, ROLES } from '../config/roles.js';
 import { HttpError } from '../utils/httpError.js';
@@ -53,6 +53,12 @@ function createAuth(checkRevoked) {
       // Nombre del token (cuentas de Google): solo es el valor inicial de la ficha.
       name: typeof decoded.name === 'string' && decoded.name.trim() ? decoded.name.trim() : null,
       role,
+      // Proveedor de acceso y correo verificado: los usa POST /auth/google.
+      signInProvider:
+        typeof decoded.firebase?.sign_in_provider === 'string'
+          ? decoded.firebase.sign_in_provider
+          : null,
+      emailVerified: decoded.email_verified === true,
       // Solo se acepta un companyId de texto: cualquier otro valor del claim se ignora.
       companyId:
         typeof decoded.companyId === 'string' && decoded.companyId ? decoded.companyId : null,
