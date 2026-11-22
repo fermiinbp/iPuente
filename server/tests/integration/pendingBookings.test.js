@@ -255,6 +255,7 @@ describe('Reservas pendientes de pago y caducidad', () => {
   describe('extender expiresAt', () => {
     it('alarga una pendiente vigente sin tocar su occupancy', async () => {
       await seedPending('pv', 'r-free', 10, 12, minutes(10));
+      await bookingModel.update('pv', { createdAt: new Date() });
       const nueva = minutes(40);
       const res = await bookingsService.extendPendingExpiry('pv', nueva);
       assert.equal(res.getTime(), nueva.getTime());
@@ -265,6 +266,7 @@ describe('Reservas pendientes de pago y caducidad', () => {
     it('no la acorta', async () => {
       const larga = minutes(60);
       await seedPending('pv', 'r-free', 10, 12, larga);
+      await bookingModel.update('pv', { createdAt: new Date() });
       await bookingsService.extendPendingExpiry('pv', minutes(30));
       assert.equal((await bookingModel.findById('pv')).expiresAt.getTime(), larga.getTime());
     });
@@ -520,6 +522,7 @@ describe('Reservas pendientes de pago y caducidad', () => {
   describe('extendPendingExpiry con reloj inyectado', () => {
     it('evalúa el reloj dentro de la transacción', async () => {
       await seedPending('pv', 'r-free', 10, 12, minutes(10));
+      await bookingModel.update('pv', { createdAt: new Date() });
       await assert.rejects(
         bookingsService.extendPendingExpiry('pv', minutes(60), {
           clock: () => Date.now() + 20 * 60000,
@@ -527,7 +530,8 @@ describe('Reservas pendientes de pago y caducidad', () => {
         (e) => e.code === 'BOOKING_EXPIRED',
       );
       await bookingsService.extendPendingExpiry('pv', minutes(60), { clock: () => Date.now() });
-      assert.ok((await bookingModel.findById('pv')).expiresAt.getTime() > minutes(50).getTime());
+      // Se recorta al tope absoluto: createdAt + 50 min.
+      assert.ok((await bookingModel.findById('pv')).expiresAt.getTime() > minutes(49).getTime());
     });
   });
 

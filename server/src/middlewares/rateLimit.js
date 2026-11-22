@@ -42,6 +42,11 @@ const DEFAULTS = {
     windowMs: HOUR,
     message: 'Has editado la solicitud demasiadas veces. Inténtalo de nuevo más tarde.',
   },
+  checkout: {
+    limit: 20,
+    windowMs: HOUR,
+    message: 'Has iniciado demasiados pagos. Inténtalo de nuevo más tarde.',
+  },
 };
 
 let overrides = null;
@@ -78,6 +83,7 @@ function storeFor(name) {
   if (name === 'profile') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'googleAuth') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'companyEdit') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
+  if (name === 'checkout') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'ai') return new FirestoreRateLimitStore({ prefix: name, failOpen: false });
   return undefined; // general: memoria por defecto
 }
@@ -94,7 +100,8 @@ function build(name) {
     legacyHeaders: false,
     store: storeFor(name),
     keyGenerator: (req) =>
-      (['ai', 'companyEdit', 'profile', 'googleAuth'].includes(name) && req.user?.uid) ||
+      (['ai', 'companyEdit', 'profile', 'googleAuth', 'checkout'].includes(name) &&
+        req.user?.uid) ||
       clientIp(req),
     handler: (req, res, next) => next(new HttpError(429, 'RATE_LIMITED', message)),
     // Se crea en la primera petición (para poder cambiarlo en tests) y se reutiliza: el aviso
@@ -119,3 +126,5 @@ export const profileEditLimiter = limiter('profile');
 export const companyEditLimiter = limiter('companyEdit');
 // POST /auth/google: 60 por hora por uid, falla abierto; va después de authStrict.
 export const googleAuthLimiter = limiter('googleAuth');
+// Iniciar un pago (20 por hora por uid, falla abierto): va después de `auth`.
+export const checkoutLimiter = limiter('checkout');
