@@ -71,6 +71,10 @@
   padding-left: var(--space-5);
 }
 
+.noticeAction {
+  margin-top: var(--space-2);
+}
+
 .layout {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) minmax(260px, 320px);
