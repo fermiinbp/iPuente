@@ -10,6 +10,14 @@ export const MIN_SIZE = 20;
 // Plano en blanco para una planta sin plano subido (mismo tamaño que los mapas de demo).
 export const BLANK_MAP = Object.freeze({ ancho: 1000, alto: 600 });
 
+// Tamaño del plano para una imagen: su lado mayor mide 1000 y se conserva la proporción (mínimo 200 por lado).
+export function planFromImage(width, height) {
+  const size = (ratio) => Math.max(200, Math.round((1000 * ratio) / GRID) * GRID);
+  return width >= height
+    ? { ancho: 1000, alto: size(height / width) }
+    : { ancho: size(width / height), alto: 1000 };
+}
+
 export const snap = (value, grid = GRID) => Math.round(value / grid) * grid;
 
 export const clamp = (value, min, max) => Math.min(Math.max(value, min), max);

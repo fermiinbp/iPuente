@@ -1,6 +1,6 @@
 # iPuente
  
-iPuente es un portal donde las empresas publican sus oficinas y salas, y los clientes las alquilan por horas: eligen el edificio, la planta en un modelo 3D y la sala en su plano, y ven su precio, capacidad y equipamiento antes de reservar. Cada empresa sube la imagen de su plano, iPuente detecta las salas automáticamente y genera el mapa interactivo y el edificio 3D, que la empresa revisa y publica desde su propio panel.
+iPuente es un portal donde las empresas publican sus oficinas y salas, y los clientes las alquilan por horas: eligen el edificio, la planta en un modelo 3D y la sala en su plano, y ven su precio, capacidad y equipamiento antes de reservar. Cada empresa sube la imagen de su plano, dibuja sus salas encima y iPuente genera el mapa interactivo y el edificio 3D, que la empresa publica desde su propio panel.
  
 ## Índice
  
@@ -31,8 +31,8 @@ iPuente une las dos partes en un mismo sitio. La empresa convierte su plano en u
  
 1. Se registra como empresa y da de alta su edificio con el número de plantas.
 2. En cada planta sube la imagen de su plano (PNG o JPG).
-3. Un modelo de IA con visión analiza la imagen y devuelve un primer borrador con las salas detectadas: nombre, código y posición.
-4. El editor de mapas muestra el plano de fondo con las salas detectadas encima. La empresa mueve, ajusta, borra o añade salas, o las dibuja a mano si la detección falla.
+3. El editor de mapas muestra el plano de fondo y la empresa dibuja encima sus salas.
+4. Mueve, ajusta, borra o añade salas, y les pone código, nombre y tipo.
 5. Completa los datos de cada sala (precio por hora, capacidad, m², equipamiento, fotos) y la publica.
 6. Con las plantas guardadas, iPuente genera automáticamente el edificio 3D, con las plantas apiladas y cada sala como un bloque.
 ### Para el cliente
@@ -85,8 +85,8 @@ Nadie puede registrarse como admin, y las cuentas de empresa quedan pendientes h
 | HU-05 | Como **cliente**, quiero reservar una sala por fecha y franja horaria, para cerrar el alquiler en un solo paso. |
 | HU-06 | Como **cliente**, quiero ver y cancelar mis reservas, para gestionar cambios de planes sin llamar a nadie. |
 | HU-07 | Como **empresa**, quiero registrarme y dar de alta mi edificio con sus plantas, para publicar mis espacios en el portal. |
-| HU-08 | Como **empresa**, quiero subir la imagen de mi plano y que se detecten las salas automáticamente, para no tener que dibujar el mapa desde cero. |
-| HU-09 | Como **empresa**, quiero corregir el mapa detectado o dibujar las salas a mano sobre mi plano, para que el mapa publicado sea exacto. |
+| HU-08 | Como **empresa**, quiero subir la imagen de mi plano como fondo del editor, para dibujar el mapa sobre él. |
+| HU-09 | Como **empresa**, quiero dibujar y corregir las salas sobre mi plano, para que el mapa publicado sea exacto. |
 | HU-10 | Como **empresa**, quiero indicar el precio, la capacidad, el equipamiento y las fotos de cada sala, para que los clientes tengan toda la información. |
 | HU-11 | Como **empresa**, quiero ver las reservas de mis salas y bloquear horas, para controlar la ocupación de mis espacios. |
 | HU-12 | Como **admin**, quiero aprobar o suspender empresas, para que solo se publiquen espacios reales. |
@@ -101,7 +101,7 @@ Nadie puede registrarse como admin, y las cuentas de empresa quedan pendientes h
 | 1 | Registro e inicio de sesión con email; roles de cliente, empresa y admin | HU-04, HU-07 |
 | 2 | Alta de empresa, edificio y plantas | HU-07 |
 | 3 | Editor de mapas: plano subido como fondo y salas como rectángulos que se dibujan, mueven, redimensionan y nombran | HU-09 |
-| 4 | Detección automática de salas a partir de la imagen del plano, con IA, como borrador editable | HU-08 |
+| 4 | Subida de la imagen del plano como fondo del editor | HU-08 |
 | 5 | Guardar el mapa de cada planta en Firestore | HU-08, HU-09 |
 | 6 | Datos de cada sala: precio por hora, capacidad, m², equipamiento y fotos | HU-10 |
 | 7 | Plano 2D clicable para clientes, con colores según el estado de cada sala (libre, ocupada, no reservable) | HU-02 |
@@ -114,7 +114,7 @@ Nadie puede registrarse como admin, y las cuentas de empresa quedan pendientes h
 | 14 | Panel de admin: aprobar empresas y consultar usuarios y reservas | HU-12, HU-13 |
 | 15 | Diseño responsive (móvil, tablet y escritorio) | Todas |
  
-**Orden de desarrollo:** primero el editor manual (punto 3), que garantiza que siempre haya mapa; después la detección automática (punto 4), que rellena ese mismo editor. Si falta tiempo, la detección automática es lo primero que se recorta y el portal sigue funcionando.
+**Decisión:** la detección automática de salas con IA se descartó para no depender de un servicio de pago; el mapa se dibuja a mano en el editor sobre el plano subido.
  
 ### Extras (solo si el MVP está terminado, por orden de prioridad)
  
@@ -131,7 +131,7 @@ Nadie puede registrarse como admin, y las cuentas de empresa quedan pendientes h
 ### Fuera de alcance (no se hará en este proyecto)
  
 - **Modelo 3D a partir de una foto del edificio.** Los servicios de IA que lo hacen devuelven un único bloque decorativo, sin plantas separadas, y no permitiría hacer clic por plantas.
-- **Detección de planos complejos de arquitecto** (paredes finas, cotas, formas irregulares): la detección automática está pensada para planos de bloques rectangulares; el resto se dibuja a mano en el editor.
+- **Detección automática de salas con IA.** Las capas gratuitas no permiten ofrecerla a usuarios de la UE y las de pago quedan fuera de este proyecto. El trabajo previo está guardado en la rama `DAT025-deteccion-de-salas-con-ia`.
 - **Cobro directo a cada empresa (Stripe Connect)**, pagos reales y facturación con validez fiscal.
 - Alquiler mensual de oficinas con contrato.
 - App móvil nativa.
@@ -632,7 +632,7 @@ node --env-file=.env scripts/pingDb.js
 
 En **Vercel**, las mismas variables van en *Settings → Environment Variables*. `config.js` convierte los `\n` literales de la clave en saltos de línea reales.
 
-**Límites y proxy:** la API limita las peticiones por IP (general 300 cada 15 min, registro 10 por hora, detección con IA 10 por hora) y responde `429 RATE_LIMITED`. Como en Vercel hay un proxy delante, `app.js` usa `trust proxy = 1` para leer la IP real del cliente; si se despliega sin proxy, hay que quitarlo o cualquiera podría falsear su IP con `X-Forwarded-For`. El límite general cuenta en la memoria de cada instancia (orientativo, para no escribir en Firestore en cada petición); el de registro y el de IA usan un contador compartido en Firestore (colección `rateLimits`, documento por clave con `count` y `expiresAt`). Conviene activar en Firebase la política TTL de Firestore sobre `rateLimits.expiresAt` para que los contadores caducados se borren solos.
+**Límites y proxy:** la API limita las peticiones por IP (general 300 cada 15 min, registro 10 por hora) y responde `429 RATE_LIMITED`. Como en Vercel hay un proxy delante, `app.js` usa `trust proxy = 1` para leer la IP real del cliente; si se despliega sin proxy, hay que quitarlo o cualquiera podría falsear su IP con `X-Forwarded-For`. El límite general cuenta en la memoria de cada instancia (orientativo, para no escribir en Firestore en cada petición); el de registro usa un contador compartido en Firestore (colección `rateLimits`, documento por clave con `count` y `expiresAt`). Conviene activar en Firebase la política TTL de Firestore sobre `rateLimits.expiresAt` para que los contadores caducados se borren solos.
 
 **IP real en Vercel:** el límite usa la cabecera `x-vercel-forwarded-for` (Vercel la sobrescribe en cada petición, así que el cliente no puede falsearla; si trae varias IP, se usa la primera); si no existe (local, tests), `req.ip`. No se usa `x-real-ip` ni `x-forwarded-for` directamente. `trust proxy` sigue en 1.
 

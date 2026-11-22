@@ -1,4 +1,4 @@
-// Rutas del panel de empresa: alta, edificios, plantas, mapas (detección con IA, guardar, publicar), salas, reservas y bloqueos. Cada empresa solo accede a lo suyo.
+// Rutas del panel de empresa: alta, edificios, plantas, mapas (guardar, publicar), salas, reservas y bloqueos. Cada empresa solo accede a lo suyo.
 import { Router } from 'express';
 
 import { ROLES } from '../config/roles.js';

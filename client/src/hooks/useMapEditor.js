@@ -97,6 +97,8 @@ function reducer(state, action) {
         dirty: true,
       };
     }
+    case 'plan':
+      return { ...state, plan: action.plan, dirty: true };
     case 'saved':
       return { ...state, dirty: false };
     default:
@@ -122,6 +124,8 @@ export function useMapEditor() {
         dispatch({ type: 'change', id, rect: fields, record: rec }),
       deleteRoom: (id) => dispatch({ type: 'delete', id }),
       undo: () => dispatch({ type: 'undo' }),
+      // Tamaño del plano (al subir una imagen a una planta sin salas).
+      setPlan: (plan) => dispatch({ type: 'plan', plan }),
       markSaved: () => dispatch({ type: 'saved' }),
     }),
     [],

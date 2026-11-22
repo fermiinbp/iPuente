@@ -11,15 +11,3 @@
   background: var(--lima);
   color: var(--bosque-profundo);
 }
-
-.separator {
-  width: 60%;
-  height: 1px;
-  margin: var(--space-2) 0;
-  background: var(--linea);
-}
-
-.ia {
-  font-size: var(--text-etiqueta);
-  font-weight: 700;
-}

@@ -1,4 +1,4 @@
-// Panel de empresa: alta, edificios, plantas, detección con IA, guardar y publicar mapas, salas, reservas y bloqueos.
+// Panel de empresa: alta, edificios, plantas, guardar y publicar mapas, salas, reservas y bloqueos.
 import { ApiError, del, get, patch, post, put } from './apiClient.js';
 
 // Empresa del usuario autenticado (la API la saca del token):
