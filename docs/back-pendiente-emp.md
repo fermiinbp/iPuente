@@ -164,11 +164,11 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 
 ## EMP015 · Ajustes
 
-- **Ya cubierto (DAT013, DAT022):** `GET /api/companies/me`.
-- **Falta:**
-  - Editar los datos de la empresa ya aprobada (DAT030, #160: una empresa aprobada solo edita sus datos de contacto).
-  - Cambiar el email de acceso de la cuenta de empresa (la contraseña la cambia el front con Firebase Auth).
-  - Cobros: estado de la cuenta de Stripe Connect y movimientos (decisión 2).
+- **Ya cubierto (DAT013, DAT022, DAT030):** `GET /api/companies/me` y `PATCH /api/companies/me`. Una empresa aprobada solo edita la persona de contacto, el teléfono y el email de contacto; el resto da `FIELD_NOT_EDITABLE`.
+- **Hecho en el front (EMP015):** pestañas Empresa y Cobros.
+  - **Decisión: la cuenta de acceso (email y contraseña) no va en Ajustes**, porque ya está en «Mi cuenta» (`/account`), que la empresa abre desde su menú. Cambiar el email de acceso deja de ser parte de esta issue.
+  - **Decisión: Cobros no lleva maqueta**; solo avisa de que llegará más adelante.
+- **Falta:** Cobros, el estado de la cuenta de Stripe Connect y los movimientos (decisión 2).
 
 ## EMP016 · _Extra_ Edificio 3D
 

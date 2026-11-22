@@ -1,5 +1,5 @@
-// Fila de una reserva en «Mis reservas»: sala, fecha, franja, importe y estado. Solo se puede cancelar
-// una reserva confirmada que todavía no ha empezado.
+// Fila de una reserva en «Mis reservas»: sala, fecha, franja, importe y estado. Se puede cancelar una reserva
+// confirmada o pendiente de pago (que además se puede pagar) si todavía no ha empezado.
 import { Link } from 'react-router';
 import Button from '@/components/ui/Button/Button.jsx';
 import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
@@ -10,7 +10,9 @@ import styles from './BookingCard.module.css';
 const pad = (hour) => String(hour).padStart(2, '0');
 
 export default function BookingCard({ booking, onCancel }) {
-  const canCancel = booking.estado === 'CONFIRMED' && !hasStarted(booking);
+  const canCancel =
+    (booking.estado === 'CONFIRMED' || booking.estado === 'PENDING_PAYMENT') &&
+    !hasStarted(booking);
   const name = booking.sala?.nombre ?? 'Sala';
 
   return (

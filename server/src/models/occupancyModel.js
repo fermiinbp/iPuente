@@ -1,7 +1,7 @@
 // Acceso a la colección occupancy: una ficha por sala y hora ocupada, con id fijo «roomId_AAAA-MM-DD_HH».
 // Como el id es único, dos reservas no pueden crear la misma hora: create falla si ya existe (útil dentro de una transacción).
 // Campos: companyId, roomId, date (AAAA-MM-DD), hour (0-23), bookingId o blockId, createdAt, updatedAt.
-import { createModel, runQuery } from './baseModel.js';
+import { createModel, now, runQuery } from './baseModel.js';
 
 const base = createModel('occupancy');
 
@@ -17,6 +17,13 @@ export async function listByRoomAndDate(roomId, date) {
   const query = base.collection().where('roomId', '==', roomId).where('date', '==', date);
   const slots = await runQuery(query);
   return slots.sort((a, b) => a.hour - b.hour);
+}
+
+// Sustituye (set completo) la ficha de una hora que pertenecía a otra reserva caducada. Solo dentro
+// de una transacción: así borrar la vieja y crear la nueva es una única escritura atómica.
+export function overwrite(data, { id, tx }) {
+  tx.set(base.docRef(id), { ...data, createdAt: now(), updatedAt: now() });
+  return id;
 }
 
 export function listByBooking(bookingId) {

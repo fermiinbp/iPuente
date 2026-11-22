@@ -5,6 +5,7 @@ import { Router } from 'express';
 import { ROLES } from '../config/roles.js';
 import * as ctrl from '../controllers/companyBookingsController.js';
 import { auth } from '../middlewares/auth.js';
+import { bookingCancelLimiter } from '../middlewares/rateLimit.js';
 import { requireApprovedCompany } from '../middlewares/requireApprovedCompany.js';
 import { requireRole } from '../middlewares/requireRole.js';
 import { validate } from '../middlewares/validate.js';
@@ -171,7 +172,7 @@ router.get(
  *                   type: string
  *                   enum: [PENDING_PAYMENT, CONFIRMED, CANCELLED, EXPIRED, COMPLETED]
  *                 motivoCancelacion: {type: string, nullable: true, description: Solo si está cancelada}
- *                 canceladaPor: {type: string, enum: [cliente, empresa], nullable: true, description: Solo si está cancelada}
+ *                 canceladaPor: {type: string, enum: [cliente, empresa, admin], nullable: true, description: Solo si está cancelada}
  *                 cliente:
  *                   type: object
  *                   nullable: true
@@ -201,7 +202,7 @@ router.get(
  *   patch:
  *     tags: [Empresa]
  *     summary: Cancela una reserva de una sala de la empresa
- *     description: 'Solo reservas CONFIRMED que no hayan empezado. Una reserva de otra empresa responde 404 como una inexistente. Libera las horas y guarda el motivo. No gestiona reembolsos: todavía no hay pago online.'
+ *     description: 'Solo reservas CONFIRMED que no hayan empezado. Una reserva de otra empresa responde 404 como una inexistente. Libera las horas y guarda el motivo. Una reserva PENDING_PAYMENT no la cancela la empresa (400 BOOKING_NOT_CANCELLABLE). Si estaba pagada se reembolsa: la respuesta lleva `reembolso` (REFUNDED o PENDING) y, si Stripe falla, la cancelación se mantiene y añade `aviso`.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -246,10 +247,13 @@ router.get(
  *         $ref: '#/components/responses/Forbidden'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       429:
+ *         description: Demasiadas peticiones seguidas (RATE_LIMITED).
  */
 router.patch(
   '/company/bookings/:id/cancel',
   ...guard,
+  bookingCancelLimiter,
   validator.cancelBooking,
   validate,
   asyncHandler(ctrl.cancelBooking),

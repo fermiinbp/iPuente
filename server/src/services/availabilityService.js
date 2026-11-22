@@ -1,7 +1,9 @@
-// Reglas de disponibilidad de una sala. Bloquean una franja las reservas CONFIRMED y los bloqueos
-// de la empresa (blocks); el resto de estados no cuentan. Calcula las horas libres de un día y,
+// Reglas de disponibilidad de una sala. Bloquean una franja las reservas CONFIRMED, las
+// PENDING_PAYMENT vigentes (expiresAt futuro) y los bloqueos de la empresa (blocks); el resto de
+// estados, y una pendiente vencida, no cuentan. Calcula las horas libres de un día y,
 // dentro de una transacción de Firestore, comprueba que una franja nueva no solape con nada.
 // Las franjas son { inicio, fin } en horas enteras (0-24) del mismo día.
+import { PENDING_MINUTES } from '../config/bookingHours.js';
 import * as blockModel from '../models/blockModel.js';
 import * as bookingModel from '../models/bookingModel.js';
 import { dayRange } from '../utils/dates.js';
@@ -15,9 +17,45 @@ export function overlaps(a, b) {
   return a.inicio < b.fin && a.fin > b.inicio;
 }
 
-// Un bloqueo siempre ocupa; una reserva solo si está CONFIRMED.
+// Un bloqueo siempre ocupa; una reserva si está CONFIRMED o PENDING_PAYMENT. Una pendiente vencida
+// llega aquí ya como EXPIRED (lo calcula toSlot), así que no ocupa.
 export function isActive(item) {
-  return item.tipo === 'bloqueo' || (item.tipo === 'reserva' && item.status === 'CONFIRMED');
+  return (
+    item.tipo === 'bloqueo' ||
+    (item.tipo === 'reserva' && (item.status === 'CONFIRMED' || item.status === 'PENDING_PAYMENT'))
+  );
+}
+
+// Milisegundos de un Date, Timestamp de Firestore, texto ISO o número; NaN si no es válido (nunca lanza).
+export function toMillis(value) {
+  try {
+    if (value == null) return NaN;
+    if (typeof value.toDate === 'function') return value.toDate().getTime();
+    if (value instanceof Date) return value.getTime();
+    if (typeof value === 'string') return Date.parse(value);
+    return typeof value === 'number' ? value : NaN;
+  } catch {
+    return NaN;
+  }
+}
+
+// ¿Es una reserva PENDING_PAYMENT ya vencida? Vence en expiresAt; si falta o no es válido, en
+// createdAt + 15 min; si tampoco hay createdAt válido (dato sin fechas), se trata como vigente
+// porque liberar por error la franja de una reserva que quizá se está pagando es peor que dejarla.
+export function isPendingExpired(booking, nowMs = Date.now()) {
+  if (booking?.status !== 'PENDING_PAYMENT') return false;
+  let end = toMillis(booking.expiresAt);
+  if (!Number.isFinite(end)) {
+    const created = toMillis(booking.createdAt);
+    end = Number.isFinite(created) ? created + PENDING_MINUTES * 60 * 1000 : Infinity;
+  }
+  return end <= nowMs;
+}
+
+// Estado que se muestra y se usa para ocupar: EXPIRED si es una pendiente vencida (aunque aún no se
+// haya escrito en Firestore); si no, el guardado.
+export function effectiveStatus(booking, nowMs = Date.now()) {
+  return isPendingExpired(booking, nowMs) ? 'EXPIRED' : booking?.status;
 }
 
 // Horas libres [h, h+1) entre desde y hasta que no solapan con ningún item activo.
@@ -34,15 +72,16 @@ export function freeSlots(items, { desde = 8, hasta = 21 } = {}) {
 export const toDate = (value) => (typeof value.toDate === 'function' ? value.toDate() : value);
 
 // Convierte un documento del model en una franja { tipo, status, inicio, fin } de horas enteras.
-export function toSlot(doc, tipo) {
+// El status es el efectivo: una pendiente vencida sale como EXPIRED.
+export function toSlot(doc, tipo, nowMs = Date.now()) {
   const start = toDate(doc.startDate);
   const end = toDate(doc.endDate);
   const nextDay = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
   const fin = end.getTime() >= nextDay.getTime() ? 24 : end.getHours();
-  return { tipo, status: doc.status, inicio: start.getHours(), fin };
+  return { tipo, status: effectiveStatus(doc, nowMs), inicio: start.getHours(), fin };
 }
 
-// Lanza 409 SLOT_TAKEN si la franja pedida solapa con una reserva CONFIRMED o un bloqueo.
+// Lanza 409 SLOT_TAKEN si la franja pedida solapa con una reserva viva o un bloqueo.
 // fecha es 'AAAA-MM-DD'; los models se pueden sustituir por dobles en los tests.
 export async function assertSlotAvailable(
   roomId,

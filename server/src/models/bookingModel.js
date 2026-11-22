@@ -1,6 +1,8 @@
 // Acceso a la colección bookings. Campos: code (IP-1000...), userId, companyId, roomId, startDate, endDate, price, pricePeriod,
-// totalAmount, status (PENDING_PAYMENT | CONFIRMED | CANCELLED | EXPIRED | COMPLETED), paymentId, cancelledAt,
-// cancelledBy (CLIENT | COMPANY), cancelReason, createdAt, updatedAt.
+// totalAmount, status (PENDING_PAYMENT | CONFIRMED | CANCELLED | EXPIRED | COMPLETED), paymentId,
+// expiresAt (solo PENDING_PAYMENT: hasta cuándo retiene las horas; vencida deja de ocupar), cancelledAt,
+// cancelledBy (CLIENT | COMPANY), cancelReason, checkoutAttempt / checkoutExpiresAt / checkoutSessionId (intento de pago
+// con Stripe), paidAt, createdAt, updatedAt.
 import { createModel, runQuery } from './baseModel.js';
 
 const base = createModel('bookings');

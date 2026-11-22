@@ -42,10 +42,11 @@ describe('overlaps', () => {
 });
 
 describe('isActive', () => {
-  it('CONFIRMED bloquea; CANCELLED y PENDING_PAYMENT no', () => {
+  it('CONFIRMED y PENDING_PAYMENT bloquean; CANCELLED y EXPIRED no', () => {
     assert.equal(isActive(reserva(10, 12, 'CONFIRMED')), true);
     assert.equal(isActive(reserva(10, 12, 'CANCELLED')), false);
-    assert.equal(isActive(reserva(10, 12, 'PENDING_PAYMENT')), false);
+    assert.equal(isActive(reserva(10, 12, 'PENDING_PAYMENT')), true);
+    assert.equal(isActive(reserva(10, 12, 'EXPIRED')), false);
   });
 
   it('un bloqueo siempre bloquea', () => {
@@ -62,12 +63,16 @@ describe('freeSlots', () => {
     assert.deepEqual(free, [8, 11, 12, 13, 15, 16, 17, 18, 19, 20]);
   });
 
-  it('ignora una reserva cancelada y una pendiente de pago', () => {
-    const items = [reserva(10, 12, 'CANCELLED'), reserva(12, 14, 'PENDING_PAYMENT')];
+  it('ignora una reserva cancelada y una caducada, pero no una pendiente vigente', () => {
+    const items = [
+      reserva(10, 12, 'CANCELLED'),
+      reserva(12, 14, 'PENDING_PAYMENT'),
+      reserva(14, 15, 'EXPIRED'),
+    ];
 
-    const free = freeSlots(items, { desde: 10, hasta: 14 });
+    const free = freeSlots(items, { desde: 10, hasta: 15 });
 
-    assert.deepEqual(free, [10, 11, 12, 13]);
+    assert.deepEqual(free, [10, 11, 14]);
   });
 
   it('con el día completo ocupado devuelve []', () => {
@@ -222,9 +227,10 @@ describe('roomStatusAtHour', () => {
     assert.equal(roomStatusAtHour(sala, items, 15), 'FREE');
   });
 
-  it('una reserva cancelada o pendiente no ocupa', () => {
+  it('una reserva cancelada o caducada no ocupa y una pendiente vigente sí', () => {
     assert.equal(roomStatusAtHour(sala, items, 16), 'FREE');
-    assert.equal(roomStatusAtHour(sala, [reserva(10, 12, 'PENDING_PAYMENT')], 10), 'FREE');
+    assert.equal(roomStatusAtHour(sala, [reserva(10, 12, 'EXPIRED')], 10), 'FREE');
+    assert.equal(roomStatusAtHour(sala, [reserva(10, 12, 'PENDING_PAYMENT')], 10), 'OCCUPIED');
   });
 
   it('UNAVAILABLE si no es reservable, está inactiva, no existe o no tiene precio', () => {

@@ -102,3 +102,18 @@ export const listBookings = [
 
 export const getBooking = [idParam];
 export const summary = [sinCorchetes];
+
+// Listado de pagos: estado (en inglés) y página.
+export const listPayments = [
+  sinCorchetes,
+  query('estado')
+    .optional()
+    .custom(isText)
+    .bail()
+    .isIn(['PENDING', 'SUCCEEDED', 'FAILED', 'REFUNDED'])
+    .withMessage('estado debe ser PENDING, SUCCEEDED, FAILED o REFUNDED'),
+  pageQuery(25),
+];
+
+// Reembolso de un pago: solo el id en la URL (el reembolso siempre es total).
+export const refundPayment = [idParam];
