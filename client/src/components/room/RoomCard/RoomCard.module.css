@@ -20,19 +20,26 @@
   justify-content: center;
   aspect-ratio: 3 / 2;
   border-radius: var(--radio-tarjeta);
-  background: var(--foto-hueco);
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--bronce) 14%, var(--foto-hueco)),
+    var(--foto-hueco)
+  );
   border: 1px solid var(--linea);
   overflow: hidden;
   transition: border-color var(--dur-fast) var(--ease-out);
 }
 
-.symbol {
-  display: block;
-  width: 48px;
-  height: 48px;
-  background: var(--linea-plano);
-  -webkit-mask: var(--simbolo) center / contain no-repeat;
-  mask: var(--simbolo) center / contain no-repeat;
+/* Tipo de sala como cartel tipográfico. */
+.type {
+  padding: var(--space-4);
+  font-family: var(--font-display);
+  font-size: clamp(26px, 3vw, 34px);
+  font-style: italic;
+  line-height: 1.1;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--bronce-claro);
   transition: transform var(--dur-media) var(--ease-out);
 }
 
@@ -64,9 +71,8 @@
   aspect-ratio: 4 / 3;
 }
 
-.featured .symbol {
-  width: 88px;
-  height: 88px;
+.featured .type {
+  font-size: clamp(36px, 4.6vw, 64px);
 }
 
 .featured .name {
@@ -115,19 +121,19 @@
     border-color: var(--crema-suave);
   }
 
-  .card:hover .symbol {
+  .card:hover .type {
     transform: scale(1.1);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .card,
-  .symbol {
+  .type {
     transition: none;
   }
 
   .card:hover,
-  .card:hover .symbol {
+  .card:hover .type {
     transform: none;
   }
 }

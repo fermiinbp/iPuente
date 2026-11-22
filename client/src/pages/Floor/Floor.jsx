@@ -17,7 +17,7 @@ import { FLOOR_CAMERA, FLOOR_PLAN } from '@/pages/Landing/floorPlanData.js';
 import { FLOORS_HERO, roomsForFloor } from '@/pages/Landing/heroBuildingData.js';
 import { getBuilding } from '@/services/buildingsService.js';
 import { getFloor } from '@/services/floorsService.js';
-import { formatLongDate, todayString } from '@/utils/dates.js';
+import { todayString } from '@/utils/dates.js';
 import { hasWebGL } from '@/utils/webgl.js';
 import styles from './Floor.module.css';
 
@@ -207,7 +207,7 @@ export default function Floor() {
             />
           )}
           <p className={styles.summary}>
-            {freeCount} de {rooms.length} salas libres el {formatLongDate(fecha)}.
+            {freeCount} de {rooms.length} salas libres.
           </p>
 
           <div className={styles.date}>
