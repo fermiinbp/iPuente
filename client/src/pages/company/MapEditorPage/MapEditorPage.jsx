@@ -1,6 +1,6 @@
 // Página del editor de mapas de una planta: subir plano, detectar, corregir, guardar y publicar (wireframe 13).
 // Pantalla completa, fuera de DashboardLayout, con cabecera propia: «← Mis edificios», «Edificio · Planta», estado,
-// «Guardar borrador» y «Publicar planta» (desactivado hasta EMP010). Debajo: herramientas (EditorToolbar), lienzo
+// «Guardar borrador» y «Publicar planta» (o «Despublicar»). Debajo: herramientas (EditorToolbar), lienzo
 // (MapEditor) y un panel con la sala seleccionada (RoomPropertiesPanel) o, sin selección, la lista de salas.
 // En pantallas de menos de 900 px no se edita: se avisa de que el editor se usa en pantallas grandes.
 //
@@ -13,7 +13,9 @@
 // y después los datos de las salas que han cambiado (así también las recién dibujadas, que ya existen en la API). Si
 // falla alguna sala se dice cuál y sus cambios se quedan para reintentar. Eliminar una sala ya guardada comprueba sus
 // reservas futuras: si tiene, no se elimina (hay que cancelarlas antes en Reservas).
-// Fuera: subir el plano y la IA (EMP008), las fotos de la sala (EMP012) y publicar (EMP010).
+// Publicar (EMP010): guarda lo pendiente, abre PublishValidationModal con las comprobaciones del front (checkFloor) y
+// llama a publishFloor; la API vuelve a comprobar. Si el edificio es un borrador, ofrece publicarlo.
+// Fuera: subir el plano y la IA (EMP008).
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import Alert from '@/components/ui/Alert/Alert.jsx';
@@ -26,6 +28,7 @@ import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
 import EditorToolbar from '@/components/map-editor/EditorToolbar/EditorToolbar.jsx';
 import MapEditor from '@/components/map-editor/MapEditor/MapEditor.jsx';
 import RoomPropertiesPanel from '@/components/map-editor/RoomPropertiesPanel/RoomPropertiesPanel.jsx';
+import PublishValidationModal from '@/components/map-editor/PublishValidationModal/PublishValidationModal.jsx';
 import UnsavedChangesModal from '@/components/map-editor/UnsavedChangesModal/UnsavedChangesModal.jsx';
 import { PUBLISH_STATUS } from '@/config/constants.js';
 import { useFetch } from '@/hooks/useFetch.js';
@@ -36,10 +39,14 @@ import {
   getFloorMap,
   getRoomFutureBookings,
   getRooms,
+  publishBuilding,
+  publishFloor,
   saveFloorMap,
+  unpublishFloor,
   updateRoom,
 } from '@/services/companyService.js';
 import { BLANK_MAP } from '@/utils/mapGeometry.js';
+import { BILLING_NOTICE, checkFloor } from '@/utils/publishChecks.js';
 import {
   EMPTY_DATA,
   dataFromApi,
@@ -200,6 +207,17 @@ function Editor({ building, floor, map, rooms }) {
     .filter((item) => item.body);
   const dirty = editor.dirty || pending.length > 0;
 
+  // Publicación (EMP010): estado local, parte del que llega de la API y se actualiza con sus respuestas.
+  const [published, setPublished] = useState(floor.publicado === true);
+  const [buildingPublished, setBuildingPublished] = useState(building.publicado === true);
+  const [checks, setChecks] = useState(null); // { errores, avisos } mientras el modal está abierto
+  const [checking, setChecking] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishingBuilding, setPublishingBuilding] = useState(false);
+  const [confirmUnpublish, setConfirmUnpublish] = useState(false);
+  const [notice, setNotice] = useState(null);
+  const busy = saving || checking || publishing || publishingBuilding;
+
   const hasPlan = Boolean(map.ancho && map.alto);
   // Salas sin dimensiones del plano: no se pueden colocar, y guardar el plano en blanco las borraría.
   const locked = !hasPlan && (floor.salas > 0 || (map.salas?.length ?? 0) > 0);
@@ -265,6 +283,7 @@ function Editor({ building, floor, map, rooms }) {
     }
     setSaving(true);
     setResult(null);
+    setNotice(null); // «Planta publicada.» o un error de publicar ya no aplican tras guardar
     const mapChanged = editor.dirty;
     if (mapChanged) {
       try {
@@ -350,6 +369,97 @@ function Editor({ building, floor, map, rooms }) {
   };
   const guardedEditor = { ...editor, deleteRoom: requestDelete };
 
+  // Publicar (EMP010): primero se guarda lo pendiente (si falla, se para) y luego se abre el modal con las
+  // comprobaciones. La API vuelve a comprobar al publicar.
+  const startPublish = async () => {
+    if (busy) return;
+    setChecking(true);
+    setNotice(null);
+    if (dirty && !(await save())) {
+      setChecking(false);
+      return;
+    }
+    setChecking(false);
+    const { errores, avisos } = checkFloor({ salas: editor.salas, dataOf });
+    // Sin errores ni avisos se publica directamente (wireframe 13d, nota 3).
+    if (errores.length === 0 && avisos.length === 0) {
+      doPublish();
+      return;
+    }
+    setChecks({ errores, avisos: [...avisos, { texto: BILLING_NOTICE }] });
+  };
+
+  // «Revisar»: cierra el modal y selecciona la sala.
+  const reviewRoom = (roomId) => {
+    setChecks(null);
+    editor.setTool('select');
+    editor.select(roomId);
+  };
+
+  const doPublish = async () => {
+    if (publishing) return;
+    setPublishing(true);
+    try {
+      await publishFloor(floor.id);
+      setPublished(true);
+      setResult(null);
+      setNotice({ type: 'success', text: 'Planta publicada.' });
+    } catch (error) {
+      const messages = {
+        MAP_REQUIRED: 'La planta no tiene salas guardadas. Dibuja alguna y guarda el borrador.',
+        NO_BOOKABLE_ROOMS:
+          'Necesitas al menos una sala reservable con precio (o gratis). Revisa «Reservable» y el precio.',
+      };
+      setNotice({
+        type: 'error',
+        text: messages[error?.code] || error?.message || 'No hemos podido publicar la planta.',
+      });
+    }
+    setChecks(null);
+    setPublishing(false);
+  };
+
+  const doUnpublish = async () => {
+    if (publishing) return;
+    setPublishing(true);
+    try {
+      const response = await unpublishFloor(floor.id);
+      setPublished(false);
+      setNotice({
+        type: response?.aviso ? 'warning' : 'success',
+        text: response?.aviso
+          ? `Planta despublicada. ${response.aviso.replace(/\.?\s*$/, '.')}`
+          : 'Planta despublicada: vuelve a ser un borrador.',
+      });
+    } catch (error) {
+      setNotice({
+        type: 'error',
+        text: error?.message || 'No hemos podido despublicar la planta.',
+      });
+    }
+    setConfirmUnpublish(false);
+    setPublishing(false);
+  };
+
+  const publishTheBuilding = async () => {
+    if (publishingBuilding) return;
+    setPublishingBuilding(true);
+    try {
+      await publishBuilding(building.id);
+      setBuildingPublished(true);
+      setNotice({ type: 'success', text: 'Edificio publicado: los clientes ya pueden verlo.' });
+    } catch (error) {
+      setNotice({
+        type: 'error',
+        text:
+          error?.code === 'NO_PUBLISHED_FLOORS'
+            ? 'El edificio necesita al menos una planta publicada.'
+            : error?.message || 'No hemos podido publicar el edificio.',
+      });
+    }
+    setPublishingBuilding(false);
+  };
+
   const goBack = (event) => {
     if (!dirty) return;
     event.preventDefault();
@@ -367,7 +477,7 @@ function Editor({ building, floor, map, rooms }) {
         <h1 className={styles.title}>{title}</h1>
         <StatusBadge
           kind="publish"
-          status={floor.publicado ? PUBLISH_STATUS.PUBLISHED : PUBLISH_STATUS.DRAFT}
+          status={published ? PUBLISH_STATUS.PUBLISHED : PUBLISH_STATUS.DRAFT}
         />
         {dirty && <span className={styles.unsaved}>Cambios sin guardar</span>}
         <div className={styles.headerActions}>
@@ -380,13 +490,25 @@ function Editor({ building, floor, map, rooms }) {
           >
             Guardar borrador
           </Button>
-          {/* TODO(EMP010): comprobar y publicar la planta. */}
-          <Button size="md" disabled aria-describedby="publicar-pronto">
-            Publicar planta
-          </Button>
-          <span id="publicar-pronto" className={styles.srOnly}>
-            Próximamente
-          </span>
+          {published ? (
+            <Button
+              variant="secondary"
+              size="md"
+              disabled={busy}
+              onClick={() => setConfirmUnpublish(true)}
+            >
+              Despublicar
+            </Button>
+          ) : (
+            <Button
+              size="md"
+              loading={checking}
+              disabled={locked || uploadingPhotos || busy}
+              onClick={startPublish}
+            >
+              Publicar planta
+            </Button>
+          )}
         </div>
       </header>
 
@@ -415,6 +537,22 @@ function Editor({ building, floor, map, rooms }) {
                   ))}
                 </ul>
               )}
+            </Alert>
+          )}
+          {notice && <Alert type={notice.type}>{notice.text}</Alert>}
+          {published && !buildingPublished && (
+            <Alert type="info">
+              Para que los clientes la vean, publica también el edificio.
+              <div className={styles.noticeAction}>
+                <Button
+                  variant="secondary"
+                  size="md"
+                  loading={publishingBuilding}
+                  onClick={publishTheBuilding}
+                >
+                  Publicar edificio
+                </Button>
+              </div>
             </Alert>
           )}
         </div>
@@ -469,6 +607,27 @@ function Editor({ building, floor, map, rooms }) {
           if (await save()) navigate('/company/buildings');
           else setLeaving(false);
         }}
+      />
+
+      <PublishValidationModal
+        open={Boolean(checks)}
+        errores={checks?.errores ?? []}
+        avisos={checks?.avisos ?? []}
+        publishing={publishing}
+        onRevisar={reviewRoom}
+        onPublish={doPublish}
+        onClose={() => setChecks(null)}
+      />
+
+      <ConfirmModal
+        open={confirmUnpublish}
+        onClose={() => setConfirmUnpublish(false)}
+        title="¿Despublicar la planta?"
+        text="Los clientes dejarán de ver esta planta. Las reservas que ya existen no se cancelan."
+        confirmLabel="Despublicar"
+        cancelLabel="Cancelar"
+        loading={publishing}
+        onConfirm={doUnpublish}
       />
 
       {deleting && !deleting.loading && (

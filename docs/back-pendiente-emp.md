@@ -121,9 +121,8 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 ## EMP010 · Editor IV: guardar y publicar
 
 - **Ya cubierto (DAT015):** guardar borrador, publicar con comprobación (mapa y al menos una sala con precio) y despublicar (con `aviso` si era la última planta publicada del edificio).
-- **Falta:**
-  - Que la respuesta de publicar separe **errores** (bloquean) y **avisos** (no bloquean), con el id de la sala afectada para «Revisar».
-  - Comprobar la cuenta de cobro de la empresa (decisión 2).
+- **Hecho en el front (EMP010):** las comprobaciones previas (errores y avisos, con la sala afectada para «Revisar») se calculan en el front (`utils/publishChecks.js`) con las mismas reglas que la API; los errores 400 `MAP_REQUIRED` y `NO_BOOKABLE_ROOMS` de publicar quedan como red de seguridad y se traducen. La cuenta de cobro es solo un aviso simulado (decisión 2, Stripe Connect fuera de alcance).
+- **Mejora opcional (back):** que publicar devuelva los **errores** y **avisos** separados, con el id de la sala afectada, para no duplicar las reglas en el front.
 
 ## EMP011 · Salas
 

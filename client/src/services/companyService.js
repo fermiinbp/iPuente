@@ -123,6 +123,19 @@ export function saveFloorMap(floorId, mapa, options) {
   return put(`/company/floors/${encodeURIComponent(floorId)}/map`, mapa, options);
 }
 
+// Publica una planta propia (POST /company/floors/:id/publish): `{ id, publicado: true }`. Errores: 400 MAP_REQUIRED
+// (sin salas) y 400 NO_BOOKABLE_ROOMS (ninguna sala reservable con precio). La API no tiene un endpoint de
+// «validar»: las comprobaciones previas se hacen en el front (utils/publishChecks.js).
+export function publishFloor(id, options) {
+  return post(`/company/floors/${encodeURIComponent(id)}/publish`, undefined, options);
+}
+
+// Vuelve una planta a borrador (POST /company/floors/:id/unpublish): `{ id, publicado: false, reservasFuturas,
+// aviso? }`. El `aviso` (texto) avisa de reservas futuras o de que el edificio se queda sin plantas publicadas.
+export function unpublishFloor(id, options) {
+  return post(`/company/floors/${encodeURIComponent(id)}/unpublish`, undefined, options);
+}
+
 // Salas activas de la empresa (GET /company/rooms), ordenadas por edificio, planta y código. Cada una:
 // { id, buildingId, floorId, codigo, nombre, capacidad, m2, precioHora (null si es gratis o no tiene), gratis,
 // equipamiento, reservable, fotos, estado }. `filtros` (opcionales): { buildingId, floorId, estado } (estado:
