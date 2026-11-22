@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
+import BridgeCable from '@/components/layout/BridgeCable/BridgeCable.jsx';
 import UserMenu from '@/components/layout/UserMenu/UserMenu.jsx';
 import Chip from '@/components/ui/Chip/Chip.jsx';
 import IconButton from '@/components/ui/IconButton/IconButton.jsx';
@@ -162,6 +163,7 @@ export default function DashboardLayout({ title, links = [] }) {
               />
             )}
           </div>
+          <BridgeCable />
         </header>
 
         <main className={styles.content}>

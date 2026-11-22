@@ -11,12 +11,18 @@ import styles from './BridgeCable.module.css';
 // x avanza linealmente con el parámetro (por eso la sala puede seguirla solo con CSS).
 const CURVA = 'M0 0Q500 32 1000 0';
 
-export default function BridgeCable() {
+// Por defecto cuelga de su contenedor (una barra `sticky`, con `position: relative` o sticky). Con `fixed` se fija al borde
+// superior de la ventana: para las pantallas sin barra, como el acceso y el registro (AuthLayout).
+export default function BridgeCable({ fixed = false }) {
   const ref = useRef(null);
   useScrollProgress(ref, { mode: 'page' });
 
   return (
-    <div className={styles.cable} ref={ref} aria-hidden="true">
+    <div
+      className={fixed ? `${styles.cable} ${styles.fijo}` : styles.cable}
+      ref={ref}
+      aria-hidden="true"
+    >
       <svg
         className={styles.curva}
         viewBox="0 0 1000 16"

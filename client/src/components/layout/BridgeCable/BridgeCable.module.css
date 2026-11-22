@@ -11,6 +11,14 @@
   pointer-events: none;
 }
 
+/* Sin barra a la que colgarse (acceso y registro): fijo al borde superior de la ventana. */
+.fijo {
+  position: fixed;
+  /* 8 px más abajo del borde: así la «sala» (centrada en los extremos del cable) no queda cortada por la ventana. */
+  top: 8px;
+  z-index: var(--z-cabecera);
+}
+
 .curva {
   display: block;
   width: 100%;

@@ -1,6 +1,7 @@
 // Marco de las pantallas de acceso (entrar, crear cuenta, recuperar contraseña): sin cabecera ni pie.
 // En escritorio, un panel de marca a la izquierda y el formulario a la derecha; en móvil, solo el formulario.
 import { Link } from 'react-router';
+import BridgeCable from '@/components/layout/BridgeCable/BridgeCable.jsx';
 import logo from '@/assets/images/ipuente-logo-sobre-oscuro.svg';
 import symbol from '@/assets/images/ipuente-simbolo.svg';
 import styles from './AuthLayout.module.css';
@@ -8,6 +9,7 @@ import styles from './AuthLayout.module.css';
 export default function AuthLayout({ title, lead, footer, children }) {
   return (
     <main className={styles.page}>
+      <BridgeCable fixed />
       <div className={styles.visual} aria-hidden="true">
         <img className={styles.symbol} src={symbol} alt="" />
         <p className={styles.claim}>Elige tu sala en el plano y resérvala por horas.</p>
