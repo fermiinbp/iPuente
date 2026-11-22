@@ -28,25 +28,6 @@
   gap: var(--space-3);
 }
 
-/* Tarjeta de ingresos: la cifra aún no existe en la API y se avisa debajo. */
-.soon {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.soonCard {
-  flex: 1;
-  border-style: dashed;
-}
-
-.soonNote {
-  margin: 0;
-  color: var(--crema-suave);
-  font-size: var(--text-pequeno);
-}
-
 .note {
   margin: var(--space-2) 0 0;
   color: var(--crema-suave);

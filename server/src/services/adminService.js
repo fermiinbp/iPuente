@@ -3,6 +3,7 @@ import * as bookingModel from '../models/bookingModel.js';
 import * as buildingModel from '../models/buildingModel.js';
 import * as companyModel from '../models/companyModel.js';
 import { now, runTransaction } from '../models/baseModel.js';
+import * as paymentModel from '../models/paymentModel.js';
 import * as roomModel from '../models/roomModel.js';
 import * as userModel from '../models/userModel.js';
 import { addDays, monthRange, resolveRange, todayString } from '../utils/dates.js';
@@ -404,13 +405,13 @@ const USER_ROLES = ['CLIENT', 'COMPANY', 'ADMIN'];
 // `status` (anteriores a ese campo) cuentan como pendientes. Las reservas PENDING_PAYMENT del mes se
 // leen (hasta `readLimit`) para pasar las vencidas de PENDING_PAYMENT a EXPIRED, como en los
 // listados; si se alcanza el tope, `reservasMes.truncado` es true y esa cifra puede quedarse corta.
-export async function getSummary({ readLimit = BOOKINGS_READ_LIMIT } = {}) {
-  const { from, to, mes } = monthRange();
+export async function getSummary({ readLimit = BOOKINGS_READ_LIMIT, now } = {}) {
+  const { from, to, mes } = monthRange(now);
   const monthFilters = [
     ['startDate', '>=', from],
     ['startDate', '<', to],
   ];
-  const [totalEmpresas, aprobada, rechazada, suspendida, roles, estados, pendientes] =
+  const [totalEmpresas, aprobada, rechazada, suspendida, roles, estados, pendientes, ingresosMes] =
     await Promise.all([
       companyModel.countWhere(),
       companyModel.countWhere([['status', '==', APPROVED]]),
@@ -423,6 +424,7 @@ export async function getSummary({ readLimit = BOOKINGS_READ_LIMIT } = {}) {
         ),
       ),
       bookingModel.listInRange({ from, to, status: 'PENDING_PAYMENT', limit: readLimit }),
+      monthRevenue(from, to),
     ]);
   const empresas = {
     pendiente: Math.max(0, totalEmpresas - aprobada - rechazada - suspendida),
@@ -441,5 +443,36 @@ export async function getSummary({ readLimit = BOOKINGS_READ_LIMIT } = {}) {
     empresas,
     usuarios,
     reservasMes: { total, porEstado, mes, ...(truncado && { truncado }) },
+    ingresosMes,
   };
+}
+
+// Ingresos de los pagos creados en [from, to): pagos SUCCEEDED menos los que tienen un reembolso
+// pendiente (los REFUNDED no cuentan). Dos agregaciones sobre `amountCents` (enteros) y se pasa a
+// euros al final; no usa `!=` porque excluiría los pagos sin `refundPending`. Si la consulta falla
+// (p. ej. índice aún sin crear) devuelve null y registra solo el código del error.
+async function monthRevenue(from, to) {
+  const range = [
+    ['createdAt', '>=', from],
+    ['createdAt', '<', to],
+  ];
+  try {
+    const [cobrados, pendientes] = await Promise.all([
+      paymentModel.aggregateWhere([['status', '==', 'SUCCEEDED'], ...range], 'amountCents'),
+      paymentModel.aggregateWhere(
+        [['status', '==', 'SUCCEEDED'], ['refundPending', '==', true], ...range],
+        'amountCents',
+      ),
+    ]);
+    return {
+      total: Math.max(0, cobrados.total - pendientes.total) / 100,
+      pagos: Math.max(0, cobrados.count - pendientes.count),
+    };
+  } catch (err) {
+    console.error(
+      'Resumen de admin: no se pudieron calcular los ingresos del mes',
+      err?.code ?? '',
+    );
+    return null;
+  }
 }

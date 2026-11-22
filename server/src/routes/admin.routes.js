@@ -495,12 +495,27 @@ router.post(
  *   get:
  *     tags: [Admin]
  *     summary: Resumen del panel
- *     description: 'Devuelve `{ empresas, usuarios, reservasMes }`: empresas por estado, usuarios por rol y reservas del mes actual por estado (una PENDING_PAYMENT vencida cuenta como EXPIRED; si se alcanza el tope de lectura, reservasMes.truncado es true). Solo admin.'
+ *     description: 'Devuelve `{ empresas, usuarios, reservasMes, ingresosMes }`: empresas por estado, usuarios por rol, reservas del mes actual por estado (una PENDING_PAYMENT vencida cuenta como EXPIRED; si se alcanza el tope de lectura, reservasMes.truncado es true) e ingresos del mes natural (pagos SUCCEEDED creados en el mes, sin los que tienen un reembolso pendiente; los REFUNDED no cuentan; agregación sin leer documentos). `ingresosMes` es null si no se han podido calcular; el resto del resumen responde igual. Solo admin.'
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Resumen.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ingresosMes:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     total:
+ *                       type: number
+ *                       description: Euros cobrados en el mes.
+ *                     pagos:
+ *                       type: integer
+ *                       description: Número de pagos contados.
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       403:

@@ -13,6 +13,12 @@ export function listByBooking(bookingId, options) {
   return base.listBy('bookingId', bookingId, options);
 }
 
+// Cuenta y suma `sumField` de los pagos que cumplen los filtros con una agregación de Firestore
+// (no lee los documentos). Devuelve { count, total }. Índices status (+ refundPending) + createdAt + amountCents.
+export function aggregateWhere(filters, sumField) {
+  return base.aggregateWhere(filters, sumField);
+}
+
 // Pagos, los más recientes primero, con filtro opcional por estado (índice status + createdAt DESC).
 // Máximo `limit` resultados.
 export function listAll({ status, limit = 500 } = {}) {
