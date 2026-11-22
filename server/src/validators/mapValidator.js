@@ -111,6 +111,7 @@ const mapImageUrl = body('mapImageUrl')
   .custom(storageImageUrl)
   .customSanitizer(normalizeStorageUrl);
 
+export const getFloor = [idParam];
 export const saveMap = [idParam, mapImageUrl, checkMapBody];
 export const publishFloor = [idParam];
 

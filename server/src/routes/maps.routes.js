@@ -1,4 +1,4 @@
-// Rutas de mapas de planta del panel de empresa: guardar el mapa, publicar la planta
+// Rutas de mapas de planta del panel de empresa: leer el mapa (GET /company/floors/:id), guardarlo, publicar la planta
 // (POST /company/floors/:id/publish) y despublicarla (POST /company/floors/:id/unpublish).
 import { Router } from 'express';
 
@@ -12,6 +12,43 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import * as mapValidator from '../validators/mapValidator.js';
 
 const router = Router();
+
+/**
+ * @openapi
+ * /company/floors/{id}:
+ *   get:
+ *     tags: [Mapas]
+ *     summary: Lee el mapa de una planta propia
+ *     description: 'Devuelve el mapa guardado (borrador o publicado) para el editor. Las salas eliminadas no salen. Sin mapa: `salas` vacío y `ancho`, `alto`, `origen` y `mapImageUrl` a `null`. Solo para empresas aprobadas; una planta ajena, eliminada o inexistente responde el mismo 404.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 'Mapa: `{ id, buildingId, numero, nombre, publicado, ancho, alto, origen, salas, mapImageUrl }`.'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ */
+router.get(
+  '/company/floors/:id',
+  auth,
+  requireRole(ROLES.COMPANY),
+  requireApprovedCompany,
+  ...mapValidator.getFloor,
+  validate,
+  asyncHandler(ctrl.getFloor),
+);
 
 /**
  * @openapi
@@ -142,7 +179,7 @@ router.post(
  *   post:
  *     tags: [Mapas]
  *     summary: Vuelve una planta propia a borrador
- *     description: 'Es idempotente. Si el edificio está publicado y era su última planta publicada, sigue publicado y la respuesta incluye `aviso`. Si hay reservas futuras (CONFIRMED o PENDING_PAYMENT) en sus salas, `reservasFuturas` las cuenta y `aviso` (texto único, se combinan los avisos) lo indica; siguen en pie y no se bloquea. Solo para empresas aprobadas; ajena 403, inexistente 404.'
+ *     description: 'Es idempotente. Si el edificio está publicado y era su última planta publicada, sigue publicado y la respuesta incluye `aviso`. Si hay reservas futuras (CONFIRMED o PENDING_PAYMENT) en sus salas, `reservasFuturas` las cuenta y `aviso` (texto único, se combinan los avisos) lo indica; siguen en pie y no se bloquea. Solo para empresas aprobadas; ajena o inexistente 404.'
  *     security:
  *       - bearerAuth: []
  *     parameters:

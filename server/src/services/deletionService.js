@@ -21,15 +21,16 @@ import { getOwnedBuilding, getOwnedFloor, getOwnedRoom } from './ownershipServic
 const MAX_WRITES = 490;
 
 const TEXTS = {
-  room: { notFound: 'La sala no existe', what: 'la sala', where: 'esta sala' },
-  floor: { notFound: 'La planta no existe', what: 'la planta', where: 'esta planta' },
-  building: { notFound: 'El edificio no existe', what: 'el edificio', where: 'este edificio' },
+  room: { what: 'la sala', where: 'esta sala' },
+  floor: { what: 'la planta', where: 'esta planta' },
+  building: { what: 'el edificio', where: 'este edificio' },
 };
 
-// Lanza 404 si el documento no existe, está eliminado o es de otra empresa (dentro de la transacción).
-function assertLive(doc, companyId, kind) {
+// Lanza 404 si el documento no existe, está eliminado o es de otra empresa (dentro de la
+// transacción), con el mismo mensaje que assertOwnedBy para no distinguir unos casos de otros.
+function assertLive(doc, companyId) {
   if (!doc || isDeleted(doc) || doc.companyId !== companyId) {
-    throw new HttpError(404, 'NOT_FOUND', TEXTS[kind].notFound);
+    throw new HttpError(404, 'NOT_FOUND', 'No se encontró el recurso');
   }
   return doc;
 }
@@ -66,18 +67,18 @@ async function loadScope(kind, id, companyId, tx) {
   const limit = MAX_WRITES + 1;
   let scope;
   if (kind === 'room') {
-    const room = assertLive(await roomModel.findById(id, { tx }), companyId, 'room');
+    const room = assertLive(await roomModel.findById(id, { tx }), companyId);
     const floor = await floorModel.findById(room.floorId, { tx });
     const siblings = floor ? await roomModel.listByFloor(floor.id, { tx, limit }) : [];
     scope = { room, floor, rooms: [room], floors: [], targetFloors: [], siblings };
   } else if (kind === 'floor') {
-    const floor = assertLive(await floorModel.findById(id, { tx }), companyId, 'floor');
+    const floor = assertLive(await floorModel.findById(id, { tx }), companyId);
     const rooms = await roomModel.listByFloor(id, { tx, limit });
     const building = await buildingModel.findById(floor.buildingId, { tx });
     const buildingFloors = await floorModel.listByBuilding(floor.buildingId, { tx, limit });
     scope = { floor, building, buildingFloors, rooms, floors: [floor], targetFloors: [floor] };
   } else {
-    const building = assertLive(await buildingModel.findById(id, { tx }), companyId, 'building');
+    const building = assertLive(await buildingModel.findById(id, { tx }), companyId);
     const floors = await floorModel.listByBuilding(id, { tx, limit });
     const rooms = await roomModel.listByBuilding(id, { tx, limit });
     scope = { building, rooms, floors, targetFloors: floors.filter(notDeleted) };
@@ -241,7 +242,7 @@ async function removeResource(kind, companyId, id) {
   });
 }
 
-// Elimina una sala propia (404/403 si no existe, está eliminada o es ajena).
+// Elimina una sala propia (404 si no existe, está eliminada o es ajena).
 export async function deleteRoom(companyId, id) {
   await getOwnedRoom(id, companyId);
   return removeResource('room', companyId, id);

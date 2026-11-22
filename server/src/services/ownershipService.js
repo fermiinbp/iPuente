@@ -5,13 +5,16 @@ import * as roomModel from '../models/roomModel.js';
 import { HttpError } from '../utils/httpError.js';
 import { isDeleted } from '../utils/softDelete.js';
 
-// 404 si no existe (o está eliminado lógicamente, salvo includeDeleted) y 403 si es de otra
-// empresa (comparación estricta; companyId vacío siempre 403).
+// Siempre el mismo 404 si no existe, está eliminado lógicamente (salvo includeDeleted), es de otra
+// empresa (comparación estricta) o companyId está vacío: no se revela que el recurso existe.
 export function assertOwnedBy(resource, companyId, { includeDeleted = false } = {}) {
-  if (!resource || (!includeDeleted && isDeleted(resource)))
+  if (
+    !resource ||
+    (!includeDeleted && isDeleted(resource)) ||
+    !companyId ||
+    resource.companyId !== companyId
+  ) {
     throw new HttpError(404, 'NOT_FOUND', 'No se encontró el recurso');
-  if (!companyId || resource.companyId !== companyId) {
-    throw new HttpError(403, 'FORBIDDEN', 'No tienes permiso sobre este recurso');
   }
   return resource;
 }
@@ -25,17 +28,17 @@ export function assertBookingOwned(resource, companyId) {
   return resource;
 }
 
-// Edificio de la empresa o error 404/403 (uno eliminado lógicamente es un 404).
+// Edificio de la empresa o error 404 (ajeno, inexistente o eliminado lógicamente es un 404).
 export async function getOwnedBuilding(id, companyId) {
   return assertOwnedBy(await buildingModel.findById(id), companyId);
 }
 
-// Planta de la empresa o error 404/403 (una eliminada lógicamente es un 404).
+// Planta de la empresa o error 404 (ajena, inexistente o eliminada lógicamente es un 404).
 export async function getOwnedFloor(id, companyId) {
   return assertOwnedBy(await floorModel.findById(id), companyId);
 }
 
-// Sala de la empresa o error 404/403. includeDeleted deja ver una sala eliminada lógicamente
+// Sala de la empresa o error 404. includeDeleted deja ver una sala eliminada lógicamente
 // (solo para consultar su historial de reservas).
 export async function getOwnedRoom(id, companyId, options) {
   return assertOwnedBy(await roomModel.findById(id), companyId, options);

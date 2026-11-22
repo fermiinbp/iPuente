@@ -1,4 +1,4 @@
-// Guarda el mapa de una planta, sincroniza la colección rooms (crea, conserva o desactiva salas) y publica.
+// Lee, guarda el mapa de una planta, sincroniza la colección rooms (crea, conserva o desactiva salas) y publica.
 import * as buildingModel from '../models/buildingModel.js';
 import { runTransaction } from '../models/baseModel.js';
 import * as floorModel from '../models/floorModel.js';
@@ -116,6 +116,28 @@ async function writePlan(floor, plan, tx) {
   for (const room of plan.deactivations) {
     await roomModel.update(room.id, { status: 'INACTIVE', bookable: false }, { tx });
   }
+}
+
+// Lee el mapa de una planta propia (borrador o publicada) para el editor. Las salas eliminadas
+// lógicamente se excluyen (su id no se puede volver a guardar). Sin mapa: salas vacías y el resto null.
+export async function getFloor(companyId, floorId) {
+  const floor = await getOwnedFloor(floorId, companyId);
+  const rooms = await roomModel.listByFloor(floorId);
+  const deleted = new Set(rooms.filter(isDeleted).map((r) => r.id));
+  const salas = Array.isArray(floor.salas) ? floor.salas.filter((s) => !deleted.has(s.id)) : [];
+  const hasMap = Number.isFinite(floor.ancho) && Number.isFinite(floor.alto);
+  return {
+    id: floorId,
+    buildingId: floor.buildingId,
+    numero: floor.level,
+    nombre: floor.name,
+    publicado: floor.status === 'PUBLISHED',
+    ancho: hasMap ? floor.ancho : null,
+    alto: hasMap ? floor.alto : null,
+    origen: hasMap ? (floor.origen ?? null) : null,
+    salas: pickSalas(salas),
+    mapImageUrl: floor.mapImageUrl ?? null,
+  };
 }
 
 // Guarda el mapa de una planta propia y sincroniza sus salas en una transacción.

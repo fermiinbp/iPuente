@@ -49,7 +49,7 @@ function queryRange(filters) {
 // Ordena por fecha e inicio ascendentes.
 const byDate = (a, b) => a.fecha.localeCompare(b.fecha) || a.inicio - b.inicio;
 
-// Si viene roomId comprueba que es de la empresa (404/403; una sala eliminada lógicamente sigue
+// Si viene roomId comprueba que es de la empresa (404; una sala eliminada lógicamente sigue
 // consultable por su historial); sin roomId no filtra por sala.
 async function checkRoomFilter(roomId, companyId) {
   if (roomId) await getOwnedRoom(roomId, companyId, { includeDeleted: true });
@@ -84,7 +84,7 @@ export async function listBookings(companyId, { desde, hasta, roomId } = {}) {
 }
 
 // Reservas futuras (CONFIRMED o PENDING_PAYMENT, con inicio posterior a ahora) de una sala propia,
-// por inicio ascendente y como mucho 500: las que bloquean eliminarla. 404/403 si la sala no es
+// por inicio ascendente y como mucho 500: las que bloquean eliminarla. 404 si la sala no es
 // propia o ya está eliminada. Mismo formato que el listado de reservas (cliente con nombre y email).
 export async function listFutureBookings(companyId, roomId) {
   const room = await getOwnedRoom(roomId, companyId);

@@ -4,7 +4,7 @@
 // a `checkpoint()` al empezar y a `changeRoom(..., { record: false })` mientras dura), y cada pulsación de teclado es
 // otro. `dirty` dice si hay cambios sin guardar desde la última carga o el último guardado.
 import { useCallback, useMemo, useReducer } from 'react';
-import { BLANK_MAP, fitRect } from '@/utils/mapGeometry.js';
+import { BLANK_MAP } from '@/utils/mapGeometry.js';
 
 const MAX_HISTORY = 100;
 
@@ -47,7 +47,8 @@ function reducer(state, action) {
   switch (action.type) {
     case 'load': {
       const plan = { ancho: action.map.ancho, alto: action.map.alto };
-      const salas = (action.map.salas ?? []).map((s) => fitRect(s, plan));
+      // Las salas se cargan tal cual: abrir y guardar sin tocar nada no cambia el mapa.
+      const salas = action.map.salas ?? [];
       return { ...initialState, plan, salas };
     }
     case 'tool':
