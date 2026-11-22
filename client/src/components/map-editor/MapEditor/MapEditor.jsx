@@ -131,7 +131,7 @@ export default function MapEditor({ editor, imageUrl, label }) {
             href={imageUrl}
             width={plan.ancho}
             height={plan.alto}
-            preserveAspectRatio="none"
+            preserveAspectRatio="xMidYMid meet"
             data-background="true"
           />
         ) : (

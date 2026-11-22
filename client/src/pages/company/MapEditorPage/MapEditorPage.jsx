@@ -1,4 +1,4 @@
-// Página del editor de mapas de una planta: subir plano, detectar, corregir, guardar y publicar (wireframe 13).
+// Página del editor de mapas de una planta: subir el plano, dibujar las salas, guardar y publicar (wireframe 13).
 // Pantalla completa, fuera de DashboardLayout, con cabecera propia: «← Mis edificios», «Edificio · Planta», estado,
 // «Guardar borrador» y «Publicar planta» (o «Despublicar»). Debajo: herramientas (EditorToolbar), lienzo
 // (MapEditor) y un panel con la sala seleccionada (RoomPropertiesPanel) o, sin selección, la lista de salas.
@@ -15,7 +15,8 @@
 // reservas futuras: si tiene, no se elimina (hay que cancelarlas antes en Reservas).
 // Publicar (EMP010): guarda lo pendiente, abre PublishValidationModal con las comprobaciones del front (checkFloor) y
 // llama a publishFloor; la API vuelve a comprobar. Si el edificio es un borrador, ofrece publicarlo.
-// Fuera: subir el plano y la IA (EMP008).
+// Plano (EMP008): PlanUploader sube la imagen a Storage y la URL se guarda con el mapa en «Guardar borrador». En una
+// planta sin salas el plano toma la proporción de la imagen; con salas conserva su tamaño para no moverlas.
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import Alert from '@/components/ui/Alert/Alert.jsx';
@@ -27,10 +28,12 @@ import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
 import EditorToolbar from '@/components/map-editor/EditorToolbar/EditorToolbar.jsx';
 import MapEditor from '@/components/map-editor/MapEditor/MapEditor.jsx';
+import PlanUploader from '@/components/map-editor/PlanUploader/PlanUploader.jsx';
 import RoomPropertiesPanel from '@/components/map-editor/RoomPropertiesPanel/RoomPropertiesPanel.jsx';
 import PublishValidationModal from '@/components/map-editor/PublishValidationModal/PublishValidationModal.jsx';
 import UnsavedChangesModal from '@/components/map-editor/UnsavedChangesModal/UnsavedChangesModal.jsx';
 import { PUBLISH_STATUS } from '@/config/constants.js';
+import { useAuth } from '@/hooks/useAuth.js';
 import { useFetch } from '@/hooks/useFetch.js';
 import { useMapEditor } from '@/hooks/useMapEditor.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
@@ -45,7 +48,9 @@ import {
   unpublishFloor,
   updateRoom,
 } from '@/services/companyService.js';
-import { BLANK_MAP } from '@/utils/mapGeometry.js';
+import { uploadImage } from '@/services/uploadService.js';
+import { imageSize } from '@/utils/files.js';
+import { BLANK_MAP, planFromImage } from '@/utils/mapGeometry.js';
 import { BILLING_NOTICE, checkFloor } from '@/utils/publishChecks.js';
 import {
   EMPTY_DATA,
@@ -185,11 +190,19 @@ function DeleteRoomModal({ state, onClose, onRetry, onConfirm }) {
 
 function Editor({ building, floor, map, rooms }) {
   const navigate = useNavigate();
+  const { companyId } = useAuth();
   const editor = useMapEditor();
   const { load } = editor;
   const [saving, setSaving] = useState(false);
   // Fotos subiéndose a Storage: no se guarda hasta que terminen (si no, se quedarían fuera).
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  // Imagen del plano: la guardada en la API y la que se ve ahora (cambia al subir o quitar, hasta guardar).
+  const [savedImage, setSavedImage] = useState(map.mapImageUrl ?? null);
+  const [planImage, setPlanImage] = useState(map.mapImageUrl ?? null);
+  const [uploadingPlan, setUploadingPlan] = useState(false);
+  const [planError, setPlanError] = useState(null);
+  const uploading = uploadingPhotos || uploadingPlan;
+  const imageChanged = planImage !== savedImage;
   const [result, setResult] = useState(null);
   const [leaving, setLeaving] = useState(false);
   // Datos para el cliente: los guardados en la API (`base`, por id de sala) y los cambios sin guardar (`drafts`).
@@ -205,7 +218,7 @@ function Editor({ building, floor, map, rooms }) {
   const pending = editor.salas
     .map((sala) => ({ sala, body: patchFor(baseOf(sala.id), dataOf(sala.id), sala.tipo) }))
     .filter((item) => item.body);
-  const dirty = editor.dirty || pending.length > 0;
+  const dirty = editor.dirty || imageChanged || pending.length > 0;
 
   // Publicación (EMP010): estado local, parte del que llega de la API y se actualiza con sus respuestas.
   const [published, setPublished] = useState(floor.publicado === true);
@@ -259,6 +272,21 @@ function Editor({ building, floor, map, rooms }) {
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
   }, [dirty]);
 
+  // Sube la imagen del plano. Sin salas, el plano toma su proporción; con salas se mantiene para no descolocarlas.
+  const changePlan = async (file) => {
+    setPlanError(null);
+    setUploadingPlan(true);
+    try {
+      const size = await imageSize(file);
+      const { url } = await uploadImage(file, { companyId, folder: `floors/${floor.id}` });
+      setPlanImage(url);
+      if (editor.salas.length === 0) editor.setPlan(planFromImage(size.width, size.height));
+    } catch (error) {
+      setPlanError(error?.message || 'No hemos podido subir el plano.');
+    }
+    setUploadingPlan(false);
+  };
+
   // Primera sala con datos que no se pueden guardar (código o nombre vacíos, o números fuera de rango).
   const firstInvalid = () =>
     editor.salas.find(
@@ -284,7 +312,7 @@ function Editor({ building, floor, map, rooms }) {
     setSaving(true);
     setResult(null);
     setNotice(null); // «Planta publicada.» o un error de publicar ya no aplican tras guardar
-    const mapChanged = editor.dirty;
+    const mapChanged = editor.dirty || imageChanged;
     if (mapChanged) {
       try {
         await saveFloorMap(floor.id, {
@@ -292,7 +320,9 @@ function Editor({ building, floor, map, rooms }) {
           alto: editor.plan.alto,
           origen: map.origen ?? 'manual',
           salas: editor.salas,
+          ...(imageChanged ? { mapImageUrl: planImage } : {}),
         });
+        setSavedImage(planImage);
         editor.markSaved();
       } catch (error) {
         const details = Array.isArray(error?.details) ? error.details.map((d) => d.message) : [];
@@ -485,7 +515,7 @@ function Editor({ building, floor, map, rooms }) {
             variant="secondary"
             size="md"
             loading={saving}
-            disabled={locked || !dirty || uploadingPhotos}
+            disabled={locked || !dirty || uploading}
             onClick={save}
           >
             Guardar borrador
@@ -503,7 +533,7 @@ function Editor({ building, floor, map, rooms }) {
             <Button
               size="md"
               loading={checking}
-              disabled={locked || uploadingPhotos || busy}
+              disabled={locked || uploading || busy}
               onClick={startPublish}
             >
               Publicar planta
@@ -567,11 +597,18 @@ function Editor({ building, floor, map, rooms }) {
             onUndo={editor.undo}
           />
           <div className={styles.canvasArea}>
-            <MapEditor
-              editor={guardedEditor}
-              imageUrl={map.mapImageUrl ?? null}
-              label={`Plano de ${title}`}
+            <PlanUploader
+              hasImage={Boolean(planImage)}
+              uploading={uploadingPlan}
+              disabled={locked || busy}
+              error={planError}
+              onFile={changePlan}
+              onRemove={() => {
+                setPlanError(null);
+                setPlanImage(null);
+              }}
             />
+            <MapEditor editor={guardedEditor} imageUrl={planImage} label={`Plano de ${title}`} />
             <p className={styles.hint}>
               {editor.tool === 'draw'
                 ? 'Arrastra sobre el plano para dibujar una sala. Escape para dejar de dibujar.'
@@ -595,11 +632,12 @@ function Editor({ building, floor, map, rooms }) {
       <UnsavedChangesModal
         open={leaving}
         floorName={floor.nombre}
-        canSave={!locked && !uploadingPhotos}
+        canSave={!locked && !uploading}
         saving={saving}
         onStay={() => setLeaving(false)}
         onLeave={() => {
           editor.markSaved();
+          setPlanImage(savedImage);
           setDrafts({});
           navigate('/company/buildings');
         }}
