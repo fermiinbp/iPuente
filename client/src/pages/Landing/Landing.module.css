@@ -9,7 +9,8 @@
 .hero {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  /* clip y no hidden: hidden crearía un contenedor de scroll y el edificio fijado (sticky) no se quedaría fijo. */
+  overflow: clip;
   background: var(--bosque);
 }
 
@@ -218,6 +219,22 @@
 
   .featuredItem {
     grid-row: span 3;
+  }
+}
+
+/* Escritorio con movimiento: el hero añade una carrera (60 vh) en la que el edificio se queda fijado y las plantas se abren con el scroll (HeroStory). */
+@media (min-width: 960px) and (prefers-reduced-motion: no-preference) {
+  .heroInner {
+    grid-template-areas:
+      'texto edificio'
+      'buscador edificio'
+      'carrera edificio';
+    grid-template-rows: auto auto 60vh;
+  }
+
+  .heroBuilding {
+    position: sticky;
+    top: calc(var(--alto-cabecera) + var(--space-4));
   }
 }
 

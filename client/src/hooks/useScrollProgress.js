@@ -4,7 +4,7 @@
 // pantalla, con un `requestAnimationFrame` por fotograma como máximo y el listener en modo pasivo.
 //   mode 'view': 0 cuando el elemento asoma por abajo y 1 cuando sale por arriba.
 //   mode 'pin':  para un contenedor alto con un hijo `sticky`: 0 al empezar a fijarse y 1 al soltarse.
-// Con prefers-reduced-motion no escucha nada: deja `--progreso` en 1 (estado final, sin movimiento).
+// Con prefers-reduced-motion no escucha nada: deja `--progreso` en 1 (estado final para el CSS) y no llama a `onProgress`.
 import { useEffect, useRef } from 'react';
 
 const clamp = (value) => Math.min(1, Math.max(0, value));
@@ -39,7 +39,8 @@ export function useScrollProgress(ref, { mode = 'view', onProgress } = {}) {
     };
 
     if (prefersReducedMotion() || typeof IntersectionObserver === 'undefined') {
-      apply(1);
+      // Estado final solo para el CSS: no se avisa a `onProgress`, para que nada se mueva por el scroll.
+      element.style.setProperty('--progreso', '1');
       return undefined;
     }
 

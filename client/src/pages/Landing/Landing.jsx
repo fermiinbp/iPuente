@@ -24,6 +24,8 @@ export default function Landing() {
   // Se calcula una sola vez, antes de que el cargador marque la sesión como vista.
   const [entranceDelay] = useState(heroEntranceDelay);
   const heroRef = useRef(null);
+  // Contenedor del hero: su progreso de scroll abre las plantas del 3D en escritorio (HeroStory).
+  const heroInnerRef = useRef(null);
 
   // Foco de luz que sigue al ratón por el hero. Solo ratón: en táctil queda el resplandor fijo.
   function handleHeroPointerMove(event) {
@@ -60,7 +62,7 @@ export default function Landing() {
         aria-labelledby="hero-titulo"
         style={{ '--entrada-base': `${entranceDelay}ms` }}
       >
-        <div className={styles.heroInner}>
+        <div className={styles.heroInner} ref={heroInnerRef}>
           <div className={styles.heroText}>
             <p className={styles.eyebrow}>Salas de oficina por horas</p>
             <h1 className={styles.heroTitle} id="hero-titulo">
@@ -74,7 +76,11 @@ export default function Landing() {
           </div>
 
           <div className={styles.heroBuilding}>
-            <HeroStory buildingId={BUILDING.id} buildingName={BUILDING.name} />
+            <HeroStory
+              buildingId={BUILDING.id}
+              buildingName={BUILDING.name}
+              pinRef={heroInnerRef}
+            />
           </div>
 
           <SearchBar
