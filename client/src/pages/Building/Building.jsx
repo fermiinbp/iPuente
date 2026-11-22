@@ -40,6 +40,48 @@ function demoBuilding() {
   };
 }
 
+// Ilustración decorativa de la cabecera: una losa isométrica por planta (hasta 8), apiladas. Solo adorna.
+function FloorsArt({ count }) {
+  const floors = Math.min(Math.max(count, 1), 8);
+  const step = 52;
+  const halfW = 150;
+  const halfH = 62;
+  const thick = 10;
+  const height = (floors - 1) * step + halfH * 2 + thick + 8;
+  const cx = halfW + 4;
+  const slabs = Array.from({ length: floors }, (_, i) => {
+    // La planta más baja se dibuja primero y las de arriba la tapan.
+    const y = halfH + 4 + (floors - 1 - i) * step;
+    return { i, y, top: i === floors - 1 };
+  });
+
+  return (
+    <svg
+      className={styles.art}
+      viewBox={`0 0 ${halfW * 2 + 8} ${height}`}
+      aria-hidden="true"
+      focusable="false"
+    >
+      {slabs.map(({ i, y, top }) => (
+        <g key={i} className={styles.slab} style={{ '--i': floors - 1 - i }}>
+          <polygon
+            className={styles.slabSide}
+            points={`${cx - halfW},${y} ${cx},${y + halfH} ${cx},${y + halfH + thick} ${cx - halfW},${y + thick}`}
+          />
+          <polygon
+            className={styles.slabSideDark}
+            points={`${cx + halfW},${y} ${cx},${y + halfH} ${cx},${y + halfH + thick} ${cx + halfW},${y + thick}`}
+          />
+          <polygon
+            className={top ? styles.slabTopHigh : styles.slabTop}
+            points={`${cx},${y - halfH} ${cx + halfW},${y} ${cx},${y + halfH} ${cx - halfW},${y}`}
+          />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 export default function Building() {
   const { buildingId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -129,6 +171,7 @@ export default function Building() {
           <span className={styles.blobC} />
         </div>
         <div className={styles.heroInner}>
+          <FloorsArt count={building.plantas.length} />
           <Breadcrumbs items={crumbs} />
           <p className={styles.eyebrow}>{building.ciudad || 'Edificio'}</p>
           <h1 className={styles.title} id="edificio-titulo">
