@@ -160,7 +160,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/pages/Landing/loaderSession.js` | Recuerda en la sesión si ya se vio el cargador de la home, para no repetirlo y ajustar la entrada del hero. |
 | `client/src/pages/Landing/LandingLoader/LandingLoader.jsx` + `.module.css` | Pantalla de carga de la Landing: el monograma «iP» se abre como una puerta; se puede saltar. |
 | `client/src/pages/Landing/FloorSection/FloorSection.jsx` + `.module.css` | Sección de la Landing con una planta: lista de salas, detalle de la seleccionada y plano 3D. |
-| `client/src/pages/Landing/NearbySection/NearbySection.jsx` + `.module.css` | Sección «Alrededor del edificio» de la Landing: mapa 3D de los puntos cercanos y lista accesible con sus tiempos. |
+| `client/src/pages/Landing/NearbySection/NearbySection.jsx` + `.module.css` | Sección «Alrededor del edificio» (Landing y página de edificio): mapa 3D de los puntos cercanos y lista accesible con sus tiempos. `tone="crema"` la pone como banda clara (la usa la página de edificio). |
 | `client/src/pages/Landing/HowItWorks/HowItWorks.jsx` + `.module.css` | Sección «Cómo funciona» de la Landing: tres pasos numerados. |
 | `client/src/pages/Landing/CompaniesCta/CompaniesCta.jsx` + `.module.css` | Sección «¿Tienes oficinas?» de la Landing: pasos, botón «Publica tu oficina» e ilustración del editor. |
 | `client/src/pages/Landing/*.js` | Datos de prueba de la Landing (edificio, plantas, salas destacadas, plano y lugares cercanos) hasta que los sirvan los services. |

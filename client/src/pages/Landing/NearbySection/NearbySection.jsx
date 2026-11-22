@@ -17,7 +17,8 @@ function tiempos(poi) {
   return partes.join(' · ');
 }
 
-export default function NearbySection() {
+// `tone` es el fondo de la sección: 'elevated' (verde, por defecto) o 'crema' (banda clara con el texto en bosque).
+export default function NearbySection({ tone = 'elevated' }) {
   const [activeId, setActiveId] = useState(null); // elegido con clic o Enter: mueve la cámara
   const [hoverId, setHoverId] = useState(null); // ratón o foco: solo resalta
   const [announcement, setAnnouncement] = useState('');
@@ -47,8 +48,9 @@ export default function NearbySection() {
     <Section
       id="alrededor"
       titleId="alrededor-titulo"
-      tone="elevated"
+      tone={tone}
       spacious
+      className={tone === 'crema' ? styles.light : ''}
       innerClassName={styles.inner}
     >
       <div className={styles.mapBox} ref={mapRef}>

@@ -151,9 +151,31 @@
 }
 
 .explorer {
+  position: relative;
+  isolation: isolate;
   display: grid;
   gap: var(--space-6);
   margin-top: var(--space-6);
+}
+
+/* Foco de luz detrás del 3D (verde claro) y un toque de bronce al otro lado: da profundidad al fondo plano. */
+.explorer::before {
+  content: '';
+  position: absolute;
+  inset: -8% -6%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      48% 62% at 30% 50%,
+      color-mix(in srgb, var(--foto-hueco) 90%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      30% 40% at 88% 90%,
+      color-mix(in srgb, var(--bronce) 16%, transparent),
+      transparent 70%
+    );
 }
 
 .picker {
