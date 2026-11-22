@@ -6,6 +6,7 @@ import BookingForm from '@/components/booking/BookingForm/BookingForm.jsx';
 import AmenitiesList from '@/components/room/AmenitiesList/AmenitiesList.jsx';
 import RoomGallery from '@/components/room/RoomGallery/RoomGallery.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
+import Reveal from '@/components/ui/Reveal/Reveal.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { useAuth } from '@/hooks/useAuth.js';
 import { useFetch } from '@/hooks/useFetch.js';
@@ -176,7 +177,7 @@ export default function Room() {
             <span aria-hidden="true">←</span> Volver al plano
           </Link>
           <Breadcrumbs items={crumbs} />
-          <h1 className={styles.title}>{room.nombre}</h1>
+          <Reveal as="h1" className={styles.title} text={room.nombre} />
           {room.reservable && (
             <a className={styles.jump} href="#reserva-titulo">
               Reservar esta sala<span aria-hidden="true"> ↓</span>

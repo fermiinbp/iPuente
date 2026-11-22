@@ -11,6 +11,7 @@ import Button from '@/components/ui/Button/Button.jsx';
 import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
 import NumberStepper from '@/components/ui/NumberStepper/NumberStepper.jsx';
+import Reveal from '@/components/ui/Reveal/Reveal.jsx';
 import Select from '@/components/ui/Select/Select.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { useFetch } from '@/hooks/useFetch.js';
@@ -224,7 +225,7 @@ export default function Search() {
   return (
     <div className={styles.page}>
       <div className={styles.inner}>
-        <h1 className={styles.title}>Encuentra tu sala</h1>
+        <Reveal as="h1" className={styles.title} text="Encuentra tu sala" />
         <div ref={barRef}>
           <SearchBar city={city} date={date} people={people} onSearch={handleSearch} />
         </div>

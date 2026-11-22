@@ -1,26 +1,33 @@
-// Pantalla de carga de la Landing: el monograma «iP» se parte en dos mitades que se separan como una puerta.
-// Aísla la página (inert + sin scroll) mientras dura, se puede saltar y solo se muestra una vez por sesión.
-// Nunca se muestra con prefers-reduced-motion: reduce.
+// Pantalla de carga de la Landing: una planta se dibuja por líneas sobre el monograma «iP» y, al acabar,
+// las dos mitades del monograma se separan como una puerta. Dura 1 s como máximo (DRAW_MS + OPEN_MS).
+// Aísla la página (inert + sin scroll) mientras dura, se puede saltar (clic o Escape) y solo se muestra
+// una vez por sesión. Nunca se muestra con prefers-reduced-motion: reduce. Todo el movimiento es CSS.
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import simbolo from '@/assets/images/ipuente-simbolo.svg';
 import {
-  HOLD_MS,
-  LOAD_MS,
+  DRAW_MS,
   markLoaderSeen as markSeen,
   OPEN_MS,
   shouldShowLoader,
 } from '../loaderSession.js';
 import styles from './LandingLoader.module.css';
 
-const SAFETY_MS = 4000;
+const SAFETY_MS = 2500;
+
+// Planta de ejemplo: el contorno y los muros que la dividen en cinco salas. `delay` en ms.
+const PLAN_LINES = [
+  { d: 'M2 2H198V108H2Z', delay: 0 },
+  { d: 'M100 2V60', delay: 120 },
+  { d: 'M2 60H198', delay: 200 },
+  { d: 'M60 60V108', delay: 280 },
+  { d: 'M140 60V108', delay: 340 },
+];
 
 export default function LandingLoader() {
-  // Fases: carga (contador 0 a 100 %), abre (las mitades se separan) y done (se desmonta).
+  // Fases: dibuja (se traza la planta), abre (las mitades se separan) y done (se desmonta).
   const [active] = useState(shouldShowLoader);
-  const [fase, setFase] = useState('carga');
+  const [fase, setFase] = useState('dibuja');
   const [done, setDone] = useState(false);
-  const [pct, setPct] = useState(0);
 
   const skip = useCallback(() => setFase('abre'), []);
 
@@ -38,35 +45,20 @@ export default function LandingLoader() {
     };
   }, [active, done]);
 
-  // Fase de carga: solo el contador y la línea se actualizan desde JavaScript.
+  // La sesión lo da por visto y, pase lo que pase, el cargador no se queda más de SAFETY_MS.
   useEffect(() => {
     if (!active) return undefined;
     markSeen();
-
-    const start = performance.now();
-    let frame = 0;
-
-    const safetyTimer = setTimeout(() => {
-      cancelAnimationFrame(frame);
-      setDone(true);
-    }, SAFETY_MS);
-
-    const step = (now) => {
-      const t = now - start;
-      setPct(Math.min(100, Math.floor((t / LOAD_MS) * 100)));
-      if (t >= LOAD_MS + HOLD_MS) {
-        setFase('abre');
-        return;
-      }
-      frame = requestAnimationFrame(step);
-    };
-
-    frame = requestAnimationFrame(step);
-    return () => {
-      cancelAnimationFrame(frame);
-      clearTimeout(safetyTimer);
-    };
+    const safetyTimer = setTimeout(() => setDone(true), SAFETY_MS);
+    return () => clearTimeout(safetyTimer);
   }, [active]);
+
+  // Fase de dibujo: tras DRAW_MS se abre (o antes, si se salta).
+  useEffect(() => {
+    if (!active || fase !== 'dibuja') return undefined;
+    const timer = setTimeout(() => setFase('abre'), DRAW_MS);
+    return () => clearTimeout(timer);
+  }, [active, fase]);
 
   // Saltar con Escape.
   useEffect(() => {
@@ -87,14 +79,11 @@ export default function LandingLoader() {
 
   if (!active || done) return null;
 
-  const progress = fase === 'abre' ? 1 : Math.min(pct, 100) / 100;
-  const shown = fase === 'abre' ? 100 : pct;
-
   return createPortal(
     <div
       className={styles.loader}
       data-fase={fase}
-      style={{ '--prog': progress, '--dur-abre': `${OPEN_MS}ms` }}
+      style={{ '--dur-abre': `${OPEN_MS}ms` }}
       onClick={skip}
     >
       <p className={styles.sr} role="status">
@@ -109,14 +98,18 @@ export default function LandingLoader() {
         <span className={styles.mono}>
           <em>i</em>P
         </span>
-        <div className={styles.counter}>
-          <img className={styles.symbol} src={simbolo} alt="" width="64" height="64" />
-          <span className={styles.pct}>{shown}%</span>
-          <div className={styles.track}>
-            <div className={styles.line} />
-          </div>
-        </div>
       </div>
+      <svg className={styles.plan} viewBox="0 0 200 110" aria-hidden="true" focusable="false">
+        {PLAN_LINES.map((line) => (
+          <path
+            key={line.d}
+            d={line.d}
+            pathLength="1"
+            className={styles.trazo}
+            style={{ '--retardo': `${line.delay}ms` }}
+          />
+        ))}
+      </svg>
       <div className={styles.band} aria-hidden="true" />
     </div>,
     document.body,
