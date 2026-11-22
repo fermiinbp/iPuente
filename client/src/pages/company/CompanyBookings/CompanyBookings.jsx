@@ -2,11 +2,17 @@
 // Filtros Edificio → Sala → Fecha, guardados en la URL (`?edificio=…&sala=…&fecha=proximos7`). La API da las reservas
 // y los bloqueos por separado: se piden a la vez con el rango y la sala, y se unen en una sola tabla, donde los
 // bloqueos salen con el estado «Bloqueada» y su motivo. El filtro por edificio se aplica aquí (la API no lo tiene).
-// «Bloquear horas» abre BlockHoursModal; un bloqueo se quita desde su fila, con confirmación.
-// Fuera de esta issue: el detalle de una reserva en panel lateral y cancelarla (EMP014).
+// «Bloquear horas» abre BlockHoursModal.
+// Detalle (EMP014, wireframes 15b y 15c): «Ver» abre un SidePanel con BookingDetail (al lado de la tabla en
+// escritorio, a pantalla completa en móvil). Una reserva va en la URL (`/company/bookings/:bookingId`, se lee con
+// GET /company/bookings/:id, así que abrir el enlace directamente también funciona); un bloqueo, en `?bloqueo=id`
+// (la API no tiene detalle de bloqueo: se usa su fila). Cerrar vuelve a `/company/bookings` con los mismos filtros.
+// «Cancelar reserva» abre CancelBookingModal (motivo obligatorio); «Quitar bloqueo», en el panel, pide confirmación.
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
+import BookingDetail from '@/components/booking/BookingDetail/BookingDetail.jsx';
 import BlockHoursModal from '@/components/company/BlockHoursModal/BlockHoursModal.jsx';
+import CancelBookingModal from '@/components/company/CancelBookingModal/CancelBookingModal.jsx';
 import Alert from '@/components/ui/Alert/Alert.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import ConfirmModal from '@/components/ui/ConfirmModal/ConfirmModal.jsx';
@@ -15,13 +21,16 @@ import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
 import FilterBar from '@/components/ui/FilterBar/FilterBar.jsx';
 import PageContainer from '@/components/ui/PageContainer/PageContainer.jsx';
+import SidePanel from '@/components/ui/SidePanel/SidePanel.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
+import { ROLES } from '@/config/constants.js';
 import { useFetch } from '@/hooks/useFetch.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import {
   deleteBlock,
   getBlocks,
+  getBooking,
   getBookings,
   getBuildings,
   getRooms,
@@ -33,6 +42,7 @@ import {
   mergeRows,
   rangeFor,
 } from '@/utils/companyBookings.js';
+import { detailStatus, detailTitle } from '@/utils/bookingDetail.js';
 import { priceLabel } from '@/utils/formatPrice.js';
 import styles from './CompanyBookings.module.css';
 
@@ -112,9 +122,64 @@ async function loadCatalog(signal) {
   };
 }
 
+// Panel lateral con el detalle: de una reserva (la pide a la API) o de un bloqueo (los datos de su fila).
+function DetailPanel({ bookingId, block, version, onClose, onCancel, onRemoveBlock }) {
+  const detail = useFetch(
+    (signal) => (bookingId ? getBooking(bookingId, { signal }) : Promise.resolve(null)),
+    `${bookingId ?? ''}|${version}`,
+  );
+  const item = block ?? detail.data;
+
+  let content;
+  if (block) content = null;
+  else if (detail.loading) content = <Spinner label="Cargando la reserva…" />;
+  else if (detail.error) {
+    content =
+      detail.error.status === 404 ? (
+        <EmptyState
+          title="No encontramos esta reserva"
+          text="Puede que no exista o que sea de otra empresa."
+        />
+      ) : (
+        <ErrorState
+          error={detail.error}
+          title="No hemos podido cargar la reserva"
+          onRetry={detail.reload}
+        />
+      );
+  }
+
+  return (
+    <SidePanel
+      open
+      onClose={onClose}
+      title={item ? detailTitle(item) : 'Reserva'}
+      titleExtra={
+        item ? <StatusBadge kind="booking" status={detailStatus(item, ROLES.COMPANY)} /> : null
+      }
+    >
+      {content ??
+        (item && (
+          <BookingDetail
+            booking={item}
+            role={ROLES.COMPANY}
+            showHeader={false}
+            onCancel={onCancel}
+            onRemoveBlock={onRemoveBlock}
+          />
+        ))}
+    </SidePanel>
+  );
+}
+
 function Content({ catalog }) {
   const [params, setParams] = useSearchParams();
+  const { bookingId } = useParams();
+  const navigate = useNavigate();
   const [blocking, setBlocking] = useState(false);
+  const [cancelling, setCancelling] = useState(null);
+  // Sube al cancelar para que el panel vuelva a pedir la reserva.
+  const [detailVersion, setDetailVersion] = useState(0);
   const [removing, setRemoving] = useState(null);
   const [removeState, setRemoveState] = useState({ loading: false, error: null });
   const [notice, setNotice] = useState(null);
@@ -150,6 +215,32 @@ function Content({ catalog }) {
     const all = mergeRows(list.data.bookings, list.data.blocks);
     return edificio ? all.filter((row) => buildingOf.get(row.roomId) === edificio) : all;
   }, [list.data, edificio, buildingOf]);
+  const blockId = bookingId ? '' : (params.get('bloqueo') ?? '');
+  const openBlock = blockId
+    ? (rows.find((row) => row.tipo === 'bloqueo' && row.id === blockId) ?? null)
+    : null;
+  const panelOpen = Boolean(bookingId || openBlock);
+
+  // Abre o cierra el detalle conservando los filtros de la URL.
+  const filterSearch = () => {
+    const next = new URLSearchParams(params);
+    next.delete('bloqueo');
+    return next;
+  };
+  const openDetail = (row) => {
+    const next = filterSearch();
+    if (row.tipo === 'bloqueo') {
+      next.set('bloqueo', row.id);
+      navigate({ pathname: '/company/bookings', search: `?${next}` });
+    } else {
+      navigate({ pathname: `/company/bookings/${encodeURIComponent(row.id)}`, search: `?${next}` });
+    }
+  };
+  const closeDetail = () => {
+    const next = filterSearch().toString();
+    navigate({ pathname: '/company/bookings', search: next ? `?${next}` : '' });
+  };
+
   const truncated =
     list.data && (list.data.bookings.length >= API_LIMIT || list.data.blocks.length >= API_LIMIT);
 
@@ -190,6 +281,7 @@ function Content({ catalog }) {
       setNotice(
         `Bloqueo quitado: ${roomName(removing.sala)}, ${formatDate(removing.fecha)}, ${formatSlot(removing)}.`,
       );
+      if (openBlock?.id === removing.id) closeDetail();
       setRemoving(null);
       setRemoveState({ loading: false, error: null });
       list.reload();
@@ -199,6 +291,11 @@ function Content({ catalog }) {
         error: error?.message || 'No hemos podido quitar el bloqueo. Inténtalo de nuevo.',
       });
     }
+  };
+
+  const askRemove = (row) => {
+    setRemoveState({ loading: false, error: null });
+    setRemoving(row);
   };
 
   const hasRooms = catalog.rooms.length > 0;
@@ -236,20 +333,20 @@ function Content({ catalog }) {
           columns={COLUMNS}
           rows={rows}
           getRowKey={(row) => row.key}
-          actions={(row) =>
-            row.tipo === 'bloqueo' ? (
-              <Button
-                variant="ghost"
-                size="md"
-                onClick={() => {
-                  setRemoveState({ loading: false, error: null });
-                  setRemoving(row);
-                }}
-              >
-                Quitar bloqueo
-              </Button>
-            ) : null
-          }
+          actions={(row) => (
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => openDetail(row)}
+              aria-label={
+                row.tipo === 'bloqueo'
+                  ? `Ver bloqueo de ${roomName(row.sala)}, ${formatDate(row.fecha)}`
+                  : `Ver reserva ${row.codigo ?? ''} de ${row.cliente?.nombre ?? 'cliente'}`
+              }
+            >
+              Ver
+            </Button>
+          )}
           emptyTitle="No hay reservas en estas fechas"
           emptyText="Prueba con otro rango de fechas, otro edificio u otra sala."
         />
@@ -279,7 +376,35 @@ function Content({ catalog }) {
           </Button>
         </div>
       )}
-      {body}
+      <div className={panelOpen ? styles.withPanel : undefined}>
+        <div className={styles.list}>{body}</div>
+        {panelOpen && (
+          <DetailPanel
+            key={bookingId ?? openBlock.id}
+            bookingId={bookingId}
+            block={openBlock}
+            version={detailVersion}
+            onClose={closeDetail}
+            onCancel={(booking) => setCancelling(booking)}
+            onRemoveBlock={(block) => askRemove(block)}
+          />
+        )}
+      </div>
+
+      {cancelling && (
+        <CancelBookingModal
+          booking={cancelling}
+          onClose={() => setCancelling(null)}
+          onCancelled={() => {
+            setNotice(
+              `Reserva ${cancelling.codigo ?? ''} cancelada: ${roomName(cancelling.sala)}, ${formatDate(cancelling.fecha)}, ${formatSlot(cancelling)}.`,
+            );
+            setCancelling(null);
+            setDetailVersion((v) => v + 1);
+            list.reload();
+          }}
+        />
+      )}
 
       {blocking && (
         <BlockHoursModal

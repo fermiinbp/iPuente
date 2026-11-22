@@ -166,6 +166,19 @@ export async function getBookings(filtros, options) {
   return Array.isArray(data?.reservas) ? data.reservas : [];
 }
 
+// Detalle de una reserva propia (GET /company/bookings/:id): { id, codigo, fecha, inicio, fin, horas, precioHora,
+// importe, estado, sala: { id, codigo, nombre }, planta, edificio, cliente: { nombre, email }, canceladaPor?,
+// motivoCancelacion? }. 404 NOT_FOUND si no existe o es de otra empresa.
+export function getBooking(id, options) {
+  return get(`/company/bookings/${encodeURIComponent(id)}`, options);
+}
+
+// Cancela una reserva propia con un motivo (1–500): responde { id, estado: 'CANCELLED', motivo }.
+// 400 BOOKING_NOT_CANCELLABLE si no está confirmada y 400 BOOKING_STARTED si ya ha empezado.
+export function cancelBooking(id, motivo, options) {
+  return patch(`/company/bookings/${encodeURIComponent(id)}/cancel`, { motivo }, options);
+}
+
 // Bloqueos de horas de la empresa (como mucho 500). Cada uno: { id, roomId, sala, fecha, inicio, fin, motivo }.
 // La API responde { bloqueos: [...] }; aquí se devuelve solo la lista.
 export async function getBlocks(filtros, options) {

@@ -36,3 +36,16 @@
 .noticeAlert {
   width: 100%;
 }
+
+.list {
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .withPanel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+    align-items: start;
+    gap: var(--space-5);
+  }
+}
