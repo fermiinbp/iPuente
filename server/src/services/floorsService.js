@@ -5,6 +5,7 @@ import * as floorModel from '../models/floorModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
+import { matchesNeeds } from '../utils/roomNeeds.js';
 import { isDeleted } from '../utils/softDelete.js';
 import {
   effectivePrice,
@@ -16,7 +17,11 @@ import {
 } from './availabilityService.js';
 import { isBuildingPublic } from './publicCatalogService.js';
 
-export async function getPublishedMap(id, fecha = todayString(), hora) {
+// necesidades: { personas?, equipamiento[] } (equipamiento ya normalizado). Con alguna, cada sala
+// lleva `encaja` (necesidades, no disponibilidad); las no reservables son siempre false.
+export async function getPublishedMap(id, fecha = todayString(), hora, necesidades = {}) {
+  const { personas, equipamiento = [] } = necesidades;
+  const filtra = personas !== undefined || equipamiento.length > 0;
   const notFound = () => new HttpError(404, 'NOT_FOUND', 'La planta no existe');
   const floor = await floorModel.findById(id);
   if (!floor || floor.status !== 'PUBLISHED' || isDeleted(floor)) throw notFound();
@@ -50,6 +55,7 @@ export async function getPublishedMap(id, fecha = todayString(), hora) {
       capacidad: visible ? (room.capacity ?? null) : null,
       precioHora: visible ? effectivePrice(room) : null,
       gratis: visible && room.isFree === true,
+      ...(filtra && { encaja: visible && matchesNeeds(room, { personas, equipamiento }) }),
     };
   });
 

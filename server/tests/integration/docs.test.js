@@ -20,6 +20,15 @@ describe('Documentación de la API (Swagger)', () => {
     assert.ok(swaggerSpec.paths['/health']?.get, 'GET /health no está en la especificación');
   });
 
+  it('/floors/{id} documenta personas, equipamiento y encaja', () => {
+    const op = swaggerSpec.paths['/floors/{id}']?.get;
+    assert.ok(op, 'GET /floors/{id} no está en la especificación');
+    const names = op.parameters.map((p) => p.name);
+    for (const n of ['fecha', 'hora', 'personas', 'equipamiento']) assert.ok(names.includes(n), n);
+    const sala = op.responses['200'].content['application/json'].schema.properties.salas.items;
+    assert.equal(sala.properties.encaja.type, 'boolean');
+  });
+
   it('/users/me aparece documentada, protegida con bearerAuth', () => {
     const op = swaggerSpec.paths['/users/me']?.get;
     assert.ok(op, 'GET /users/me no está en la especificación');

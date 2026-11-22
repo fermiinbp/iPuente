@@ -7,6 +7,7 @@ import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 import { isDeleted, notDeleted } from '../utils/softDelete.js';
+import { matchesNeeds, parseEquipamiento } from '../utils/roomNeeds.js';
 import { normalizeText } from '../utils/text.js';
 import {
   effectivePrice,
@@ -46,14 +47,9 @@ const DEFAULT_LIMIT = 20;
 
 // ¿La sala encaja con los filtros de sala (personas, tipo, precio y equipamiento)?
 function matchesRoom(room, { personas, tipo, precioMax, equipamiento }) {
-  if (personas !== undefined && !(room.capacity >= personas)) return false;
   if (tipo !== undefined && room.type !== tipo) return false;
   if (precioMax !== undefined && !(effectivePrice(room) <= precioMax)) return false;
-  if (equipamiento.length > 0) {
-    const have = new Set((room.amenities ?? []).map(normalizeText));
-    if (!equipamiento.every((item) => have.has(item))) return false;
-  }
-  return true;
+  return matchesNeeds(room, { personas, equipamiento });
 }
 
 // Orden del listado: por precio (def.) o por nº de salas; desempata y acaba por nombre.
@@ -70,7 +66,7 @@ function compareBuildings(orden) {
 // filtros: { ciudad, personas, equipamiento[], fecha, tipo, precioMax, orden, page, limit }.
 export async function searchPublished(filtros = {}) {
   const { fecha, orden, page = 1, limit = DEFAULT_LIMIT } = filtros;
-  const equipamiento = (filtros.equipamiento ?? []).map(normalizeText).filter(Boolean);
+  const equipamiento = parseEquipamiento(filtros.equipamiento);
   const ciudad = normalizeText(filtros.ciudad);
   const [published, floors] = await Promise.all([
     buildingModel.listByStatus('PUBLISHED'),
