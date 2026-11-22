@@ -4,12 +4,11 @@ import * as bookingsService from '../services/bookingsService.js';
 // Crea una reserva. Solo pasa roomId, fecha, inicio y fin: importe, estado y dueño los fija el servidor.
 export async function createBooking(req, res) {
   const { roomId, fecha, inicio, fin } = req.body;
-  const booking = await bookingsService.createBooking(req.user.uid, {
-    roomId,
-    fecha,
-    inicio: Number.parseInt(inicio, 10),
-    fin: Number.parseInt(fin, 10),
-  });
+  const booking = await bookingsService.createBooking(
+    req.user.uid,
+    { roomId, fecha, inicio: Number.parseInt(inicio, 10), fin: Number.parseInt(fin, 10) },
+    { pendingPayment: true },
+  );
   res.status(201).json(booking);
 }
 

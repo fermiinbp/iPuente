@@ -121,8 +121,17 @@ export function createFakeFirestore() {
     };
   }
 
-  // Transacción mínima: aplica las escrituras al final, solo si la función no lanza.
-  async function runTransaction(fn) {
+  // Transacción mínima: aplica las escrituras al final, solo si la función no lanza. Las
+  // transacciones se ejecutan una detrás de otra: así dos concurrentes sobre los mismos datos dan el
+  // resultado que daría Firestore (la que pierde se reintenta y ve lo que escribió la primera).
+  let queue = Promise.resolve();
+  function runTransaction(fn) {
+    const run = queue.then(() => runOne(fn));
+    queue = run.catch(() => {});
+    return run;
+  }
+
+  async function runOne(fn) {
     const writes = [];
     const tx = {
       get: (ref) => ref.get(),
