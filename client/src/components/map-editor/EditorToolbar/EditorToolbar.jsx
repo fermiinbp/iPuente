@@ -5,6 +5,9 @@
 import IconButton from '@/components/ui/IconButton/IconButton.jsx';
 import styles from './EditorToolbar.module.css';
 
+// La detección con IA es el extra EMP008: oculta hasta que exista. Poner a true cuando se implemente.
+const SHOW_AI_DETECTION = false;
+
 const STROKE = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' };
 
 export default function EditorToolbar({ tool, onTool, canDelete, onDelete, canUndo, onUndo }) {
@@ -57,11 +60,14 @@ export default function EditorToolbar({ tool, onTool, canDelete, onDelete, canUn
           <path d="M9 13L4 8l5-5M4 8h10a6 6 0 010 12h-4" {...STROKE} />
         </svg>
       </IconButton>
-      <span className={styles.separator} aria-hidden="true" />
-      {/* TODO(EMP008): detectar las salas del plano con IA. */}
-      <IconButton variant="secondary" label="Detectar salas con IA (próximamente)" disabled>
-        <span className={styles.ia}>IA</span>
-      </IconButton>
+      {SHOW_AI_DETECTION && (
+        <>
+          <span className={styles.separator} aria-hidden="true" />
+          <IconButton variant="secondary" label="Detectar salas con IA (próximamente)" disabled>
+            <span className={styles.ia}>IA</span>
+          </IconButton>
+        </>
+      )}
     </div>
   );
 }
