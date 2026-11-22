@@ -1,0 +1,55 @@
+/* Cable del puente bajo la cabecera. `--progreso` (0 a 1) lo escribe useScrollProgress en `.cable`; los hijos lo heredan. */
+.cable {
+  /* Cuánto se aplana la curva al llegar al final de la página (0,75 = queda al 25 %). */
+  --tension: calc(1 - var(--progreso, 0) * 0.75);
+  position: absolute;
+  top: 100%;
+  /* Los extremos quedan 8 px dentro de la pantalla para que la «sala» no se corte al empezar ni al acabar. */
+  left: 8px;
+  right: 8px;
+  height: var(--cable-caida);
+  pointer-events: none;
+}
+
+.curva {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform-origin: top;
+  transform: scaleY(var(--tension));
+}
+
+.reposo,
+.recorrido {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.reposo {
+  stroke: var(--cable-trazo);
+  stroke-width: 1;
+}
+
+/* Lo recorrido: el trazo se dibuja de izquierda a derecha (pathLength 1: el desplazamiento va de 1 a 0). */
+.recorrido {
+  stroke: var(--cable-recorrido);
+  stroke-width: 1.5;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--progreso, 0));
+}
+
+/* La «sala»: en x = progreso y sobre la curva, y = caída · 4p(1 − p), con la misma tensión que el cable. */
+.sala {
+  position: absolute;
+  left: calc(var(--progreso, 0) * 100%);
+  top: calc(
+    var(--cable-caida) * 4 * var(--progreso, 0) * (1 - var(--progreso, 0)) * var(--tension)
+  );
+  width: 7px;
+  height: 7px;
+  translate: -50% -50%;
+  border-radius: 1px;
+  background: var(--cable-sala);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cable-sala) 28%, transparent);
+}
