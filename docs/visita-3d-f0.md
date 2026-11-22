@@ -115,8 +115,9 @@ Cada ficha: **qué se ve**, **qué hace el HTML**, **interacción**, **sonido** 
 - Se ve: la cámara se detiene mirando la ciudad; el edificio queda de fondo.
 - HTML: el buscador grande y el pie con «Contacto».
 - Interacción: ninguna más; el foco va al campo de ciudad.
-- Sonido: silencio.
+- Sonido: aquí entra la **playlist del final** que aportará el equipo (ver decisión 7). Hasta recibirla, el ambiente se apaga y queda silencio.
 - Móvil: igual.
+- **Además de ser una zona, «Reservar» está siempre visible**: un botón «Buscar salas» fijo (en la cabecera en escritorio y en una barra inferior en móvil) abre el buscador desde cualquier punto del recorrido sin perder el sitio. Quien solo quiere reservar nunca necesita llegar a la zona 07.
 
 ## 5. Navegación
 
@@ -152,8 +153,8 @@ Las teclas funcionan solo cuando el foco no está en un campo de texto. El salto
 
 | Nivel            | Cuándo                                                           | Qué cambia                                                                              |
 | ---------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| **A · Completo** | escritorio y móviles potentes                                    | sombras suaves, `dpr` hasta 2, inclinación con el puntero                               |
-| **B · Ligero**   | móviles de gama media y baja                                     | sin sombras, `dpr` 1, menos instancias, solo se renderizan la zona actual y las vecinas |
+| **A · Completo** | escritorio (puntero fino y pantalla ancha)                       | sombras suaves, `dpr` hasta 2, inclinación con el puntero                               |
+| **B · Ligero**   | **todos los móviles y tabletas, siempre** (decidido)             | sin sombras, `dpr` 1, menos instancias, solo se renderizan la zona actual y las vecinas |
 | **C · Sin 3D**   | sin WebGL, movimiento reducido, `save-data` o «Saltar la visita» | la landing actual, sin canvas                                                           |
 
 ## 7. Presupuesto por zona
@@ -186,18 +187,27 @@ Para no pasarse en pantalla: en cada momento se dibujan solo la zona actual y la
 | Cable del puente (hilo del recorrido)                            | Sonido de oficina (F6)                      |
 | `NearbySection` y su mapa                                        | Piezas nuevas de mobiliario                 |
 
-## 9. Decisiones que necesito para cerrar la F0
+## 9. Decisiones
 
-1. **Orden de las zonas.** Propongo mover «Alrededor» después de «Empresas» para que la azotea cierre el recorrido. Hoy va antes de «Salas». ¿Te vale el cambio?
-2. **Modelo de cámara.** ¿Confirmas el carril guiado por scroll con inclinación del puntero?
-3. **Zona 07 «Reservar».** ¿La dejamos como cierre dentro del recorrido o prefieres que el buscador esté siempre accesible y no sea una zona?
-4. **Nivel C por defecto en móviles de gama baja.** ¿Prefieres que se decida solo (por rendimiento medido) o que el móvil siempre empiece en nivel B?
-5. **Cortar tras F3** para evaluar antes de seguir (sigue abierta del plan).
-6. **Sonido de oficina**: confirmar que es ambiente de oficina y no el de la serie «The Office» (sigue abierta del plan).
+Tomadas (22-11-2026):
+
+1. **Orden de las zonas:** «Alrededor» pasa después de «Empresas» para que la azotea cierre el recorrido. Sí.
+2. **Modelo de cámara:** carril guiado por el scroll nativo, con un pequeño giro con el puntero en escritorio. Sí.
+3. **Zona 07 «Reservar»:** es una zona del recorrido **y además está siempre visible** (botón «Buscar salas» fijo que abre el buscador desde cualquier punto).
+4. **Nivel de calidad en móvil:** **siempre empieza en el nivel B (ligero)**; no se decide por rendimiento medido. El nivel A es solo para escritorio. El paso a nivel C por FPS bajos sigue siendo automático.
+5. **Corte tras F3:** el proyecto **se evalúa tras la F3** (entrada y navegación) antes de seguir con las demás fases.
+
+Abiertas:
+
+6. **Sonido de oficina:** confirmar que «el sonido de tipo office» es ambiente de oficina y no el audio de la serie «The Office» (que no se puede usar por derechos).
+7. **Playlist del final:** el equipo aportará una playlist para la zona 07 (y se enviará más adelante). Antes de integrarla hay que decidir tres cosas:
+   - **Derechos:** música con licencia que permita usarla en la web (propia, CC0, CC-BY con atribución o con licencia comprada). Una lista de Spotify o YouTube no se puede reproducir como archivo propio.
+   - **Formato:** archivos propios (con su peso dentro del presupuesto de sonido, que hoy es de 300 KB para el ambiente) o un reproductor incrustado del servicio (más pesado y con sus propias condiciones y cookies).
+   - **Comportamiento:** se activa solo con «Entrar con sonido» o con el interruptor, empieza en la zona 07, no se superpone al ambiente y se puede pausar.
 
 ## 10. «Hecho cuando» de la F0
 
-- [ ] El storyboard de las siete zonas está aprobado.
-- [ ] El modelo de cámara y el orden de las zonas están decididos.
-- [ ] La tabla de presupuesto está aprobada.
-- [ ] Las decisiones 1 a 6 tienen respuesta.
+- [x] El storyboard de las siete zonas está redactado (pendiente de revisión final al ver la F1).
+- [x] El modelo de cámara y el orden de las zonas están decididos.
+- [ ] La tabla de presupuesto está aprobada: queda por confirmar que cuadra con los modelos reales.
+- [ ] Las decisiones 6 y 7 tienen respuesta.
