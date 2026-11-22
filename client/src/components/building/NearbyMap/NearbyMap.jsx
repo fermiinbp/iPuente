@@ -27,12 +27,6 @@ const line = (coordinates) => ({
   properties: {},
 });
 
-const footprint = {
-  type: 'Feature',
-  geometry: { type: 'Polygon', coordinates: [BUILDING.footprint] },
-  properties: {},
-};
-
 function boundsOf(puntos) {
   const lngs = puntos.map((p) => p[0]);
   const lats = puntos.map((p) => p[1]);
@@ -43,6 +37,8 @@ function boundsOf(puntos) {
 }
 
 export default function NearbyMap({
+  // Edificio con sus coordenadas ({ name, lat, lng, height, footprint }); sin él, el provisional de config/nearby.js.
+  building = BUILDING,
   pois,
   activeId,
   hoverId,
@@ -56,6 +52,14 @@ export default function NearbyMap({
   const [style, setStyle] = useState(null);
   const [mobile] = useState(() => window.matchMedia(MOBILE).matches);
   const c = useMemo(() => readMapColors(), []);
+  const footprint = useMemo(
+    () => ({
+      type: 'Feature',
+      geometry: { type: 'Polygon', coordinates: [building.footprint] },
+      properties: {},
+    }),
+    [building],
+  );
   const active = pois.find((poi) => poi.id === activeId) ?? null;
 
   useEffect(() => {
@@ -78,7 +82,7 @@ export default function NearbyMap({
     const duration = window.matchMedia(REDUCED).matches ? 0 : VIEW.flyMs;
     if (!active) {
       map.flyTo({
-        center: [BUILDING.lng, BUILDING.lat],
+        center: [building.lng, building.lat],
         zoom: VIEW.zoom,
         pitch,
         bearing: VIEW.bearing,
@@ -96,7 +100,7 @@ export default function NearbyMap({
       duration,
       easing: easeInOut,
     });
-  }, [activeId, active, mobile]);
+  }, [activeId, active, mobile, building]);
 
   const habilitarRueda = () => mapRef.current?.scrollZoom.enable();
   const deshabilitarRueda = () => mapRef.current?.scrollZoom.disable();
@@ -107,15 +111,15 @@ export default function NearbyMap({
     <div
       className={styles.wrap}
       role="region"
-      aria-label={`Mapa de los alrededores de ${BUILDING.name}`}
+      aria-label={`Mapa de los alrededores de ${building.name}`}
       onMouseLeave={deshabilitarRueda}
     >
       <MapGL
         ref={mapRef}
         mapStyle={style}
         initialViewState={{
-          longitude: BUILDING.lng,
-          latitude: BUILDING.lat,
+          longitude: building.lng,
+          latitude: building.lat,
           zoom: VIEW.zoom,
           pitch: mobile ? VIEW.pitchMobile : VIEW.pitch,
           bearing: VIEW.bearing,
@@ -160,7 +164,7 @@ export default function NearbyMap({
             paint={{
               'fill-extrusion-color': c.bronce,
               'fill-extrusion-opacity': 1,
-              'fill-extrusion-height': BUILDING.height,
+              'fill-extrusion-height': building.height,
               'fill-extrusion-base': 0,
             }}
           />
@@ -181,9 +185,9 @@ export default function NearbyMap({
           </Source>
         )}
 
-        <Marker longitude={BUILDING.lng} latitude={BUILDING.lat} anchor="bottom">
+        <Marker longitude={building.lng} latitude={building.lat} anchor="bottom">
           <div aria-hidden="true" className={styles.here}>
-            {BUILDING.name}
+            {building.name}
           </div>
         </Marker>
 

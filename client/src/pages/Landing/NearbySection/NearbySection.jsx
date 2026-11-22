@@ -1,11 +1,12 @@
 // Sección «Alrededor del edificio»: mapa vectorial con los lugares cercanos y lista accesible con sus tiempos.
 // Sin mapa (sin WebGL o sin red), la lista y el detalle bastan. MapLibre se carga en diferido.
-import { lazy, Suspense, useCallback, useState } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
 import { useNearViewport } from '@/hooks/useNearViewport.js';
 import ErrorBoundary from '@/components/three/ErrorBoundary/ErrorBoundary.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
-import pois from '@/data/poi.json';
+import poiData from '@/data/poi.json';
+import { buildingAt, shiftPlaces } from '@/utils/nearbyPlaces.js';
 import styles from './NearbySection.module.css';
 
 const NearbyMap = lazy(() => import('@/components/building/NearbyMap/NearbyMap.jsx'));
@@ -18,13 +19,26 @@ function tiempos(poi) {
 }
 
 // `tone` es el fondo de la sección: 'elevated' (verde, por defecto) o 'crema' (banda clara con el texto en bosque).
-export default function NearbySection({ tone = 'elevated' }) {
+// `building` son los datos del edificio de la API ({ nombre, latitud, longitud }): con coordenadas válidas el mapa se
+// centra en él y los lugares de ejemplo se desplazan con él; sin ellas se usan las coordenadas provisionales.
+export default function NearbySection({ tone = 'elevated', building }) {
   const [activeId, setActiveId] = useState(null); // elegido con clic o Enter: mueve la cámara
   const [hoverId, setHoverId] = useState(null); // ratón o foco: solo resalta
   const [announcement, setAnnouncement] = useState('');
   // El mapa (MapLibre, unos 300 kB) solo se descarga cuando la sección se acerca a la pantalla.
   const [mapRef, mapNear] = useNearViewport();
   const [mapaFallido, setMapaFallido] = useState(false);
+  const nombre = building?.nombre;
+  const latitud = building?.latitud;
+  const longitud = building?.longitud;
+  const mapBuilding = useMemo(
+    () => buildingAt({ nombre, latitud, longitud }),
+    [nombre, latitud, longitud],
+  );
+  const pois = useMemo(
+    () => (mapBuilding ? shiftPlaces(poiData, mapBuilding) : poiData),
+    [mapBuilding],
+  );
   const active = pois.find((poi) => poi.id === activeId) ?? null;
 
   const choose = (poi) => {
@@ -61,6 +75,7 @@ export default function NearbySection({ tone = 'elevated' }) {
             <Suspense fallback={<p className={styles.note}>Cargando el mapa…</p>}>
               {mapNear ? (
                 <NearbyMap
+                  building={mapBuilding ?? undefined}
                   pois={pois}
                   activeId={activeId}
                   hoverId={hoverId}

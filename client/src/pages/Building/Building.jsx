@@ -266,7 +266,7 @@ export default function Building() {
         </div>
       </Section>
 
-      <NearbySection tone="crema" />
+      <NearbySection tone="crema" building={building} />
     </div>
   );
 }
