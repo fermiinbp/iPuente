@@ -14,7 +14,7 @@ const router = Router();
  *   get:
  *     tags: [Público]
  *     summary: Mapa de una planta con el estado de sus salas
- *     description: 'No necesita token. Devuelve el plano de una planta publicada y, por cada sala, su estado ese día o, con hora, a esa hora (FREE, OCCUPIED o UNAVAILABLE). Sin fecha, hoy. Una sala sin precio figura como UNAVAILABLE. Nunca incluye quién ha reservado.'
+ *     description: 'No necesita token. Devuelve el plano de una planta publicada y, por cada sala, su estado ese día o, con hora, a esa hora (FREE, OCCUPIED o UNAVAILABLE). Sin fecha, hoy. Una sala sin precio figura como UNAVAILABLE. Con personas y/o equipamiento marca cada sala con encaja (true/false) sin ocultar ninguna. Nunca incluye quién ha reservado.'
  *     parameters:
  *       - in: path
  *         name: id
@@ -39,6 +39,22 @@ const router = Router();
  *           minimum: 8
  *           maximum: 19
  *         example: 10
+ *       - in: query
+ *         name: personas
+ *         required: false
+ *         description: Personas que necesitas (entero de 1 a 1000). Marca con `encaja` las salas con capacidad suficiente; no oculta ninguna.
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 1000
+ *         example: 8
+ *       - in: query
+ *         name: equipamiento
+ *         required: false
+ *         description: Equipamiento que necesitas, separado por comas (hasta 30; sin tildes ni mayúsculas). La sala debe tenerlo todo para que `encaja` sea true.
+ *         schema:
+ *           type: string
+ *         example: wifi,pantalla
  *     responses:
  *       200:
  *         description: Mapa de la planta.
@@ -99,6 +115,9 @@ const router = Router();
  *                       gratis:
  *                         type: boolean
  *                         description: true si la sala es gratis (false en las no reservables).
+ *                       encaja:
+ *                         type: boolean
+ *                         description: Solo si se pidió `personas` o `equipamiento`. true si la sala es reservable y cubre esas necesidades (no mide la disponibilidad, una sala ocupada puede encajar). Las salas no reservables son siempre false.
  *             example:
  *               id: floor-0
  *               nombre: Planta baja

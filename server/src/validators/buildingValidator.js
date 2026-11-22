@@ -22,7 +22,7 @@ export function sinCorchetes(req, res, next) {
 }
 
 // Equipamiento en CSV: hasta 30 elementos; cada uno, tras normalizar, solo [a-z0-9_ -] y ≤ 50.
-const equipamiento = query('equipamiento')
+export const equipamiento = query('equipamiento')
   .optional()
   .custom(isText)
   .withMessage('equipamiento debe ser una lista separada por comas')
@@ -37,6 +37,15 @@ const equipamiento = query('equipamiento')
   })
   .withMessage('equipamiento admite hasta 30 elementos de letras, números, espacio, _ y -');
 
+// Personas (entero 1–1000); una lista o un parámetro repetido da 400.
+export const personas = query('personas')
+  .optional()
+  .custom(isScalar)
+  .withMessage('personas debe ser un entero entre 1 y 1000')
+  .bail()
+  .isInt({ min: 1, max: 1000, allow_leading_zeroes: false })
+  .withMessage('personas debe ser un entero entre 1 y 1000');
+
 // Filtros del buscador de edificios (todos opcionales).
 export const search = [
   sinCorchetes,
@@ -47,12 +56,7 @@ export const search = [
     .bail()
     .isLength({ max: 100 })
     .withMessage('ciudad admite hasta 100 caracteres'),
-  query('personas')
-    .optional()
-    .custom(isScalar)
-    .bail()
-    .isInt({ min: 1, max: 1000, allow_leading_zeroes: false })
-    .withMessage('personas debe ser un entero entre 1 y 1000'),
+  personas,
   equipamiento,
   fechaQuery,
   query('tipo')
@@ -64,6 +68,7 @@ export const search = [
   query('precioMax')
     .optional()
     .custom(isScalar)
+    .withMessage('precioMax debe ser un número mayor que 0 y como máximo 10000')
     .bail()
     .isFloat({ gt: 0, max: 10000 })
     .withMessage('precioMax debe ser un número mayor que 0 y como máximo 10000'),
@@ -76,12 +81,14 @@ export const search = [
   query('page')
     .optional()
     .custom(isScalar)
+    .withMessage('page debe ser un entero entre 1 y 10000')
     .bail()
     .isInt({ min: 1, max: 10000, allow_leading_zeroes: false })
     .withMessage('page debe ser un entero entre 1 y 10000'),
   query('limit')
     .optional()
     .custom(isScalar)
+    .withMessage('limit debe ser un entero entre 1 y 50')
     .bail()
     .isInt({ min: 1, max: 50, allow_leading_zeroes: false })
     .withMessage('limit debe ser un entero entre 1 y 50'),
