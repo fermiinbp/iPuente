@@ -26,6 +26,8 @@ export default function Landing() {
   const heroRef = useRef(null);
   // Contenedor del hero: su progreso de scroll abre las plantas del 3D en escritorio (HeroStory).
   const heroInnerRef = useRef(null);
+  // Hueco de la carrera del hero (escritorio): ahí HeroStory pinta la leyenda de la planta abierta.
+  const [noteContainer, setNoteContainer] = useState(null);
 
   // Foco de luz que sigue al ratón por el hero. Solo ratón: en táctil queda el resplandor fijo.
   function handleHeroPointerMove(event) {
@@ -80,8 +82,11 @@ export default function Landing() {
               buildingId={BUILDING.id}
               buildingName={BUILDING.name}
               pinRef={heroInnerRef}
+              noteContainer={noteContainer}
             />
           </div>
+
+          <div className={styles.heroNote} ref={setNoteContainer} />
 
           <SearchBar
             variant="hero"

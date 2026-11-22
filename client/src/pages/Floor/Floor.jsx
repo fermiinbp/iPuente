@@ -278,6 +278,7 @@ export default function Floor() {
                     selectedId={selectedId}
                     onSelect={setSelectedId}
                     litIds={litIds}
+                    intro
                   />
                 </LazyCanvas>
               </Suspense>

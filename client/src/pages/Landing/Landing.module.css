@@ -69,6 +69,11 @@
   grid-area: edificio;
 }
 
+/* Hueco de la leyenda de la planta abierta: solo existe en escritorio con movimiento (ver el bloque del final). */
+.heroNote {
+  display: none;
+}
+
 .heroText,
 .heroBuilding,
 .search {
@@ -235,6 +240,15 @@
   .heroBuilding {
     position: sticky;
     top: calc(var(--alto-cabecera) + var(--space-4));
+  }
+
+  .heroNote {
+    display: block;
+    grid-area: carrera;
+    align-self: start;
+    margin-top: var(--space-6);
+    position: sticky;
+    top: calc(var(--alto-cabecera) + var(--space-6));
   }
 }
 

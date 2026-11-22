@@ -120,7 +120,10 @@ function Ambiente({ fraccion, reducedMotion }) {
   );
 }
 
-export default function FloorPlan({ plan, selectedId, onSelect, litIds = [] }) {
+// Con `intro`, cada sala se dibuja al montarse (contorno y relleno), escalonadas; con movimiento reducido no hay dibujo.
+const ESCALONADO_MS = 50;
+
+export default function FloorPlan({ plan, selectedId, onSelect, litIds = [], intro = false }) {
   const colores = useCssColors(NOMBRES_COLOR);
   const reducedMotion = useReducedMotion();
 
@@ -214,7 +217,7 @@ export default function FloorPlan({ plan, selectedId, onSelect, litIds = [] }) {
         position={[0, 0.003, pasilloZ]}
       />
 
-      {salas.map(({ sala, posicion, tamano }) => (
+      {salas.map(({ sala, posicion, tamano }, indice) => (
         <RoomShape
           key={sala.id}
           room={sala}
@@ -230,6 +233,8 @@ export default function FloorPlan({ plan, selectedId, onSelect, litIds = [] }) {
           recursos={recursos}
           doorSide={sala.y < plan.corridor.y ? 1 : -1}
           lit={encendidas.has(sala.id)}
+          intro={intro}
+          introDelay={indice * ESCALONADO_MS}
         />
       ))}
     </group>
