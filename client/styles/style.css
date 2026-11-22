@@ -108,6 +108,14 @@
 
   /* Elevación: una sola sombra, solo para lo que flota (modal, menús, banner, hoja inferior) */
   --sombra-flotante: 0 8px 24px rgb(0 0 0 / 0.35);
+
+  /* Elevación de superficies: paneles y tarjetas que se levantan sobre el fondo (no se superponen a nada, a diferencia de
+     --sombra-flotante). Sombra tintada de bosque, con un filo de luz arriba. 1 = en reposo, 2 = panel destacado,
+     3 = tarjeta levantada al pasar el ratón. */
+  --luz-borde: inset 0 1px 0 color-mix(in srgb, var(--crema) 7%, transparent);
+  --sombra-1: var(--luz-borde), 0 1px 2px rgb(8 13 6 / 0.35), 0 6px 16px -6px rgb(8 13 6 / 0.45);
+  --sombra-2: var(--luz-borde), 0 2px 4px rgb(8 13 6 / 0.3), 0 14px 32px -10px rgb(8 13 6 / 0.55);
+  --sombra-3: var(--luz-borde), 0 4px 8px rgb(8 13 6 / 0.3), 0 22px 44px -12px rgb(8 13 6 / 0.6);
   --velo-modal: rgb(10 16 8 / 0.72);
 
   /* Cable del puente (BridgeCable, bajo la cabecera): trazo en reposo, trazo ya recorrido, la «sala» que se desliza y

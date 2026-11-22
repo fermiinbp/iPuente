@@ -157,6 +157,7 @@
   border: 1px solid var(--linea);
   border-radius: var(--radio-tarjeta);
   background: color-mix(in srgb, var(--bosque-profundo) 85%, transparent);
+  box-shadow: var(--sombra-2);
 }
 
 .bookingTitle {

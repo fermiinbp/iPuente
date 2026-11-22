@@ -5,10 +5,12 @@
   border: 1px solid var(--linea);
   border-radius: var(--radio-tarjeta);
   background: color-mix(in srgb, var(--bosque-elevado) 75%, transparent);
+  box-shadow: var(--sombra-1);
   color: var(--crema);
   text-decoration: none;
   transition:
     transform var(--dur-media) var(--ease-out),
+    box-shadow var(--dur-media) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out);
 }
 
@@ -94,6 +96,7 @@
   .card:hover {
     transform: translateY(-4px);
     border-color: var(--lima);
+    box-shadow: var(--sombra-3);
   }
 }
 

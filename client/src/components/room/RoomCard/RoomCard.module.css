@@ -26,8 +26,11 @@
     var(--foto-hueco)
   );
   border: 1px solid var(--linea);
+  box-shadow: var(--sombra-1);
   overflow: hidden;
-  transition: border-color var(--dur-fast) var(--ease-out);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-media) var(--ease-out);
 }
 
 /* Tipo de sala como cartel tipográfico. */
@@ -119,6 +122,7 @@
 
   .card:hover .photo {
     border-color: var(--crema-suave);
+    box-shadow: var(--sombra-3);
   }
 
   .card:hover .type {
