@@ -28,6 +28,8 @@ import styles from './AdminBookings.module.css';
 // La API no deja pasar de la página 25.
 const MAX_PAGE = 25;
 const PAGE_SIZE = 20;
+// Mismo formato de id que acepta la API (`companyId`); otro valor en la URL se ignora.
+const ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 
 const ESTADO_OPTIONS = [
   { value: '', label: 'Todos' },
@@ -124,7 +126,8 @@ export default function AdminBookings() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const empresa = searchParams.get('empresa') ?? '';
+  const empresaParam = searchParams.get('empresa') ?? '';
+  const empresa = ID_PATTERN.test(empresaParam) ? empresaParam : '';
   const estadoParam = searchParams.get('estado') ?? '';
   const estado = ESTADOS.includes(estadoParam) ? estadoParam : '';
   const fechaParam = searchParams.get('fecha') ?? '';
@@ -139,13 +142,21 @@ export default function AdminBookings() {
     `bookings-${empresa}|${estado}|${fecha}|${page}`,
   );
 
-  // Desplegable de empresas: si la lista falla, el filtro queda solo con «Todas».
+  // Desplegable de empresas: si la lista falla, el filtro queda solo con «Todas». Si la empresa de la URL aún no está
+  // en la lista (cargando, error o id desconocido), se añade una opción provisional para que el desplegable no quede
+  // en blanco.
   const companyOptions = [
     { value: '', label: 'Todas' },
     ...(companies.data?.empresas ?? [])
       .map((c) => ({ value: c.id, label: c.nombre || 'Sin nombre' }))
       .sort((a, b) => a.label.localeCompare(b.label, 'es')),
   ];
+  if (empresa && !companyOptions.some((o) => o.value === empresa)) {
+    companyOptions.push({
+      value: empresa,
+      label: companies.loading ? 'Cargando empresa…' : 'Empresa no encontrada',
+    });
+  }
   const filters = [
     { name: 'empresa', label: 'Empresa', options: companyOptions },
     { name: 'estado', label: 'Estado', options: ESTADO_OPTIONS },
