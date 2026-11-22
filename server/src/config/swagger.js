@@ -38,7 +38,7 @@ const definition = {
     { name: 'Auth', description: 'Registro de clientes y empresas.' },
     { name: 'Cliente', description: 'Reservas y perfil del cliente autenticado.' },
     { name: 'Empresa', description: 'Panel de empresa: edificios, plantas, salas y reservas.' },
-    { name: 'Mapas', description: 'Detección con IA, guardado y publicación de mapas de planta.' },
+    { name: 'Mapas', description: 'Lectura, guardado y publicación de mapas de planta.' },
     { name: 'Pagos', description: 'Checkout de Stripe y webhook.' },
     { name: 'Admin', description: 'Panel de administración.' },
   ],

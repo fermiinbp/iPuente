@@ -69,4 +69,4 @@ export const HOW_IT_WORKS_STEPS = [
   },
 ];
 
-export const COMPANY_STEPS = ['Sube tu plano', 'Revisa las salas', 'Publica'];
+export const COMPANY_STEPS = ['Sube tu plano', 'Dibuja las salas', 'Publica'];
