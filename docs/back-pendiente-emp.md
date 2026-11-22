@@ -24,6 +24,7 @@ Issues de back que usa `EMP`:
 | DAT028 (#158) · Eliminar edificio, planta o sala                 | Hecho                          | `DELETE /api/company/buildings/:id`, `/floors/:id` y `/rooms/:id` (`409 HAS_FUTURE_BOOKINGS`; borrado lógico con `deletedAt` si hay historial) y `GET /api/company/rooms/:id/future-bookings` |
 | DAT029 (#159) · Resumen del panel de empresa                     | Hecho                          | `GET /api/company/summary` (EMP002): cifras, próximas reservas, tareas pendientes y `primerAcceso`                                                                                            |
 | DAT030 (#160) · Completar el alta de empresa                     | Pendiente                      | Email de contacto, ciudad y condiciones en el alta, y `PATCH /api/companies/me`                                                                                                               |
+| DAT041 (#233) · Leer el mapa de una planta propia                | Hecho                          | `GET /api/company/floors/:id` (borrador o publicada, sin salas eliminadas). Un recurso ajeno responde 404 como uno inexistente en toda la API de empresa                                      |
 | DAT039 (#172) · Salas gratis                                     | Pendiente                      | Elegir entre precio, gratis u oculta                                                                                                                                                          |
 
 Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@openapi` (etiqueta `Empresa` o `Mapas`, `bearerAuth`) y como mínimo un test de permisos (propio 200, ajeno 403, rol cliente 403). El `companyId` sale siempre del token y los endpoints del panel usan `requireApprovedCompany`.
@@ -92,8 +93,8 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 ## EMP007 · Editor I: lienzo
 
 - **Ya cubierto (DAT015):** guardar el mapa (`PUT /api/company/floors/:id/map`).
-- **Falta (necesario):** **leer el mapa de una planta propia aunque esté en borrador**, p. ej. `GET /api/company/floors/:id` → `{ id, buildingId, numero, nombre, publicado, ancho, alto, origen, salas, mapImageUrl }` (con su validator, `@openapi` y test de permisos; 404 si no existe, es ajena o está eliminada). Hoy no hay ninguna forma: `GET /floors/:id` es público y da 404 en las plantas sin publicar, y `GET /company/buildings` no trae el mapa.
-  - **Qué hace el front mientras tanto (EMP007):** `companyService.getFloorMap` lo llama y, si la API responde que la ruta no existe, el editor avisa de que «la carga del mapa guardado se implementará más adelante» y empieza en blanco. Como guardar **sustituye el mapa entero** (las salas que faltan quedan no reservables), si la planta ya tiene salas «Guardar borrador» se desactiva para no borrarlas. En cuanto exista el endpoint, el editor lo usa sin más cambios.
+- **Hecho (DAT041, #233):** **leer el mapa de una planta propia aunque esté en borrador**: `GET /api/company/floors/:id` → `{ id, buildingId, numero, nombre, publicado, ancho, alto, origen, salas, mapImageUrl }` (sin mapa: `salas: []` y `ancho`, `alto`, `origen` y `mapImageUrl` a `null`; las salas eliminadas no salen; 404 si no existe, es ajena o está eliminada, con el mismo cuerpo). Lo ajeno responde 404 en toda la API de empresa.
+  - **Front:** `companyService.getFloorMap` usa el endpoint real; una planta sin mapa empieza en blanco. Como guardar **sustituye el mapa entero**, «Guardar borrador» solo se desactiva si hay salas pero faltan las dimensiones del plano.
 - **Mejoras recomendadas:**
   - Que `PUT .../map` acepte una comprobación de versión (p. ej. `updatedAt` leído) y responda `409 STALE_DATA` si otra persona guardó la planta entretanto, para no pisar cambios.
 
@@ -112,7 +113,7 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 - **Hecho en el front (EMP009):**
   - Código, nombre y tipo se guardan con el mapa (`PUT .../map`, que los copia a la sala); los datos para el cliente, con `PATCH /api/company/rooms/:id`, después de guardar el mapa (así también las salas recién dibujadas).
   - **Decisión: una sala con reservas futuras no se puede eliminar en el editor**; hay que cancelarlas antes en Reservas (la misma regla que `DELETE /company/rooms/:id`). El wireframe 13g decía «se cancelarán y reembolsarán», pero no hay pagos todavía.
-- **Sigue faltando (EMP007):** `GET /api/company/floors/:id`. Sin él, una planta que ya tiene salas no se puede editar en el editor, así que tampoco sus datos para el cliente desde aquí (lo hará Salas, EMP011).
+- **Hecho (EMP007, DAT041):** `GET /api/company/floors/:id`: una planta con salas se abre en el editor y sus datos para el cliente siguen viniendo de `GET /company/rooms`.
 - **Mejoras recomendadas:**
   - Que `PATCH /api/company/rooms/:id` acepte `null` para vaciar `capacidad`, `m2` o el precio (ahora no se pueden borrar una vez puestos).
   - Guardar el mapa y los datos de las salas en una sola petición, para que no pueda quedar guardado solo el mapa.
