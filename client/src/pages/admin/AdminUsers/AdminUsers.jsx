@@ -200,6 +200,7 @@ export default function AdminUsers() {
               <Input
                 label="Buscar por nombre o email"
                 type="search"
+                placeholder="Nombre o email"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 maxLength={Q_MAX}
