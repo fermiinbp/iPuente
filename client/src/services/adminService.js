@@ -8,6 +8,14 @@ export function listCompanies(estado, options) {
   return get(`/admin/companies${query}`, options);
 }
 
+// Detalle de una empresa: { id, nombre, razonSocial, cif, email, telefono, direccion, descripcion, contacto, estado,
+// verificada, motivo, fechaSolicitud, version, revisadaEn, dueno: { nombre, email } | null,
+// edificios: [{ id, nombre, ciudad, publicado }] }. `ciudad` de la empresa aún no llega: si la API la añade, se
+// muestra. 404 NOT_FOUND si no existe.
+export function getCompany(id, options) {
+  return get(`/admin/companies/${encodeURIComponent(id)}`, options);
+}
+
 // Transiciones de estado. Cada una devuelve la empresa actualizada y, si no se pudo actualizar la cuenta del dueño
 // en Firebase Auth, `aviso`. Errores: 400 INVALID_TRANSITION (la empresa ya no está en el estado de partida) y
 // 400 VALIDATION_ERROR (motivo de 3 a 500 caracteres, con `details`).
