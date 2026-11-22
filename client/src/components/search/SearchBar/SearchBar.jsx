@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import Button from '@/components/ui/Button/Button.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
+import NumberStepper from '@/components/ui/NumberStepper/NumberStepper.jsx';
 import { todayString } from '@/utils/dates.js';
 import styles from './SearchBar.module.css';
 
@@ -81,10 +82,9 @@ export default function SearchBar({
         />
       </div>
       <div className={styles.field}>
-        <Input
+        <NumberStepper
           label="Personas"
           name="people"
-          type="number"
           min="1"
           step="1"
           inputMode="numeric"

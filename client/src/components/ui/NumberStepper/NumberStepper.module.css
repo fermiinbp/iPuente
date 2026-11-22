@@ -1,0 +1,53 @@
+/* Contenedor sin estilo propio: el aspecto del campo lo da Input. */
+.wrap {
+  display: contents;
+}
+
+/* Botón − / +: 44 × 44 px de área táctil, icono fino de 18 px. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio-plano);
+  background: transparent;
+  color: var(--crema-suave);
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+
+.button:hover:not(:disabled) {
+  background: var(--bosque-elevado);
+  color: var(--crema);
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: -2px;
+}
+
+.button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .button:active:not(:disabled) {
+    transform: none;
+  }
+}
