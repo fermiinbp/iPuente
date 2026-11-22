@@ -8,6 +8,12 @@ export function listCompanies(estado, options) {
   return get(`/admin/companies${query}`, options);
 }
 
+// Resumen del panel: { empresas: { pendiente, aprobada, rechazada, suspendida }, usuarios: { CLIENT, COMPANY, ADMIN },
+// reservasMes: { total, porEstado, mes, truncado? } }. Sin ingresos todavía (DAT042, #245).
+export function getSummary(options) {
+  return get('/admin/summary', options);
+}
+
 // Detalle de una empresa: { id, nombre, razonSocial, cif, email, telefono, direccion, descripcion, contacto, estado,
 // verificada, motivo, fechaSolicitud, version, revisadaEn, dueno: { nombre, email } | null,
 // edificios: [{ id, nombre, ciudad, publicado }] }. `ciudad` de la empresa aún no llega: si la API la añade, se
