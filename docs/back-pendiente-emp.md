@@ -109,6 +109,13 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 
 - **Ya cubierto (DAT014):** editar los datos comerciales de una sala, incluido el m² (`m2`). El tipo se guarda desde el editor de mapas (`tipo` en `salas`, DAT015).
 - **Ya cubierto (DAT028):** `GET /api/company/rooms/:id/future-bookings` (reservas futuras de una sala, para avisar antes de eliminarla) y `DELETE /api/company/rooms/:id`, que se rechaza con `409 HAS_FUTURE_BOOKINGS` si las hay.
+- **Hecho en el front (EMP009):**
+  - Código, nombre y tipo se guardan con el mapa (`PUT .../map`, que los copia a la sala); los datos para el cliente, con `PATCH /api/company/rooms/:id`, después de guardar el mapa (así también las salas recién dibujadas).
+  - **Decisión: una sala con reservas futuras no se puede eliminar en el editor**; hay que cancelarlas antes en Reservas (la misma regla que `DELETE /company/rooms/:id`). El wireframe 13g decía «se cancelarán y reembolsarán», pero no hay pagos todavía.
+- **Sigue faltando (EMP007):** `GET /api/company/floors/:id`. Sin él, una planta que ya tiene salas no se puede editar en el editor, así que tampoco sus datos para el cliente desde aquí (lo hará Salas, EMP011).
+- **Mejoras recomendadas:**
+  - Que `PATCH /api/company/rooms/:id` acepte `null` para vaciar `capacidad`, `m2` o el precio (ahora no se pueden borrar una vez puestos).
+  - Guardar el mapa y los datos de las salas en una sola petición, para que no pueda quedar guardado solo el mapa.
 
 ## EMP010 · Editor IV: guardar y publicar
 

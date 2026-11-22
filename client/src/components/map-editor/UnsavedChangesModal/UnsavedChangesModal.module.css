@@ -1,0 +1,6 @@
+/* Estilos de UnsavedChangesModal (CSS Module). Los botones y el marco los pone ConfirmModal. */
+.note {
+  margin: 0;
+  color: var(--crema-suave);
+  font-size: var(--text-pequeno);
+}

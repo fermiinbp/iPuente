@@ -1,14 +1,20 @@
 // Página del editor de mapas de una planta: subir plano, detectar, corregir, guardar y publicar (wireframe 13).
 // Pantalla completa, fuera de DashboardLayout, con cabecera propia: «← Mis edificios», «Edificio · Planta», estado,
 // «Guardar borrador» y «Publicar planta» (desactivado hasta EMP010). Debajo: herramientas (EditorToolbar), lienzo
-// (MapEditor) y un panel con la sala seleccionada o, sin selección, la lista de salas para elegir una.
+// (MapEditor) y un panel con la sala seleccionada (RoomPropertiesPanel) o, sin selección, la lista de salas.
 // En pantallas de menos de 900 px no se edita: se avisa de que el editor se usa en pantallas grandes.
 //
 // Carga: el edificio y la planta salen de GET /company/buildings, y el mapa de getFloorMap. La API TODAVÍA NO TIENE
 // el endpoint para leer el mapa de una planta en borrador (docs/back-pendiente-emp.md, EMP007): mientras no exista,
 // se avisa de que se implementará más adelante y se empieza con el plano en blanco. Como guardar sustituye el mapa
 // entero, si la planta ya tiene salas «Guardar borrador» se desactiva para no borrarlas.
-// Fuera de esta issue: subir el plano y la IA (EMP008), editar los datos de la sala (EMP009) y publicar (EMP010).
+//
+// Panel de sala (EMP009): código, nombre y tipo van con el mapa; los datos para el cliente (precio, personas, m²,
+// equipamiento y «reservable») se guardan con PATCH /company/rooms/:id. Un solo «Guardar borrador»: primero el mapa
+// y después los datos de las salas que han cambiado (así también las recién dibujadas, que ya existen en la API). Si
+// falla alguna sala se dice cuál y sus cambios se quedan para reintentar. Eliminar una sala ya guardada comprueba sus
+// reservas futuras: si tiene, no se elimina (hay que cancelarlas antes en Reservas).
+// Fuera: subir el plano y la IA (EMP008), las fotos de la sala (EMP012) y publicar (EMP010).
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import Alert from '@/components/ui/Alert/Alert.jsx';
@@ -20,25 +26,36 @@ import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
 import EditorToolbar from '@/components/map-editor/EditorToolbar/EditorToolbar.jsx';
 import MapEditor from '@/components/map-editor/MapEditor/MapEditor.jsx';
+import RoomPropertiesPanel from '@/components/map-editor/RoomPropertiesPanel/RoomPropertiesPanel.jsx';
+import UnsavedChangesModal from '@/components/map-editor/UnsavedChangesModal/UnsavedChangesModal.jsx';
 import { PUBLISH_STATUS } from '@/config/constants.js';
 import { useFetch } from '@/hooks/useFetch.js';
 import { useMapEditor } from '@/hooks/useMapEditor.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
-import { getBuildings, getFloorMap, saveFloorMap } from '@/services/companyService.js';
+import {
+  getBuildings,
+  getFloorMap,
+  getRoomFutureBookings,
+  getRooms,
+  saveFloorMap,
+  updateRoom,
+} from '@/services/companyService.js';
 import { BLANK_MAP } from '@/utils/mapGeometry.js';
+import {
+  EMPTY_DATA,
+  dataFromApi,
+  hasClientData,
+  patchFor,
+  roomInfoErrors,
+  savedData,
+  validateData,
+} from '@/utils/roomData.js';
 import styles from './MapEditorPage.module.css';
-
-const TYPE_LABELS = {
-  sala: 'Sala',
-  box: 'Box',
-  comun: 'Zona común',
-  cocina: 'Cocina',
-  pasillo: 'Pasillo',
-};
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-// Edificio, planta y mapa a la vez. Si la planta no está en el listado de la empresa: 404.
+// Edificio, planta, mapa y salas de la planta (con sus datos para el cliente). Si la planta no está en el listado de
+// la empresa: 404.
 async function loadFloor(floorId, signal) {
   const [buildings, map] = await Promise.all([
     getBuildings({ signal }),
@@ -46,7 +63,10 @@ async function loadFloor(floorId, signal) {
   ]);
   for (const building of buildings) {
     const floor = building.plantas?.find((p) => p.id === floorId);
-    if (floor) return { building, floor, map };
+    if (floor) {
+      const rooms = await getRooms({ floorId }, { signal });
+      return { building, floor, map, rooms: Array.isArray(rooms) ? rooms : [] };
+    }
   }
   const error = new Error('No encontramos esta planta.');
   error.status = 404;
@@ -56,44 +76,22 @@ async function loadFloor(floorId, signal) {
 // ¿Está el foco en un campo de texto? (los atajos de teclado no deben saltar mientras se escribe)
 const typing = (target) => target?.closest?.('input, textarea, select, [contenteditable="true"]');
 
-function RoomPanel({ editor }) {
+function RoomPanel({ editor, dataOf, baseOf, onDataChange, onDelete, deletingId }) {
   const { selected, salas } = editor;
 
   if (selected) {
     return (
-      <div className={styles.panelBody}>
-        <h2 className={styles.panelTitle}>Sala seleccionada</h2>
-        <dl className={styles.facts}>
-          <div>
-            <dt>Código</dt>
-            <dd>{selected.codigo}</dd>
-          </div>
-          <div>
-            <dt>Nombre</dt>
-            <dd>{selected.nombre}</dd>
-          </div>
-          <div>
-            <dt>Tipo</dt>
-            <dd>{TYPE_LABELS[selected.tipo] ?? selected.tipo}</dd>
-          </div>
-          <div>
-            <dt>Posición y tamaño</dt>
-            <dd>
-              {selected.x}, {selected.y} · {selected.w} × {selected.h}
-            </dd>
-          </div>
-        </dl>
-        <p className={styles.panelNote}>
-          El código, el nombre, el tipo y los datos para el cliente se editarán aquí próximamente.
-        </p>
-        <Button variant="secondary" size="md" onClick={() => editor.deleteRoom(selected.id)}>
-          Eliminar sala
-        </Button>
-        <p className={styles.panelNote}>
-          Con teclado: flechas para mover, Mayús + flechas para cambiar el tamaño, Supr para borrar
-          y Escape para soltarla.
-        </p>
-      </div>
+      <RoomPropertiesPanel
+        key={selected.id}
+        room={selected}
+        onRoomChange={(fields, options) => editor.updateRoomInfo(selected.id, fields, options)}
+        onCheckpoint={editor.checkpoint}
+        data={dataOf(selected.id)}
+        base={baseOf(selected.id)}
+        onDataChange={(data) => onDataChange(selected.id, data)}
+        onDelete={() => onDelete(selected.id)}
+        deleting={deletingId === selected.id}
+      />
     );
   }
 
@@ -130,13 +128,67 @@ function RoomPanel({ editor }) {
   );
 }
 
-function Editor({ building, floor, map }) {
+// Confirmación de eliminar una sala guardada (wireframe 13g, derecha), según sus reservas futuras.
+function DeleteRoomModal({ state, onClose, onRetry, onConfirm }) {
+  const { room, count, error } = state;
+  const name = room.codigo || room.nombre || 'esta sala';
+  if (error) {
+    return (
+      <ConfirmModal
+        open
+        onClose={onClose}
+        title={`¿Eliminar ${name}?`}
+        text="No hemos podido comprobar si tiene reservas futuras. Inténtalo de nuevo."
+        confirmLabel="Reintentar"
+        onConfirm={onRetry}
+      />
+    );
+  }
+  if (count > 0) {
+    return (
+      <ConfirmModal
+        open
+        onClose={onClose}
+        title={`No se puede eliminar ${name}`}
+        text={`Tiene ${plural(count, 'reserva futura', 'reservas futuras')}. Cancélalas antes en «Reservas» y vuelve a intentarlo.`}
+        confirmLabel="Entendido"
+        onConfirm={onClose}
+      />
+    );
+  }
+  return (
+    <ConfirmModal
+      open
+      onClose={onClose}
+      title={`¿Eliminar ${name}?`}
+      text="Se quita del plano y, cuando guardes el borrador, dejará de poder reservarse. Hasta entonces puedes deshacerlo."
+      confirmLabel="Eliminar sala"
+      onConfirm={onConfirm}
+    />
+  );
+}
+
+function Editor({ building, floor, map, rooms }) {
   const navigate = useNavigate();
   const editor = useMapEditor();
   const { load } = editor;
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState(null);
   const [leaving, setLeaving] = useState(false);
+  // Datos para el cliente: los guardados en la API (`base`, por id de sala) y los cambios sin guardar (`drafts`).
+  const [base, setBase] = useState(() =>
+    Object.fromEntries(rooms.map((room) => [room.id, dataFromApi(room)])),
+  );
+  const [drafts, setDrafts] = useState({});
+  // Eliminar una sala guardada: { room, loading, count, error } mientras se comprueban sus reservas futuras.
+  const [deleting, setDeleting] = useState(null);
+
+  const baseOf = (id) => base[id] ?? EMPTY_DATA;
+  const dataOf = (id) => drafts[id] ?? baseOf(id);
+  const pending = editor.salas
+    .map((sala) => ({ sala, body: patchFor(baseOf(sala.id), dataOf(sala.id), sala.tipo) }))
+    .filter((item) => item.body);
+  const dirty = editor.dirty || pending.length > 0;
 
   const mapAvailable = map.disponible;
   // Sin el endpoint no se sabe qué salas tiene: guardar el plano en blanco las borraría.
@@ -170,44 +222,126 @@ function Editor({ building, floor, map }) {
 
   // Avisar al cerrar o recargar la pestaña con cambios sin guardar.
   useEffect(() => {
-    if (!editor.dirty) return undefined;
+    if (!dirty) return undefined;
     const onBeforeUnload = (event) => {
       event.preventDefault();
       event.returnValue = '';
     };
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
-  }, [editor.dirty]);
+  }, [dirty]);
 
+  // Primera sala con datos que no se pueden guardar (código o nombre vacíos, o números fuera de rango).
+  const firstInvalid = () =>
+    editor.salas.find(
+      (sala) =>
+        Object.keys(roomInfoErrors(sala)).length > 0 ||
+        (hasClientData(sala.tipo) &&
+          Object.keys(validateData(dataOf(sala.id), baseOf(sala.id))).length > 0),
+    );
+
+  // Guarda el mapa (si ha cambiado) y luego los datos para el cliente de las salas que han cambiado. Devuelve true
+  // si se ha guardado todo.
   const save = async () => {
-    setSaving(true);
-    setResult(null);
-    try {
-      await saveFloorMap(floor.id, {
-        ancho: editor.plan.ancho,
-        alto: editor.plan.alto,
-        origen: map.origen ?? 'manual',
-        salas: editor.salas,
-      });
-      editor.markSaved();
-      setResult({ type: 'success', text: 'Borrador guardado.' });
-    } catch (error) {
-      const details = Array.isArray(error?.details) ? error.details.map((d) => d.message) : [];
+    const invalid = firstInvalid();
+    if (invalid) {
+      editor.setTool('select');
+      editor.select(invalid.id);
       setResult({
         type: 'error',
-        text:
-          error?.code === 'ROOM_ID_TAKEN'
-            ? 'Una de las salas tiene un identificador que ya usa otra planta. Bórrala y dibújala de nuevo.'
-            : error?.message || 'No hemos podido guardar el borrador.',
-        details,
+        text: `Revisa los datos de ${invalid.codigo || 'la sala seleccionada'}: hay campos con errores.`,
       });
-    } finally {
-      setSaving(false);
+      return false;
     }
+    setSaving(true);
+    setResult(null);
+    const mapChanged = editor.dirty;
+    if (mapChanged) {
+      try {
+        await saveFloorMap(floor.id, {
+          ancho: editor.plan.ancho,
+          alto: editor.plan.alto,
+          origen: map.origen ?? 'manual',
+          salas: editor.salas,
+        });
+        editor.markSaved();
+      } catch (error) {
+        const details = Array.isArray(error?.details) ? error.details.map((d) => d.message) : [];
+        setResult({
+          type: 'error',
+          text:
+            error?.code === 'ROOM_ID_TAKEN'
+              ? 'Una de las salas tiene un identificador que ya usa otra planta. Bórrala y dibújala de nuevo.'
+              : error?.message || 'No hemos podido guardar el borrador.',
+          details,
+        });
+        setSaving(false);
+        return false;
+      }
+    }
+
+    // Las salas guardadas en el mapa ya existen en la API.
+    const nextBase = { ...base };
+    for (const sala of editor.salas) if (!nextBase[sala.id]) nextBase[sala.id] = EMPTY_DATA;
+    const nextDrafts = { ...drafts };
+    const failures = [];
+    for (const { sala, body } of pending) {
+      try {
+        await updateRoom(sala.id, body);
+        nextBase[sala.id] = hasClientData(sala.tipo)
+          ? savedData(dataOf(sala.id))
+          : { ...nextBase[sala.id], reservable: false };
+        delete nextDrafts[sala.id];
+      } catch (error) {
+        failures.push(`${sala.codigo}: ${error?.message || 'no se ha podido guardar'}`);
+      }
+    }
+    setBase(nextBase);
+    setDrafts(nextDrafts);
+    setSaving(false);
+
+    if (failures.length > 0) {
+      setResult({
+        type: 'error',
+        text: mapChanged
+          ? 'Se ha guardado el plano, pero no los datos para el cliente de estas salas. Revísalos y vuelve a guardar.'
+          : 'No se han guardado los datos para el cliente de estas salas. Revísalos y vuelve a guardar.',
+        details: failures,
+      });
+      return false;
+    }
+    setResult({ type: 'success', text: 'Borrador guardado.' });
+    return true;
   };
 
+  const changeData = (id, data) => setDrafts((current) => ({ ...current, [id]: data }));
+
+  // Eliminar: una sala recién dibujada se quita sin más (se puede deshacer); una ya guardada solo si no tiene
+  // reservas futuras.
+  const requestDelete = (id) => {
+    const room = editor.salas.find((sala) => sala.id === id);
+    if (!room) return;
+    if (!base[id]) {
+      editor.deleteRoom(id);
+      return;
+    }
+    setDeleting({ room, loading: true, count: null, error: false });
+    getRoomFutureBookings(id)
+      .then((list) =>
+        setDeleting((current) =>
+          current?.room.id === id ? { ...current, loading: false, count: list.length } : current,
+        ),
+      )
+      .catch(() =>
+        setDeleting((current) =>
+          current?.room.id === id ? { ...current, loading: false, error: true } : current,
+        ),
+      );
+  };
+  const guardedEditor = { ...editor, deleteRoom: requestDelete };
+
   const goBack = (event) => {
-    if (!editor.dirty) return;
+    if (!dirty) return;
     event.preventDefault();
     setLeaving(true);
   };
@@ -225,13 +359,13 @@ function Editor({ building, floor, map }) {
           kind="publish"
           status={floor.publicado ? PUBLISH_STATUS.PUBLISHED : PUBLISH_STATUS.DRAFT}
         />
-        {editor.dirty && <span className={styles.unsaved}>Cambios sin guardar</span>}
+        {dirty && <span className={styles.unsaved}>Cambios sin guardar</span>}
         <div className={styles.headerActions}>
           <Button
             variant="secondary"
             size="md"
             loading={saving}
-            disabled={locked || !editor.dirty}
+            disabled={locked || !dirty}
             onClick={save}
           >
             Guardar borrador
@@ -285,13 +419,13 @@ function Editor({ building, floor, map }) {
             tool={editor.tool}
             onTool={editor.setTool}
             canDelete={Boolean(editor.selected)}
-            onDelete={() => editor.selected && editor.deleteRoom(editor.selected.id)}
+            onDelete={() => editor.selected && requestDelete(editor.selected.id)}
             canUndo={editor.canUndo}
             onUndo={editor.undo}
           />
           <div className={styles.canvasArea}>
             <MapEditor
-              editor={editor}
+              editor={guardedEditor}
               imageUrl={map.mapImageUrl ?? null}
               label={`Plano de ${title}`}
             />
@@ -302,23 +436,46 @@ function Editor({ building, floor, map }) {
             </p>
           </div>
           <aside className={styles.panel} aria-label="Sala">
-            <RoomPanel editor={editor} />
+            <RoomPanel
+              editor={editor}
+              dataOf={dataOf}
+              baseOf={baseOf}
+              onDataChange={changeData}
+              onDelete={requestDelete}
+              deletingId={deleting?.loading ? deleting.room.id : null}
+            />
           </aside>
         </div>
       </div>
 
-      <ConfirmModal
+      <UnsavedChangesModal
         open={leaving}
-        onClose={() => setLeaving(false)}
-        title="¿Salir sin guardar?"
-        text="Tienes cambios en el plano que no se han guardado. Si sales, se perderán."
-        confirmLabel="Salir sin guardar"
-        cancelLabel="Seguir editando"
-        onConfirm={() => {
+        floorName={floor.nombre}
+        canSave={!locked}
+        saving={saving}
+        onStay={() => setLeaving(false)}
+        onLeave={() => {
           editor.markSaved();
+          setDrafts({});
           navigate('/company/buildings');
         }}
+        onSave={async () => {
+          if (await save()) navigate('/company/buildings');
+          else setLeaving(false);
+        }}
       />
+
+      {deleting && !deleting.loading && (
+        <DeleteRoomModal
+          state={deleting}
+          onClose={() => setDeleting(null)}
+          onRetry={() => requestDelete(deleting.room.id)}
+          onConfirm={() => {
+            editor.deleteRoom(deleting.room.id);
+            setDeleting(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -92,6 +92,21 @@ export function deleteFloor(id, options) {
   return del(`/company/floors/${encodeURIComponent(id)}`, options);
 }
 
+// Edita los datos para el cliente de una sala propia: { precioHora? (> 0) | gratis?, capacidad? (1–1000),
+// m2? (> 0), equipamiento? (lista de textos), reservable? }. `gratis` y `precioHora` no van juntos; un precio nuevo
+// quita «gratis». 400 ROOM_WITHOUT_PRICE si quedaría reservable sin precio. El código, el nombre y el tipo NO se
+// editan aquí: van con el mapa (saveFloorMap), que los copia a la sala al guardar.
+export function updateRoom(id, datos, options) {
+  return patch(`/company/rooms/${encodeURIComponent(id)}`, datos, options);
+}
+
+// Reservas futuras (confirmadas o pendientes de pago) de una sala propia. La API responde { reservas: [...] };
+// aquí se devuelve solo la lista.
+export async function getRoomFutureBookings(id, options) {
+  const data = await get(`/company/rooms/${encodeURIComponent(id)}/future-bookings`, options);
+  return Array.isArray(data?.reservas) ? data.reservas : [];
+}
+
 // Mapa de una planta propia para el editor (aunque esté en borrador). Lo que se espera de la API:
 // GET /company/floors/:id → { id, buildingId, numero, nombre, publicado, ancho, alto, origen, salas, mapImageUrl }.
 // Ese endpoint TODAVÍA NO EXISTE (docs/back-pendiente-emp.md, EMP007): si la API responde que la ruta no existe,
@@ -120,9 +135,16 @@ export function saveFloorMap(floorId, mapa, options) {
 }
 
 // Salas activas de la empresa (GET /company/rooms), ordenadas por edificio, planta y código. Cada una:
-// { id, buildingId, floorId, codigo, nombre, capacidad, precioHora, gratis, reservable, estado, … }.
-export function getRooms(options) {
-  return get('/company/rooms', options);
+// { id, buildingId, floorId, codigo, nombre, capacidad, m2, precioHora (null si es gratis o no tiene), gratis,
+// equipamiento, reservable, fotos, estado }. `filtros` (opcionales): { buildingId, floorId, estado } (estado:
+// publicada, sin_precio u oculta).
+export function getRooms(filtros = {}, options) {
+  const params = new URLSearchParams();
+  for (const key of ['buildingId', 'floorId', 'estado']) {
+    if (filtros[key]) params.set(key, filtros[key]);
+  }
+  const query = params.toString();
+  return get(`/company/rooms${query ? `?${query}` : ''}`, options);
 }
 
 // Filtros comunes de reservas y bloqueos: `desde` y `hasta` (AAAA-MM-DD, inclusive; máximo 366 días; sin ellos,
