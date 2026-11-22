@@ -4,13 +4,13 @@ Apoya a `docs/plan-visita-3d.md` (fase F2). Las fuentes y sus licencias están e
 
 ## 1. Dónde conseguir modelos `.glb`
 
-| Fuente | Qué tiene | Licencia típica |
-| --- | --- | --- |
-| **Kenney** (kenney.nl, packs «Furniture Kit» y similares) | Muebles y objetos low-poly muy limpios | CC0 |
-| **Quaternius** (quaternius.com) | Packs de muebles, oficina y props en glTF | CC0 |
-| **Poly Pizza** (poly.pizza) | Buscador de miles de props low-poly | CC0 y CC-BY, según el modelo |
-| **Sketchfab** | El mayor catálogo; filtra por _Downloadable_ y por licencia | Mezcla: usar **CC0 o CC-BY**, evitar las **NC** (no comercial) y **ND** |
-| **Poly Haven** (polyhaven.com) | Modelos de alta calidad | CC0, pero suelen ser demasiado pesados para web |
+| Fuente                                                    | Qué tiene                                                   | Licencia típica                                                         |
+| --------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------- |
+| **Kenney** (kenney.nl, packs «Furniture Kit» y similares) | Muebles y objetos low-poly muy limpios                      | CC0                                                                     |
+| **Quaternius** (quaternius.com)                           | Packs de muebles, oficina y props en glTF                   | CC0                                                                     |
+| **Poly Pizza** (poly.pizza)                               | Buscador de miles de props low-poly                         | CC0 y CC-BY, según el modelo                                            |
+| **Sketchfab**                                             | El mayor catálogo; filtra por _Downloadable_ y por licencia | Mezcla: usar **CC0 o CC-BY**, evitar las **NC** (no comercial) y **ND** |
+| **Poly Haven** (polyhaven.com)                            | Modelos de alta calidad                                     | CC0, pero suelen ser demasiado pesados para web                         |
 
 **Recomendación:** sacar la mayoría de las piezas (sillas, mesas, sofá, plantas, impresora, estanterías) de Kenney y Quaternius, que son low-poly coherentes entre sí y CC0, y reservar la IA para las piezas propias de iPuente: la maqueta del puente colgante del logo para el vestíbulo y el mostrador de recepción.
 
