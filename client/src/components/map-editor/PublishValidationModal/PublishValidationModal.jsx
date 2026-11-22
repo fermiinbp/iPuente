@@ -11,7 +11,12 @@ function Items({ items, onRevisar }) {
         <li key={`${item.roomId ?? 'planta'}-${index}`} className={styles.item}>
           <span className={styles.itemText}>{item.texto}</span>
           {item.roomId && (
-            <button type="button" className={styles.review} onClick={() => onRevisar(item.roomId)}>
+            <button
+              type="button"
+              className={styles.review}
+              aria-label={`Revisar: ${item.texto}`}
+              onClick={() => onRevisar(item.roomId)}
+            >
               Revisar
             </button>
           )}

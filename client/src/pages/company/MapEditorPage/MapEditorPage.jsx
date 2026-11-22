@@ -284,6 +284,7 @@ function Editor({ building, floor, map, rooms }) {
     }
     setSaving(true);
     setResult(null);
+    setNotice(null); // «Planta publicada.» o un error de publicar ya no aplican tras guardar
     const mapChanged = editor.dirty;
     if (mapChanged) {
       try {
