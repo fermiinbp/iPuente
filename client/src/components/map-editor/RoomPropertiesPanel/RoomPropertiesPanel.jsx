@@ -5,7 +5,9 @@
 // - Datos para el cliente (solo Sala y Box; una zona común no tiene): precio/h o «Gratis», personas, m²,
 //   equipamiento y «Reservable». Controlados con `data` y `onDataChange(datos)`; `base` son los guardados (la API
 //   no deja vaciar un número que ya tenía valor). Las fotos van aparte (EMP012).
-// - «Eliminar sala» llama a `onDelete`; quien lo usa decide si se puede (reservas futuras).
+// - «Eliminar sala» llama a `onDelete`; quien lo usa decide si se puede (reservas futuras). Sin `onDelete`, no sale.
+// - En Salas (EMP011), `editableInfo={false}`: código y nombre se ven pero no se editan (van con el mapa), sin tipo
+//   ni ayuda de teclado. `title={null}` quita el título (cuando ya lo pone el contenedor, p. ej. SidePanel).
 // Los errores se ven mientras se escribe; quien lo usa no guarda si hay alguno (`validateData`).
 import { useRef } from 'react';
 import Button from '@/components/ui/Button/Button.jsx';
@@ -32,16 +34,19 @@ export default function RoomPropertiesPanel({
   onDataChange,
   onDelete,
   deleting = false,
+  editableInfo = true,
+  title = 'Sala seleccionada',
 }) {
   // Campo de texto en el que ya se ha guardado un paso de deshacer desde que tiene el foco.
   const started = useRef(null);
   const infoErrors = roomInfoErrors(room);
   const dataErrors = validateData(data, base);
-  const clientData = hasClientData(room.tipo);
+  const clientData = hasClientData(room.tipo ?? 'sala');
   // Una sala de tipo cocina o pasillo (del mapa) se mantiene como opción hasta que se cambie.
-  const types = ROOM_TYPES.some((t) => t.value === room.tipo)
-    ? ROOM_TYPES
-    : [...ROOM_TYPES, { value: room.tipo, label: TYPE_LABELS[room.tipo] ?? room.tipo }];
+  const types =
+    !room.tipo || ROOM_TYPES.some((t) => t.value === room.tipo)
+      ? ROOM_TYPES
+      : [...ROOM_TYPES, { value: room.tipo, label: TYPE_LABELS[room.tipo] ?? room.tipo }];
   // Equipamiento que ya tiene la sala y no está en la lista: se mantiene.
   const amenities = [
     ...AMENITIES,
@@ -73,38 +78,53 @@ export default function RoomPropertiesPanel({
 
   return (
     <div className={styles.panel}>
-      <h2 className={styles.title}>Sala seleccionada</h2>
+      {title && <h2 className={styles.title}>{title}</h2>}
 
-      <div className={styles.pair}>
-        <Input
-          variant="boxed"
-          label="Código"
-          name="codigo"
-          maxLength={50}
-          value={room.codigo}
-          error={infoErrors.codigo}
-          onFocus={handleTextFocus}
-          onChange={handleTextChange}
-        />
-        <Input
-          variant="boxed"
-          label="Nombre"
-          name="nombre"
-          maxLength={100}
-          value={room.nombre}
-          error={infoErrors.nombre}
-          onFocus={handleTextFocus}
-          onChange={handleTextChange}
-        />
-      </div>
+      {editableInfo ? (
+        <>
+          <div className={styles.pair}>
+            <Input
+              variant="boxed"
+              label="Código"
+              name="codigo"
+              maxLength={50}
+              value={room.codigo}
+              error={infoErrors.codigo}
+              onFocus={handleTextFocus}
+              onChange={handleTextChange}
+            />
+            <Input
+              variant="boxed"
+              label="Nombre"
+              name="nombre"
+              maxLength={100}
+              value={room.nombre}
+              error={infoErrors.nombre}
+              onFocus={handleTextFocus}
+              onChange={handleTextChange}
+            />
+          </div>
 
-      <SegmentedControl
-        label="Tipo"
-        name={`tipo-${room.id}`}
-        options={types}
-        value={room.tipo}
-        onChange={(event) => onRoomChange({ tipo: event.target.value })}
-      />
+          <SegmentedControl
+            label="Tipo"
+            name={`tipo-${room.id}`}
+            options={types}
+            value={room.tipo}
+            onChange={(event) => onRoomChange({ tipo: event.target.value })}
+          />
+        </>
+      ) : (
+        <dl className={styles.facts}>
+          <div>
+            <dt>Código</dt>
+            <dd>{room.codigo || '—'}</dd>
+          </div>
+          <div>
+            <dt>Nombre</dt>
+            <dd>{room.nombre || '—'}</dd>
+          </div>
+        </dl>
+      )}
 
       <section className={styles.section} aria-labelledby={`cliente-${room.id}`}>
         <h3 className={styles.subtitle} id={`cliente-${room.id}`}>
@@ -173,13 +193,20 @@ export default function RoomPropertiesPanel({
         )}
       </section>
 
-      <Button variant="secondary" size="md" loading={deleting} onClick={onDelete}>
-        Eliminar sala
-      </Button>
-      <p className={styles.note}>
-        Con teclado, en el plano: flechas para mover, Mayús + flechas para cambiar el tamaño, Supr
-        para borrar y Escape para soltarla.
-      </p>
+      {!editableInfo && (
+        <p className={styles.note}>El código y el nombre se cambian en el editor de mapas.</p>
+      )}
+      {onDelete && (
+        <Button variant="secondary" size="md" loading={deleting} onClick={onDelete}>
+          Eliminar sala
+        </Button>
+      )}
+      {editableInfo && (
+        <p className={styles.note}>
+          Con teclado, en el plano: flechas para mover, Mayús + flechas para cambiar el tamaño, Supr
+          para borrar y Escape para soltarla.
+        </p>
+      )}
     </div>
   );
 }

@@ -126,8 +126,9 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 
 ## EMP011 · Salas
 
-- **Ya cubierto (DAT014, DAT018):** editar una sala, `GET /api/company/rooms` con filtros de edificio, planta y estado (`publicada`, `sin_precio`, `oculta`), y ocultar o mostrar una sala (`PATCH /api/company/rooms/:id/visibility`; una sala sin precio no se puede mostrar: `ROOM_WITHOUT_PRICE`).
-- **Relacionado:** salas gratis (DAT039, #172), pendiente.
+- **Ya cubierto (DAT014, DAT018):** editar una sala, `GET /api/company/rooms` con filtros de edificio, planta y estado (`publicada`, `sin_precio`, `oculta`), y ocultar o mostrar una sala (`PATCH /api/company/rooms/:id/visibility`; una sala sin precio no se puede mostrar: `ROOM_WITHOUT_PRICE`). Al ocultar con reservas futuras devuelve un `aviso` y no las cancela.
+- **Hecho en el front (EMP011):** la pantalla usa la API real (ya no hacen falta los datos de prueba de UI015). «Editar» solo cambia los datos para el cliente; código, nombre y tipo se cambian en el editor de mapas.
+- **Mejora recomendada:** que `GET /api/company/rooms` devuelva el `tipo` de cada sala. Sin él, las zonas comunes salen en la lista como «Sin precio» y su panel muestra los datos para el cliente, como si fueran salas.
 
 ## EMP012 · Fotos de sala
 
