@@ -215,6 +215,7 @@ export default function Floor() {
               label="Fecha"
               type="date"
               name="date"
+              variant="boxed"
               value={fecha}
               min={todayString()}
               onChange={handleDateChange}
