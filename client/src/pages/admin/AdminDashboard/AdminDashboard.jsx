@@ -1,7 +1,7 @@
 // Resumen del panel de admin (/admin, wireframe 16 adaptado a la API): cuatro cifras de GET /admin/summary y la tabla
 // de empresas pendientes de aprobación (las 5 primeras de listCompanies('pendiente')) con «Ver» y «Aprobar»
 // (CompanyActionModal, el mismo que la lista y el detalle). Sin «Actividad reciente»: la API no la tiene.
-// «Ingresos este mes» aún no lo da la API: la tarjeta sale con «—» y el aviso de que llegará (DAT042, #245).
+// «Ingresos este mes» sale de `ingresosMes.total` (pagos cobrados del mes); sin cifra, «—».
 import { useRef, useState } from 'react';
 import CompanyActionModal from '@/components/admin/CompanyActionModal/CompanyActionModal.jsx';
 import Alert from '@/components/ui/Alert/Alert.jsx';
@@ -15,6 +15,7 @@ import { useFetch } from '@/hooks/useFetch.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import { getSummary, listCompanies } from '@/services/adminService.js';
 import { ACTIONS, formatCompanyDate } from '@/utils/companyActions.js';
+import { formatPrice } from '@/utils/formatPrice.js';
 import styles from './AdminDashboard.module.css';
 
 // Empresas pendientes que se enseñan en el resumen; el resto, en «Ver todas».
@@ -44,6 +45,9 @@ function Stats({ summary, loading, error, onRetry }) {
   const empresas = summary.empresas ?? {};
   const total = Object.values(empresas).reduce((sum, n) => sum + (Number(n) || 0), 0);
   const reservas = summary.reservasMes ?? {};
+  // Sin cifra de ingresos (la API no pudo calcularla): «—», no 0,00 €.
+  const ingresosTotal = summary.ingresosMes?.total;
+  const ingresos = Number.isFinite(ingresosTotal) ? formatPrice(ingresosTotal) : '—';
 
   // `reservas.total` sale de recuentos exactos; `truncado` solo afecta al reparto pendiente/caducada, que no se enseña.
   return (
@@ -51,10 +55,7 @@ function Stats({ summary, loading, error, onRetry }) {
       <StatCard value={number.format(total)} label="Empresas" />
       <StatCard value={number.format(empresas.pendiente ?? 0)} label="Pendientes de aprobar" />
       <StatCard value={number.format(reservas.total ?? 0)} label="Reservas este mes" />
-      <div className={styles.soon}>
-        <StatCard value="—" label="Ingresos este mes" className={styles.soonCard} />
-        <p className={styles.soonNote}>Se implementará más adelante.</p>
-      </div>
+      <StatCard value={ingresos} label="Ingresos este mes" />
     </div>
   );
 }
