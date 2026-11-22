@@ -4,7 +4,11 @@
 // pantalla, con un `requestAnimationFrame` por fotograma como máximo y el listener en modo pasivo.
 //   mode 'view': 0 cuando el elemento asoma por abajo y 1 cuando sale por arriba.
 //   mode 'pin':  para un contenedor alto con un hijo `sticky`: 0 al empezar a fijarse y 1 al soltarse.
-// Con prefers-reduced-motion no escucha nada: deja `--progreso` en 1 (estado final para el CSS) y no llama a `onProgress`.
+//   mode 'page': progreso de lectura de toda la página (0 arriba, 1 abajo), para un elemento fijo como el cable del
+//                puente bajo la cabecera. Escucha siempre (el elemento no sale de la pantalla) y se recalcula si la
+//                página cambia de alto (ResizeObserver sobre <body>).
+// Con prefers-reduced-motion no escucha nada: deja `--progreso` en 1 (estado final para el CSS; en modo 'page', en 0,
+// que es el elemento parado) y no llama a `onProgress`.
 import { useEffect, useRef } from 'react';
 
 const clamp = (value) => Math.min(1, Math.max(0, value));
@@ -17,6 +21,14 @@ export function progressOf(rect, vh, mode = 'view') {
     return clamp(-rect.top / span);
   }
   return clamp((vh - rect.top) / (vh + rect.height));
+}
+
+// Parte pura del modo 'page': `scrollY` es lo desplazado, `scrollHeight` el alto total del documento y `vh` el de la
+// ventana. Una página que cabe entera en la ventana no tiene recorrido: 0.
+export function pageProgressOf(scrollY, scrollHeight, vh) {
+  const span = scrollHeight - vh;
+  if (span <= 0) return 0;
+  return clamp(scrollY / span);
 }
 
 export function prefersReducedMotion() {
@@ -37,6 +49,35 @@ export function useScrollProgress(ref, { mode = 'view', onProgress } = {}) {
       element.style.setProperty('--progreso', progress.toFixed(4));
       callback.current?.(progress);
     };
+
+    if (mode === 'page') {
+      if (prefersReducedMotion()) {
+        element.style.setProperty('--progreso', '0');
+        return undefined;
+      }
+      let pageFrame = 0;
+      const updatePage = () => {
+        pageFrame = 0;
+        apply(
+          pageProgressOf(window.scrollY, document.documentElement.scrollHeight, window.innerHeight),
+        );
+      };
+      const requestPage = () => {
+        if (!pageFrame) pageFrame = requestAnimationFrame(updatePage);
+      };
+      window.addEventListener('scroll', requestPage, { passive: true });
+      window.addEventListener('resize', requestPage);
+      const resizeObserver =
+        typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(requestPage);
+      resizeObserver?.observe(document.body);
+      requestPage();
+      return () => {
+        window.removeEventListener('scroll', requestPage);
+        window.removeEventListener('resize', requestPage);
+        resizeObserver?.disconnect();
+        if (pageFrame) cancelAnimationFrame(pageFrame);
+      };
+    }
 
     if (prefersReducedMotion() || typeof IntersectionObserver === 'undefined') {
       // Estado final solo para el CSS: no se avisa a `onProgress`, para que nada se mueva por el scroll.

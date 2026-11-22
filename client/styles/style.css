@@ -110,6 +110,13 @@
   --sombra-flotante: 0 8px 24px rgb(0 0 0 / 0.35);
   --velo-modal: rgb(10 16 8 / 0.72);
 
+  /* Cable del puente (BridgeCable, bajo la cabecera): trazo en reposo, trazo ya recorrido, la «sala» que se desliza y
+     cuánto cuelga el cable sobre el contenido. */
+  --cable-trazo: var(--linea);
+  --cable-recorrido: var(--bronce-claro);
+  --cable-sala: var(--bronce);
+  --cable-caida: 16px;
+
   /* Capas */
   --z-cabecera: 100;
   --z-menu: 200;

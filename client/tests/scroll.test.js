@@ -2,7 +2,7 @@
 // y floorForProgress (qué planta abre el hero). Se ejecutan con `npm test -w client` (node:test, sin dependencias).
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { progressOf } from '../src/hooks/useScrollProgress.js';
+import { pageProgressOf, progressOf } from '../src/hooks/useScrollProgress.js';
 import { FLOORS_HERO } from '../src/pages/Landing/heroBuildingData.js';
 import { floorForProgress } from '../src/pages/Landing/heroScroll.js';
 
@@ -35,6 +35,25 @@ describe('progressOf', () => {
 
   it('por defecto usa el modo view', () => {
     assert.equal(progressOf({ top: 200, height: 400 }, vh), 0.5);
+  });
+});
+
+describe('pageProgressOf', () => {
+  it('0 arriba, 1 abajo y proporcional entre medias', () => {
+    assert.equal(pageProgressOf(0, 3000, 800), 0);
+    assert.equal(pageProgressOf(1100, 3000, 800), 0.5);
+    assert.equal(pageProgressOf(2200, 3000, 800), 1);
+  });
+
+  it('se queda entre 0 y 1 aunque el scroll rebote (iOS) o la página crezca', () => {
+    assert.equal(pageProgressOf(-50, 3000, 800), 0);
+    assert.equal(pageProgressOf(5000, 3000, 800), 1);
+  });
+
+  it('una página que cabe en la ventana no tiene recorrido: 0 sin dividir por cero', () => {
+    assert.equal(pageProgressOf(0, 700, 800), 0);
+    assert.equal(pageProgressOf(0, 800, 800), 0);
+    assert.equal(pageProgressOf(30, 800, 800), 0);
   });
 });
 
