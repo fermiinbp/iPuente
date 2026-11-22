@@ -3,10 +3,13 @@ import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 
 import { setDbForTests } from '../../src/config/config.js';
+import { setStripeForTests } from '../../src/config/stripe.js';
 import { setTokenVerifier } from '../../src/middlewares/auth.js';
 import * as bookingModel from '../../src/models/bookingModel.js';
 import * as occupancyModel from '../../src/models/occupancyModel.js';
+import * as roomModel from '../../src/models/roomModel.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
+import { createStripeDouble } from '../helpers/stripeDouble.js';
 import { listen, seedPublicData } from '../helpers/publicData.js';
 
 // Fecha futura fija y lejana para no depender del día en que se ejecuta el test.
@@ -20,6 +23,7 @@ const AYER = (() => {
 describe('Reservas del cliente', () => {
   let server;
   let baseUrl;
+  let stripe;
 
   // Petición con token: el doble acepta el token como uid ("u1", "u2"...).
   async function request(method, path, { token = 'u1', body } = {}) {
@@ -48,12 +52,16 @@ describe('Reservas del cliente', () => {
   });
 
   beforeEach(async () => {
+    delete process.env.STRIPE_SECRET_KEY;
+    stripe = createStripeDouble();
+    setStripeForTests({ client: stripe, webhookSecret: 'whsec_test' });
     setTokenVerifier(async (token) => ({ uid: token }));
     setDbForTests(createFakeFirestore());
     await seedPublicData();
   });
 
   after(async () => {
+    setStripeForTests(null);
     setTokenVerifier(null);
     setDbForTests(null);
     await new Promise((resolve) => server.close(resolve));
@@ -70,11 +78,39 @@ describe('Reservas del cliente', () => {
       assert.equal(body.horas, 3);
       assert.equal(body.precioHora, 25);
       assert.equal(body.importe, 75);
-      assert.equal(body.estado, 'CONFIRMED');
+      assert.equal(body.estado, 'PENDING_PAYMENT');
+      assert.ok(Date.parse(body.expiraEn) > Date.now(), 'lleva expiraEn');
       const guardada = await bookingModel.findById(body.id);
       assert.equal(guardada.userId, 'u1');
       assert.equal(guardada.companyId, 'c1');
       assert.equal(guardada.totalAmount, 75);
+    });
+
+    it('una sala gratis (0 €) nace CONFIRMED, sin expiraEn, sin sesión ni pago y sin Stripe', async () => {
+      await roomModel.update('r-free', { isFree: true, price: null });
+      setStripeForTests(null);
+      const { status, body } = await reservar(franja(10, 12));
+      assert.equal(status, 201);
+      assert.equal(body.estado, 'CONFIRMED');
+      assert.equal(body.importe, 0);
+      assert.equal(body.expiraEn, undefined);
+      assert.equal((await bookingModel.findById(body.id)).paymentId, null);
+      assert.equal(stripe.calls.create.length, 0);
+      // Cancelarla no toca Stripe ni genera reembolso.
+      const cancel = await request('PATCH', `/api/bookings/${body.id}/cancel`);
+      assert.deepEqual(cancel.body, { id: body.id, estado: 'CANCELLED' });
+      assert.equal(stripe.calls.refunds.length, 0);
+    });
+
+    it('503 PAYMENTS_UNAVAILABLE sin Stripe y no retiene horas ni gasta código', async () => {
+      setStripeForTests(null);
+      const { status, body } = await reservar(franja(10, 12));
+      assert.equal(status, 503);
+      assert.equal(body.error.code, 'PAYMENTS_UNAVAILABLE');
+      assert.deepEqual(await occupancyModel.listByRoomAndDate('r-free', FUTURA), []);
+      assert.deepEqual(await bookingModel.listByUser('u1'), []);
+      setStripeForTests({ client: stripe, webhookSecret: 'whsec_test' });
+      assert.equal((await reservar(franja(10, 12))).body.codigo, 'IP-1000');
     });
 
     it('crea una ficha de occupancy por hora sin datos del cliente', async () => {
@@ -112,10 +148,10 @@ describe('Reservas del cliente', () => {
       // Comprobar
       assert.equal(status, 201);
       assert.equal(body.importe, 50);
-      assert.equal(body.estado, 'CONFIRMED');
+      assert.equal(body.estado, 'PENDING_PAYMENT');
       const guardada = await bookingModel.findById(body.id);
       assert.equal(guardada.userId, 'u1');
-      assert.equal(guardada.status, 'CONFIRMED');
+      assert.equal(guardada.status, 'PENDING_PAYMENT');
       assert.equal(guardada.totalAmount, 50);
       assert.equal(guardada.price, 25);
     });
@@ -278,7 +314,7 @@ describe('Reservas del cliente', () => {
       assert.equal(body.fin, 13);
       assert.equal(body.horas, 3);
       assert.equal(body.importe, 75);
-      assert.equal(body.estado, 'CONFIRMED');
+      assert.equal(body.estado, 'PENDING_PAYMENT');
       assert.deepEqual(body.sala, { id: 'r-free', codigo: 'R-FREE', nombre: 'Sala r-free' });
       assert.deepEqual(body.planta, { id: 'f-0', nombre: 'Planta baja', nivel: 0 });
       assert.deepEqual(body.edificio, {
@@ -377,7 +413,7 @@ describe('Reservas del cliente', () => {
       assert.equal(status, 404);
       assert.equal(body.error.code, 'NOT_FOUND');
       assert.deepEqual(body, falta.body);
-      assert.equal((await bookingModel.findById(creada.id)).status, 'CONFIRMED');
+      assert.equal((await bookingModel.findById(creada.id)).status, 'PENDING_PAYMENT');
     });
 
     it('responde 403 FORBIDDEN a empresa y admin al cancelar', async () => {
@@ -390,7 +426,7 @@ describe('Reservas del cliente', () => {
         assert.equal(status, 403);
         assert.equal(body.error.code, 'FORBIDDEN');
       }
-      assert.equal((await bookingModel.findById(creada.id)).status, 'CONFIRMED');
+      assert.equal((await bookingModel.findById(creada.id)).status, 'PENDING_PAYMENT');
     });
 
     it('responde 400 BOOKING_STARTED si la reserva ya ha empezado', async () => {

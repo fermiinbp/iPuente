@@ -149,7 +149,11 @@ function AdminDetail({ booking, showHeader }) {
 }
 
 function ClientDetail({ booking, showHeader, onCancel }) {
-  const canCancel = Boolean(onCancel) && isCancellable(booking);
+  // El cliente también puede cancelar una reserva pendiente de pago (la empresa, no).
+  const canCancel =
+    Boolean(onCancel) &&
+    (isCancellable(booking) ||
+      (booking.estado === BOOKING_STATUS.PENDING_PAYMENT && !hasStarted(booking)));
   const canPay = booking.estado === BOOKING_STATUS.PENDING_PAYMENT && !hasStarted(booking);
   const place = [booking.edificio?.direccion, booking.edificio?.ciudad].filter(Boolean).join(', ');
   const mapsQuery = `${booking.edificio?.nombre ?? ''} ${place}`.trim();

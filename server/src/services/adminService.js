@@ -5,11 +5,12 @@ import * as companyModel from '../models/companyModel.js';
 import { now, runTransaction } from '../models/baseModel.js';
 import * as roomModel from '../models/roomModel.js';
 import * as userModel from '../models/userModel.js';
-import { addDays, monthRange, resolveRange } from '../utils/dates.js';
+import { addDays, monthRange, resolveRange, todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
 import { notDeleted } from '../utils/softDelete.js';
 import { normalizeText } from '../utils/text.js';
 import { authClient } from './authService.js';
+import { effectiveStatus, toDate } from './availabilityService.js';
 import { atHour, buildBookingDetail, toCancellation, toItem } from './bookingsService.js';
 import {
   COMPANY_STATUS,
@@ -278,6 +279,39 @@ function cached(read) {
   };
 }
 
+// startDate de una reserva en milisegundos.
+const startMs = (booking) => toDate(booking.startDate).getTime();
+
+// Lee las reservas del rango (más recientes primero, tope `readLimit` por consulta) según el estado
+// EFECTIVO: una pendiente vencida cuenta como EXPIRED, así que `EXPIRED` junta las guardadas como
+// EXPIRED y las PENDING_PAYMENT vencidas (dos consultas con los índices existentes) y
+// `PENDING_PAYMENT` solo deja las vigentes. Devuelve { bookings, cutoff }: `cutoff` es null si la
+// lectura fue completa o, si se cortó, el startDate (ms) desde el que el resultado es completo.
+async function readBookings({ from, to, companyId, estado, readLimit }) {
+  const statuses = estado === 'EXPIRED' ? ['EXPIRED', 'PENDING_PAYMENT'] : [estado];
+  const lists = await Promise.all(
+    statuses.map((status) =>
+      bookingModel.listInRange({ from, to, companyId, status, limit: readLimit }),
+    ),
+  );
+  const cuts = lists
+    .filter((list) => list.length >= readLimit)
+    .map((list) => toDate(list[list.length - 1].startDate).getTime());
+  let cutoff = cuts.length > 0 ? Math.max(...cuts) : null;
+  let bookings = lists
+    .flat()
+    .filter(
+      (b) =>
+        (!estado || effectiveStatus(b) === estado) && (cutoff === null || startMs(b) >= cutoff),
+    )
+    .sort((a, b) => startMs(b) - startMs(a));
+  if (bookings.length > readLimit) {
+    bookings = bookings.slice(0, readLimit);
+    cutoff = Math.max(cutoff ?? 0, startMs(bookings[bookings.length - 1]));
+  }
+  return { bookings, cutoff };
+}
+
 // Reservas de todas las empresas en el rango (por defecto hoy - 30 días y 90 días desde ahí; máximo
 // 366 días y 500 resultados), de la más reciente a la más antigua. Pagina primero y solo resuelve
 // sala, edificio, empresa y cliente de la página.
@@ -290,12 +324,12 @@ export async function listBookings({
   readLimit = BOOKINGS_READ_LIMIT,
 } = {}) {
   const range = resolveRange({ desde, hasta });
-  const bookings = await bookingModel.listInRange({
+  const { bookings, cutoff } = await readBookings({
     from: atHour(range.desde, 0),
     to: atHour(addDays(range.hasta, 1), 0),
     companyId,
-    status: estado,
-    limit: readLimit,
+    estado,
+    readLimit,
   });
   const pageItems = paginate(bookings, page);
   const room = cached((id) => roomModel.findById(id));
@@ -330,9 +364,9 @@ export async function listBookings({
       };
     }),
   );
-  const truncado = bookings.length >= readLimit;
+  const truncado = cutoff !== null;
   // Si se cortó la lectura, las reservas más antiguas del rango pueden faltar: `desdeEfectivo` es la
-  // fecha de la más antigua leída (desde ahí el listado es completo).
+  // fecha desde la que el listado es completo.
   return {
     reservas,
     total: bookings.length,
@@ -341,7 +375,7 @@ export async function listBookings({
     desde: range.desde,
     hasta: range.hasta,
     truncado,
-    ...(truncado && { desdeEfectivo: toItem(bookings[bookings.length - 1]).fecha }),
+    ...(truncado && { desdeEfectivo: todayString(new Date(cutoff)) }),
   };
 }
 
@@ -367,25 +401,29 @@ const USER_ROLES = ['CLIENT', 'COMPANY', 'ADMIN'];
 // Resumen del panel con agregaciones count() de Firestore (no lee documentos): empresas por
 // estado, usuarios por rol y reservas del mes actual (por fecha de inicio y en la zona horaria del
 // servidor). Las empresas «pendientes» son el total menos las demás, de modo que las que no tienen
-// `status` (anteriores a ese campo) cuentan como pendientes.
-export async function getSummary() {
+// `status` (anteriores a ese campo) cuentan como pendientes. Las reservas PENDING_PAYMENT del mes se
+// leen (hasta `readLimit`) para pasar las vencidas de PENDING_PAYMENT a EXPIRED, como en los
+// listados; si se alcanza el tope, `reservasMes.truncado` es true y esa cifra puede quedarse corta.
+export async function getSummary({ readLimit = BOOKINGS_READ_LIMIT } = {}) {
   const { from, to, mes } = monthRange();
   const monthFilters = [
     ['startDate', '>=', from],
     ['startDate', '<', to],
   ];
-  const [totalEmpresas, aprobada, rechazada, suspendida, roles, estados] = await Promise.all([
-    companyModel.countWhere(),
-    companyModel.countWhere([['status', '==', APPROVED]]),
-    companyModel.countWhere([['status', '==', REJECTED]]),
-    companyModel.countWhere([['status', '==', SUSPENDED]]),
-    Promise.all(USER_ROLES.map((r) => userModel.countWhere([['role', '==', r]]))),
-    Promise.all(
-      BOOKING_STATUSES.map((st) =>
-        bookingModel.countWhere([['status', '==', st], ...monthFilters]),
+  const [totalEmpresas, aprobada, rechazada, suspendida, roles, estados, pendientes] =
+    await Promise.all([
+      companyModel.countWhere(),
+      companyModel.countWhere([['status', '==', APPROVED]]),
+      companyModel.countWhere([['status', '==', REJECTED]]),
+      companyModel.countWhere([['status', '==', SUSPENDED]]),
+      Promise.all(USER_ROLES.map((r) => userModel.countWhere([['role', '==', r]]))),
+      Promise.all(
+        BOOKING_STATUSES.map((st) =>
+          bookingModel.countWhere([['status', '==', st], ...monthFilters]),
+        ),
       ),
-    ),
-  ]);
+      bookingModel.listInRange({ from, to, status: 'PENDING_PAYMENT', limit: readLimit }),
+    ]);
   const empresas = {
     pendiente: Math.max(0, totalEmpresas - aprobada - rechazada - suspendida),
     aprobada,
@@ -394,6 +432,14 @@ export async function getSummary() {
   };
   const usuarios = Object.fromEntries(USER_ROLES.map((r, i) => [r, roles[i]]));
   const porEstado = Object.fromEntries(BOOKING_STATUSES.map((st, i) => [st, estados[i]]));
+  const vencidas = pendientes.filter((b) => effectiveStatus(b) === 'EXPIRED').length;
+  porEstado.PENDING_PAYMENT -= vencidas;
+  porEstado.EXPIRED += vencidas;
   const total = estados.reduce((a, b) => a + b, 0);
-  return { empresas, usuarios, reservasMes: { total, porEstado, mes } };
+  const truncado = pendientes.length >= readLimit;
+  return {
+    empresas,
+    usuarios,
+    reservasMes: { total, porEstado, mes, ...(truncado && { truncado }) },
+  };
 }

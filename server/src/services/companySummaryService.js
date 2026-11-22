@@ -14,6 +14,8 @@ import { isActiveFuture } from './futureBookingsService.js';
 // Próximas reservas que devuelve el resumen (se piden algunas más por si alguna se descarta).
 const UPCOMING_LIMIT = 5;
 const UPCOMING_FETCH = 10;
+// Tope fijo de reservas que se leen buscando las 5 vivas (las pendientes vencidas se descartan).
+const UPCOMING_MAX_READ = 200;
 // Elementos de cada lista de tareas y tope de edificios, plantas y salas que se leen de la empresa
 // (si se alcanza, la respuesta lleva `truncado: true` y las cifras y tareas pueden quedarse cortas).
 const MAX_TASKS = 50;
@@ -51,14 +53,24 @@ async function loadCapped(listByCompany, companyId) {
 // a la más lejana, con la sala y el cliente (nombre y email; nunca su id ni su teléfono).
 async function upcomingBookings(companyId, now, roomsById) {
   const nowMs = now.getTime();
-  const bookings = await bookingModel.listUpcomingByCompany(companyId, {
-    statuses: ACTIVE,
-    from: now,
-    limit: UPCOMING_FETCH,
-  });
-  const next = bookings
-    .filter((b) => b.companyId === companyId && roomsById.has(b.roomId) && isActiveFuture(b, nowMs))
-    .slice(0, UPCOMING_LIMIT);
+  // Se amplía el número de reservas leídas (10, 20, 40... hasta 200, siempre por startDate
+  // ascendente y con el mismo índice) hasta reunir 5 vivas o agotar las reservas o el tope.
+  let next;
+  for (let limit = UPCOMING_FETCH; ; limit = Math.min(limit * 2, UPCOMING_MAX_READ)) {
+    const bookings = await bookingModel.listUpcomingByCompany(companyId, {
+      statuses: ACTIVE,
+      from: now,
+      limit,
+    });
+    next = bookings
+      .filter(
+        (b) => b.companyId === companyId && roomsById.has(b.roomId) && isActiveFuture(b, nowMs),
+      )
+      .slice(0, UPCOMING_LIMIT);
+    if (next.length >= UPCOMING_LIMIT || bookings.length < limit || limit >= UPCOMING_MAX_READ) {
+      break;
+    }
+  }
   const userIds = [...new Set(next.map((b) => b.userId).filter(Boolean))];
   const users = await Promise.all(userIds.map((id) => userModel.findById(id)));
   const usersById = new Map(userIds.map((id, i) => [id, users[i]]));

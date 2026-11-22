@@ -34,3 +34,22 @@ export function suspendCompany(id, motivo, options) {
 export function reactivateCompany(id, options) {
   return post(`/admin/companies/${encodeURIComponent(id)}/reactivate`, undefined, options);
 }
+
+// Pagos, de los más recientes a los más antiguos (20 por página): { pagos: [{ id, importe, moneda, estado,
+// reembolsoPendiente, motivoReembolso, fecha, reembolsadoEn, reserva: { id, codigo, estado } | null,
+// cliente: { nombre, email } | null }], total, page, limit, truncado }.
+// `estado` (opcional): PENDING, SUCCEEDED, FAILED o REFUNDED; `page` de 1 a 25.
+export function listPayments({ estado, page } = {}, options) {
+  const query = new URLSearchParams();
+  if (estado) query.set('estado', estado);
+  if (page && page > 1) query.set('page', String(page));
+  const text = query.toString();
+  return get(`/admin/payments${text ? `?${text}` : ''}`, options);
+}
+
+// Reembolso total de un pago `SUCCEEDED`: { id, estado: 'REFUNDED', reserva: { id, estado }, yaReembolsado? }.
+// Errores: 404 NOT_FOUND, 409 PAYMENT_NOT_REFUNDABLE, 502 PAYMENTS_ERROR (queda pendiente; se puede reintentar)
+// y 503 PAYMENTS_UNAVAILABLE.
+export function refundPayment(id, options) {
+  return post(`/admin/payments/${encodeURIComponent(id)}/refund`, undefined, options);
+}
