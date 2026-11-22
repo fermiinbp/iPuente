@@ -64,3 +64,20 @@ Estado a 22-11-2026, con compilaciones de producción (`vite build` y `vite prev
 - [x] Sin cambios de comportamiento con el teclado ni con lector de pantalla, probado con el árbol de accesibilidad de Chrome y el DOM (**no con NVDA, JAWS ni VoiceOver**): el cargador anuncia «Cargando iPuente» y «Listo» con `role="status"` y deja la página `inert` solo mientras dura; bajar por el hero no cambia ninguna región viva; el `h1` de `Reveal` lleva el texto completo en un `<span>` para lectores y las palabras partidas con `aria-hidden`; los botones del `NumberStepper` tienen nombre; la leyenda del hero no es una región viva y en móvil queda oculta (no tabulable). **Corregido:** la leyenda estaba antes del buscador en el DOM y el foco saltaba a ella y volvía; ahora va después y el orden de tabulación sigue al visual.
 - [x] Sin dependencias nuevas; el paquete principal pasa de 460,02 kB a 462,27 kB (+2,25 kB, gzip +0,67 kB; el límite era 10 kB).
 - [x] `npm run lint` y `npm run build` sin errores, `npm test -w client` con 10 pruebas en verde y la documentación de `AGENTS.md` al día.
+
+## Cable del puente y profundidad (rama `CLI014-cable-del-puente`)
+
+Seña de identidad que sale en todas las pantallas salvo el editor de mapas: una curva de bronce bajo la cabecera que marca lo leído de la página, y una escala de elevación para paneles y tarjetas. Componente `BridgeCable`, modo `page` de `useScrollProgress` y tokens `--cable-*` y `--sombra-1/2/3`.
+
+Dónde está: cabecera pública, barra superior de los paneles de empresa y admin (colgado de ella) y acceso y registro (fijo al borde superior, 8 px más abajo para que la «sala» no se corte).
+
+Comprobación final, con compilaciones de producción (Firebase ficticio, sin API, iframe de 390 px) frente al commit anterior al cable (`c11f4b4`):
+
+- [x] Peso: el paquete principal pasa de 463,14 kB a 464,42 kB (+1,28 kB, gzip +0,53 kB). Sin dependencias nuevas.
+- [x] LCP igual o mejor en landing, búsqueda, edificio, planta, sala y acceso (la sala sube 24 ms, dentro del ruido). CLS 0 en todas (landing 0,0003, igual que antes).
+- [x] Coste del scroll: 120 eventos de scroll producen 119 escrituras de `--progreso` (una por fotograma como máximo), sin fotogramas lentos ni `long-animation-frame`.
+- [x] `prefers-reduced-motion` (emulado): el cable queda quieto, `--progreso` en 0 en cualquier posición de scroll y la sala parada al inicio.
+- [x] Accesibilidad: `aria-hidden`, ningún elemento enfocable dentro, `pointer-events: none` (el clic llega al contenido que hay debajo, comprobado en cuatro puntos del cable) y no aparece en el árbol de accesibilidad. No cambia la tabulación de la cabecera.
+- [x] Con el menú móvil abierto el menú tapa el cable. Sin desbordamiento horizontal en 390 px.
+- [ ] Barra superior de los paneles de empresa y admin: solo comprobada por código (necesita una sesión de empresa o admin), no en pantalla.
+- [ ] Lector de pantalla real (NVDA, JAWS, VoiceOver): no probado; se ha comprobado con el árbol de accesibilidad de Chrome.
