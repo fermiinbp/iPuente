@@ -30,7 +30,14 @@ export default function Layout() {
       </a>
       <Header />
       <main className={styles.main} id="contenido" tabIndex={-1}>
-        <Suspense fallback={<Spinner label="Cargando…" />}>
+        {/* Mientras llega el fragmento de la pantalla el hueco ya mide una pantalla: el pie no salta al cargar (CLS). */}
+        <Suspense
+          fallback={
+            <div className={styles.cargando}>
+              <Spinner label="Cargando…" />
+            </div>
+          }
+        >
           <Outlet />
         </Suspense>
       </main>

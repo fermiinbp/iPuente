@@ -10,6 +10,15 @@
   width: 100%;
 }
 
+/* Fallback de Suspense: ocupa el alto de una pantalla bajo la cabecera, así el pie queda fuera de la vista y no salta. */
+.cargando {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding-top: var(--space-9);
+  min-height: calc(100svh - var(--alto-cabecera));
+}
+
 .main:focus {
   outline: none;
 }

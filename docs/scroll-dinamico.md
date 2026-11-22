@@ -52,13 +52,15 @@ Un paso cada vez y con confirmación entre pasos. Agentes del repo: `analista` �
 
 ## Hecho cuando
 
-- [ ] La carga de la landing dibuja la planta, se puede saltar, dura como máximo 1 s y solo se ve la primera vez de la sesión.
-- [ ] El LCP de la landing no empeora y el CLS es 0 en landing, edificio, planta y sala.
-- [ ] En la landing, bajar abre las plantas del 3D sin clic y con el mismo resultado que elegir la planta a mano.
-- [ ] Los títulos principales se revelan por líneas con un único efecto por pantalla.
-- [ ] La planta se dibuja con trazo y rellena por estado.
-- [ ] Todo funciona en 390 px y en escritorio, sin scroll horizontal.
-- [ ] Con `prefers-reduced-motion` no hay movimiento y el contenido es el mismo.
-- [ ] Sin cambios de comportamiento con el teclado ni con lector de pantalla.
-- [ ] Sin dependencias nuevas; el paquete principal no crece más de 10 kB.
-- [ ] `npm run lint` y `npm run build` sin errores, y la documentación de `AGENTS.md` al día.
+Estado a 22-11-2026, con compilaciones de producción (`vite build` y `vite preview`, Firebase ficticio, sin API) medidas en un iframe de 390 px frente a la compilación anterior al scroll (`f5f7b6d`).
+
+- [x] La carga de la landing dibuja la planta, se puede saltar, dura 1 s (600 ms de dibujo + 400 ms de apertura, medido en desarrollo) y solo se ve la primera vez de la sesión.
+- [x] LCP: landing 2444 ms → 1420 ms (mediana); búsqueda 192 → 148 ms; las demás pantallas, dentro del ruido (±30 ms). CLS: 0 en edificio, planta, sala y búsqueda (antes 0,14–0,39); en la landing 0,0003 y en edificio a 1100 px de ancho 0,0037. El salto lo causaba el pie visible mientras cargaba el fragmento de la pantalla (`Suspense` del `Layout`).
+- [x] En la landing, bajar abre las plantas del 3D sin clic (escritorio fijado y móvil por cruce) y con el mismo resultado que elegir la planta a mano.
+- [x] Los títulos principales de búsqueda, planta y sala se revelan por líneas con un único efecto por pantalla.
+- [x] La planta se dibuja con trazo y rellena por estado (en el plano 3D).
+- [x] Todo funciona en 390 px y en escritorio, sin scroll horizontal (comprobado en landing, búsqueda, edificio, planta y sala).
+- [ ] Con `prefers-reduced-motion` no hay movimiento y el contenido es el mismo: implementado en cada pieza, **sin probar con la preferencia activada**.
+- [ ] Sin cambios de comportamiento con el teclado ni con lector de pantalla: no se tocó el foco, los textos accesibles se conservan y el scroll no anuncia nada; **sin probar con lector de pantalla**.
+- [x] Sin dependencias nuevas; el paquete principal pasa de 460,02 kB a 462,27 kB (+2,25 kB, gzip +0,67 kB; el límite era 10 kB).
+- [x] `npm run lint` y `npm run build` sin errores, `npm test -w client` con 10 pruebas en verde y la documentación de `AGENTS.md` al día.

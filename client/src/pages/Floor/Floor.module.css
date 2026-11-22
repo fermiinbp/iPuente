@@ -14,6 +14,9 @@
   max-width: var(--ancho-max);
   margin: 0 auto;
   padding: var(--space-9) var(--gutter);
+  /* Altura de una pantalla: al llegar el contenido el pie no salta (CLS) porque ya está fuera de la vista. */
+  align-content: start;
+  min-height: calc(100svh - var(--alto-cabecera));
 }
 
 /* Fondo vivo: dos manchas que derivan despacio detrás del plano. */

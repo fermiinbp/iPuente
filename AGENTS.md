@@ -26,7 +26,8 @@
  
 | Archivo | Para qué sirve |
 | --- | --- |
-| `client/package.json` | Dependencias y scripts del front (`dev`, `build`, `preview`, `lint`). |
+| `client/package.json` | Dependencias y scripts del front (`dev`, `build`, `preview`, `lint`, `test`). |
+| `client/tests/scroll.test.js` | Pruebas (`node:test`, sin dependencias; `npm test -w client`) de las funciones puras del scroll dinámico: `progressOf` (modos `view` y `pin`, bordes y contenedor más bajo que la ventana) y `floorForProgress` (tramos, orden, sin planta baja). El CI aún no las ejecuta. |
 | `client/index.html` | Única página HTML de la web: metadatos, enlace a `styles/style.css` y el `<div id="root">` donde React monta la aplicación. |
 | `client/styles/style.css` | Estilos globales de la web: variables en `:root`, reset y estilos base. Los estilos de cada componente van en su `.module.css`. |
 | `client/public/favicon.svg` | Icono de la pestaña del navegador (provisional hasta tener logo). |
@@ -156,7 +157,7 @@ Todo el código de React. `config/` conecta con Firebase; `App.jsx` define las U
 | `client/src/components/booking/BookingSummary/BookingSummary.jsx` + `.module.css` | Resumen de la reserva con el precio que devuelve la API. |
 | `client/src/components/booking/BookingCard/BookingCard.jsx` + `.module.css` | Fila de una reserva en «Mis reservas»: sala, fecha, importe y estado; «Pagar ahora» y «Cancelar» si está pendiente de pago. |
 | `client/src/components/booking/BookingDetail/BookingDetail.jsx` + `.module.css` | Detalle de una reserva común a cliente, empresa y admin (`role`, por defecto `CLIENT`); no llama a la API y el contenedor lo pone quien lo usa (página o `SidePanel`, con `showHeader={false}`). Cliente: página con cómo llegar, pago, cancelar (`onCancel`) y «Pagar ahora» si está pendiente de pago. Empresa: sala y planta, fecha, horario, cliente, email e importe, «Cancelar reserva» (futuras) y «Escribir al cliente» (`mailto:`); un bloqueo (`tipo: 'bloqueo'`) con motivo y «Quitar bloqueo» (`onRemoveBlock`). Admin: sala, edificio, empresa, cliente, fecha e importe, y «Ver empresa». No muestra lo que la API no tiene (asistentes, desglose de comisiones, historial, reembolso). |
-| `client/src/components/layout/Layout/Layout.jsx` + `.module.css` | Plantilla común de las páginas públicas: cabecera, contenido (`<Outlet />`) y pie. |
+| `client/src/components/layout/Layout/Layout.jsx` + `.module.css` | Plantilla común de las páginas públicas: cabecera, contenido (`<Outlet />`) y pie. El fallback de `Suspense` mide una pantalla bajo la cabecera (`.cargando`) para que el pie no salte al llegar el fragmento de la página (CLS 0). |
 | `client/src/pages/Landing/Landing.jsx` + `.module.css` | Home: hero con el edificio por plantas, buscador, plantas, cómo funciona, alrededor, salas destacadas y llamada a empresas. |
 | `client/src/pages/Landing/HeroStory.jsx` | Edificio 3D del hero de la home: las plantas se abren solas de arriba abajo al bajar la página (`useScrollProgress`) y también al pulsarlas. Escritorio: el edificio queda fijado (`sticky`) durante la carrera de 60 vh del hero y el progreso es el de `heroInner` (`pinRef`, modo `pin`); móvil: sin fijado, el progreso es el del propio edificio (modo `view`). Con `prefers-reduced-motion` no se abre nada con el scroll y no hay carrera. El selector con salas y plano vive aparte, en `FloorSection`. |
 | `client/src/pages/Landing/heroScroll.js` | `floorForProgress(progreso, modo)`: qué planta del hero se abre según el progreso de scroll (`''` = cerrado; la planta baja no se abre). Pura, la usa `HeroStory`. |
