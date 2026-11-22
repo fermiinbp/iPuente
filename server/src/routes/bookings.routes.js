@@ -248,7 +248,7 @@ router.get(
  *   patch:
  *     tags: [Cliente]
  *     summary: Cancela una reserva propia
- *     description: 'Solo el cliente dueño (rol CLIENT) puede cancelar una reserva CONFIRMED que no haya empezado. Libera las horas de la sala. Una reserva de otro usuario responde 404 como una inexistente.'
+ *     description: 'Solo el cliente dueño (rol CLIENT) puede cancelar una reserva CONFIRMED (o PENDING_PAYMENT vigente) que no haya empezado; una pendiente vencida responde 400 BOOKING_NOT_CANCELLABLE. Libera las horas de la sala. Una reserva de otro usuario responde 404 como una inexistente.'
  *     security:
  *       - bearerAuth: []
  *     parameters:

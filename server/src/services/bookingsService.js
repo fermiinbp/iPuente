@@ -1,6 +1,8 @@
-// Crear, listar y cancelar reservas del cliente (sin pago online: nacen CONFIRMED). El servidor
-// calcula pricePeriod y totalAmount a partir del price de la sala; occupancy bloquea cada hora.
-import { BOOKING_HOURS } from '../config/bookingHours.js';
+// Crear, listar y cancelar reservas del cliente. Hoy nacen CONFIRMED (sin pago online); con la
+// opción interna `pendingPayment` nacen PENDING_PAYMENT con expiresAt a +15 min (salvo las de 0 €).
+// El servidor calcula pricePeriod y totalAmount a partir del price de la sala; occupancy bloquea
+// cada hora. Una pendiente vencida se muestra como EXPIRED y se expira al reservar sobre ella.
+import { BOOKING_HOURS, PENDING_MINUTES } from '../config/bookingHours.js';
 import { now, runTransaction } from '../models/baseModel.js';
 import * as bookingModel from '../models/bookingModel.js';
 import * as buildingModel from '../models/buildingModel.js';
@@ -13,10 +15,14 @@ import { HttpError } from '../utils/httpError.js';
 import {
   assertSlotAvailable,
   effectivePrice,
+  effectiveStatus,
   isBookable,
+  isPendingExpired,
   toDate,
+  toMillis,
   toSlot,
 } from './availabilityService.js';
+import { readSlotPlan, releaseSlots, slotIds, writeSlotClaims } from './occupancyService.js';
 import { findPublicRoom } from './roomsService.js';
 
 // Date local de una fecha AAAA-MM-DD a una hora (24 pasa al día siguiente a las 00:00).
@@ -25,9 +31,12 @@ export function atHour(fecha, hour) {
   return new Date(y, m - 1, d, hour);
 }
 
-// Datos públicos de una reserva a partir de su documento.
+// Datos públicos de una reserva a partir de su documento. El estado es el efectivo: una pendiente
+// vencida sale como EXPIRED aunque Firestore aún diga PENDING_PAYMENT. Una pendiente vigente añade
+// `expiraEn` (ISO).
 export function toItem(booking) {
   const { inicio, fin } = toSlot(booking, 'reserva');
+  const estado = effectiveStatus(booking);
   return {
     id: booking.id,
     codigo: booking.code ?? null,
@@ -38,7 +47,10 @@ export function toItem(booking) {
     horas: fin - inicio,
     precioHora: booking.price,
     importe: booking.totalAmount,
-    estado: booking.status,
+    estado,
+    ...(estado === 'PENDING_PAYMENT' && Number.isFinite(toMillis(booking.expiresAt))
+      ? { expiraEn: new Date(toMillis(booking.expiresAt)).toISOString() }
+      : {}),
   };
 }
 
@@ -113,8 +125,14 @@ export function translateConflict(err) {
   return err;
 }
 
-// Crea una reserva CONFIRMED y bloquea cada hora, todo en una transacción.
-export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
+// Crea una reserva y bloquea cada hora, todo en una transacción. Por defecto nace CONFIRMED; con
+// { pendingPayment: true } nace PENDING_PAYMENT con expiresAt a +15 min, salvo si importa 0 €
+// (sala gratis), que se confirma siempre. Nadie activa la opción todavía.
+export async function createBooking(
+  uid,
+  { roomId, fecha, inicio, fin },
+  { pendingPayment = false } = {},
+) {
   // Fuera de la transacción: 404 si la sala, su planta o su edificio no están publicados.
   const { room: publicRoom } = await findPublicRoom(roomId);
   assertBookable(publicRoom, inicio, fin);
@@ -122,6 +140,8 @@ export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
   let room;
   let importe;
   let codigo;
+  let estado = 'CONFIRMED';
+  let expiresAt;
   try {
     let number;
     const id = await runTransaction(async (tx) => {
@@ -136,10 +156,14 @@ export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
       }
       importe = precio * horas;
       await assertSlotAvailable(roomId, fecha, inicio, fin, tx);
-      // Todas las lecturas van antes que las escrituras: el contador se lee aquí.
+      // Todas las lecturas van antes que las escrituras: el contador y las fichas se leen aquí.
+      const plan = await readSlotPlan(roomId, fecha, inicio, fin, { tx });
       const last = await counterModel.getValue('bookings', { tx });
       number = Math.max(last, FIRST_CODE_NUMBER - 1) + 1;
       codigo = `${CODE_PREFIX}${number}`;
+      const pending = pendingPayment && importe > 0;
+      estado = pending ? 'PENDING_PAYMENT' : 'CONFIRMED';
+      expiresAt = pending ? new Date(Date.now() + PENDING_MINUTES * 60 * 1000) : undefined;
       const bookingId = await bookingModel.create(
         {
           code: codigo,
@@ -151,21 +175,20 @@ export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
           price: effectivePrice(room),
           pricePeriod: 'HOUR',
           totalAmount: importe,
-          status: 'CONFIRMED',
+          status: estado,
           paymentId: null,
+          ...(expiresAt && { expiresAt }),
         },
         { tx },
       );
       await counterModel.setValue('bookings', number, { tx });
-      for (let hour = inicio; hour < fin; hour++) {
-        await occupancyModel.create(
-          { companyId: room.companyId, roomId, date: fecha, hour, bookingId },
-          { id: occupancyModel.slotId(roomId, fecha, hour), tx },
-        );
-      }
+      await writeSlotClaims(
+        plan,
+        { companyId: room.companyId, roomId, fecha, inicio, owner: { bookingId } },
+        tx,
+      );
       return bookingId;
     });
-    const estado = 'CONFIRMED';
     return {
       id,
       codigo,
@@ -177,6 +200,7 @@ export async function createBooking(uid, { roomId, fecha, inicio, fin }) {
       precioHora: effectivePrice(room),
       importe,
       estado,
+      ...(expiresAt && { expiraEn: expiresAt.toISOString() }),
     };
   } catch (err) {
     throw translateConflict(err);
@@ -198,8 +222,10 @@ export async function listMyBookings(uid) {
       item: { ...toItem(b), sala: room ? { nombre: room.name, codigo: room.code } : null },
     };
   });
-  const proximas = items.filter((i) => i.end > ahora).sort((a, b) => a.start - b.start);
-  const pasadas = items.filter((i) => i.end <= ahora).sort((a, b) => b.start - a.start);
+  // Una pendiente vencida (EXPIRED) ya no es una próxima reserva aunque su hora no haya pasado.
+  const vivas = (i) => i.end > ahora && i.item.estado !== 'EXPIRED';
+  const proximas = items.filter(vivas).sort((a, b) => a.start - b.start);
+  const pasadas = items.filter((i) => !vivas(i)).sort((a, b) => b.start - a.start);
   return { proximas: proximas.map((i) => i.item), pasadas: pasadas.map((i) => i.item) };
 }
 
@@ -211,13 +237,24 @@ function assertBookingOfUser(booking, uid) {
 }
 
 // Comprueba existencia, propietario, estado y que no haya empezado; lanza el error que toque.
+// Se cancelan las CONFIRMED y las PENDING_PAYMENT vigentes. Una pendiente vencida (o EXPIRED) da
+// 400 BOOKING_NOT_CANCELLABLE como cualquier estado no cancelable, con mensaje propio: no hay nada
+// que cancelar ni que liberar, y así no parece que se haya cancelado algo vivo.
 function assertCancellable(booking, uid) {
   assertBookingOfUser(booking, uid);
-  if (booking.status !== 'CONFIRMED') {
+  const estado = effectiveStatus(booking);
+  if (estado === 'EXPIRED') {
     throw new HttpError(
       400,
       'BOOKING_NOT_CANCELLABLE',
-      'Solo se pueden cancelar reservas confirmadas',
+      'La reserva ha caducado y ya no se puede cancelar',
+    );
+  }
+  if (estado !== 'CONFIRMED' && estado !== 'PENDING_PAYMENT') {
+    throw new HttpError(
+      400,
+      'BOOKING_NOT_CANCELLABLE',
+      'Solo se pueden cancelar reservas confirmadas o pendientes de pago',
     );
   }
   if (toDate(booking.startDate).getTime() <= Date.now()) {
@@ -229,23 +266,45 @@ function assertCancellable(booking, uid) {
   }
 }
 
-// Cancela una reserva propia y libera sus horas de occupancy en una transacción.
+// Cancela una reserva propia y libera sus horas de occupancy en una transacción. Solo borra las
+// fichas cuyo bookingId es el de esta reserva (nunca la de otra reserva o bloqueo).
 export async function cancelBooking(uid, id) {
   await runTransaction(async (tx) => {
     const booking = await bookingModel.findById(id, { tx });
     assertCancellable(booking, uid);
     const fecha = todayString(toDate(booking.startDate));
     const { inicio, fin } = toSlot(booking, 'reserva');
+    const ids = slotIds(booking.roomId, fecha, inicio, fin);
+    const slots = await Promise.all(ids.map((slot) => occupancyModel.findById(slot, { tx })));
     await bookingModel.update(
       id,
       { status: 'CANCELLED', cancelledAt: now(), cancelledBy: 'CLIENT' },
       { tx },
     );
-    for (let hour = inicio; hour < fin; hour++) {
-      await occupancyModel.remove(occupancyModel.slotId(booking.roomId, fecha, hour), { tx });
-    }
+    await releaseSlots(ids, slots, 'bookingId', id, tx);
   });
   return { id, estado: 'CANCELLED' };
+}
+
+// Alarga expiresAt de una reserva en una transacción, solo si sigue PENDING_PAYMENT y vigente
+// (la usará el pago al crear la sesión de Checkout). Nunca lo acorta (si ya es posterior, no
+// escribe) y no toca su occupancy. 404 si no existe, 409 BOOKING_NOT_PENDING si ya no está
+// pendiente y 409 BOOKING_EXPIRED si venció. Devuelve el expiresAt resultante (Date).
+export async function extendPendingExpiry(id, expiresAt, { clock = Date.now } = {}) {
+  return runTransaction(async (tx) => {
+    const booking = await bookingModel.findById(id, { tx });
+    if (!booking) throw new HttpError(404, 'NOT_FOUND', 'La reserva no existe');
+    if (booking.status !== 'PENDING_PAYMENT') {
+      throw new HttpError(409, 'BOOKING_NOT_PENDING', 'La reserva no está pendiente de pago');
+    }
+    if (isPendingExpired(booking, clock())) {
+      throw new HttpError(409, 'BOOKING_EXPIRED', 'La reserva ha caducado');
+    }
+    const current = toMillis(booking.expiresAt);
+    if (Number.isFinite(current) && current >= expiresAt.getTime()) return new Date(current);
+    await bookingModel.update(id, { expiresAt }, { tx });
+    return expiresAt;
+  });
 }
 
 // Detalle de una reserva propia: 404 si no existe o es de otro usuario.

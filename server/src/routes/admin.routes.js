@@ -409,7 +409,7 @@ router.get(
  *   get:
  *     tags: [Admin]
  *     summary: Resumen del panel
- *     description: 'Devuelve `{ empresas, usuarios, reservasMes }`: empresas por estado, usuarios por rol y reservas del mes actual por estado. Solo admin.'
+ *     description: 'Devuelve `{ empresas, usuarios, reservasMes }`: empresas por estado, usuarios por rol y reservas del mes actual por estado (una PENDING_PAYMENT vencida cuenta como EXPIRED; si se alcanza el tope de lectura, reservasMes.truncado es true). Solo admin.'
  *     security:
  *       - bearerAuth: []
  *     responses:
