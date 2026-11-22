@@ -1,6 +1,6 @@
 # Plan: recorrer el edificio en 3D (inspirado en arshkhachatrian.com)
 
-Borrador pendiente de aprobación. No se ha tocado código. Estimación total: **85–125 horas**, repartidas en 10 fases que se pueden fusionar por separado.
+Borrador pendiente de aprobación. No se ha tocado código. Estimación total: **87–127 horas**, repartidas en 10 fases que se pueden fusionar por separado.
 
 ## 1. Qué hemos mirado de la referencia
 
@@ -76,8 +76,15 @@ Mirar alrededor con el puntero (en móvil, un toque lo sustituye, sin giroscopio
 Redactar los textos de cada zona (sin copiar los de la referencia), el microcopy de la entrada y del menú, y pasar el contenido existente.
 **Hecho cuando:** el contenido de las 7 zonas está revisado.
 
-### F6 · Sonido (4–6 h, opcional)
-Sonido ambiente y de interfaz con Web Audio, **desactivado por defecto**, con un interruptor que se recuerda. Decidir si merece la pena.
+### F6 · Sonido de oficina (6–8 h)
+Decidido: el sonido es un **ambiente de oficina**. Capas con Web Audio: zumbido suave de aire acondicionado, murmullo lejano, teclados lejanos, y detalles puntuales (impresora, cafetera, teléfono lejano). Un «ding» de ascensor y un paso de puerta al cambiar de zona, que además refuerzan la metáfora del edificio. El volumen y el color del ambiente cambian según la zona (más ruido en «Salas», más calma en «Alrededor»).
+
+- **Origen de los sonidos:** sonidos propios sintetizados con Web Audio donde se pueda (ruido filtrado para el aire acondicionado y el murmullo: 0 KB) y, para lo que no (teclas, impresora, cafetera), muestras cortas con licencia libre (CC0 o similar) con la licencia anotada en el repo. **No se usará audio de la serie «The Office» ni de ningún producto con derechos**: si te referías al sonido de esa serie, no podemos usarlo y lo cambiamos por ambiente de oficina propio.
+- **Peso:** menos de 300 KB en total y solo se descarga tras pulsar «Entrar».
+- **Cómo se activa:** los navegadores no dejan reproducir sonido sin una acción de la persona. La pantalla de entrada ofrece **«Entrar con sonido»** y **«Entrar sin sonido»**; un interruptor siempre visible lo cambia después y se recuerda.
+- **Respeto:** volumen bajo por defecto, se silencia al pasar la pestaña a segundo plano y con `prefers-reduced-motion` no suena nada por defecto.
+- **Accesibilidad:** el sonido nunca transmite información que no esté también en pantalla.
+**Hecho cuando:** el ambiente cambia entre zonas sin cortes ni chasquidos, el interruptor funciona con teclado y el peso está dentro del presupuesto.
 
 ### F7 · Accesibilidad y alternativa estática (8–10 h)
 Contenido paralelo en el DOM, puntos de referencia por zona, gestión del foco al cambiar de zona, ruta sin movimiento con las zonas apiladas, `prefers-reduced-motion` y `prefers-reduced-data`.
@@ -102,10 +109,14 @@ Pruebas de las funciones puras, emulación de movimiento reducido, lector de pan
 - **Alcance:** 85–125 h es un proyecto en sí. Conviene cortar en fases y poder parar tras F3 con algo usable.
 - **Lo visual de la referencia no verificado:** tendremos que ir validando el resultado con vosotros, no contra la referencia.
 
-## 7. Decisiones que necesito de ti
+## 7. Decisiones
 
-1. ¿La visita es **solo la landing** o también edificio, planta y sala?
-2. ¿Sonido: sí, no o más adelante?
+Tomadas:
+1. **Alcance:** la visita 3D es **solo la landing**. El resto de pantallas (edificio, planta, sala, reservas, cuenta, paneles) no tiene visita, pero sí el cable del puente y la profundidad para que todo sea un mismo producto.
+2. **Sonido:** sí, con **ambiente de oficina** (ver F6).
+
+Abiertas:
 3. ¿Modelos 100 % procedurales o puedes aportar/encargar modelos `.glb`?
 4. ¿Qué hacemos con la rama del cable del puente: **la dejamos como hilo del recorrido** (recomendado) o la cerramos aparte?
 5. ¿Cortamos tras F3 para evaluar antes de seguir?
+6. Confirmar que «el sonido de tipo office» es ambiente de oficina y no el audio de la serie «The Office» (que no podemos usar).
