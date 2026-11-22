@@ -21,6 +21,7 @@ import styles from './AdminUsers.module.css';
 // La API no deja pasar de la página 50 ni buscar más de 100 caracteres.
 const MAX_PAGE = 50;
 const Q_MAX = 100;
+const PAGE_SIZE = 20;
 
 const ROLE_LABELS = {
   [ROLES.CLIENT]: 'Cliente',
@@ -91,13 +92,14 @@ export default function AdminUsers() {
     setSearch(q);
   }
 
+  // Cada cambio crea una entrada en el historial: atrás y adelante recorren filtros, búsquedas y páginas.
   const update = (changes) => {
     const next = new URLSearchParams(searchParams);
     Object.entries(changes).forEach(([name, value]) => {
       if (value) next.set(name, String(value));
       else next.delete(name);
     });
-    setSearchParams(next, { replace: true });
+    setSearchParams(next);
   };
 
   const changeFilter = (name, value) => update({ [name]: value, page: '' });
@@ -124,8 +126,10 @@ export default function AdminUsers() {
       );
     }
     const total = data?.total ?? 0;
-    const limit = data?.limit || 20;
+    const limit = data?.limit || PAGE_SIZE;
     const lastPage = Math.min(Math.max(Math.ceil(total / limit), 1), MAX_PAGE);
+    // Una página de la URL más allá de la última (p. ej. un enlace viejo): sin filas y «Anterior» lleva a la última.
+    const pastEnd = total > 0 && page > lastPage;
     return (
       <>
         {data?.truncado && (
@@ -138,20 +142,33 @@ export default function AdminUsers() {
           caption="Usuarios de iPuente"
           columns={COLUMNS}
           rows={data?.usuarios ?? []}
-          emptyTitle={filtered ? 'Ningún usuario coincide' : 'No hay usuarios'}
-          emptyText={filtered ? 'Prueba con otro rol u otra búsqueda.' : undefined}
+          emptyTitle={
+            pastEnd
+              ? 'Esta página no tiene usuarios'
+              : filtered
+                ? 'Ningún usuario coincide'
+                : 'No hay usuarios'
+          }
+          emptyText={
+            pastEnd
+              ? `La última página es la ${lastPage}.`
+              : filtered
+                ? 'Prueba con otro rol u otra búsqueda.'
+                : undefined
+          }
         />
         {total > 0 && (
           <nav className={styles.pager} aria-label="Paginación de usuarios">
             <p className={styles.pagerInfo}>
-              Página {page} de {lastPage} · {total} {total === 1 ? 'usuario' : 'usuarios'}
+              Página {Math.min(page, lastPage)} de {lastPage} · {total}{' '}
+              {total === 1 ? 'usuario' : 'usuarios'}
             </p>
             <div className={styles.pagerButtons}>
               <Button
                 variant="secondary"
                 size="md"
                 disabled={page <= 1}
-                onClick={() => goToPage(page - 1)}
+                onClick={() => goToPage(Math.min(page - 1, lastPage))}
               >
                 Anterior
               </Button>
