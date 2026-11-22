@@ -1,1 +1,63 @@
-/* Estilos de AdminBookings (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de AdminBookings (CSS Module). Mobile first: filtros apilados, la tabla pasa a tarjetas (DataTable) y el
+   detalle ocupa la pantalla (SidePanel); desde 900 px el detalle va al lado de la lista. */
+.title {
+  margin-bottom: var(--space-5);
+  font-size: var(--text-titulo-paso);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.wrap {
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  color: var(--crema-suave);
+  font-size: var(--text-pequeno);
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.pagerInfo {
+  margin: 0;
+  color: var(--crema-suave);
+  font-size: var(--text-pequeno);
+}
+
+.pagerButtons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+@media (min-width: 900px) {
+  .withPanel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+    align-items: start;
+    gap: var(--space-5);
+  }
+}

@@ -26,6 +26,28 @@ export function listUsers({ rol, q, page } = {}, options) {
   return get(`/admin/users${query ? `?${query}` : ''}`, options);
 }
 
+// Reservas de todas las empresas, de la más reciente a la más antigua (20 por página): { reservas: [{ id, codigo,
+// fecha, inicio, fin, importe, estado, sala, edificio, empresa, cliente, canceladaPor?, motivoCancelacion? }], total,
+// page, limit, desde, hasta, truncado, desdeEfectivo? }. Filtros opcionales: `estado` (en inglés), `desde`/`hasta`
+// (AAAA-MM-DD; sin ellos, hoy − 30 días a +90), `companyId` y `page` (1–25). Lee como mucho 500: con `truncado`, el
+// listado solo está completo desde `desdeEfectivo`.
+export function listBookings({ estado, desde, hasta, companyId, page } = {}, options) {
+  const params = new URLSearchParams();
+  if (estado) params.set('estado', estado);
+  if (desde) params.set('desde', desde);
+  if (hasta) params.set('hasta', hasta);
+  if (companyId) params.set('companyId', companyId);
+  if (page > 1) params.set('page', String(page));
+  const query = params.toString();
+  return get(`/admin/bookings${query ? `?${query}` : ''}`, options);
+}
+
+// Detalle de cualquier reserva (el de BookingDetail) con `empresa: { id, nombre }` y `cliente: { nombre, email }`.
+// 404 NOT_FOUND si no existe.
+export function getBooking(id, options) {
+  return get(`/admin/bookings/${encodeURIComponent(id)}`, options);
+}
+
 // Detalle de una empresa: { id, nombre, razonSocial, cif, email, telefono, direccion, descripcion, contacto, estado,
 // verificada, motivo, fechaSolicitud, version, revisadaEn, dueno: { nombre, email } | null,
 // edificios: [{ id, nombre, ciudad, publicado }] }. `ciudad` de la empresa aún no llega: si la API la añade, se
