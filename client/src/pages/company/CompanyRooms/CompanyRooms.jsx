@@ -52,6 +52,7 @@ function EditRoom({ room, onClose, onSaved }) {
   const base = dataFromApi(room);
   const [data, setData] = useState(base);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const errors = validateData(data, base);
   const body = patchFor(base, data, 'sala');
@@ -87,7 +88,7 @@ function EditRoom({ room, onClose, onSaved }) {
           <Button variant="ghost" size="md" onClick={onClose}>
             Cancelar
           </Button>
-          <Button size="md" loading={saving} disabled={!body} onClick={save}>
+          <Button size="md" loading={saving} disabled={!body || uploading} onClick={save}>
             Guardar
           </Button>
         </div>
@@ -102,6 +103,7 @@ function EditRoom({ room, onClose, onSaved }) {
           data={data}
           base={base}
           onDataChange={setData}
+          onUploadingChange={setUploading}
         />
       </div>
     </SidePanel>

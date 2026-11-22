@@ -76,7 +76,15 @@ async function loadFloor(floorId, signal) {
 // ¿Está el foco en un campo de texto? (los atajos de teclado no deben saltar mientras se escribe)
 const typing = (target) => target?.closest?.('input, textarea, select, [contenteditable="true"]');
 
-function RoomPanel({ editor, dataOf, baseOf, onDataChange, onDelete, deletingId }) {
+function RoomPanel({
+  editor,
+  dataOf,
+  baseOf,
+  onDataChange,
+  onDelete,
+  deletingId,
+  onUploadingChange,
+}) {
   const { selected, salas } = editor;
 
   if (selected) {
@@ -91,6 +99,7 @@ function RoomPanel({ editor, dataOf, baseOf, onDataChange, onDelete, deletingId 
         onDataChange={(data) => onDataChange(selected.id, data)}
         onDelete={() => onDelete(selected.id)}
         deleting={deletingId === selected.id}
+        onUploadingChange={onUploadingChange}
       />
     );
   }
@@ -173,6 +182,8 @@ function Editor({ building, floor, map, rooms }) {
   const editor = useMapEditor();
   const { load } = editor;
   const [saving, setSaving] = useState(false);
+  // Fotos subiéndose a Storage: no se guarda hasta que terminen (si no, se quedarían fuera).
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [result, setResult] = useState(null);
   const [leaving, setLeaving] = useState(false);
   // Datos para el cliente: los guardados en la API (`base`, por id de sala) y los cambios sin guardar (`drafts`).
@@ -365,7 +376,7 @@ function Editor({ building, floor, map, rooms }) {
             variant="secondary"
             size="md"
             loading={saving}
-            disabled={locked || !dirty}
+            disabled={locked || !dirty || uploadingPhotos}
             onClick={save}
           >
             Guardar borrador
@@ -443,6 +454,7 @@ function Editor({ building, floor, map, rooms }) {
               onDataChange={changeData}
               onDelete={requestDelete}
               deletingId={deleting?.loading ? deleting.room.id : null}
+              onUploadingChange={setUploadingPhotos}
             />
           </aside>
         </div>
@@ -451,7 +463,7 @@ function Editor({ building, floor, map, rooms }) {
       <UnsavedChangesModal
         open={leaving}
         floorName={floor.nombre}
-        canSave={!locked}
+        canSave={!locked && !uploadingPhotos}
         saving={saving}
         onStay={() => setLeaving(false)}
         onLeave={() => {

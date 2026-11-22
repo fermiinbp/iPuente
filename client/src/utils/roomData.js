@@ -1,4 +1,4 @@
-// Datos para el cliente de una sala (precio, personas, m², equipamiento y «reservable») en los formularios de empresa
+// Datos para el cliente de una sala (precio, personas, m², equipamiento, «reservable» y fotos) en los formularios de empresa
 // (RoomPropertiesPanel). En el formulario los números van como texto; aquí se pasan de la API al formulario, se
 // validan con las mismas reglas que la API y se calcula el PATCH con solo lo que ha cambiado.
 
@@ -42,6 +42,7 @@ export const EMPTY_DATA = Object.freeze({
   m2: '',
   equipamiento: [],
   reservable: false,
+  fotos: [],
 });
 
 const toText = (value) => (value === null || value === undefined ? '' : String(value));
@@ -55,12 +56,15 @@ export function dataFromApi(room) {
     m2: toText(room.m2),
     equipamiento: Array.isArray(room.equipamiento) ? room.equipamiento : [],
     reservable: room.reservable === true,
+    fotos: Array.isArray(room.fotos) ? room.fotos : [],
   };
 }
 
 const number = (text) => Number(String(text).replace(',', '.'));
 const sameList = (a, b) =>
   a.length === b.length && [...a].sort().join('|') === [...b].sort().join('|');
+// Las fotos van en orden (la primera es la portada): cuenta también el orden.
+const sameOrder = (a = [], b = []) => a.length === b.length && a.every((item, i) => item === b[i]);
 
 // Errores por campo ({ campo: mensaje }) de los datos de una sala, comparados con los guardados (`base`): la API no
 // deja vaciar un número que ya tenía valor.
@@ -115,6 +119,7 @@ export function patchFor(base, data, tipo) {
   if (data.m2.trim() !== '' && data.m2.trim() !== base.m2) body.m2 = number(data.m2);
   if (!sameList(data.equipamiento, base.equipamiento)) body.equipamiento = data.equipamiento;
   if (data.reservable !== base.reservable) body.reservable = data.reservable;
+  if (!sameOrder(data.fotos, base.fotos)) body.fotos = data.fotos ?? [];
   return Object.keys(body).length > 0 ? body : null;
 }
 

@@ -4,12 +4,14 @@
 //   por campo editado, no por tecla).
 // - Datos para el cliente (solo Sala y Box; una zona común no tiene): precio/h o «Gratis», personas, m²,
 //   equipamiento y «Reservable». Controlados con `data` y `onDataChange(datos)`; `base` son los guardados (la API
-//   no deja vaciar un número que ya tenía valor). Las fotos van aparte (EMP012).
+//   no deja vaciar un número que ya tenía valor). Fotos (EMP012) con RoomPhotosManager, en el mismo `data.fotos`;
+//   mientras suben, `onUploadingChange(true)` para que quien lo usa no guarde a medias.
 // - «Eliminar sala» llama a `onDelete`; quien lo usa decide si se puede (reservas futuras). Sin `onDelete`, no sale.
 // - En Salas (EMP011), `editableInfo={false}`: código y nombre se ven pero no se editan (van con el mapa), sin tipo
 //   ni ayuda de teclado. `title={null}` quita el título (cuando ya lo pone el contenedor, p. ej. SidePanel).
 // Los errores se ven mientras se escribe; quien lo usa no guarda si hay alguno (`validateData`).
 import { useRef } from 'react';
+import RoomPhotosManager from '@/components/company/RoomPhotosManager/RoomPhotosManager.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import Checkbox from '@/components/ui/Checkbox/Checkbox.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
@@ -36,6 +38,7 @@ export default function RoomPropertiesPanel({
   deleting = false,
   editableInfo = true,
   title = 'Sala seleccionada',
+  onUploadingChange,
 }) {
   // Campo de texto en el que ya se ha guardado un paso de deshacer desde que tiene el foco.
   const started = useRef(null);
@@ -185,6 +188,16 @@ export default function RoomPropertiesPanel({
               checked={data.reservable}
               onChange={(event) => setData({ reservable: event.target.checked })}
             />
+
+            <fieldset className={styles.amenities}>
+              <legend className={styles.legend}>Fotos</legend>
+              <RoomPhotosManager
+                photos={data.fotos ?? []}
+                roomName={room.nombre || room.codigo}
+                onChange={(fotos) => setData({ fotos })}
+                onUploadingChange={onUploadingChange}
+              />
+            </fieldset>
           </>
         ) : (
           <p className={styles.note}>
