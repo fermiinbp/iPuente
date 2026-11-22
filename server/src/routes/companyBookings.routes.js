@@ -458,7 +458,7 @@ router.delete(
  *   get:
  *     tags: [Empresa]
  *     summary: Reservas futuras de una sala propia
- *     description: 'Reservas CONFIRMED o PENDING_PAYMENT que empiezan después de ahora, por inicio ascendente (máx. 500). Son las que impiden eliminar la sala (`HAS_FUTURE_BOOKINGS`). Mismo formato que `/company/bookings`: incluye nombre y email del cliente, nunca su id. Sala ajena 403; inexistente o eliminada 404.'
+ *     description: 'Reservas CONFIRMED o PENDING_PAYMENT que empiezan después de ahora, por inicio ascendente (máx. 500). Son las que impiden eliminar la sala (`HAS_FUTURE_BOOKINGS`). Mismo formato que `/company/bookings`: incluye nombre y email del cliente, nunca su id. Sala ajena, inexistente o eliminada 404.'
  *     security:
  *       - bearerAuth: []
  *     parameters:

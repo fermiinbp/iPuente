@@ -146,9 +146,9 @@ describe('Publicar edificios y gestionar salas', () => {
       assert.equal(await buildingStatus('b-a2'), 'DRAFT');
     });
 
-    it('edificio ajeno: 403 y sin cambios', async () => {
+    it('edificio ajeno: 404 y sin cambios', async () => {
       const r = await call('POST', '/api/company/buildings/b-b/publish', { token: 'a' });
-      assert.equal(r.status, 403);
+      assert.equal(r.status, 404);
       assert.equal(await buildingStatus('b-b'), 'DRAFT');
     });
 
@@ -170,9 +170,9 @@ describe('Publicar edificios y gestionar salas', () => {
       assert.equal(again.body.publicado, false);
     });
 
-    it('edificio ajeno: 403', async () => {
+    it('edificio ajeno: 404', async () => {
       const r = await call('POST', '/api/company/buildings/b-b/unpublish', { token: 'a' });
-      assert.equal(r.status, 403);
+      assert.equal(r.status, 404);
     });
   });
 
@@ -207,9 +207,9 @@ describe('Publicar edificios y gestionar salas', () => {
       assert.equal(r.body.aviso, undefined);
     });
 
-    it('planta ajena: 403 y sin cambios', async () => {
+    it('planta ajena: 404 y sin cambios', async () => {
       const r = await call('POST', '/api/company/floors/f-b/unpublish', { token: 'a' });
-      assert.equal(r.status, 403);
+      assert.equal(r.status, 404);
       assert.equal(await floorStatus('f-b'), 'PUBLISHED');
     });
 
@@ -378,10 +378,10 @@ describe('Publicar edificios y gestionar salas', () => {
       assert.deepEqual(ids(byAll), ['r-pub']);
     });
 
-    it('buildingId o floorId ajeno: 403; inexistente: 404', async () => {
+    it('buildingId o floorId ajeno o inexistente: 404', async () => {
       for (const q of ['buildingId=b-b', 'floorId=f-b']) {
         const r = await call('GET', `/api/company/rooms?${q}`, { token: 'a' });
-        assert.equal(r.status, 403);
+        assert.equal(r.status, 404);
       }
       for (const q of ['buildingId=nada', 'floorId=nada']) {
         const r = await call('GET', `/api/company/rooms?${q}`, { token: 'a' });
@@ -428,8 +428,8 @@ describe('Publicar edificios y gestionar salas', () => {
       assert.equal(r.body.error.code, 'ROOM_INACTIVE');
     });
 
-    it('sala ajena: 403', async () => {
-      assert.equal((await patch('r-b', { visible: false })).status, 403);
+    it('sala ajena: 404', async () => {
+      assert.equal((await patch('r-b', { visible: false })).status, 404);
     });
 
     it('visible no booleano ("true" o [true]): 400 VALIDATION_ERROR', async () => {

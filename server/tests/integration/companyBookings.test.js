@@ -201,9 +201,9 @@ describe('Panel de empresa: reservas y bloqueos', () => {
       }
     });
 
-    it('responde 403 con roomId ajeno, 404 con inexistente y 400 con desde > hasta', async () => {
+    it('responde 404 con roomId ajeno, 404 con inexistente y 400 con desde > hasta', async () => {
       const ajena = await call('GET', '/api/company/bookings?roomId=r-b');
-      assert.equal(ajena.status, 403);
+      assert.equal(ajena.status, 404);
       const nada = await call('GET', '/api/company/bookings?roomId=no-existe');
       assert.equal(nada.status, 404);
       const rango = await call('GET', '/api/company/bookings?desde=2030-05-01&hasta=2030-04-01');
@@ -254,9 +254,9 @@ describe('Panel de empresa: reservas y bloqueos', () => {
       assert.equal(status, 201);
     });
 
-    it('responde 403 en sala ajena sin crear nada', async () => {
+    it('responde 404 en sala ajena sin crear nada', async () => {
       const { status } = await bloquear({ roomId: 'r-b' });
-      assert.equal(status, 403);
+      assert.equal(status, 404);
       assert.deepEqual(await occupancyModel.listByRoomAndDate('r-b', FECHA), []);
       assert.deepEqual(await blockModel.listByCompany('c-b'), []);
     });
@@ -347,7 +347,7 @@ describe('Panel de empresa: reservas y bloqueos', () => {
       );
     });
 
-    it('responde 403 al borrar un bloqueo ajeno sin borrarlo', async () => {
+    it('responde 404 al borrar un bloqueo ajeno sin borrarlo', async () => {
       await blockModel.upsert('bl-b', {
         companyId: 'c-b',
         roomId: 'r-b',
@@ -356,7 +356,7 @@ describe('Panel de empresa: reservas y bloqueos', () => {
         reason: 'Ajeno',
       });
       const { status } = await call('DELETE', '/api/company/blocks/bl-b');
-      assert.equal(status, 403);
+      assert.equal(status, 404);
       assert.ok(await blockModel.findById('bl-b'));
     });
 

@@ -1,4 +1,4 @@
-// Test de integración: guardar y publicar el mapa de una planta (/api/company/floors/:id/map y /publish),
+// Test de integración: leer, guardar y publicar el mapa de una planta (GET /api/company/floors/:id, /map y /publish),
 // con el verificador de tokens y Firestore sustituidos por dobles.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -32,7 +32,7 @@ const sala = (id, over = {}) => ({
 });
 const mapa = (salas, over = {}) => ({ ancho: 1000, alto: 600, origen: 'manual', salas, ...over });
 
-describe('Mapa de planta: guardar y publicar', () => {
+describe('Mapa de planta: leer, guardar y publicar', () => {
   let server;
   let baseUrl;
 
@@ -48,6 +48,7 @@ describe('Mapa de planta: guardar y publicar', () => {
   }
   const put = (id, body, token = 'a') =>
     call('PUT', `/api/company/floors/${id}/map`, { token, body });
+  const get = (id, token = 'a') => call('GET', `/api/company/floors/${id}`, { token });
   const publish = (id, token = 'a') => call('POST', `/api/company/floors/${id}/publish`, { token });
 
   before(async () => {
@@ -106,6 +107,102 @@ describe('Mapa de planta: guardar y publicar', () => {
         assert.equal(r.body.error.code, 'COMPANY_NOT_APPROVED');
       });
     }
+  });
+
+  describe('GET /company/floors/:id', () => {
+    it('401 sin token, 403 FORBIDDEN con CLIENT y 403 COMPANY_NOT_APPROVED con empresa pendiente', async () => {
+      assert.equal((await call('GET', '/api/company/floors/f-a')).status, 401);
+      const cli = await get('f-a', 'cliente');
+      assert.equal(cli.status, 403);
+      assert.equal(cli.body.error.code, 'FORBIDDEN');
+      const pend = await get('f-a', 'pend');
+      assert.equal(pend.status, 403);
+      assert.equal(pend.body.error.code, 'COMPANY_NOT_APPROVED');
+    });
+
+    it('planta sin mapa: salas vacías y el resto a null', async () => {
+      const r = await get('f-a');
+      assert.equal(r.status, 200);
+      assert.deepEqual(r.body, {
+        id: 'f-a',
+        buildingId: 'b-a',
+        numero: 0,
+        nombre: 'Baja',
+        publicado: false,
+        ancho: null,
+        alto: null,
+        origen: null,
+        salas: [],
+        mapImageUrl: null,
+      });
+    });
+
+    it('borrador y publicada: devuelve el mapa y el estado', async () => {
+      const own = storageUrl('companies/c-a/floors/f-a/plan.png');
+      await seedBookable('r1');
+      await put('f-a', mapa([sala('r1')], { origen: 'ia', mapImageUrl: own }));
+      const borrador = await get('f-a');
+      assert.equal(borrador.status, 200);
+      assert.equal(borrador.body.publicado, false);
+      assert.equal(borrador.body.ancho, 1000);
+      assert.equal(borrador.body.alto, 600);
+      assert.equal(borrador.body.origen, 'ia');
+      assert.equal(borrador.body.mapImageUrl, own);
+      assert.deepEqual(borrador.body.salas, [sala('r1')]);
+      await publish('f-a');
+      assert.equal((await get('f-a')).body.publicado, true);
+    });
+
+    it('planta ajena: 404 con el mismo cuerpo que una inexistente', async () => {
+      const ajena = await get('f-b');
+      const nada = await get('f-no-existe');
+      assert.equal(ajena.status, 404);
+      assert.equal(nada.status, 404);
+      assert.deepEqual(ajena.body, nada.body);
+    });
+
+    it('planta eliminada: 404', async () => {
+      await floorModel.update('f-a', { deletedAt: new Date() });
+      assert.equal((await get('f-a')).status, 404);
+    });
+
+    it('excluye las salas eliminadas lógicamente', async () => {
+      await put('f-a', mapa([sala('r1'), sala('r2', { x: 200 })]));
+      await roomModel.update('r2', { deletedAt: new Date() });
+      const r = await get('f-a');
+      assert.deepEqual(
+        r.body.salas.map((x) => x.id),
+        ['r1'],
+      );
+    });
+
+    it('400 con un id no válido', async () => {
+      const r = await get('a'.repeat(200));
+      assert.equal(r.status, 400);
+    });
+
+    it('cargar y guardar sin cambios conserva salas (también una menor de 20), plano y datos', async () => {
+      const own = storageUrl('companies/c-a/floors/f-a/plan.png');
+      const salas = [sala('r1'), sala('r2', { x: 300, y: 50, w: 12, h: 8 })];
+      await put('f-a', mapa(salas, { mapImageUrl: own }));
+      await roomModel.update('r1', { bookable: true, price: 25, capacity: 8 });
+      const cargado = (await get('f-a')).body;
+      const mapaCargado = {
+        ancho: cargado.ancho,
+        alto: cargado.alto,
+        origen: cargado.origen,
+        salas: cargado.salas,
+      };
+      assert.deepEqual(mapaCargado.salas, salas);
+      const guardado = await put('f-a', mapaCargado);
+      assert.equal(guardado.status, 200);
+      assert.equal(guardado.body.salasCreadas, 0);
+      assert.equal(guardado.body.mapImageUrl, own);
+      assert.deepEqual((await get('f-a')).body, cargado);
+      const room = await roomModel.findById('r1');
+      assert.equal(room.price, 25);
+      assert.equal(room.bookable, true);
+    });
   });
 
   describe('mapImageUrl', () => {
@@ -240,9 +337,9 @@ describe('Mapa de planta: guardar y publicar', () => {
       assert.equal(room.price, 25);
     });
 
-    it('planta ajena: 403 y no cambia nada', async () => {
+    it('planta ajena: 404 y no cambia nada', async () => {
       const r = await put('f-b', mapa([sala('x1')]));
-      assert.equal(r.status, 403);
+      assert.equal(r.status, 404);
       assert.deepEqual((await floorModel.findById('f-b')).salas, []);
       assert.equal(await roomModel.findById('x1'), null);
     });
@@ -394,9 +491,9 @@ describe('Mapa de planta: guardar y publicar', () => {
       assert.deepEqual(again.body, { id: 'f-a', publicado: true });
     });
 
-    it('planta ajena: 403 y no se publica', async () => {
+    it('planta ajena: 404 y no se publica', async () => {
       const r = await publish('f-b');
-      assert.equal(r.status, 403);
+      assert.equal(r.status, 404);
       assert.equal((await floorModel.findById('f-b')).status, 'DRAFT');
     });
 

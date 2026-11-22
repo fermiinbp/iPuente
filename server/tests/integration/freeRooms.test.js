@@ -118,8 +118,8 @@ describe('Salas gratis', () => {
       assert.equal(room.gratis, false);
     });
 
-    it('403 con sala ajena y 403 con rol cliente', async () => {
-      assert.equal((await patch('r-free', { gratis: true }, 'c2')).status, 403);
+    it('404 con sala ajena y 403 con rol cliente', async () => {
+      assert.equal((await patch('r-free', { gratis: true }, 'c2')).status, 404);
       assert.equal((await patch('r-free', { gratis: true }, 'cliente')).status, 403);
       assert.equal((await roomModel.findById('r-free')).price, 25);
     });
