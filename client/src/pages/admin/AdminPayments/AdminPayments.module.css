@@ -1,1 +1,55 @@
-/* Estilos de AdminPayments (CSS Module: clases en camelCase, importadas como styles.nombreClase). */
+/* Estilos de AdminPayments (CSS Module). Mobile first: la tabla pasa a tarjetas en móvil (DataTable). */
+.title {
+  margin-bottom: var(--space-5);
+  font-size: var(--text-titulo-paso);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.strong {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  color: var(--crema-suave);
+  font-size: var(--text-pequeno);
+  overflow-wrap: anywhere;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.pagerInfo {
+  margin: 0;
+  color: var(--crema-suave);
+  font-size: var(--text-pequeno);
+}
+
+.pagerButtons {
+  display: flex;
+  gap: var(--space-2);
+}

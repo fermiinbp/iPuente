@@ -50,6 +50,8 @@ const STATES = {
     DRAFT: { label: 'Borrador', className: styles.pending },
   },
   payment: {
+    PENDING: { label: 'Pendiente', className: styles.pending },
+    FAILED: { label: 'Fallido', className: styles.danger },
     SUCCEEDED: { label: 'Pagado', className: styles.free },
     REFUNDED: { label: 'Reembolsado', className: styles.neutral },
   },

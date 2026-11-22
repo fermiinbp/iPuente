@@ -1,5 +1,6 @@
-// Crear, listar y cancelar reservas del cliente. Hoy nacen CONFIRMED (sin pago online); con la
-// opción interna `pendingPayment` nacen PENDING_PAYMENT con expiresAt a +15 min (salvo las de 0 €).
+// Crear, listar y cancelar reservas del cliente. Con la opción `pendingPayment` (la que usa la API)
+// nacen PENDING_PAYMENT con expiresAt a +15 min y sin Stripe responden 503; las de 0 € y las
+// creadas sin la opción nacen CONFIRMED.
 // El servidor calcula pricePeriod y totalAmount a partir del price de la sala; occupancy bloquea
 // cada hora. Una pendiente vencida se muestra como EXPIRED y se expira al reservar sobre ella.
 import {
@@ -7,12 +8,12 @@ import {
   PENDING_MAX_HOLD_MINUTES,
   PENDING_MINUTES,
 } from '../config/bookingHours.js';
-import { now, runTransaction } from '../models/baseModel.js';
+import { getStripe } from '../config/stripe.js';
+import { runTransaction } from '../models/baseModel.js';
 import * as bookingModel from '../models/bookingModel.js';
 import * as buildingModel from '../models/buildingModel.js';
 import * as counterModel from '../models/counterModel.js';
 import * as floorModel from '../models/floorModel.js';
-import * as occupancyModel from '../models/occupancyModel.js';
 import * as roomModel from '../models/roomModel.js';
 import { todayString } from '../utils/dates.js';
 import { HttpError } from '../utils/httpError.js';
@@ -26,7 +27,8 @@ import {
   toMillis,
   toSlot,
 } from './availabilityService.js';
-import { readSlotPlan, releaseSlots, slotIds, writeSlotClaims } from './occupancyService.js';
+import { cancelBooking as cancelBookingCommon } from './cancellationService.js';
+import { readSlotPlan, writeSlotClaims } from './occupancyService.js';
 import { findPublicRoom } from './roomsService.js';
 
 // Date local de una fecha AAAA-MM-DD a una hora (24 pasa al día siguiente a las 00:00).
@@ -63,7 +65,7 @@ const CODE_PREFIX = 'IP-';
 const FIRST_CODE_NUMBER = 1000;
 
 // Quién canceló, en español, a partir del valor guardado en la reserva.
-const CANCELLED_BY = { CLIENT: 'cliente', COMPANY: 'empresa' };
+const CANCELLED_BY = { CLIENT: 'cliente', COMPANY: 'empresa', ADMIN: 'admin' };
 
 // Datos de cancelación de una reserva (motivo y quién); vacío si no está cancelada.
 export function toCancellation(booking) {
@@ -131,7 +133,8 @@ export function translateConflict(err) {
 
 // Crea una reserva y bloquea cada hora, todo en una transacción. Por defecto nace CONFIRMED; con
 // { pendingPayment: true } nace PENDING_PAYMENT con expiresAt a +15 min, salvo si importa 0 €
-// (sala gratis), que se confirma siempre. Nadie activa la opción todavía.
+// (sala gratis), que se confirma siempre y no necesita Stripe. Con importe > 0 y sin Stripe
+// disponible: 503 PAYMENTS_UNAVAILABLE antes de retener horas.
 export async function createBooking(
   uid,
   { roomId, fecha, inicio, fin },
@@ -159,6 +162,14 @@ export async function createBooking(
         throw new HttpError(400, 'ROOM_NOT_BOOKABLE', 'Esta sala no se puede reservar');
       }
       importe = precio * horas;
+      // Con importe > 0 hace falta Stripe: sin él se falla antes de retener horas.
+      if (pendingPayment && importe > 0 && !getStripe()) {
+        throw new HttpError(
+          503,
+          'PAYMENTS_UNAVAILABLE',
+          'Los pagos no están disponibles en este momento',
+        );
+      }
       await assertSlotAvailable(roomId, fecha, inicio, fin, tx);
       // Todas las lecturas van antes que las escrituras: el contador y las fichas se leen aquí.
       const plan = await readSlotPlan(roomId, fecha, inicio, fin, { tx });
@@ -270,24 +281,14 @@ function assertCancellable(booking, uid) {
   }
 }
 
-// Cancela una reserva propia y libera sus horas de occupancy en una transacción. Solo borra las
-// fichas cuyo bookingId es el de esta reserva (nunca la de otra reserva o bloqueo).
+// Cancela una reserva propia (cancellationService): libera sus horas y, si estaba pagada, la
+// reembolsa. Si el reembolso falla se mantiene la cancelación y la respuesta lleva `aviso`.
 export async function cancelBooking(uid, id) {
-  await runTransaction(async (tx) => {
-    const booking = await bookingModel.findById(id, { tx });
-    assertCancellable(booking, uid);
-    const fecha = todayString(toDate(booking.startDate));
-    const { inicio, fin } = toSlot(booking, 'reserva');
-    const ids = slotIds(booking.roomId, fecha, inicio, fin);
-    const slots = await Promise.all(ids.map((slot) => occupancyModel.findById(slot, { tx })));
-    await bookingModel.update(
-      id,
-      { status: 'CANCELLED', cancelledAt: now(), cancelledBy: 'CLIENT' },
-      { tx },
-    );
-    await releaseSlots(ids, slots, 'bookingId', id, tx);
+  return cancelBookingCommon({
+    id,
+    cancelledBy: 'CLIENT',
+    verify: (booking) => assertCancellable(booking, uid),
   });
-  return { id, estado: 'CANCELLED' };
 }
 
 // Alarga expiresAt de una reserva en una transacción, solo si sigue PENDING_PAYMENT y vigente

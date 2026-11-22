@@ -97,9 +97,17 @@ export default function Room() {
         inicio: activeSelection.inicio,
         fin: activeSelection.fin,
       });
-      navigate(`/my-bookings/${booking.id}`, { state: { created: true } });
+      if (booking.estado === 'PENDING_PAYMENT') {
+        navigate(`/checkout/${encodeURIComponent(booking.id)}`);
+      } else {
+        navigate(`/my-bookings/${booking.id}`, { state: { created: true } });
+      }
     } catch (error) {
-      setBookingError(error.message);
+      setBookingError(
+        error.code === 'PAYMENTS_UNAVAILABLE'
+          ? 'El pago online no está disponible ahora mismo, así que no podemos crear la reserva. Inténtalo más tarde.'
+          : error.message,
+      );
       if (error.code === 'SLOT_TAKEN') {
         setSelection(null);
         hours.reload();
