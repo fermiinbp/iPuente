@@ -45,24 +45,17 @@ function Stats({ summary, loading, error, onRetry }) {
   const total = Object.values(empresas).reduce((sum, n) => sum + (Number(n) || 0), 0);
   const reservas = summary.reservasMes ?? {};
 
+  // `reservas.total` sale de recuentos exactos; `truncado` solo afecta al reparto pendiente/caducada, que no se enseña.
   return (
-    <>
-      <div className={styles.stats}>
-        <StatCard value={number.format(total)} label="Empresas" />
-        <StatCard value={number.format(empresas.pendiente ?? 0)} label="Pendientes de aprobar" />
-        <StatCard value={number.format(reservas.total ?? 0)} label="Reservas este mes" />
-        <div className={styles.soon}>
-          <StatCard value="—" label="Ingresos este mes" className={styles.soonCard} />
-          <p className={styles.soonNote}>Se implementará más adelante.</p>
-        </div>
+    <div className={styles.stats}>
+      <StatCard value={number.format(total)} label="Empresas" />
+      <StatCard value={number.format(empresas.pendiente ?? 0)} label="Pendientes de aprobar" />
+      <StatCard value={number.format(reservas.total ?? 0)} label="Reservas este mes" />
+      <div className={styles.soon}>
+        <StatCard value="—" label="Ingresos este mes" className={styles.soonCard} />
+        <p className={styles.soonNote}>Se implementará más adelante.</p>
       </div>
-      {reservas.truncado && (
-        <p className={styles.note}>
-          Hay muchas reservas pendientes de pago este mes: el reparto por estado puede no estar
-          completo.
-        </p>
-      )}
-    </>
+    </div>
   );
 }
 
