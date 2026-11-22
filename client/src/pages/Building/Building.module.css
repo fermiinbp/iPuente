@@ -68,7 +68,7 @@
   position: relative;
   max-width: var(--ancho-max);
   margin: 0 auto;
-  padding: clamp(56px, 9vw, 120px) var(--gutter) clamp(48px, 7vw, 88px);
+  padding: clamp(40px, 6vw, 72px) var(--gutter) clamp(32px, 5vw, 56px);
 }
 
 .eyebrow {
@@ -103,11 +103,20 @@
   color: var(--crema-suave);
 }
 
+/* Cifras y fecha en una sola fila (apiladas en móvil). */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-5) var(--space-7);
+  margin-top: var(--space-6);
+}
+
 .stats {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-7);
-  margin: var(--space-7) 0 0;
+  gap: var(--space-6);
+  margin: 0;
 }
 
 .stat dt {
@@ -123,8 +132,8 @@
 }
 
 .date {
-  max-width: 280px;
-  margin-top: var(--space-6);
+  width: 100%;
+  max-width: 240px;
 }
 
 .note {
@@ -212,6 +221,10 @@
 @media (min-width: 960px) {
   .explorer {
     grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr);
-    align-items: start;
+    align-items: center;
+  }
+
+  .allFloors {
+    display: none;
   }
 }

@@ -137,27 +137,30 @@ export default function Building() {
           {where && <p className={styles.address}>{where}</p>}
           {building.descripcion && <p className={styles.lead}>{building.descripcion}</p>}
 
-          <dl className={styles.stats}>
-            <div className={styles.stat}>
-              <dt>Plantas</dt>
-              <dd>{building.plantas.length}</dd>
-            </div>
-            <div className={styles.stat}>
-              <dt>Salas libres</dt>
-              <dd>{building.salasLibres}</dd>
-            </div>
-          </dl>
+          <div className={styles.meta}>
+            <dl className={styles.stats}>
+              <div className={styles.stat}>
+                <dt>Plantas</dt>
+                <dd>{building.plantas.length}</dd>
+              </div>
+              <div className={styles.stat}>
+                <dt>Salas libres</dt>
+                <dd>{building.salasLibres}</dd>
+              </div>
+            </dl>
 
-          <div className={styles.date}>
-            <Input
-              label="Fecha"
-              type="date"
-              name="date"
-              value={fecha}
-              min={todayString()}
-              onChange={handleDateChange}
-              hint={formatLongDate(fecha)}
-            />
+            <div className={styles.date}>
+              <Input
+                label="Fecha"
+                type="date"
+                name="date"
+                variant="boxed"
+                value={fecha}
+                min={todayString()}
+                onChange={handleDateChange}
+                hint={formatLongDate(fecha)}
+              />
+            </div>
           </div>
           {isDemo && (
             <p className={styles.note} role="note">
@@ -170,7 +173,7 @@ export default function Building() {
       <Section id="plantas" titleId="plantas-titulo" tone="deep" decor="grid" spacious>
         <SectionTitle id="plantas-titulo">Elige una planta</SectionTitle>
         <p className={styles.sectionLead}>
-          Entra en una planta para ver su plano y las salas libres del {formatLongDate(fecha)}.
+          Entra en una planta para ver su plano y sus salas libres en la fecha elegida.
         </p>
         {heroFloors.length > 0 && (
           <div className={styles.explorer}>
@@ -195,8 +198,8 @@ export default function Building() {
                 <p className={styles.summaryTitle}>{activeFloor.name}</p>
                 <p className={styles.summaryText}>
                   {activeFloor.free === 0
-                    ? 'Sin salas libres este día.'
-                    : `${activeFloor.free} ${activeFloor.free === 1 ? 'sala libre' : 'salas libres'} el ${formatLongDate(fecha)}.`}
+                    ? 'Sin salas libres.'
+                    : `${activeFloor.free} ${activeFloor.free === 1 ? 'sala libre' : 'salas libres'}.`}
                 </p>
                 <Link
                   className={styles.summaryLink}
@@ -208,13 +211,16 @@ export default function Building() {
             </div>
           </div>
         )}
-        <h3 className={styles.listTitle}>Todas las plantas</h3>
-        <FloorList
-          buildingId={building.id}
-          floors={building.plantas}
-          fecha={fecha}
-          people={people}
-        />
+        {/* La lista repite el selector: solo se enseña donde no cabe el selector junto al 3D (móvil y tablet). */}
+        <div className={styles.allFloors}>
+          <h3 className={styles.listTitle}>Todas las plantas</h3>
+          <FloorList
+            buildingId={building.id}
+            floors={building.plantas}
+            fecha={fecha}
+            people={people}
+          />
+        </div>
       </Section>
 
       <NearbySection />
