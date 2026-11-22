@@ -14,6 +14,18 @@ export function getSummary(options) {
   return get('/admin/summary', options);
 }
 
+// Usuarios, de los más recientes a los más antiguos (20 por página): { usuarios: [{ id, nombre, email, rol,
+// empresa: { id, nombre } | null, fechaAlta }], total, page, limit, truncado }. `rol` en inglés (CLIENT, COMPANY o
+// ADMIN), `q` busca por nombre o email (hasta 100 caracteres) y `page` va de 1 a 50.
+export function listUsers({ rol, q, page } = {}, options) {
+  const params = new URLSearchParams();
+  if (rol) params.set('rol', rol);
+  if (q) params.set('q', q);
+  if (page > 1) params.set('page', String(page));
+  const query = params.toString();
+  return get(`/admin/users${query ? `?${query}` : ''}`, options);
+}
+
 // Detalle de una empresa: { id, nombre, razonSocial, cif, email, telefono, direccion, descripcion, contacto, estado,
 // verificada, motivo, fechaSolicitud, version, revisadaEn, dueno: { nombre, email } | null,
 // edificios: [{ id, nombre, ciudad, publicado }] }. `ciudad` de la empresa aún no llega: si la API la añade, se
