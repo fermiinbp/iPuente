@@ -21,6 +21,11 @@
   overflow-wrap: anywhere;
 }
 
+/* Recibe el foco por código tras una acción (tabIndex -1): no hace falta el contorno. */
+.title:focus {
+  outline: none;
+}
+
 .headerActions {
   display: flex;
   flex-wrap: wrap;

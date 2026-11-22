@@ -3,7 +3,7 @@
 // rechazada o suspendida, datos de la empresa, cuenta del dueño, edificios e historial (solo las fechas de la API).
 // La ciudad de la empresa solo sale si la API la envía (hoy GET /admin/companies/:id no la trae). Sin fecha de alta
 // de la cuenta, cuenta de cobro ni plantas por edificio: la API no los tiene (docs/funciones-wireframes.md).
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import CompanyActionModal from '@/components/admin/CompanyActionModal/CompanyActionModal.jsx';
 import Alert from '@/components/ui/Alert/Alert.jsx';
@@ -65,10 +65,13 @@ export default function AdminCompanyDetail() {
   const [pending, setPending] = useState(null);
   const [notice, setNotice] = useState(null);
 
+  // Tras una acción el botón que abrió el modal puede desaparecer (cambia el estado): el foco va al título.
+  const titleRef = useRef(null);
   const finishAction = (result) => {
     setNotice(result);
     setPending(null);
     reload();
+    requestAnimationFrame(() => titleRef.current?.focus());
   };
 
   const back = <BackLink to="/admin/companies">Empresas</BackLink>;
@@ -88,6 +91,7 @@ export default function AdminCompanyDetail() {
     return (
       <PageContainer>
         {back}
+        {notice && <Alert type={notice.type}>{notice.text}</Alert>}
         <ErrorState
           error={error}
           title={notFound ? 'Esta empresa no existe' : 'No hemos podido cargar la empresa'}
@@ -140,7 +144,9 @@ export default function AdminCompanyDetail() {
       <header className={styles.header}>
         <div className={styles.heading}>
           {back}
-          <h1 className={styles.title}>{nombre}</h1>
+          <h1 ref={titleRef} tabIndex={-1} className={styles.title}>
+            {nombre}
+          </h1>
         </div>
         <div className={styles.headerActions}>
           <StatusBadge kind="company" status={BADGE_STATUS[company.estado]} />
@@ -149,6 +155,7 @@ export default function AdminCompanyDetail() {
               key={type}
               variant={PRIMARY.has(type) ? 'primary' : 'secondary'}
               size="md"
+              disabled={loading}
               onClick={() => setPending({ type, company })}
             >
               {ACTIONS[type].label}
