@@ -16,9 +16,26 @@ export function detailTitle(booking) {
 export function detailStatus(booking, role = ROLES.CLIENT) {
   if (isBlock(booking)) return BOOKING_DISPLAY_STATUS.BLOCKED;
   if (booking.estado !== 'CANCELLED' || role !== ROLES.CLIENT) return booking.estado;
+  if (booking.canceladaPor === 'admin') return booking.estado;
   return booking.canceladaPor === 'empresa'
     ? BOOKING_DISPLAY_STATUS.CANCELLED_BY_SPACE
     : BOOKING_DISPLAY_STATUS.CANCELLED_BY_CLIENT;
+}
+
+// Aviso tras cancelar, según la respuesta de la API: `reembolso` 'REFUNDED' (hecho) o 'PENDING' (con `aviso`).
+// Devuelve { type, text } para un Alert.
+export function cancelNotice(dateText, result) {
+  const base = `Reserva del ${dateText} cancelada.`;
+  if (result?.reembolso === 'REFUNDED') {
+    return { type: 'success', text: `${base} Te hemos reembolsado el pago.` };
+  }
+  if (result?.reembolso === 'PENDING') {
+    return {
+      type: 'warning',
+      text: `${base} El reembolso está pendiente. ${result.aviso ?? ''}`.trim(),
+    };
+  }
+  return { type: 'success', text: base };
 }
 
 // Texto de quién canceló y su motivo, según quién lo lee.
@@ -26,13 +43,16 @@ export function cancellationText(booking, role = ROLES.CLIENT) {
   const by = booking.canceladaPor;
   let who;
   if (role === ROLES.CLIENT) {
-    who =
-      by === 'empresa' ? 'El espacio ha cancelado esta reserva.' : 'Has cancelado esta reserva.';
+    if (by === 'empresa') who = 'El espacio ha cancelado esta reserva.';
+    else if (by === 'admin') who = 'iPuente ha cancelado esta reserva.';
+    else who = 'Has cancelado esta reserva.';
   } else if (role === ROLES.COMPANY) {
     if (by === 'empresa') who = 'Tu empresa canceló esta reserva.';
     else if (by === 'cliente') who = 'El cliente canceló esta reserva.';
+    else if (by === 'admin') who = 'iPuente canceló esta reserva.';
     else who = 'Esta reserva está cancelada.';
-  } else if (by === 'empresa') who = 'La empresa canceló esta reserva.';
+  } else if (by === 'admin') who = 'Un administrador canceló esta reserva.';
+  else if (by === 'empresa') who = 'La empresa canceló esta reserva.';
   else if (by === 'cliente') who = 'El cliente canceló esta reserva.';
   else who = 'Esta reserva está cancelada.';
   return booking.motivoCancelacion ? `${who} Motivo: ${booking.motivoCancelacion}` : who;

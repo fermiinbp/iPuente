@@ -1,9 +1,10 @@
-// Rutas del panel de admin: empresas (listar, detalle, aprobar, rechazar, suspender y reactivar), usuarios, reservas y resumen.
+// Rutas del panel de admin: empresas (listar, detalle, aprobar, rechazar, suspender y reactivar), usuarios, reservas, pagos y resumen.
 import { Router } from 'express';
 
 import { ROLES } from '../config/roles.js';
 import * as ctrl from '../controllers/adminController.js';
 import { authStrict } from '../middlewares/auth.js';
+import { adminRefundLimiter } from '../middlewares/rateLimit.js';
 import { requireRole } from '../middlewares/requireRole.js';
 import { validate } from '../middlewares/validate.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -405,11 +406,96 @@ router.get(
 
 /**
  * @openapi
+ * /admin/payments:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Lista los pagos con su reserva
+ *     description: 'Devuelve `{ pagos: [{ id, importe, moneda, estado, reembolsoPendiente, motivoReembolso, fecha, reembolsadoEn, reserva { id, codigo, estado }, cliente { nombre, email } }], total, page, limit, truncado }`, del más reciente al más antiguo, 20 por página (hasta 500 pagos leídos, página máxima 25). `estado` es el del pago. Nunca incluye datos de tarjeta. El `id` del pago es el id de la sesión de Checkout de Stripe (clave de idempotencia del pago; no es secreto y solo lo ve el admin). Solo admin.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: estado
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, SUCCEEDED, FAILED, REFUNDED]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 25
+ *     responses:
+ *       200:
+ *         description: Página de pagos.
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ */
+router.get(
+  '/admin/payments',
+  authStrict,
+  requireRole(ROLES.ADMIN),
+  adminValidator.listPayments,
+  validate,
+  asyncHandler(ctrl.listPayments),
+);
+
+/**
+ * @openapi
+ * /admin/payments/{id}/refund:
+ *   post:
+ *     tags: [Admin]
+ *     summary: Reembolsa un pago (siempre total)
+ *     description: 'Reembolsa en Stripe el pago `SUCCEEDED` (o reintenta uno con `reembolsoPendiente`), lo pasa a `REFUNDED`, cancela su reserva `CONFIRMED` (`canceladaPor: admin`) y libera sus horas; una reserva `COMPLETED` conserva su estado y su historial (`reserva.estado: COMPLETED`). El `id` del pago es el id de la sesión de Checkout de Stripe (clave de idempotencia; no es secreto y solo lo ve el admin). Es idempotente: repetir la llamada sobre un pago ya reembolsado responde 200 con `yaReembolsado: true` sin volver a llamar a Stripe. Devuelve `{ id, estado, reserva { id, estado }, yaReembolsado? }`. 409 `PAYMENT_NOT_REFUNDABLE` si el pago no está cobrado; 502 `PAYMENTS_ERROR` si Stripe falla (el reembolso queda pendiente y se puede reintentar); 503 `PAYMENTS_UNAVAILABLE` sin Stripe. Solo admin.'
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Pago reembolsado.
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       429:
+ *         description: Demasiados reembolsos seguidos (`RATE_LIMITED`).
+ *       409:
+ *         description: El pago no se puede reembolsar (`PAYMENT_NOT_REFUNDABLE`).
+ *       502:
+ *         description: Stripe ha fallado (`PAYMENTS_ERROR`); el reembolso queda pendiente.
+ *       503:
+ *         description: Pagos no disponibles (`PAYMENTS_UNAVAILABLE`).
+ */
+router.post(
+  '/admin/payments/:id/refund',
+  authStrict,
+  requireRole(ROLES.ADMIN),
+  adminRefundLimiter,
+  adminValidator.refundPayment,
+  validate,
+  asyncHandler(ctrl.refundPayment),
+);
+
+/**
+ * @openapi
  * /admin/summary:
  *   get:
  *     tags: [Admin]
  *     summary: Resumen del panel
- *     description: 'Devuelve `{ empresas, usuarios, reservasMes }`: empresas por estado, usuarios por rol y reservas del mes actual por estado. Solo admin.'
+ *     description: 'Devuelve `{ empresas, usuarios, reservasMes }`: empresas por estado, usuarios por rol y reservas del mes actual por estado (una PENDING_PAYMENT vencida cuenta como EXPIRED; si se alcanza el tope de lectura, reservasMes.truncado es true). Solo admin.'
  *     security:
  *       - bearerAuth: []
  *     responses:

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it, mock } from 'node:test';
 
 import { db, setDbForTests } from '../../src/config/config.js';
+import { setStripeForTests } from '../../src/config/stripe.js';
 import { setTokenVerifier } from '../../src/middlewares/auth.js';
 import * as buildingModel from '../../src/models/buildingModel.js';
 import * as companyModel from '../../src/models/companyModel.js';
@@ -12,6 +13,7 @@ import * as roomModel from '../../src/models/roomModel.js';
 import * as userModel from '../../src/models/userModel.js';
 import { setAuthClientForTests } from '../../src/services/authService.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
+import { createStripeDouble } from '../helpers/stripeDouble.js';
 import { listen, seedPublicData } from '../helpers/publicData.js';
 
 const tokens = {
@@ -82,6 +84,8 @@ describe('Panel de admin: empresas', () => {
   });
 
   beforeEach(async () => {
+    delete process.env.STRIPE_SECRET_KEY;
+    setStripeForTests({ client: createStripeDouble(), webhookSecret: 'whsec_test' });
     fakeDb = createFakeFirestore();
     setDbForTests(fakeDb);
     fakeAuth = createFakeAuth();
@@ -98,6 +102,7 @@ describe('Panel de admin: empresas', () => {
   });
 
   after(async () => {
+    setStripeForTests(null);
     setAuthClientForTests(null);
     setTokenVerifier(null);
     setDbForTests(null);

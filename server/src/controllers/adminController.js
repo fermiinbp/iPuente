@@ -1,5 +1,6 @@
 // Controlador del panel de admin. Lee req, llama al service y responde; nunca habla con Firestore.
 import * as service from '../services/adminService.js';
+import * as paymentsAdmin from '../services/adminPaymentsService.js';
 
 // GET /api/admin/companies?estado=: lista de empresas.
 export async function listCompanies(req, res) {
@@ -54,4 +55,15 @@ export async function getBooking(req, res) {
 // GET /api/admin/summary: empresas por estado, usuarios por rol y reservas del mes.
 export async function getSummary(req, res) {
   res.json(await service.getSummary());
+}
+
+// GET /api/admin/payments?estado=&page=: pagos con su reserva.
+export async function listPayments(req, res) {
+  const { estado, page } = req.query;
+  res.json(await paymentsAdmin.listPayments({ estado, page: page ? Number(page) : 1 }));
+}
+
+// POST /api/admin/payments/:id/refund: reembolso total de un pago.
+export async function refundPayment(req, res) {
+  res.json(await paymentsAdmin.refundPayment(req.params.id));
 }

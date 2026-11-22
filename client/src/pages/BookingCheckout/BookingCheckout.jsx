@@ -1,6 +1,6 @@
 // Revisa tu reserva (/checkout/:bookingId): resumen antes de pagar. Solo se ve el resumen si la reserva
 // es del usuario y está pendiente de pago; si ha caducado se ofrece reservar de nuevo (si la franja sigue libre).
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import Alert from '@/components/ui/Alert/Alert.jsx';
 import BackLink from '@/components/ui/BackLink/BackLink.jsx';
@@ -28,6 +28,26 @@ function slotStillFree(booking, freeHours) {
   return true;
 }
 
+// Mensaje en español de cada error del pago.
+function payErrorMessage(err) {
+  switch (err.code) {
+    case 'PAYMENT_IN_PROGRESS':
+      return 'Ya hay un pago en marcha para esta reserva. Espera unos segundos e inténtalo de nuevo.';
+    case 'BOOKING_STARTED':
+      return 'La reserva ya ha empezado y no se puede pagar.';
+    case 'BOOKING_EXPIRED':
+      return 'Se ha agotado el tiempo para pagar esta reserva.';
+    case 'BOOKING_NOT_PENDING':
+      return 'Esta reserva ya no está pendiente de pago.';
+    case 'PAYMENTS_UNAVAILABLE':
+      return 'El pago online no está disponible ahora mismo. Tu reserva sigue guardada: inténtalo en unos minutos.';
+    case 'PAYMENTS_ERROR':
+      return 'No hemos podido conectar con el servicio de pago. No se ha hecho ningún cargo; inténtalo de nuevo.';
+    default:
+      return err.message;
+  }
+}
+
 export default function BookingCheckout() {
   usePageTitle('Revisa tu reserva');
   const { bookingId } = useParams();
@@ -52,6 +72,18 @@ export default function BookingCheckout() {
   const payLock = useRef(false);
   const [payError, setPayError] = useState('');
 
+  // Al volver atrás desde Stripe el navegador puede restaurar la página con el botón aún cargando.
+  useEffect(() => {
+    function handlePageShow(event) {
+      if (!event.persisted) return;
+      payLock.current = false;
+      setPaying(false);
+      reload();
+    }
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, [reload]);
+
   async function handlePay() {
     if (payLock.current) return;
     payLock.current = true;
@@ -59,16 +91,16 @@ export default function BookingCheckout() {
     setPayError('');
     try {
       const { url } = await createCheckout(bookingId);
-      // Solo se redirige a una página segura: nunca a una URL que no sea https.
-      if (!/^https:\/\//i.test(url ?? ''))
+      // Solo se redirige a la página de pago de Stripe, siempre por https.
+      const target = URL.canParse(url ?? '') ? new URL(url) : null;
+      if (target?.protocol !== 'https:' || target.hostname !== 'checkout.stripe.com')
         throw new Error('No hemos podido abrir la página de pago.');
-      window.location.assign(url);
+      window.location.assign(target.href);
     } catch (err) {
-      setPayError(
-        err.status === 404
-          ? 'El pago online todavía no está disponible. Tu reserva sigue guardada.'
-          : err.message,
-      );
+      setPayError(payErrorMessage(err));
+      // Si la reserva ya no se puede pagar, se recarga para enseñar su estado real.
+      if (['BOOKING_EXPIRED', 'BOOKING_NOT_PENDING', 'BOOKING_STARTED'].includes(err.code))
+        reload();
       payLock.current = false;
       setPaying(false);
     }

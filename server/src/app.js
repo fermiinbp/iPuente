@@ -9,6 +9,7 @@ import { swaggerServe, swaggerSetup } from './config/swagger.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
 import { generalLimiter } from './middlewares/rateLimit.js';
 import routes from './routes/index.js';
+import webhookRoutes from './routes/webhook.routes.js';
 
 const app = express();
 
@@ -22,9 +23,10 @@ export function corsOrigin(origin, callback) {
   callback(null, !origin || origin === allowed);
 }
 
-// Orden: cors → (aquí irá el webhook de Stripe, sin parsear y fuera del límite, cuando se haga)
+// Orden: cors → webhook de Stripe (body sin parsear y fuera del límite general; lo protege la firma)
 // → límite general → JSON → documentación → rutas.
 app.use(cors({ origin: corsOrigin }));
+app.use('/api/payments/webhook', webhookRoutes);
 app.use('/api', generalLimiter);
 app.use(express.json());
 
