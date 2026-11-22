@@ -2,9 +2,6 @@
 .selector {
   --item-w: 60px;
   --item-h: 56px;
-  position: sticky;
-  top: calc(var(--alto-cabecera) + var(--space-3));
-  z-index: 2;
   width: fit-content;
   max-width: 100%;
   min-width: 0;

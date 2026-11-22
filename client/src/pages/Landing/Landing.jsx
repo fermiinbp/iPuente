@@ -87,6 +87,7 @@ export default function Landing() {
       </section>
 
       <FloorSection buildingName={BUILDING.name} />
+      <HowItWorks />
       <NearbySection />
 
       <Section id="salas" titleId="salas-titulo" decor="grid">
@@ -115,7 +116,6 @@ export default function Landing() {
         )}
       </Section>
 
-      <HowItWorks />
       <CompaniesCta />
     </div>
   );

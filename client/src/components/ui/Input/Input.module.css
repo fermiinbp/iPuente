@@ -40,6 +40,41 @@
   opacity: 1;
 }
 
+/* Sin las flechas nativas de los campos numéricos (las sustituye NumberStepper). */
+.input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.input[type='number']::-webkit-inner-spin-button,
+.input[type='number']::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Control dentro del campo, a la derecha (botones de NumberStepper). */
+.control {
+  position: relative;
+}
+
+.endAdornment {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: flex;
+  transform: translateY(-50%);
+}
+
+/* En el campo del buscador los botones invaden el relleno para dejar sitio a las cifras. */
+.field:not(.boxed) .endAdornment {
+  right: -8px;
+}
+
+.input.withEnd {
+  padding-right: 80px;
+}
+
 .hint,
 .error {
   margin: 0;
@@ -81,6 +116,10 @@
   border: 1px solid var(--campo-borde);
   border-radius: var(--radio-plano);
   background: var(--campo-fondo);
+}
+
+.boxed .input.withEnd {
+  padding-right: 92px;
 }
 
 .boxed .input::placeholder {

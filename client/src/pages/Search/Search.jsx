@@ -10,7 +10,7 @@ import SearchBar from '@/components/search/SearchBar/SearchBar.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
-import Input from '@/components/ui/Input/Input.jsx';
+import NumberStepper from '@/components/ui/NumberStepper/NumberStepper.jsx';
 import Select from '@/components/ui/Select/Select.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { useFetch } from '@/hooks/useFetch.js';
@@ -236,12 +236,11 @@ export default function Search() {
             onChange={(label) => change({ tipo: TYPES.find((t) => t.label === label)?.value })}
           />
           <div className={styles.filterFields}>
-            <Input
+            <NumberStepper
               key={`precio-${precioMax}`}
               label="Precio máximo (€/h)"
               variant="boxed"
               name="precioMax"
-              type="number"
               min="1"
               step="1"
               inputMode="numeric"

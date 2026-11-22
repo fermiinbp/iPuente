@@ -1,8 +1,31 @@
 /* Estilos de Search (CSS Module). Mobile first. */
 .page {
+  position: relative;
+  isolation: isolate;
   min-height: 60vh;
+  overflow: clip;
   background: var(--bosque);
   color: var(--crema);
+}
+
+/* Fondo con luz, como la cabecera de edificio, planta y sala: resplandor verde arriba a la derecha y toque de bronce abajo. */
+.page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      45% 40% at 85% 8%,
+      color-mix(in srgb, var(--foto-hueco) 90%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      35% 35% at 4% 92%,
+      color-mix(in srgb, var(--bronce) 14%, transparent),
+      transparent 70%
+    );
 }
 
 .inner {
@@ -151,6 +174,6 @@
     position: sticky;
     top: 96px;
     display: block;
-    height: calc(100vh - 128px);
+    height: min(calc(100vh - 128px), 560px);
   }
 }

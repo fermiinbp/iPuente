@@ -108,6 +108,17 @@
   margin: 0;
 }
 
+/* Sin galería: los datos clave van en una banda con cifras grandes entre dos líneas. */
+.factsBand {
+  gap: var(--space-5) var(--space-7);
+  padding: var(--space-5) 0;
+  border-block: 1px solid var(--linea);
+}
+
+.factsBand dd {
+  font-size: var(--text-sala);
+}
+
 .facts dt {
   font-size: var(--text-etiqueta);
   color: var(--crema-suave);

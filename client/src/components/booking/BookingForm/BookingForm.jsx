@@ -4,6 +4,7 @@ import AvailabilityCalendar from '@/components/room/AvailabilityCalendar/Availab
 import Alert from '@/components/ui/Alert/Alert.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
+import NumberStepper from '@/components/ui/NumberStepper/NumberStepper.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { todayString } from '@/utils/dates.js';
 import BookingSummary from '../BookingSummary/BookingSummary.jsx';
@@ -75,9 +76,8 @@ export default function BookingForm({
         </>
       )}
 
-      <Input
+      <NumberStepper
         label="Asistentes"
-        type="number"
         name="attendees"
         variant="boxed"
         min="1"

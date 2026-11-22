@@ -203,3 +203,11 @@
     transform: translate3d(6%, 8%, 0) scale(1.15);
   }
 }
+
+/* Escritorio: el plano acompaña a la lista al bajar, en vez de dejar un hueco a su derecha. */
+@media (min-width: 900px) {
+  .stage {
+    position: sticky;
+    top: calc(var(--alto-cabecera) + var(--space-4));
+  }
+}
