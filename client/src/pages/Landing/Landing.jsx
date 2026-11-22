@@ -86,14 +86,15 @@ export default function Landing() {
             />
           </div>
 
-          <div className={styles.heroNote} ref={setNoteContainer} />
-
           <SearchBar
             variant="hero"
             className={styles.search}
             submitLabel="Buscar salas"
             onSearch={handleSearch}
           />
+
+          {/* Va después del buscador en el DOM para que el orden del foco siga al visual (la leyenda se ve debajo). */}
+          <div className={styles.heroNote} ref={setNoteContainer} />
         </div>
       </section>
 
