@@ -1,13 +1,14 @@
 // Test de integración del panel de admin sobre usuarios, reservas y resumen
 // (/api/admin/users, /bookings, /bookings/:id y /summary) con Firestore sustituido por un doble.
 import assert from 'node:assert/strict';
-import { after, before, beforeEach, describe, it } from 'node:test';
+import { after, before, beforeEach, describe, it, mock } from 'node:test';
 
 import { setDbForTests } from '../../src/config/config.js';
 import { setTokenVerifier } from '../../src/middlewares/auth.js';
 import * as bookingModel from '../../src/models/bookingModel.js';
 import * as buildingModel from '../../src/models/buildingModel.js';
 import * as companyModel from '../../src/models/companyModel.js';
+import * as paymentModel from '../../src/models/paymentModel.js';
 import * as roomModel from '../../src/models/roomModel.js';
 import * as userModel from '../../src/models/userModel.js';
 import * as adminService from '../../src/services/adminService.js';
@@ -416,6 +417,98 @@ describe('Panel de admin: usuarios, reservas y resumen', () => {
       await companyModel.upsert('c5', { name: 'Antigua' });
       const { body } = await get('/api/admin/summary');
       assert.equal(body.empresas.pendiente, 2);
+    });
+
+    describe('ingresosMes', () => {
+      const NOW = new Date(2026, 5, 15, 12);
+      const dentro = new Date(2026, 5, 10, 9);
+
+      // Pago con createdAt fijo (el model pone serverTimestamp, que aquí se sustituye).
+      async function mkPayment(id, data, createdAt = dentro) {
+        await paymentModel.create(
+          { bookingId: `bk-${id}`, currency: 'EUR', provider: 'STRIPE', ...data },
+          { id },
+        );
+        await paymentModel.update(id, { createdAt });
+      }
+
+      it('suma los SUCCEEDED del mes y deja fuera otros meses, REFUNDED y reembolsos pendientes', async () => {
+        await mkPayment('p1', { status: 'SUCCEEDED', amountCents: 5000 });
+        await mkPayment('p2', { status: 'SUCCEEDED', amountCents: 1250, refundPending: false });
+        await mkPayment('p3', { status: 'SUCCEEDED', amountCents: 9999, refundPending: true });
+        await mkPayment('p4', { status: 'REFUNDED', amountCents: 7000 });
+        await mkPayment('p5', { status: 'PENDING', amountCents: 3000 });
+        await mkPayment('p6', { status: 'SUCCEEDED', amountCents: 4000 }, new Date(2026, 4, 20));
+        await mkPayment('p7', { status: 'SUCCEEDED', amountCents: 4000 }, new Date(2026, 6, 2));
+        const summary = await adminService.getSummary({ now: NOW });
+        assert.deepEqual(summary.ingresosMes, { total: 62.5, pagos: 2 });
+      });
+
+      it('cuenta un SUCCEEDED sin el campo refundPending', async () => {
+        await mkPayment('p1', { status: 'SUCCEEDED', amountCents: 2500 });
+        const summary = await adminService.getSummary({ now: NOW });
+        assert.deepEqual(summary.ingresosMes, { total: 25, pagos: 1 });
+      });
+
+      it('respeta los bordes del mes: el primer instante entra y el del mes siguiente no', async () => {
+        await mkPayment('in', { status: 'SUCCEEDED', amountCents: 1000 }, new Date(2026, 5, 1));
+        await mkPayment('fin', { status: 'SUCCEEDED', amountCents: 2000 }, new Date(2026, 6, 1));
+        await mkPayment(
+          'antes',
+          { status: 'SUCCEEDED', amountCents: 4000 },
+          new Date(2026, 4, 31, 23, 59, 59, 999),
+        );
+        const summary = await adminService.getSummary({ now: NOW });
+        assert.deepEqual(summary.ingresosMes, { total: 10, pagos: 1 });
+      });
+
+      it('suma céntimos enteros sin error de coma flotante', async () => {
+        await mkPayment('a', { status: 'SUCCEEDED', amountCents: 10 });
+        await mkPayment('b', { status: 'SUCCEEDED', amountCents: 20 });
+        await mkPayment('c', { status: 'SUCCEEDED', amountCents: 1999 });
+        const summary = await adminService.getSummary({ now: NOW });
+        // 0,1 + 0,2 + 19,99 en coma flotante no daría 20,29.
+        assert.equal(summary.ingresosMes.total, 20.29);
+        assert.equal(summary.ingresosMes.pagos, 3);
+      });
+
+      it('un mes sin pagos da total 0 y 0 pagos', async () => {
+        const summary = await adminService.getSummary({ now: NOW });
+        assert.deepEqual(summary.ingresosMes, { total: 0, pagos: 0 });
+      });
+
+      it('llega por la API en el mes actual', async () => {
+        await mkPayment('p1', { status: 'SUCCEEDED', amountCents: 1234 }, new Date());
+        const { status, body } = await get('/api/admin/summary');
+        assert.equal(status, 200);
+        assert.deepEqual(body.ingresosMes, { total: 12.34, pagos: 1 });
+      });
+
+      it('si falla la agregación responde 200 con ingresosMes null y el resto del resumen', async () => {
+        const db = createFakeFirestore();
+        const fail = () => {
+          const err = new Error('FAILED_PRECONDITION: sin datos sensibles');
+          err.code = 9;
+          throw err;
+        };
+        const broken = {
+          ...db,
+          collection: (name) => {
+            const ref = db.collection(name);
+            if (name !== 'payments') return ref;
+            return { ...ref, where: () => ({ where: fail, aggregate: fail }), aggregate: fail };
+          },
+        };
+        setDbForTests(broken);
+        const log = mock.method(console, 'error', () => {});
+        const { status, body } = await get('/api/admin/summary');
+        const logged = JSON.stringify(log.mock.calls.map((c) => c.arguments));
+        log.mock.restore();
+        assert.equal(status, 200);
+        assert.equal(body.ingresosMes, null);
+        assert.ok(body.empresas && body.usuarios && body.reservasMes);
+        assert.equal(logged.includes('sin datos sensibles'), false);
+      });
     });
   });
 });
