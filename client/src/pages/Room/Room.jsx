@@ -150,7 +150,7 @@ export default function Room() {
   const mapsUrl = place
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${room.edificio?.nombre ?? ''} ${place}`.trim())}`
     : null;
-  const where = [room.edificio?.nombre, room.planta?.nombre].filter(Boolean).join(' · ');
+  const hasPhotos = (room.fotos ?? []).length > 0;
   const keep = keepParams().toString();
   const buildingTo = `/buildings/${room.edificio.id}?${keep}`;
   const floorTo = room.planta
@@ -176,7 +176,6 @@ export default function Room() {
             <span aria-hidden="true">←</span> Volver al plano
           </Link>
           <Breadcrumbs items={crumbs} />
-          {where && <p className={styles.eyebrow}>{where}</p>}
           <h1 className={styles.title}>{room.nombre}</h1>
           {room.reservable && (
             <a className={styles.jump} href="#reserva-titulo">
@@ -184,9 +183,10 @@ export default function Room() {
             </a>
           )}
 
-          <RoomGallery photos={room.fotos} name={room.nombre} />
+          {/* Sin fotos no se reserva un cuadro vacío: los datos clave suben y ocupan su sitio. */}
+          {hasPhotos && <RoomGallery photos={room.fotos} name={room.nombre} />}
 
-          <dl className={styles.facts}>
+          <dl className={`${styles.facts} ${hasPhotos ? '' : styles.factsBand}`}>
             <div>
               <dt>Capacidad</dt>
               <dd>{room.capacidad ? `${room.capacidad} personas` : '—'}</dd>

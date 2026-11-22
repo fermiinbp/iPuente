@@ -1,5 +1,10 @@
-// Controlador de mapas: guardar y publicar. Lee req, llama al service y responde; nunca habla con Firestore.
+// Controlador de mapas: leer, guardar y publicar. Lee req, llama al service y responde; nunca habla con Firestore.
 import * as mapsService from '../services/mapsService.js';
+
+// GET /api/company/floors/:id: lee el mapa de una planta propia.
+export async function getFloor(req, res) {
+  res.json(await mapsService.getFloor(req.user.companyId, req.params.id));
+}
 
 // PUT /api/company/floors/:id/map: guarda el mapa de una planta propia.
 export async function saveMap(req, res) {

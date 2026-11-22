@@ -205,10 +205,10 @@ describe('Eliminar edificio, planta o sala', () => {
         assert.equal(r.status, 403);
         assert.equal(r.body.error.code, 'COMPANY_NOT_APPROVED');
       });
-      it(`${method} ${path}: 403 con un recurso de otra empresa y no lo toca`, async () => {
+      it(`${method} ${path}: 404 con un recurso de otra empresa y no lo toca`, async () => {
         const r = await call(method, path, { token: 'b' });
-        assert.equal(r.status, 403);
-        assert.equal(r.body.error.code, 'FORBIDDEN');
+        assert.equal(r.status, 404);
+        assert.equal(r.body.error.code, 'NOT_FOUND');
         assert.equal(await exists(roomModel, 'r4'), true);
         assert.equal(await exists(floorModel, 'f3'), true);
         assert.equal(await exists(buildingModel, 'b2'), true);

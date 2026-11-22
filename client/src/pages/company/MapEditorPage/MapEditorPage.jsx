@@ -4,10 +4,9 @@
 // (MapEditor) y un panel con la sala seleccionada (RoomPropertiesPanel) o, sin selección, la lista de salas.
 // En pantallas de menos de 900 px no se edita: se avisa de que el editor se usa en pantallas grandes.
 //
-// Carga: el edificio y la planta salen de GET /company/buildings, y el mapa de getFloorMap. La API TODAVÍA NO TIENE
-// el endpoint para leer el mapa de una planta en borrador (docs/back-pendiente-emp.md, EMP007): mientras no exista,
-// se avisa de que se implementará más adelante y se empieza con el plano en blanco. Como guardar sustituye el mapa
-// entero, si la planta ya tiene salas «Guardar borrador» se desactiva para no borrarlas.
+// Carga: el edificio y la planta salen de GET /company/buildings, y el mapa de GET /company/floors/:id
+// (getFloorMap). Una planta sin mapa empieza con el plano en blanco. Como guardar sustituye el mapa entero, si la
+// planta tiene salas pero la API no trae las dimensiones del plano, «Guardar borrador» se desactiva para no borrarlas.
 //
 // Panel de sala (EMP009): código, nombre y tipo van con el mapa; los datos para el cliente (precio, personas, m²,
 // equipamiento y «reservable») se guardan con PATCH /company/rooms/:id. Un solo «Guardar borrador»: primero el mapa
@@ -219,17 +218,17 @@ function Editor({ building, floor, map, rooms }) {
   const [notice, setNotice] = useState(null);
   const busy = saving || checking || publishing || publishingBuilding;
 
-  const mapAvailable = map.disponible;
-  // Sin el endpoint no se sabe qué salas tiene: guardar el plano en blanco las borraría.
-  const locked = !mapAvailable && floor.salas > 0;
+  const hasPlan = Boolean(map.ancho && map.alto);
+  // Salas sin dimensiones del plano: no se pueden colocar, y guardar el plano en blanco las borraría.
+  const locked = !hasPlan && (floor.salas > 0 || (map.salas?.length ?? 0) > 0);
 
   useEffect(() => {
     load(
-      mapAvailable && map.ancho && map.alto
+      hasPlan
         ? { ancho: map.ancho, alto: map.alto, salas: map.salas ?? [] }
         : { ...BLANK_MAP, salas: [] },
     );
-  }, [load, map, mapAvailable]);
+  }, [load, map, hasPlan]);
 
   // Atajos: Ctrl/Cmd+Z deshace, V selecciona, R dibuja y Escape deja de dibujar.
   const { undo, setTool, tool } = editor;
@@ -523,14 +522,9 @@ function Editor({ building, floor, map, rooms }) {
 
       <div className={styles.workspace}>
         <div className={styles.messages}>
-          {!mapAvailable && (
-            <Alert
-              type={locked ? 'warning' : 'info'}
-              title="La carga del mapa guardado se implementará más adelante"
-            >
-              {locked
-                ? `La API todavía no permite leer el mapa de una planta en borrador. Esta planta ya tiene ${plural(floor.salas, 'sala', 'salas')}: para no borrarlas, «Guardar borrador» está desactivado. Puedes probar el editor, pero los cambios no se guardarán.`
-                : 'La API todavía no permite leer el mapa de una planta en borrador, así que se empieza con el plano en blanco. Esta planta no tiene salas: puedes dibujarlas y guardar.'}
+          {locked && (
+            <Alert type="warning" title="No se puede cargar el plano de esta planta">
+              {`Esta planta tiene ${plural(Math.max(floor.salas ?? 0, map.salas?.length ?? 0), 'sala', 'salas')}, pero no tiene guardadas las dimensiones del plano. Para no borrarlas, «Guardar borrador» está desactivado.`}
             </Alert>
           )}
           {result && (

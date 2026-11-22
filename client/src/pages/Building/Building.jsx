@@ -40,6 +40,48 @@ function demoBuilding() {
   };
 }
 
+// Ilustración decorativa de la cabecera: una losa isométrica por planta (hasta 8), apiladas. Solo adorna.
+function FloorsArt({ count }) {
+  const floors = Math.min(Math.max(count, 1), 8);
+  const step = 52;
+  const halfW = 150;
+  const halfH = 62;
+  const thick = 10;
+  const height = (floors - 1) * step + halfH * 2 + thick + 8;
+  const cx = halfW + 4;
+  const slabs = Array.from({ length: floors }, (_, i) => {
+    // La planta más baja se dibuja primero y las de arriba la tapan.
+    const y = halfH + 4 + (floors - 1 - i) * step;
+    return { i, y, top: i === floors - 1 };
+  });
+
+  return (
+    <svg
+      className={styles.art}
+      viewBox={`0 0 ${halfW * 2 + 8} ${height}`}
+      aria-hidden="true"
+      focusable="false"
+    >
+      {slabs.map(({ i, y, top }) => (
+        <g key={i} className={styles.slab} style={{ '--i': floors - 1 - i }}>
+          <polygon
+            className={styles.slabSide}
+            points={`${cx - halfW},${y} ${cx},${y + halfH} ${cx},${y + halfH + thick} ${cx - halfW},${y + thick}`}
+          />
+          <polygon
+            className={styles.slabSideDark}
+            points={`${cx + halfW},${y} ${cx},${y + halfH} ${cx},${y + halfH + thick} ${cx + halfW},${y + thick}`}
+          />
+          <polygon
+            className={top ? styles.slabTopHigh : styles.slabTop}
+            points={`${cx},${y - halfH} ${cx + halfW},${y} ${cx},${y + halfH} ${cx - halfW},${y}`}
+          />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 export default function Building() {
   const { buildingId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -129,6 +171,7 @@ export default function Building() {
           <span className={styles.blobC} />
         </div>
         <div className={styles.heroInner}>
+          <FloorsArt count={building.plantas.length} />
           <Breadcrumbs items={crumbs} />
           <p className={styles.eyebrow}>{building.ciudad || 'Edificio'}</p>
           <h1 className={styles.title} id="edificio-titulo">
@@ -137,27 +180,30 @@ export default function Building() {
           {where && <p className={styles.address}>{where}</p>}
           {building.descripcion && <p className={styles.lead}>{building.descripcion}</p>}
 
-          <dl className={styles.stats}>
-            <div className={styles.stat}>
-              <dt>Plantas</dt>
-              <dd>{building.plantas.length}</dd>
-            </div>
-            <div className={styles.stat}>
-              <dt>Salas libres</dt>
-              <dd>{building.salasLibres}</dd>
-            </div>
-          </dl>
+          <div className={styles.meta}>
+            <dl className={styles.stats}>
+              <div className={styles.stat}>
+                <dt>Plantas</dt>
+                <dd>{building.plantas.length}</dd>
+              </div>
+              <div className={styles.stat}>
+                <dt>Salas libres</dt>
+                <dd>{building.salasLibres}</dd>
+              </div>
+            </dl>
 
-          <div className={styles.date}>
-            <Input
-              label="Fecha"
-              type="date"
-              name="date"
-              value={fecha}
-              min={todayString()}
-              onChange={handleDateChange}
-              hint={formatLongDate(fecha)}
-            />
+            <div className={styles.date}>
+              <Input
+                label="Fecha"
+                type="date"
+                name="date"
+                variant="boxed"
+                value={fecha}
+                min={todayString()}
+                onChange={handleDateChange}
+                hint={formatLongDate(fecha)}
+              />
+            </div>
           </div>
           {isDemo && (
             <p className={styles.note} role="note">
@@ -170,7 +216,7 @@ export default function Building() {
       <Section id="plantas" titleId="plantas-titulo" tone="deep" decor="grid" spacious>
         <SectionTitle id="plantas-titulo">Elige una planta</SectionTitle>
         <p className={styles.sectionLead}>
-          Entra en una planta para ver su plano y las salas libres del {formatLongDate(fecha)}.
+          Entra en una planta para ver su plano y sus salas libres en la fecha elegida.
         </p>
         {heroFloors.length > 0 && (
           <div className={styles.explorer}>
@@ -195,8 +241,8 @@ export default function Building() {
                 <p className={styles.summaryTitle}>{activeFloor.name}</p>
                 <p className={styles.summaryText}>
                   {activeFloor.free === 0
-                    ? 'Sin salas libres este día.'
-                    : `${activeFloor.free} ${activeFloor.free === 1 ? 'sala libre' : 'salas libres'} el ${formatLongDate(fecha)}.`}
+                    ? 'Sin salas libres.'
+                    : `${activeFloor.free} ${activeFloor.free === 1 ? 'sala libre' : 'salas libres'}.`}
                 </p>
                 <Link
                   className={styles.summaryLink}
@@ -208,16 +254,19 @@ export default function Building() {
             </div>
           </div>
         )}
-        <h3 className={styles.listTitle}>Todas las plantas</h3>
-        <FloorList
-          buildingId={building.id}
-          floors={building.plantas}
-          fecha={fecha}
-          people={people}
-        />
+        {/* La lista repite el selector: solo se enseña donde no cabe el selector junto al 3D (móvil y tablet). */}
+        <div className={styles.allFloors}>
+          <h3 className={styles.listTitle}>Todas las plantas</h3>
+          <FloorList
+            buildingId={building.id}
+            floors={building.plantas}
+            fecha={fecha}
+            people={people}
+          />
+        </div>
       </Section>
 
-      <NearbySection />
+      <NearbySection tone="crema" />
     </div>
   );
 }

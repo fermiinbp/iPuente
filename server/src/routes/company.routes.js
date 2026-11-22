@@ -337,7 +337,7 @@ router.post(
  *   patch:
  *     tags: [Empresa]
  *     summary: Edita un edificio propio
- *     description: 'Todos los campos son opcionales, pero hay que enviar al menos uno de `nombre`, `direccion`, `ciudad`, `descripcion` o `fotos`. Solo para empresas aprobadas; cada empresa solo accede a lo suyo (403 si es de otra, 404 si no existe).'
+ *     description: 'Todos los campos son opcionales, pero hay que enviar al menos uno de `nombre`, `direccion`, `ciudad`, `descripcion` o `fotos`. Solo para empresas aprobadas; cada empresa solo accede a lo suyo (un recurso ajeno o inexistente responde el mismo 404).'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -374,7 +374,7 @@ router.patch(
  *   post:
  *     tags: [Empresa]
  *     summary: Crea una planta en un edificio propio
- *     description: 'Body `{ numero, nombre }` (`numero` entero de -10 a 200; 0 o negativo para sótanos). Se crea en borrador sin salas. Solo para empresas aprobadas; cada empresa solo accede a lo suyo (403 si es de otra, 404 si no existe).'
+ *     description: 'Body `{ numero, nombre }` (`numero` entero de -10 a 200; 0 o negativo para sótanos). Se crea en borrador sin salas. Solo para empresas aprobadas; cada empresa solo accede a lo suyo (un recurso ajeno o inexistente responde el mismo 404).'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -413,7 +413,7 @@ router.post(
  *   patch:
  *     tags: [Empresa]
  *     summary: Edita una planta propia
- *     description: 'Body con `numero` y/o `nombre` (al menos uno). Solo para empresas aprobadas; cada empresa solo accede a lo suyo (403 si es de otra, 404 si no existe).'
+ *     description: 'Body con `numero` y/o `nombre` (al menos uno). Solo para empresas aprobadas; cada empresa solo accede a lo suyo (un recurso ajeno o inexistente responde el mismo 404).'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -452,7 +452,7 @@ router.patch(
  *   patch:
  *     tags: [Empresa]
  *     summary: Edita los datos comerciales de una sala propia
- *     description: 'Campos opcionales (al menos uno): `nombre`, `capacidad`, `m2`, `precioHora`, `gratis`, `equipamiento`, `reservable`, `fotos`. `gratis: true` (sala gratis, `isFree`) no puede ir con `precioHora` (400 VALIDATION_ERROR en `gratis`) y deja `precioHora` en `null`; enviar `precioHora` la desmarca como gratis; `gratis: false` sin precio la deja `sin_precio`. Devuelve `{ id, floorId, buildingId, codigo, nombre, capacidad, m2, precioHora, gratis, equipamiento, reservable, fotos }`. Solo para empresas aprobadas; cada empresa solo accede a lo suyo (403 si es de otra, 404 si no existe). Una sala que ya no está en el mapa da `ROOM_INACTIVE` (400).'
+ *     description: 'Campos opcionales (al menos uno): `nombre`, `capacidad`, `m2`, `precioHora`, `gratis`, `equipamiento`, `reservable`, `fotos`. `gratis: true` (sala gratis, `isFree`) no puede ir con `precioHora` (400 VALIDATION_ERROR en `gratis`) y deja `precioHora` en `null`; enviar `precioHora` la desmarca como gratis; `gratis: false` sin precio la deja `sin_precio`. Devuelve `{ id, floorId, buildingId, codigo, nombre, capacidad, m2, precioHora, gratis, equipamiento, reservable, fotos }`. Solo para empresas aprobadas; cada empresa solo accede a lo suyo (un recurso ajeno o inexistente responde el mismo 404). Una sala que ya no está en el mapa da `ROOM_INACTIVE` (400).'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -489,7 +489,7 @@ router.patch(
  *   post:
  *     tags: [Empresa]
  *     summary: Publica un edificio propio
- *     description: 'Requiere al menos una planta publicada (`NO_PUBLISHED_FLOORS`). Es idempotente. Solo para empresas aprobadas; ajeno 403, inexistente 404.'
+ *     description: 'Requiere al menos una planta publicada (`NO_PUBLISHED_FLOORS`). Es idempotente. Solo para empresas aprobadas; ajeno o inexistente 404.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -526,7 +526,7 @@ router.post(
  *   post:
  *     tags: [Empresa]
  *     summary: Vuelve un edificio propio a borrador
- *     description: 'Es idempotente. Si hay reservas futuras (CONFIRMED o PENDING_PAYMENT) en sus salas, no se bloquea: se devuelven `reservasFuturas` y un `aviso`. Solo para empresas aprobadas; ajeno 403, inexistente 404.'
+ *     description: 'Es idempotente. Si hay reservas futuras (CONFIRMED o PENDING_PAYMENT) en sus salas, no se bloquea: se devuelven `reservasFuturas` y un `aviso`. Solo para empresas aprobadas; ajeno o inexistente 404.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -563,7 +563,7 @@ router.post(
  *   get:
  *     tags: [Empresa]
  *     summary: Lista las salas de la empresa con su estado
- *     description: 'Solo salas activas, ordenadas por edificio, planta y código. Cada una incluye `estado`: `sin_precio` (sin precio mayor que 0), `publicada` (con precio y reservable) u `oculta`. Si se pasa `buildingId` o `floorId` deben ser propios (403 si son de otra empresa, 404 si no existen). Solo para empresas aprobadas.'
+ *     description: 'Solo salas activas, ordenadas por edificio, planta y código. Cada una incluye `estado`: `sin_precio` (sin precio mayor que 0), `publicada` (con precio y reservable) u `oculta`. Si se pasa `buildingId` o `floorId` deben ser propios (si son de otra empresa o no existen, 404). Solo para empresas aprobadas.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -608,7 +608,7 @@ router.get(
  *   patch:
  *     tags: [Empresa]
  *     summary: Muestra u oculta una sala propia
- *     description: 'Body `{ visible }` (booleano). Mostrar una sala sin precio mayor que 0 y sin `gratis` da `ROOM_WITHOUT_PRICE` (con precio o gratis se puede mostrar); una sala que ya no está en el mapa da `ROOM_INACTIVE`. Con `visible: false` y reservas futuras (CONFIRMED o PENDING_PAYMENT) se devuelven `reservasFuturas` y un `aviso`; no se bloquea. Solo para empresas aprobadas; ajena 403, inexistente 404.'
+ *     description: 'Body `{ visible }` (booleano). Mostrar una sala sin precio mayor que 0 y sin `gratis` da `ROOM_WITHOUT_PRICE` (con precio o gratis se puede mostrar); una sala que ya no está en el mapa da `ROOM_INACTIVE`. Con `visible: false` y reservas futuras (CONFIRMED o PENDING_PAYMENT) se devuelven `reservasFuturas` y un `aviso`; no se bloquea. Solo para empresas aprobadas; ajena o inexistente 404.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -655,7 +655,7 @@ router.patch(
  *   delete:
  *     tags: [Empresa]
  *     summary: Elimina un edificio propio con sus plantas y salas
- *     description: 'Elimina el edificio con todas sus plantas y salas. Si alguna sala afectada tiene reservas futuras (CONFIRMED o PENDING_PAYMENT) responde 409 `HAS_FUTURE_BOOKINGS` con `details.reservasFuturas` y no cancela nada. Sin reservas futuras: lo que nunca tuvo reservas se borra del todo (también sus bloqueos y su occupancy) y lo que tiene historial de reservas se elimina de forma lógica (`borradoLogico: true`): deja de verse en el panel, en la API pública y en el mapa, pero sus reservas pasadas siguen mostrando su sala, planta y edificio. No toca Storage. Solo para empresas aprobadas; ajeno 403, inexistente o ya eliminado 404.'
+ *     description: 'Elimina el edificio con todas sus plantas y salas. Si alguna sala afectada tiene reservas futuras (CONFIRMED o PENDING_PAYMENT) responde 409 `HAS_FUTURE_BOOKINGS` con `details.reservasFuturas` y no cancela nada. Sin reservas futuras: lo que nunca tuvo reservas se borra del todo (también sus bloqueos y su occupancy) y lo que tiene historial de reservas se elimina de forma lógica (`borradoLogico: true`): deja de verse en el panel, en la API pública y en el mapa, pero sus reservas pasadas siguen mostrando su sala, planta y edificio. No toca Storage. Solo para empresas aprobadas; ajeno, inexistente o ya eliminado 404.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -721,7 +721,7 @@ router.delete(
  *   delete:
  *     tags: [Empresa]
  *     summary: Elimina una planta propio con sus salas
- *     description: 'Elimina la planta con todas sus salas. Si alguna sala afectada tiene reservas futuras (CONFIRMED o PENDING_PAYMENT) responde 409 `HAS_FUTURE_BOOKINGS` con `details.reservasFuturas` y no cancela nada. Sin reservas futuras: lo que nunca tuvo reservas se borra del todo (también sus bloqueos y su occupancy) y lo que tiene historial de reservas se elimina de forma lógica (`borradoLogico: true`): deja de verse en el panel, en la API pública y en el mapa, pero sus reservas pasadas siguen mostrando su sala, planta y edificio. No toca Storage. Solo para empresas aprobadas; ajeno 403, inexistente o ya eliminado 404.'
+ *     description: 'Elimina la planta con todas sus salas. Si alguna sala afectada tiene reservas futuras (CONFIRMED o PENDING_PAYMENT) responde 409 `HAS_FUTURE_BOOKINGS` con `details.reservasFuturas` y no cancela nada. Sin reservas futuras: lo que nunca tuvo reservas se borra del todo (también sus bloqueos y su occupancy) y lo que tiene historial de reservas se elimina de forma lógica (`borradoLogico: true`): deja de verse en el panel, en la API pública y en el mapa, pero sus reservas pasadas siguen mostrando su sala, planta y edificio. No toca Storage. Solo para empresas aprobadas; ajeno, inexistente o ya eliminado 404.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -787,7 +787,7 @@ router.delete(
  *   delete:
  *     tags: [Empresa]
  *     summary: Elimina una sala propio
- *     description: 'Elimina la sala y la quita del mapa de su planta. Si alguna sala afectada tiene reservas futuras (CONFIRMED o PENDING_PAYMENT) responde 409 `HAS_FUTURE_BOOKINGS` con `details.reservasFuturas` y no cancela nada. Sin reservas futuras: lo que nunca tuvo reservas se borra del todo (también sus bloqueos y su occupancy) y lo que tiene historial de reservas se elimina de forma lógica (`borradoLogico: true`): deja de verse en el panel, en la API pública y en el mapa, pero sus reservas pasadas siguen mostrando su sala, planta y edificio. No toca Storage. Solo para empresas aprobadas; ajeno 403, inexistente o ya eliminado 404.'
+ *     description: 'Elimina la sala y la quita del mapa de su planta. Si alguna sala afectada tiene reservas futuras (CONFIRMED o PENDING_PAYMENT) responde 409 `HAS_FUTURE_BOOKINGS` con `details.reservasFuturas` y no cancela nada. Sin reservas futuras: lo que nunca tuvo reservas se borra del todo (también sus bloqueos y su occupancy) y lo que tiene historial de reservas se elimina de forma lógica (`borradoLogico: true`): deja de verse en el panel, en la API pública y en el mapa, pero sus reservas pasadas siguen mostrando su sala, planta y edificio. No toca Storage. Solo para empresas aprobadas; ajeno, inexistente o ya eliminado 404.'
  *     security:
  *       - bearerAuth: []
  *     parameters:

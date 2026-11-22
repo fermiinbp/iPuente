@@ -235,13 +235,13 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
       assert.equal(doc.status, 'DRAFT');
     });
 
-    it('403 FORBIDDEN con edificio ajeno y no cambia', async () => {
+    it('404 con edificio ajeno y no cambia', async () => {
       const r = await call('PATCH', '/api/company/buildings/b-b', {
         token: 'a',
         body: { nombre: 'Hackeado' },
       });
-      assert.equal(r.status, 403);
-      assert.equal(r.body.error.code, 'FORBIDDEN');
+      assert.equal(r.status, 404);
+      assert.equal(r.body.error.code, 'NOT_FOUND');
       assert.equal((await buildingModel.findById('b-b')).name, 'Edif B');
     });
 
@@ -297,13 +297,13 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
       assert.equal(r.body.numero, -1);
     });
 
-    it('403 con edificio ajeno y no crea nada', async () => {
+    it('404 con edificio ajeno y no crea nada', async () => {
       const r = await call('POST', '/api/company/buildings/b-b/floors', {
         token: 'a',
         body: { numero: 5, nombre: 'x' },
       });
-      assert.equal(r.status, 403);
-      assert.equal(r.body.error.code, 'FORBIDDEN');
+      assert.equal(r.status, 404);
+      assert.equal(r.body.error.code, 'NOT_FOUND');
       assert.equal((await floorModel.listByBuilding('b-b')).length, 1);
     });
 
@@ -384,13 +384,13 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
       assert.equal((await floorModel.findById('f-a0')).level, 0);
     });
 
-    it('403 con planta ajena y no cambia', async () => {
+    it('404 con planta ajena y no cambia', async () => {
       const r = await call('PATCH', '/api/company/floors/f-b', {
         token: 'a',
         body: { nombre: 'Hackeada' },
       });
-      assert.equal(r.status, 403);
-      assert.equal(r.body.error.code, 'FORBIDDEN');
+      assert.equal(r.status, 404);
+      assert.equal(r.body.error.code, 'NOT_FOUND');
       assert.equal((await floorModel.findById('f-b')).name, 'Baja');
     });
 
@@ -453,13 +453,13 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
       assert.notEqual(doc.status, 'X');
     });
 
-    it('403 con sala ajena y no cambia', async () => {
+    it('404 con sala ajena y no cambia', async () => {
       const r = await call('PATCH', '/api/company/rooms/r-b', {
         token: 'a',
         body: { precioHora: 1 },
       });
-      assert.equal(r.status, 403);
-      assert.equal(r.body.error.code, 'FORBIDDEN');
+      assert.equal(r.status, 404);
+      assert.equal(r.body.error.code, 'NOT_FOUND');
       assert.equal((await roomModel.findById('r-b')).price, 20);
     });
 

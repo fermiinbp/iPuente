@@ -68,10 +68,3 @@ export function growRect(rect, dw, dh, plan) {
     h: clamp(rect.h + dh, MIN_SIZE, plan.alto - rect.y),
   };
 }
-
-// Mete una sala dentro del plano (por si el mapa guardado trae alguna que se sale tras cambiar el tamaño del plano).
-export function fitRect(rect, plan) {
-  const w = clamp(rect.w, MIN_SIZE, plan.ancho);
-  const h = clamp(rect.h, MIN_SIZE, plan.alto);
-  return { ...rect, w, h, x: clamp(rect.x, 0, plan.ancho - w), y: clamp(rect.y, 0, plan.alto - h) };
-}

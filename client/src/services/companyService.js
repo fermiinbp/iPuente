@@ -109,21 +109,10 @@ export async function getRoomFutureBookings(id, options) {
 
 // Mapa de una planta propia para el editor (aunque esté en borrador). Lo que se espera de la API:
 // GET /company/floors/:id → { id, buildingId, numero, nombre, publicado, ancho, alto, origen, salas, mapImageUrl }.
-// Ese endpoint TODAVÍA NO EXISTE (docs/back-pendiente-emp.md, EMP007): si la API responde que la ruta no existe,
-// devuelve `{ disponible: false }` en vez de fallar, y el editor avisa de que se implementará más adelante.
-// Con el endpoint: `{ disponible: true, ...planta }`. Una planta que no existe o es ajena sigue siendo un 404.
-const ROUTE_MISSING = /^No existe la ruta /;
-
-export async function getFloorMap(floorId, options) {
-  try {
-    const floor = await get(`/company/floors/${encodeURIComponent(floorId)}`, options);
-    if (!floor || typeof floor !== 'object') return { disponible: false };
-    return { disponible: true, ...floor };
-  } catch (error) {
-    if (error?.status === 404 && ROUTE_MISSING.test(error.message ?? ''))
-      return { disponible: false };
-    throw error;
-  }
+// Sin mapa guardado: `salas: []` y `ancho`, `alto`, `origen` y `mapImageUrl` a `null`. Una planta que no existe o es
+// ajena responde el mismo 404.
+export function getFloorMap(floorId, options) {
+  return get(`/company/floors/${encodeURIComponent(floorId)}`, options);
 }
 
 // Guarda el mapa de una planta propia (PUT /company/floors/:id/map). `mapa`: { ancho, alto, origen ('manual' o

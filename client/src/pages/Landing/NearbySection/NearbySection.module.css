@@ -169,6 +169,48 @@
   }
 }
 
+/* Banda clara (tone="crema"): texto en bosque y bronce oscuro; la lima no se lee sobre crema. */
+.light .lead,
+.light .time,
+.light .detailText {
+  color: var(--bosque-elevado);
+}
+
+.light .detailTitle,
+.light .item {
+  color: var(--bosque);
+}
+
+.light .note {
+  border-color: var(--bronce-oscuro);
+  color: var(--bosque-elevado);
+}
+
+.light .list,
+.light .item,
+.light .itemHover,
+.light .itemActive {
+  border-color: color-mix(in srgb, var(--bosque) 22%, transparent);
+}
+
+.light .itemHover,
+.light .itemActive,
+.light .itemActive .time,
+.light .itemHover .time {
+  color: var(--bronce-oscuro);
+}
+
+.light .itemActive .number {
+  background: var(--bosque);
+  color: var(--lima);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .light .item:hover {
+    color: var(--bronce-oscuro);
+  }
+}
+
 @media (min-width: 900px) {
   .mapBox {
     height: clamp(440px, 40vw, 600px);

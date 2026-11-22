@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 
 import { setDbForTests } from '../../src/config/config.js';
+import * as roomModel from '../../src/models/roomModel.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
 import {
   FECHA,
@@ -165,6 +166,128 @@ describe('Mapa público de una planta', () => {
         assert.equal(body.error.code, 'VALIDATION_ERROR');
       }
     });
+  });
+
+  describe('necesidades (personas y equipamiento)', () => {
+    const encaja = async (q) => {
+      const { status, body, text } = await getJson(baseUrl, `/api/floors/f-0?fecha=${FECHA}&${q}`);
+      assert.equal(status, 200);
+      return { body, text, map: Object.fromEntries(body.salas.map((s) => [s.id, s.encaja])) };
+    };
+    const NO_RESERVABLES = ['r-nobook', 'r-inactive', 'r-ghost'];
+
+    beforeEach(async () => {
+      // r-block: pequeña y con otro equipamiento; r-cancel: gratis, sin precio; r-free sin lista.
+      await roomModel.update('r-block', { capacity: 4, amenities: ['Café', 'WiFi'] });
+      await roomModel.update('r-cancel', { isFree: true, price: null, capacity: 3 });
+      await roomModel.update('r-free', { amenities: [] });
+    });
+
+    it('sin filtros efectivos no existe encaja', async () => {
+      for (const q of ['', '&equipamiento=,', '&equipamiento=%20,%20', '&equipamiento=']) {
+        const { body } = await getJson(baseUrl, `/api/floors/f-0?fecha=${FECHA}${q}`);
+        assert.equal(
+          body.salas.some((s) => 'encaja' in s),
+          false,
+        );
+      }
+    });
+
+    it('personas marca las salas con capacidad suficiente y no oculta ninguna', async () => {
+      const { map, body } = await encaja('personas=8');
+      assert.equal(body.salas.length, 7);
+      assert.equal(map['r-busy'], true);
+      assert.equal(map['r-free'], true);
+      assert.equal(map['r-block'], false);
+      assert.equal(map['r-cancel'], false);
+      for (const id of NO_RESERVABLES) assert.equal(map[id], false);
+    });
+
+    it('una sala gratis reservable puede encajar', async () => {
+      assert.equal((await encaja('personas=3')).map['r-cancel'], true);
+    });
+
+    it('equipamiento ignora mayúsculas y tildes y una sala sin equipamiento no encaja', async () => {
+      const { map } = await encaja('equipamiento=CAFE');
+      assert.equal(map['r-block'], true);
+      assert.equal(map['r-busy'], false);
+      assert.equal(map['r-free'], false);
+      assert.equal((await encaja('equipamiento=Café')).map['r-block'], true);
+    });
+
+    it('varios equipamientos: debe tenerlos todos', async () => {
+      assert.equal((await encaja('equipamiento=wifi,pantalla')).map['r-busy'], true);
+      const { map } = await encaja('equipamiento=wifi,pantalla,proyector');
+      assert.equal(map['r-busy'], false);
+      assert.equal((await encaja('equipamiento=wifi,,')).map['r-block'], true);
+    });
+
+    it('personas y equipamiento combinados', async () => {
+      const { map } = await encaja('personas=8&equipamiento=wifi');
+      assert.equal(map['r-busy'], true);
+      assert.equal(map['r-block'], false);
+      assert.equal(map['r-free'], false);
+    });
+
+    it('encaja mide necesidades, no disponibilidad (ocupada puede ser true)', async () => {
+      const { body } = await encaja('personas=8');
+      const busy = body.salas.find((s) => s.id === 'r-busy');
+      assert.equal(busy.estado, 'OCCUPIED');
+      assert.equal(busy.encaja, true);
+    });
+
+    it('las salas sin precio no reservables no revelan datos al probar valores', async () => {
+      await seedRoomWithoutPrice();
+      await roomModel.update('r-noprice', { capacity: 500, amenities: ['wifi'] });
+      for (const q of ['personas=500', 'personas=1', 'equipamiento=wifi']) {
+        const { map } = await encaja(q);
+        for (const id of [...NO_RESERVABLES, 'r-noprice']) assert.equal(map[id], false, id);
+      }
+    });
+
+    it('una sala eliminada lógicamente es siempre false', async () => {
+      await roomModel.update('r-busy', { deletedAt: new Date() });
+      assert.equal((await encaja('personas=1')).map['r-busy'], false);
+    });
+
+    it('un equipamiento corrupto (no es una lista) no rompe el mapa y no encaja', async () => {
+      await roomModel.update('r-busy', { amenities: 'wifi' });
+      const { map, body } = await encaja('equipamiento=wifi');
+      assert.equal(body.salas.length, 7);
+      assert.equal(map['r-busy'], false);
+    });
+
+    it('funciona con hora, mantiene los campos y no incluye datos de clientes', async () => {
+      const { body, text } = await encaja('hora=10&personas=8');
+      assert.equal(body.hora, 10);
+      const busy = body.salas.find((s) => s.id === 'r-busy');
+      assert.equal(busy.estado, 'OCCUPIED');
+      assert.equal(busy.precioHora, 25);
+      assert.equal(busy.capacidad, 10);
+      assert.deepEqual(privateWordsIn(text), []);
+    });
+
+    for (const q of [
+      'personas=0',
+      'personas=1001',
+      'personas=abc',
+      'personas=2.5',
+      'personas=',
+      'personas=2&personas=3',
+      'personas[]=2',
+      'personas[x]=2',
+      'equipamiento=wifi&equipamiento=pantalla',
+      'equipamiento[]=wifi',
+      'equipamiento[x]=wifi',
+      'equipamiento=wi$fi',
+    ]) {
+      it(`responde 400 VALIDATION_ERROR con ${q}`, async () => {
+        const { status, body } = await getJson(baseUrl, `/api/floors/f-0?fecha=${FECHA}&${q}`);
+        assert.equal(status, 400);
+        assert.equal(body.error.code, 'VALIDATION_ERROR');
+        assert.equal(body.error.details[0].field, q.split(/[=[]/)[0]);
+      });
+    }
   });
 
   describe('sala reservable sin precio', () => {
