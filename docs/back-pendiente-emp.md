@@ -20,7 +20,7 @@ Issues de back que usa `EMP`:
 | DAT022 (#152) · Admin I: aprobar, rechazar y suspender empresas  | Hecho                          | Aprobar, rechazar con motivo, suspender y reactivar; estados `PENDING`, `APPROVED`, `REJECTED` y `SUSPENDED`; `GET /api/companies/me` con `estado` y `motivo`; claim `companyApproved`        |
 | DAT024 (#154) · Reglas de Firebase Storage                       | Hecho                          | `storage.rules`: solo escribe la empresa dueña y aprobada en `companies/{companyId}/…`; imágenes PNG, JPEG, WebP o GIF de hasta 5 MB                                                          |
 | DAT026 (#156) · Seguridad de la API                              | Hecho                          | Límite de peticiones, CORS y registro más seguro, con `409 EMAIL_IS_CLIENT` si el email del alta ya es de un cliente                                                                          |
-| DAT025 (#155) · Detección de salas con IA                        | Cerrada, **no está en `main`** | El código está en la rama `DAT025-deteccion-de-salas-con-ia`, sin PR. La retoma DAT040 (#180), en pausa                                                                                       |
+| DAT025 (#155) · Detección de salas con IA                        | Descartada                     | Se decidió no usar IA. El trabajo previo queda en la rama `DAT025-deteccion-de-salas-con-ia`; DAT040 (#180) se cierra sin hacer |
 | DAT028 (#158) · Eliminar edificio, planta o sala                 | Hecho                          | `DELETE /api/company/buildings/:id`, `/floors/:id` y `/rooms/:id` (`409 HAS_FUTURE_BOOKINGS`; borrado lógico con `deletedAt` si hay historial) y `GET /api/company/rooms/:id/future-bookings` |
 | DAT029 (#159) · Resumen del panel de empresa                     | Hecho                          | `GET /api/company/summary` (EMP002): cifras, próximas reservas, tareas pendientes y `primerAcceso`                                                                                            |
 | DAT030 (#160) · Completar el alta de empresa                     | Pendiente                      | Email de contacto, ciudad y condiciones en el alta, y `PATCH /api/companies/me`                                                                                                               |
@@ -98,13 +98,11 @@ Todo endpoint nuevo sigue `AGENTS.md` y `CLAUDE.md`: validator, comentario `@ope
 - **Mejoras recomendadas:**
   - Que `PUT .../map` acepte una comprobación de versión (p. ej. `updatedAt` leído) y responda `409 STALE_DATA` si otra persona guardó la planta entretanto, para no pisar cambios.
 
-## EMP008 · Editor II: plano e IA
+## EMP008 · Editor II: subir el plano
 
-- **Ya cubierto:** reglas de Storage para subir el plano (DAT024).
-- **Falta:**
-  - Guardar la URL del plano en la planta (`mapImageUrl`): `PATCH /api/company/floors/:id` solo acepta `numero` y `nombre`.
-  - `POST /api/company/floors/:id/detect`: está hecho en la rama `DAT025-deteccion-de-salas-con-ia` (DAT025, #155, cerrada), pero **no ha llegado a `main`** y no tiene PR. DAT040 (#180) lo retoma más adelante (en pausa).
-  - Límite estricto de peticiones para la detección y errores claros cuando la IA falla (también en esa rama).
+- **Ya cubierto:** reglas de Storage (DAT024) y `PUT /api/company/floors/:id/map`, que guarda `mapImageUrl` junto al mapa.
+- **Hecho en el front (EMP008):** `PlanUploader` sube la imagen y la URL se guarda con «Guardar borrador».
+- **Descartado:** la detección de salas con IA. No hace falta más back.
 
 ## EMP009 · Editor III: panel de sala
 
