@@ -1,0 +1,35 @@
+/* Estilos de ScrollArea (CSS Module). La barra va en bronce: --lima es solo para activo, seleccionado y foco, y --linea
+   apenas se ve sobre --bosque-elevado. Chrome y Edge ignoran ::-webkit-scrollbar si hay scrollbar-color, así que esa
+   propiedad va solo para Firefox (@supports al final). */
+.scrollArea {
+  /* El anillo de foco de los campos sobresale 5 px (3 de anillo + 2 de separación): el padding de --space-2 evita que
+     el scroll lo corte y el margin negativo deja el contenido donde estaba. */
+  margin: calc(-1 * var(--space-2)) 0 calc(-1 * var(--space-2)) calc(-1 * var(--space-2));
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-2);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.scrollArea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollArea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollArea::-webkit-scrollbar-thumb {
+  border-radius: var(--radio-pildora);
+  background: var(--bronce);
+}
+
+.scrollArea::-webkit-scrollbar-thumb:hover {
+  background: var(--bronce-claro);
+}
+
+@supports (-moz-appearance: none) {
+  .scrollArea {
+    scrollbar-width: thin;
+    scrollbar-color: var(--bronce) transparent;
+  }
+}

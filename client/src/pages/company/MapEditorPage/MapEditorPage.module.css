@@ -122,14 +122,13 @@
   font-size: var(--text-pequeno);
 }
 
+/* El scroll, su barra, el padding y el margin los pone ScrollArea (as="ul"). */
 .roomList {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  /* Compensa el margin negativo de ScrollArea por la izquierda: el borde derecho sigue donde estaba. */
+  width: calc(100% + var(--space-2));
   max-height: 50vh;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;
   list-style: none;
 }
 
