@@ -49,14 +49,12 @@
   font-weight: 700;
 }
 
+/* Centradas: los botones de texto (ghost) tienen relleno lateral invisible y, alineados a la izquierda, su texto no
+   cuadra con las flechas. El hueco evita que el hover (sube 2 px y pinta el fondo) tape el botón de al lado. */
 .actions {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-}
-
-.order {
-  display: flex;
+  align-items: center;
   gap: var(--space-1);
 }
 
