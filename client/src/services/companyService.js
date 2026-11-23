@@ -205,3 +205,25 @@ export function deleteBlock(id, options) {
 export function setRoomVisibility(id, visible, options) {
   return patch(`/company/rooms/${encodeURIComponent(id)}/visibility`, { visible }, options);
 }
+
+// Estado de la cuenta de cobros: { conectada, estado: 'none'|'pending'|'active'|'restricted',
+// requisitosPendientes, comprobadoEn, desactualizado?, aviso? }.
+export function getPayouts(options) {
+  return get('/company/payouts', options);
+}
+
+// Crea o continúa el alta en Stripe y devuelve { url }. 409 PAYOUTS_ALREADY_ACTIVE o PAYOUTS_BUSY.
+export function startPayoutsOnboarding(options) {
+  return post('/company/payouts/onboarding', undefined, options);
+}
+
+// Pagos de la empresa: { movimientos: [{ id, codigoReserva, sala, fechaReserva, importe, moneda,
+// estado, reembolsoPendiente, fecha }], total, page, limit, truncado }.
+export function getPayoutMovements(page = 1, options) {
+  return get(`/company/payouts/movements?page=${encodeURIComponent(page)}`, options);
+}
+
+// Enlace de un solo uso al panel de Stripe de la empresa: { url }. 409 PAYOUTS_REQUIRED sin cuenta.
+export function getPayoutsDashboardLink(options) {
+  return post('/company/payouts/dashboard', undefined, options);
+}

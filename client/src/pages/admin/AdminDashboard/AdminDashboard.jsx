@@ -1,7 +1,7 @@
 // Resumen del panel de admin (/admin, wireframe 16 adaptado a la API): cuatro cifras de GET /admin/summary y la tabla
 // de empresas pendientes de aprobación (las 5 primeras de listCompanies('pendiente')) con «Ver» y «Aprobar»
 // (CompanyActionModal, el mismo que la lista y el detalle). Sin «Actividad reciente»: la API no la tiene.
-// «Ingresos este mes» sale de `ingresosMes.total` (pagos cobrados del mes); sin cifra, «—».
+// «Volumen cobrado este mes» sale de `ingresosMes.total` (pagos cobrados del mes); sin cifra, «—».
 import { useRef, useState } from 'react';
 import CompanyActionModal from '@/components/admin/CompanyActionModal/CompanyActionModal.jsx';
 import Alert from '@/components/ui/Alert/Alert.jsx';
@@ -55,7 +55,7 @@ function Stats({ summary, loading, error, onRetry }) {
       <StatCard value={number.format(total)} label="Empresas" />
       <StatCard value={number.format(empresas.pendiente ?? 0)} label="Pendientes de aprobar" />
       <StatCard value={number.format(reservas.total ?? 0)} label="Reservas este mes" />
-      <StatCard value={ingresos} label="Ingresos este mes" />
+      <StatCard value={ingresos} label="Volumen cobrado este mes" />
     </div>
   );
 }
