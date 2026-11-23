@@ -155,12 +155,202 @@ describe('Panel de empresa: edificios, plantas y salas', () => {
         ciudad: 'Sevilla',
         descripcion: '',
         fotos: [],
+        latitud: null,
+        longitud: null,
         publicado: false,
         plantas: [
           { id: 'f-a0', numero: 0, nombre: 'Baja', publicado: false, salas: 0 },
           { id: 'f-a1', numero: 1, nombre: 'Primera', publicado: false, salas: 0 },
         ],
       });
+    });
+  });
+
+  describe('ubicación del edificio (latitud y longitud)', () => {
+    const base = { nombre: 'x', direccion: 'y', ciudad: 'z' };
+    const patch = (body) => call('PATCH', '/api/company/buildings/b-a', { token: 'a', body });
+    const post = (body) =>
+      call('POST', '/api/company/buildings', { token: 'a', body: { ...base, ...body } });
+
+    it('crea con coordenadas, se leen en GET y se guardan como número', async () => {
+      const r = await post({ latitud: 37.3891, longitud: -5.9845 });
+      assert.equal(r.status, 201);
+      assert.equal(r.body.latitud, 37.3891);
+      assert.equal(r.body.longitud, -5.9845);
+      const doc = await buildingModel.findById(r.body.id);
+      assert.equal(doc.latitude, 37.3891);
+      assert.equal(doc.longitude, -5.9845);
+      const list = await call('GET', '/api/company/buildings', { token: 'a' });
+      const item = list.body.find((b) => b.id === r.body.id);
+      assert.equal(item.latitud, 37.3891);
+      assert.equal(item.longitud, -5.9845);
+    });
+
+    it('crea sin coordenadas: devuelve null', async () => {
+      const r = await post({});
+      assert.equal(r.status, 201);
+      assert.equal(r.body.latitud, null);
+      assert.equal(r.body.longitud, null);
+    });
+
+    it('acepta los límites, (0, 0) y las dos null al crear', async () => {
+      const casos = [
+        [0, 0],
+        [-90, -180],
+        [90, 180],
+        [0, 180],
+        [-90, 0],
+      ];
+      for (const [latitud, longitud] of casos) {
+        const r = await post({ latitud, longitud });
+        assert.equal(r.status, 201, `${latitud},${longitud}`);
+        assert.equal(r.body.latitud, latitud);
+        assert.equal(r.body.longitud, longitud);
+      }
+      const nulos = await post({ latitud: null, longitud: null });
+      assert.equal(nulos.status, 201);
+      assert.equal(nulos.body.latitud, null);
+    });
+
+    it('el texto numérico se guarda como número', async () => {
+      const r = await patch({ latitud: '37.3', longitud: '-5.9' });
+      assert.equal(r.status, 200);
+      assert.strictEqual(r.body.latitud, 37.3);
+      assert.strictEqual(r.body.longitud, -5.9);
+      const doc = await buildingModel.findById('b-a');
+      assert.strictEqual(doc.latitude, 37.3);
+      assert.strictEqual(doc.longitude, -5.9);
+    });
+
+    it('PATCH cambia las coordenadas y (0, 0) es válido', async () => {
+      await patch({ latitud: 10, longitud: 20 });
+      const r = await patch({ latitud: 0, longitud: 0 });
+      assert.equal(r.status, 200);
+      assert.strictEqual(r.body.latitud, 0);
+      assert.strictEqual(r.body.longitud, 0);
+      assert.strictEqual((await buildingModel.findById('b-a')).latitude, 0);
+    });
+
+    it('PATCH con las dos null las quita', async () => {
+      await patch({ latitud: 10, longitud: 20 });
+      const r = await patch({ latitud: null, longitud: null });
+      assert.equal(r.status, 200);
+      assert.equal(r.body.latitud, null);
+      assert.equal(r.body.longitud, null);
+      const list = await call('GET', '/api/company/buildings', { token: 'a' });
+      assert.equal(list.body[0].latitud, null);
+      assert.equal(list.body[0].longitud, null);
+    });
+
+    it('un PATCH que no las envía las conserva', async () => {
+      await patch({ latitud: 10, longitud: 20 });
+      const r = await patch({ nombre: 'Otro nombre' });
+      assert.equal(r.status, 200);
+      assert.equal(r.body.latitud, 10);
+      assert.equal(r.body.longitud, 20);
+      const doc = await buildingModel.findById('b-a');
+      assert.equal(doc.latitude, 10);
+      assert.equal(doc.longitude, 20);
+    });
+
+    it('el detalle público devuelve lo guardado tras publicar', async () => {
+      await patch({ latitud: 37.38, longitud: -5.98 });
+      await floorModel.update('f-a0', { status: 'PUBLISHED' });
+      const pub = await call('POST', '/api/company/buildings/b-a/publish', { token: 'a' });
+      assert.equal(pub.status, 200);
+      const r = await call('GET', '/api/buildings/b-a');
+      assert.equal(r.status, 200);
+      assert.equal(r.body.latitud, 37.38);
+      assert.equal(r.body.longitud, -5.98);
+    });
+
+    it('el detalle público devuelve null si el edificio no tiene coordenadas', async () => {
+      assert.equal((await buildingModel.findById('b-a')).latitude, undefined);
+      await floorModel.update('f-a0', { status: 'PUBLISHED' });
+      await call('POST', '/api/company/buildings/b-a/publish', { token: 'a' });
+      const r = await call('GET', '/api/buildings/b-a');
+      assert.equal(r.status, 200);
+      assert.strictEqual(r.body.latitud, null);
+      assert.strictEqual(r.body.longitud, null);
+    });
+
+    it('-0 se guarda como 0', async () => {
+      const r = await patch({ latitud: '-0', longitud: '-0.0' });
+      assert.equal(r.status, 200);
+      const doc = await buildingModel.findById('b-a');
+      assert.ok(Object.is(doc.latitude, 0));
+      assert.ok(Object.is(doc.longitude, 0));
+    });
+
+    it('400 con valores no válidos y no guarda nada', async () => {
+      const malos = [
+        [91, 0],
+        [-91, 0],
+        [0, 181],
+        [0, -181],
+        ['abc', 0],
+        [0, 'abc'],
+        ['', 0],
+        [true, 0],
+        [0, false],
+        [[1], 0],
+        [0, [1]],
+        [{ a: 1 }, 0],
+        [0, {}],
+        ['NaN', 0],
+        ['Infinity', 0],
+        ['1e999', 0],
+      ];
+      for (const [latitud, longitud] of malos) {
+        for (const r of [await post({ latitud, longitud }), await patch({ latitud, longitud })]) {
+          assert.equal(r.status, 400, JSON.stringify({ latitud, longitud }));
+          assert.equal(r.body.error.code, 'VALIDATION_ERROR');
+        }
+      }
+      const doc = await buildingModel.findById('b-a');
+      assert.equal(doc.latitude, undefined);
+      assert.equal(doc.name, 'Edif A');
+    });
+
+    it('400 con 1e999 (Infinity) como número JSON', async () => {
+      const res = await fetch(`${baseUrl}/api/company/buildings/b-a`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer a' },
+        body: '{"latitud":1e999,"longitud":0}',
+      });
+      assert.equal(res.status, 400);
+    });
+
+    it('400 con una sola coordenada, también en PATCH aunque la otra exista', async () => {
+      for (const body of [{ latitud: 10 }, { longitud: 10 }]) {
+        assert.equal((await post(body)).status, 400, JSON.stringify(body));
+      }
+      await patch({ latitud: 10, longitud: 20 });
+      for (const body of [
+        { latitud: 11 },
+        { longitud: 21 },
+        { latitud: null },
+        { longitud: null },
+      ]) {
+        const r = await patch(body);
+        assert.equal(r.status, 400, JSON.stringify(body));
+        assert.equal(r.body.error.code, 'VALIDATION_ERROR');
+      }
+      const doc = await buildingModel.findById('b-a');
+      assert.equal(doc.latitude, 10);
+      assert.equal(doc.longitude, 20);
+    });
+
+    it('400 con null en una sola o una null y la otra con valor', async () => {
+      for (const body of [
+        { latitud: null, longitud: 5 },
+        { latitud: 5, longitud: null },
+        { latitud: null },
+        { longitud: null },
+      ]) {
+        assert.equal((await post(body)).status, 400, JSON.stringify(body));
+        assert.equal((await patch(body)).status, 400, JSON.stringify(body));
+      }
     });
   });
 

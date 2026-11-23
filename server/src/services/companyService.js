@@ -61,6 +61,8 @@ function buildingView(b) {
     ciudad: b.city,
     descripcion: b.description ?? '',
     fotos: b.photos ?? [],
+    latitud: b.latitude ?? null,
+    longitud: b.longitude ?? null,
     publicado: b.status === 'PUBLISHED',
   };
 }
@@ -110,7 +112,19 @@ const BUILDING_MAP = {
   ciudad: 'city',
   descripcion: 'description',
   fotos: 'photos',
+  latitud: 'latitude',
+  longitud: 'longitude',
 };
+
+// Campos de un edificio para Firestore. Las coordenadas -0 se guardan como 0.
+function buildingData(body) {
+  const data = pick(body, BUILDING_MAP);
+  for (const field of ['latitude', 'longitude']) {
+    if (data[field] === 0) data[field] = 0;
+  }
+  return data;
+}
+
 const FLOOR_MAP = { numero: 'level', nombre: 'name' };
 const ROOM_MAP = {
   nombre: 'name',
@@ -273,7 +287,7 @@ export async function setRoomVisibility(companyId, id, visible) {
 
 // Crea un edificio de la empresa en borrador.
 export async function createBuilding(companyId, body) {
-  const data = { ...pick(body, BUILDING_MAP), companyId, status: 'DRAFT' };
+  const data = { ...buildingData(body), companyId, status: 'DRAFT' };
   data.description ??= '';
   data.photos ??= [];
   const id = await buildingModel.create(data);
@@ -282,7 +296,7 @@ export async function createBuilding(companyId, body) {
 
 // Edita un edificio propio.
 export async function updateBuilding(companyId, id, body) {
-  const data = pick(body, BUILDING_MAP);
+  const data = buildingData(body);
   const building = await runTransaction(async (tx) => {
     const current = assertOwnedBy(await buildingModel.findById(id, { tx }), companyId);
     await buildingModel.update(id, data, { tx });
