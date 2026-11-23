@@ -55,11 +55,6 @@
   align-items: flex-start;
 }
 
-.order {
-  display: flex;
-  gap: var(--space-1);
-}
-
 .note {
   margin: 0;
   color: var(--crema-suave);

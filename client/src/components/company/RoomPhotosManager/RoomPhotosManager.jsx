@@ -3,13 +3,13 @@
 // portada; es la misma regla que la fachada del edificio): «Hacer portada» la pasa al primer lugar.
 // - Subir: FileDropzone (varias a la vez, hasta MAX_PHOTOS) sube cada imagen a Storage (uploadService, carpeta
 //   `rooms`) y la añade al final. Mientras sube, `onUploadingChange(true)` para que quien lo usa no guarde a medias.
-// - Ordenar con teclado o ratón: flechas ← y → (con su nombre accesible); el foco sigue a la foto que se mueve.
+// - Ordenar con teclado o ratón: flechas Subir y Bajar (ReorderButtons, con su nombre accesible); el foco sigue a la foto que se mueve.
 // - Quitar: la quita de la lista (la imagen sigue en Storage).
 // Las fotos se guardan con el resto de datos de la sala (PATCH /company/rooms/:id con `fotos`).
 // El texto alternativo se genera («Foto 2 de Black Room I»): la API solo guarda las URLs.
 import { useEffect, useRef, useState } from 'react';
 import Button from '@/components/ui/Button/Button.jsx';
-import IconButton from '@/components/ui/IconButton/IconButton.jsx';
+import ReorderButtons from '@/components/ui/ReorderButtons/ReorderButtons.jsx';
 import FileDropzone from '@/components/ui/FileDropzone/FileDropzone.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import { useAuth } from '@/hooks/useAuth.js';
@@ -122,26 +122,16 @@ export default function RoomPhotosManager({ photos = [], roomName, onChange, onU
                 {index === 0 && <span className={styles.cover}>Portada</span>}
               </div>
               <div className={styles.actions}>
-                <div className={styles.order}>
-                  <IconButton
-                    ref={register(url, 'up')}
-                    variant="secondary"
-                    label={`Mover la foto ${index + 1} antes`}
-                    disabled={index === 0}
-                    onClick={() => move(index, index - 1, 'up', 'down')}
-                  >
-                    ←
-                  </IconButton>
-                  <IconButton
-                    ref={register(url, 'down')}
-                    variant="secondary"
-                    label={`Mover la foto ${index + 1} después`}
-                    disabled={index === photos.length - 1}
-                    onClick={() => move(index, index + 1, 'down', 'up')}
-                  >
-                    →
-                  </IconButton>
-                </div>
+                <ReorderButtons
+                  index={index}
+                  total={photos.length}
+                  itemLabel={`la foto ${index + 1}`}
+                  prevRef={register(url, 'up')}
+                  nextRef={register(url, 'down')}
+                  onMove={(from, to) =>
+                    move(from, to, to < from ? 'up' : 'down', to < from ? 'down' : 'up')
+                  }
+                />
                 {index > 0 && (
                   <Button
                     ref={register(url, 'cover')}
