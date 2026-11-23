@@ -8,6 +8,7 @@ import { config } from '../config/config.js';
 import { getStripe, getWebhookSecret, verifyWebhook } from '../config/stripe.js';
 import { now, runTransaction } from '../models/baseModel.js';
 import * as bookingModel from '../models/bookingModel.js';
+import * as companyModel from '../models/companyModel.js';
 import * as occupancyModel from '../models/occupancyModel.js';
 import * as paymentModel from '../models/paymentModel.js';
 import { todayString } from '../utils/dates.js';
@@ -21,6 +22,8 @@ import {
   toSlot,
 } from './availabilityService.js';
 import { extendPendingExpiry } from './bookingsService.js';
+import { COMPANY_STATUS, companyStatus } from './companyService.js';
+import { assertCompanyCanCharge } from './payoutsService.js';
 import { reprocessRefund } from './refundService.js';
 import { readReclaimPlan, releaseSlots, slotIds, writeReclaimClaims } from './occupancyService.js';
 
@@ -82,34 +85,44 @@ function webOrigin() {
   return origin;
 }
 
+// Comprueba que la reserva es del usuario y se puede pagar ahora: 404 si no existe o es ajena; 409 si
+// venció, no está pendiente o ya empezó.
+function assertPayable(booking, uid, nowMs) {
+  if (!booking || booking.userId !== uid) {
+    throw new HttpError(404, 'NOT_FOUND', 'La reserva no existe');
+  }
+  if (effectiveStatus(booking, nowMs) === 'EXPIRED') {
+    throw new HttpError(409, 'BOOKING_EXPIRED', 'La reserva ha caducado');
+  }
+  if (booking.status !== 'PENDING_PAYMENT') {
+    throw new HttpError(409, 'BOOKING_NOT_PENDING', 'La reserva no está pendiente de pago');
+  }
+  if (toDate(booking.startDate).getTime() <= nowMs) {
+    throw new HttpError(409, 'BOOKING_STARTED', 'La reserva ya ha empezado y no se puede pagar');
+  }
+}
+
 // Decide en una transacción qué intento de sesión toca (y lo guarda en la reserva): reutiliza el
-// vigente o abre uno nuevo (attempt + 1, con su expires_at fijo). Así dos clics a la vez usan los
-// mismos parámetros y la misma clave de idempotencia. Valida propietario, estado e importe.
+// vigente o abre uno nuevo (attempt + 1, con su expires_at fijo y su destino). Así dos clics a la vez
+// usan los mismos parámetros y la misma clave de idempotencia. Valida propietario, estado e importe.
+// `destination` es la cuenta conectada de la empresa (ya comprobada): un intento con otro destino, o
+// sin destino (sesión anterior a Connect), no se reutiliza y devuelve `staleSessionId` para expirarla.
 // `renewFrom` fuerza uno nuevo si el intento actual sigue siendo ese (su sesión ya no está abierta).
-async function planAttempt(uid, id, { renewFrom } = {}) {
+async function planAttempt(uid, id, { destination, renewFrom } = {}) {
   return runTransaction(async (tx) => {
     const booking = await bookingModel.findById(id, { tx });
-    if (!booking || booking.userId !== uid) {
-      throw new HttpError(404, 'NOT_FOUND', 'La reserva no existe');
-    }
     const nowMs = Date.now();
-    if (effectiveStatus(booking, nowMs) === 'EXPIRED') {
-      throw new HttpError(409, 'BOOKING_EXPIRED', 'La reserva ha caducado');
-    }
-    if (booking.status !== 'PENDING_PAYMENT') {
-      throw new HttpError(409, 'BOOKING_NOT_PENDING', 'La reserva no está pendiente de pago');
-    }
-    if (toDate(booking.startDate).getTime() <= nowMs) {
-      throw new HttpError(409, 'BOOKING_STARTED', 'La reserva ya ha empezado y no se puede pagar');
-    }
+    assertPayable(booking, uid, nowMs);
     const amountCents = toCents(booking.totalAmount);
     const prevAttempt = booking.checkoutAttempt ?? 0;
     const prevExpires = toMillis(booking.checkoutExpiresAt);
     const left = prevExpires - nowMs;
     const forced = renewFrom !== undefined && prevAttempt === renewFrom;
+    const sameDestination = booking.checkoutDestination === destination;
     // Sin sesión guardada aún, solo se reutiliza el plan si Stripe todavía acepta su expires_at.
     const reusable =
       !forced &&
+      sameDestination &&
       prevAttempt > 0 &&
       left > REUSE_MIN_MS &&
       (Boolean(booking.checkoutSessionId) || left > STRIPE_MIN_MS + 5000);
@@ -120,6 +133,7 @@ async function planAttempt(uid, id, { renewFrom } = {}) {
         expiresAt: new Date(prevExpires),
         sessionId: booking.checkoutSessionId ?? null,
         amountCents,
+        destination,
       };
     }
     // Un intento nuevo solo si la sesión y su margen caben en el tope absoluto de retención.
@@ -136,11 +150,40 @@ async function planAttempt(uid, id, { renewFrom } = {}) {
     const expiresAt = new Date(nowMs + CHECKOUT_MINUTES * MINUTE);
     await bookingModel.update(
       id,
-      { checkoutAttempt: attempt, checkoutExpiresAt: expiresAt, checkoutSessionId: null },
+      {
+        checkoutAttempt: attempt,
+        checkoutExpiresAt: expiresAt,
+        checkoutSessionId: null,
+        checkoutDestination: destination,
+      },
       { tx },
     );
-    return { booking, attempt, expiresAt, sessionId: null, amountCents };
+    // Solo se expira la sesión anterior si el destino cambió (no si simplemente se renueva).
+    const staleSessionId = !forced && !sameDestination ? (booking.checkoutSessionId ?? null) : null;
+    return {
+      booking,
+      attempt,
+      expiresAt,
+      sessionId: null,
+      amountCents,
+      destination,
+      staleSessionId,
+    };
   });
+}
+
+// Expira (sin esperar a que falle) una sesión de un intento con otro destino: así no se puede pagar
+// cobrando sin destino. Es best effort: un fallo solo se registra (tipo, nunca el detalle).
+async function expireStale(stripe, sessionId) {
+  if (!sessionId) return;
+  try {
+    await stripe.checkout.sessions.expire(sessionId);
+  } catch (err) {
+    console.error(
+      'No se pudo expirar la sesión anterior:',
+      err?.type ?? err?.name ?? 'desconocido',
+    );
+  }
 }
 
 // Guarda el id de la sesión creada en la reserva, solo si sigue siendo el mismo intento.
@@ -168,7 +211,13 @@ export async function createCheckout(uid, bookingId) {
   const stripe = getStripe();
   if (!stripe) throw unavailable();
   const origin = webOrigin();
-  let plan = await planAttempt(uid, bookingId);
+  // Antes de cobrar: la reserva debe poder pagarse y la empresa (aprobada, con cuenta activa según
+  // Stripe) poder cobrar. Esa cuenta es el destino del cobro, también al reutilizar una sesión.
+  const current = await bookingModel.findById(bookingId);
+  assertPayable(current, uid, Date.now());
+  const destination = await assertCompanyCanCharge(current.companyId);
+  let plan = await planAttempt(uid, bookingId, { destination });
+  await expireStale(stripe, plan.staleSessionId);
   // Doble clic o reintento: si ya hay una sesión abierta de este intento, se devuelve la misma.
   for (let tries = 0; plan.sessionId && tries < 2; tries++) {
     const session = await callStripe(() => stripe.checkout.sessions.retrieve(plan.sessionId));
@@ -176,7 +225,7 @@ export async function createCheckout(uid, bookingId) {
     if (session.status === 'complete') {
       throw new HttpError(409, 'PAYMENT_IN_PROGRESS', 'Tu pago se está procesando');
     }
-    plan = await planAttempt(uid, bookingId, { renewFrom: plan.attempt });
+    plan = await planAttempt(uid, bookingId, { destination, renewFrom: plan.attempt });
   }
   if (plan.sessionId) throw new HttpError(409, 'BUSY', 'Inténtalo de nuevo en unos segundos');
   // Primero se amplía la reserva (falla aquí si venció) y solo después se crea la sesión.
@@ -188,8 +237,12 @@ export async function createCheckout(uid, bookingId) {
         mode: 'payment',
         locale: 'es',
         client_reference_id: bookingId,
-        metadata: { bookingId, attempt: String(plan.attempt) },
-        payment_intent_data: { metadata: { bookingId } },
+        metadata: { bookingId, attempt: String(plan.attempt), destination: plan.destination },
+        // Destination charge: el dinero va a la cuenta conectada de la empresa (sin comisión ni on_behalf_of).
+        payment_intent_data: {
+          metadata: { bookingId },
+          transfer_data: { destination: plan.destination },
+        },
         expires_at: Math.floor(plan.expiresAt.getTime() / 1000),
         success_url: returnUrl,
         cancel_url: `${returnUrl}&cancelado=1`,
@@ -245,6 +298,31 @@ export async function handleEvent(event) {
 function paymentIntentId(session) {
   const pi = session.payment_intent;
   return (typeof pi === 'string' ? pi : pi?.id) ?? null;
+}
+
+// Cuenta conectada de destino de la sesión (metadata verificada por la firma del webhook), o null.
+function destinationOf(session) {
+  const destination = session.metadata?.destination;
+  return typeof destination === 'string' && /^acct_[A-Za-z0-9_]+$/.test(destination)
+    ? destination
+    : null;
+}
+
+// Motivo por el que un pago no se acepta según la empresa: no está aprobada (o no existe) o el cobro
+// no fue a su cuenta de cobros actual (sesión sin destino o con otro). La reserva no se confirma.
+function payoutsReason(booking, company, destination) {
+  if (!booking) return null;
+  if (!company || companyStatus(company) !== COMPANY_STATUS.APPROVED) return 'COMPANY_NOT_APPROVED';
+  if (!destination || destination !== company.stripeAccountId) return 'NO_DESTINATION';
+  return null;
+}
+
+// Fichas de occupancy de una reserva (ids y documentos leídos en la transacción).
+async function readBookingSlots(booking, tx) {
+  const { inicio, fin } = toSlot(booking, 'reserva');
+  const ids = slotIds(booking.roomId, todayString(toDate(booking.startDate)), inicio, fin);
+  const docs = await Promise.all(ids.map((id) => occupancyModel.findById(id, { tx })));
+  return { ids, docs };
 }
 
 // Motivo por el que no se acepta un pago antes de mirar si la reserva está vencida (null = seguir).
@@ -313,8 +391,16 @@ async function onPaid(event, session) {
     if (booking && attempt > (booking.checkoutAttempt ?? 0)) {
       return { ignorar: 'intento_fuera_de_rango' };
     }
-    let reason = refusalReason(booking, session);
+    const company = booking?.companyId
+      ? await companyModel.findById(booking.companyId, { tx })
+      : null;
+    const destination = destinationOf(session);
+    let reason = refusalReason(booking, session) ?? payoutsReason(booking, company, destination);
     let claims = null;
+    // Empresa que ya no puede cobrar: la reserva pendiente se expira y libera sus horas (lecturas
+    // antes de escribir).
+    const expire = reason === 'COMPANY_NOT_APPROVED' && booking.status === 'PENDING_PAYMENT';
+    const slots = expire ? await readBookingSlots(booking, tx) : null;
     const late = !reason && (booking.status === 'EXPIRED' || isPendingExpired(booking));
     if (late) ({ reason, claims } = await planLatePayment(booking, tx));
     const amountCents = session.amount_total;
@@ -322,6 +408,9 @@ async function onPaid(event, session) {
       {
         bookingId,
         userId: booking?.userId ?? null,
+        // Empresa de la reserva (null si no existe) y cuenta que recibió el cobro: el reembolso la usa.
+        companyId: booking?.companyId ?? null,
+        destinationAccountId: destination,
         amount: amountCents / 100,
         amountCents,
         currency: 'EUR',
@@ -333,7 +422,13 @@ async function onPaid(event, session) {
       },
       { id: session.id, tx },
     );
-    if (reason) return { refund: true };
+    if (reason) {
+      if (expire) {
+        await bookingModel.update(bookingId, { status: 'EXPIRED' }, { tx });
+        await releaseSlots(slots.ids, slots.docs, 'bookingId', bookingId, tx);
+      }
+      return { refund: true };
+    }
     if (claims) await writeReclaimClaims(claims, { ...booking, id: bookingId }, tx);
     await bookingModel.update(
       bookingId,

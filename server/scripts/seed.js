@@ -3,6 +3,10 @@
 // Necesita SEED_DEMO_PASSWORD (mín. 12 caracteres): es la contraseña de los usuarios demo nuevos.
 // Seguridad: se niega con NODE_ENV=production, exige --yes (sin él solo informa y no escribe), solo crea
 // el admin demo con --admin y nunca toca a un usuario que ya existía sin la marca demo.
+// Cobros (DAT044): el seed usa set con merge y nunca escribe stripeAccountId, stripeAccountStatus ni
+// stripeStatusCheckedAt, así que una empresa demo ya conectada con Stripe conserva su cuenta. Una empresa
+// demo nueva NO tiene cuenta de cobros: hay que conectarla (Ajustes > Cobros) antes de publicar
+// plantas con salas de pago o de reservar y pagar en ellas; las salas gratis no la necesitan.
 // Uso: SEED_DEMO_PASSWORD='...' npm run seed -w server -- --yes [--admin]
 import '../src/config/timezone.js';
 
@@ -117,6 +121,7 @@ async function seedUser(user, existing, companies, password) {
   });
   return { uid: record.uid, created };
 }
+// Sin campos de Stripe a propósito: el merge conserva los de una empresa demo ya conectada.
 async function seedCompany(company, ownerUid) {
   await companyModel.upsert(company.id, {
     name: company.nombre,

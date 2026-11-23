@@ -114,7 +114,14 @@ const booking = (roomId, status, start, end) => ({
 //  r-ghost: en el mapa de f-0 pero sin documento  r-up: libre en f-1
 export async function seedPublicData() {
   // La empresa c1 debe estar aprobada para que sus edificios sean públicos.
-  await companyModel.upsert('c1', { name: 'Empresa c1', status: 'APPROVED', verified: true });
+  // La empresa c1 ya tiene su cuenta de cobros conectada (el doble de Stripe la da por activa).
+  await companyModel.upsert('c1', {
+    name: 'Empresa c1',
+    status: 'APPROVED',
+    verified: true,
+    stripeAccountId: 'acct_c1',
+    stripeAccountStatus: 'active',
+  });
   await buildingModel.upsert('b-pub', building('Edificio publicado', 'PUBLISHED'));
   await buildingModel.upsert('b-draft', building('Edificio borrador', 'DRAFT'));
 

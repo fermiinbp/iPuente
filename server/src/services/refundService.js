@@ -1,6 +1,6 @@
 // Reembolso de un pago con refundPending en Stripe (siempre total). Lo usan el webhook, la
 // cancelación de reservas pagadas y el reembolso de admin. Nunca llama a Stripe dentro de una
-// transacción de Firestore.
+// transacción de Firestore. Con destino (`destinationAccountId`) el reembolso revierte la transferencia.
 import { getStripe } from '../config/stripe.js';
 import { now, runTransaction } from '../models/baseModel.js';
 import * as paymentModel from '../models/paymentModel.js';
@@ -67,6 +67,9 @@ export async function reprocessRefund(paymentId) {
       const refund = await stripe.refunds.create(
         {
           payment_intent: payment.providerPaymentId,
+          // Un cobro con destino se devolvió con una transferencia a la empresa: se revierte. Los
+          // pagos anteriores a Connect (sin destino) se reembolsan como siempre.
+          ...(payment.destinationAccountId && { reverse_transfer: true }),
           metadata: { bookingId: payment.bookingId, motivo: payment.refundReason ?? '' },
         },
         { idempotencyKey: `refund:${paymentId}:${attempt}` },

@@ -57,11 +57,14 @@ export function createFakeFirestore() {
     };
   }
 
-  function query(path, filters = [], order = null, max = null) {
+  function query(path, filters = [], order = null, max = null, after = null) {
     const self = {
-      where: (field, op, value) => query(path, [...filters, { field, op, value }], order, max),
-      orderBy: (field, direction = 'asc') => query(path, filters, { field, direction }, max),
-      limit: (n) => query(path, filters, order, n),
+      where: (field, op, value) =>
+        query(path, [...filters, { field, op, value }], order, max, after),
+      orderBy: (field, direction = 'asc') => query(path, filters, { field, direction }, max, after),
+      limit: (n) => query(path, filters, order, n, after),
+      // Solo con orderBy(FieldPath.documentId()): los documentos con id posterior al dado.
+      startAfter: (id) => query(path, filters, order, max, id),
       async get() {
         let docs = [...store.entries()]
           .filter(([docPath]) => {
@@ -80,11 +83,11 @@ export function createFakeFirestore() {
           );
         if (order) {
           const sign = order.direction === 'desc' ? -1 : 1;
-          docs.sort(
-            (a, b) =>
-              sign * (comparable(a.data[order.field]) > comparable(b.data[order.field]) ? 1 : -1),
-          );
+          const key = (d) =>
+            order.field instanceof FieldPath ? d.id : comparable(d.data[order.field]);
+          docs.sort((a, b) => sign * (key(a) > key(b) ? 1 : -1));
         }
+        if (after !== null) docs = docs.filter(({ id }) => id > after);
         if (max) docs = docs.slice(0, max);
         const snaps = docs.map(({ id, data }) => makeSnap(id, data));
         return { docs: snaps, size: snaps.length, empty: snaps.length === 0 };

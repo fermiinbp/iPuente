@@ -495,7 +495,7 @@ router.post(
  *   get:
  *     tags: [Admin]
  *     summary: Resumen del panel
- *     description: 'Devuelve `{ empresas, usuarios, reservasMes, ingresosMes }`: empresas por estado, usuarios por rol, reservas del mes actual por estado (una PENDING_PAYMENT vencida cuenta como EXPIRED; si se alcanza el tope de lectura, reservasMes.truncado es true) e ingresos del mes natural (pagos SUCCEEDED creados en el mes, sin los que tienen un reembolso pendiente; los REFUNDED no cuentan; agregación sin leer documentos). `ingresosMes` es null si no se han podido calcular; el resto del resumen responde igual. Solo admin.'
+ *     description: 'Devuelve `{ empresas, usuarios, reservasMes, ingresosMes }`: empresas por estado, usuarios por rol, reservas del mes actual por estado (una PENDING_PAYMENT vencida cuenta como EXPIRED; si se alcanza el tope de lectura, reservasMes.truncado es true) e ingresos del mes natural (pagos SUCCEEDED creados en el mes, sin los que tienen un reembolso pendiente; los REFUNDED no cuentan; agregación sin leer documentos). `ingresosMes` es el volumen cobrado a los clientes en el mes (el dinero va a las cuentas de las empresas), no el ingreso de la plataforma, que no cobra comisión; se mantiene el nombre de la clave por compatibilidad. Es null si no se han podido calcular; el resto del resumen responde igual. Solo admin.'
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -512,7 +512,7 @@ router.post(
  *                   properties:
  *                     total:
  *                       type: number
- *                       description: Euros cobrados en el mes.
+ *                       description: Euros cobrados a los clientes en el mes (volumen cobrado, no ingreso de la plataforma).
  *                     pagos:
  *                       type: integer
  *                       description: Número de pagos contados.
