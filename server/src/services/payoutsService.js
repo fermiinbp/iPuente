@@ -75,13 +75,13 @@ function webOrigin() {
 }
 
 // Estado de una cuenta a partir de lo que devuelve Stripe: solo `active` si la capacidad de recibir
-// transferencias lo está. Rechazada o restringida = restricted; el resto (o sin dato) = pending.
+// transferencias lo está. Rechazada, restringida o no admitida = restricted; el resto (o sin dato) = pending.
 export function statusFromAccount(account) {
   if (account?.closed) return PAYOUT_STATUS.RESTRICTED;
   const status =
     account?.configuration?.recipient?.capabilities?.stripe_balance?.stripe_transfers?.status;
   if (status === 'active') return PAYOUT_STATUS.ACTIVE;
-  if (status === 'restricted' || status === 'rejected') return PAYOUT_STATUS.RESTRICTED;
+  if (['restricted', 'rejected', 'unsupported'].includes(status)) return PAYOUT_STATUS.RESTRICTED;
   return PAYOUT_STATUS.PENDING;
 }
 

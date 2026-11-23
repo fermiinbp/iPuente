@@ -187,12 +187,15 @@ router.post(
  *         $ref: '#/components/responses/Unauthorized'
  *       403:
  *         $ref: '#/components/responses/Forbidden'
+ *       429:
+ *         description: Demasiadas consultas (RATE_LIMITED).
  */
 router.get(
   '/company/payouts/movements',
   auth,
   requireRole(ROLES.COMPANY),
   requireApprovedCompany,
+  payoutsReadLimiter,
   ...payoutsValidator.movements,
   validate,
   asyncHandler(ctrl.listMovements),

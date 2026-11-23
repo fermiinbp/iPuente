@@ -222,6 +222,19 @@ export default function PayoutsPanel() {
   const [openingDashboard, setOpeningDashboard] = useState(false);
   const [actionError, setActionError] = useState(null);
 
+  // Al volver atrás desde Stripe el navegador puede restaurar la página tal cual: se sueltan los cerrojos.
+  useEffect(() => {
+    const onPageShow = (event) => {
+      if (!event.persisted) return;
+      startLock.current = false;
+      dashboardLock.current = false;
+      setStarting(false);
+      setOpeningDashboard(false);
+    };
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, []);
+
   const go = async (lock, setBusy, request) => {
     if (lock.current) return;
     lock.current = true;

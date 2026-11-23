@@ -297,7 +297,7 @@ describe('Cobros de empresas con Stripe Connect', () => {
         ['active', 'active'],
         ['restricted', 'restricted'],
         ['rejected', 'restricted'],
-        ['unsupported', 'pending'],
+        ['unsupported', 'restricted'],
       ];
       for (const [stripeStatus, expected] of cases) {
         stripe.connected.set('acct_a', stripeStatus);
