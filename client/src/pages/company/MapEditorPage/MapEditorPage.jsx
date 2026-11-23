@@ -24,6 +24,7 @@ import BackLink from '@/components/ui/BackLink/BackLink.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import ConfirmModal from '@/components/ui/ConfirmModal/ConfirmModal.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
+import ScrollArea from '@/components/ui/ScrollArea/ScrollArea.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
 import EditorToolbar from '@/components/map-editor/EditorToolbar/EditorToolbar.jsx';
@@ -125,7 +126,7 @@ function RoomPanel({
       ) : (
         <>
           <p className={styles.panelNote}>Elige una para seleccionarla.</p>
-          <ul className={styles.roomList}>
+          <ScrollArea as="ul" className={styles.roomList}>
             {salas.map((room) => (
               <li key={room.id}>
                 <button
@@ -141,7 +142,7 @@ function RoomPanel({
                 </button>
               </li>
             ))}
-          </ul>
+          </ScrollArea>
         </>
       )}
     </div>

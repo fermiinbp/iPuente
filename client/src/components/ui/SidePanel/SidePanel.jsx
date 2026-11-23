@@ -10,6 +10,7 @@
 import { useEffect, useId, useRef, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import IconButton from '@/components/ui/IconButton/IconButton.jsx';
+import ScrollArea from '@/components/ui/ScrollArea/ScrollArea.jsx';
 import { useModalFocus } from '@/hooks/useModalFocus.js';
 import styles from './SidePanel.module.css';
 
@@ -97,7 +98,7 @@ export default function SidePanel({
           </svg>
         </IconButton>
       </div>
-      <div className={styles.body}>{children}</div>
+      <ScrollArea className={styles.body}>{children}</ScrollArea>
       {footer && <div className={styles.footer}>{footer}</div>}
     </aside>
   );

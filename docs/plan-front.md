@@ -41,6 +41,7 @@ SET010 (#64, «Componentes comunes react») se cerró por duplicada: su contenid
 | #92 · UI018 · Panel lateral, barra fija y menú de acciones | `SidePanel` (detalle de reserva de empresa y admin), `StickyActionBar` (barra fija inferior en móvil con total y botón) y `ActionMenu` (menú «···» de la tarjeta de edificio)  | M    | UI002                                    |
 | #186 · UI019 · Iconos del menú lateral de los paneles      | Iconos SVG de cada opción del menú lateral de empresa y admin (`currentColor`, `aria-hidden`)                                                                                  | S    | UI011                                    |
 | #253 · UI020 · Flechas para ordenar las fotos de una sala  | `ReorderButtons`: flechas SVG Subir y Bajar sobre `IconButton` para ordenar las fotos en `RoomPhotosManager`                                                                   | S    | EMP009                                   |
+| #259 · UI021 · Barra de scroll de los paneles de empresa   | `ScrollArea`: barra de scroll fina en bronce, separada del contenido, en `SidePanel` y en la lista de salas del editor de mapas                                                | S    | UI018                                    |
 
 ### UI012 · Rutas de las páginas nuevas
 
