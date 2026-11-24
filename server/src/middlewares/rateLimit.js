@@ -57,6 +57,16 @@ const DEFAULTS = {
     windowMs: HOUR,
     message: 'Has cancelado demasiadas reservas. Inténtalo de nuevo más tarde.',
   },
+  payouts: {
+    limit: 20,
+    windowMs: HOUR,
+    message: 'Has hecho demasiadas peticiones de cobros. Inténtalo de nuevo más tarde.',
+  },
+  payoutsRead: {
+    limit: 120,
+    windowMs: HOUR,
+    message: 'Has consultado el estado de cobros demasiadas veces. Inténtalo de nuevo más tarde.',
+  },
   adminRefund: {
     limit: 30,
     windowMs: HOUR,
@@ -98,7 +108,16 @@ function storeFor(name) {
   if (name === 'profile') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'googleAuth') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   if (name === 'companyEdit') return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
-  if (['checkout', 'bookingCreate', 'bookingCancel', 'adminRefund'].includes(name)) {
+  if (
+    [
+      'checkout',
+      'bookingCreate',
+      'bookingCancel',
+      'adminRefund',
+      'payouts',
+      'payoutsRead',
+    ].includes(name)
+  ) {
     return new FirestoreRateLimitStore({ prefix: name, failOpen: true });
   }
   if (name === 'ai') return new FirestoreRateLimitStore({ prefix: name, failOpen: false });
@@ -126,6 +145,8 @@ function build(name) {
         'bookingCreate',
         'bookingCancel',
         'adminRefund',
+        'payouts',
+        'payoutsRead',
       ].includes(name) &&
         req.user?.uid) ||
       clientIp(req),
@@ -159,3 +180,7 @@ export const bookingCreateLimiter = limiter('bookingCreate');
 export const bookingCancelLimiter = limiter('bookingCancel');
 // Reembolso de admin: 30 por hora por uid, falla abierto; va después de `authStrict`.
 export const adminRefundLimiter = limiter('adminRefund');
+// Alta de cobros y enlace al panel de Stripe de la empresa (20 por hora por uid, falla abierto): va después de `auth`.
+export const payoutsLimiter = limiter('payouts');
+// Consultar el estado de cobros (120 por hora por uid, falla abierto): va después de `auth`.
+export const payoutsReadLimiter = limiter('payoutsRead');

@@ -8,7 +8,7 @@
 import { hasClientData, roomInfoErrors, validateData } from './roomData.js';
 
 export const BILLING_NOTICE =
-  'Todavía no puedes conectar una cuenta de cobro: las reservas se confirman sin pago online.';
+  'Las salas de pago necesitan tu cuenta de cobros activa para publicarse; las salas gratis no.';
 
 const label = (sala) => sala.codigo || sala.nombre || 'Sala sin código';
 

@@ -64,6 +64,8 @@ import {
 } from '@/utils/roomData.js';
 import styles from './MapEditorPage.module.css';
 
+const PAYOUTS_PATH = '/company/settings?tab=cobros';
+
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 // Edificio, planta, mapa y salas de la planta (con sus datos para el cliente). Si la planta no está en el listado de
@@ -206,6 +208,7 @@ function Editor({ building, floor, map, rooms }) {
   const imageChanged = planImage !== savedImage;
   const [result, setResult] = useState(null);
   const [leaving, setLeaving] = useState(false);
+  const [leaveTarget, setLeaveTarget] = useState('/company/buildings');
   // Datos para el cliente: los guardados en la API (`base`, por id de sala) y los cambios sin guardar (`drafts`).
   const [base, setBase] = useState(() =>
     Object.fromEntries(rooms.map((room) => [room.id, dataFromApi(room)])),
@@ -441,9 +444,19 @@ function Editor({ building, floor, map, rooms }) {
         NO_BOOKABLE_ROOMS:
           'Necesitas al menos una sala reservable con precio (o gratis). Revisa «Reservable» y el precio.',
       };
+      const needsPayouts = error?.code === 'PAYOUTS_REQUIRED';
+      const unavailable = error?.code === 'PAYMENTS_UNAVAILABLE';
+      const concurrent = error?.code === 'BUSY';
       setNotice({
         type: 'error',
-        text: messages[error?.code] || error?.message || 'No hemos podido publicar la planta.',
+        payouts: needsPayouts,
+        text: needsPayouts
+          ? 'Para publicar salas de pago necesitas tener activa tu cuenta de cobros.'
+          : unavailable
+            ? 'No hemos podido comprobar tu cuenta de cobros ahora mismo. Inténtalo de nuevo en unos minutos.'
+            : concurrent
+              ? 'Hay otra operación en curso sobre esta planta. Vuelve a intentarlo.'
+              : messages[error?.code] || error?.message || 'No hemos podido publicar la planta.',
       });
     }
     setChecks(null);
@@ -494,6 +507,15 @@ function Editor({ building, floor, map, rooms }) {
   const goBack = (event) => {
     if (!dirty) return;
     event.preventDefault();
+    setLeaveTarget('/company/buildings');
+    setLeaving(true);
+  };
+
+  // Enlace a Cobros: con cambios sin guardar, pasa antes por el aviso de salida.
+  const goToPayouts = (event) => {
+    if (!dirty) return;
+    event.preventDefault();
+    setLeaveTarget(PAYOUTS_PATH);
     setLeaving(true);
   };
 
@@ -570,7 +592,19 @@ function Editor({ building, floor, map, rooms }) {
               )}
             </Alert>
           )}
-          {notice && <Alert type={notice.type}>{notice.text}</Alert>}
+          {notice && (
+            <Alert type={notice.type}>
+              {notice.text}
+              {notice.payouts && (
+                <>
+                  {' '}
+                  <Link className={styles.backText} to={PAYOUTS_PATH} onClick={goToPayouts}>
+                    Ir a Cobros
+                  </Link>
+                </>
+              )}
+            </Alert>
+          )}
           {published && !buildingPublished && (
             <Alert type="info">
               Para que los clientes la vean, publica también el edificio.
@@ -640,10 +674,10 @@ function Editor({ building, floor, map, rooms }) {
           editor.markSaved();
           setPlanImage(savedImage);
           setDrafts({});
-          navigate('/company/buildings');
+          navigate(leaveTarget);
         }}
         onSave={async () => {
-          if (await save()) navigate('/company/buildings');
+          if (await save()) navigate(leaveTarget);
           else setLeaving(false);
         }}
       />
