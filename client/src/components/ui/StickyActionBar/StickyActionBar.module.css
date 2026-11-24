@@ -1,9 +1,14 @@
-/* Estilos de StickyActionBar (CSS Module). Mobile first: barra fija abajo y hueco de su misma altura en el flujo;
-   desde 900 px no se ve ninguno de los dos. La altura es fija (un botón de 44 px + relleno + zona segura del iPhone)
-   para que el hueco y la barra midan siempre lo mismo: los textos no saltan de línea. */
-.spacer,
+/* Estilos de StickyActionBar (CSS Module). Mobile first: barra fija abajo; desde 900 px no se ve. La altura es fija
+   (un botón de 44 px + relleno + zona segura del iPhone) para que los textos no salten de línea y para poder reservar
+   exactamente ese sitio. */
 .bar {
   height: calc(var(--campo-alto) + 2 * var(--space-3) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Mientras la barra está en la página, el `body` deja debajo un hueco de su misma altura. Tiene que ser el `body` y no un
+   hueco dentro del contenido: el pie va después del contenido y, sin esto, la barra fija taparía su final. */
+:global(body):has(.bar) {
+  padding-bottom: calc(var(--campo-alto) + 2 * var(--space-3) + env(safe-area-inset-bottom, 0px));
 }
 
 .bar {
@@ -53,8 +58,11 @@
 }
 
 @media (min-width: 900px) {
-  .spacer,
   .bar {
     display: none;
+  }
+
+  :global(body):has(.bar) {
+    padding-bottom: 0;
   }
 }
