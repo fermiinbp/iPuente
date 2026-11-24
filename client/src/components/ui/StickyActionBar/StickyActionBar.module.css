@@ -1,0 +1,68 @@
+/* Estilos de StickyActionBar (CSS Module). Mobile first: barra fija abajo; desde 900 px no se ve. La altura es fija
+   (un botón de 44 px + relleno + zona segura del iPhone) para que los textos no salten de línea y para poder reservar
+   exactamente ese sitio. */
+.bar {
+  height: calc(var(--campo-alto) + 2 * var(--space-3) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Mientras la barra está en la página, el `body` deja debajo un hueco de su misma altura. Tiene que ser el `body` y no un
+   hueco dentro del contenido: el pie va después del contenido y, sin esto, la barra fija taparía su final. */
+:global(body):has(.bar) {
+  padding-bottom: calc(var(--campo-alto) + 2 * var(--space-3) + env(safe-area-inset-bottom, 0px));
+}
+
+.bar {
+  position: fixed;
+  z-index: var(--z-cabecera);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--gutter) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--linea);
+  background: var(--bosque-elevado);
+  color: var(--crema);
+  font-family: var(--font-body);
+  box-shadow: var(--sombra-flotante);
+}
+
+.summary {
+  min-width: 0;
+}
+
+.amount,
+.detail {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amount {
+  font-size: var(--text-lead);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.detail {
+  color: var(--crema-suave);
+  font-size: var(--text-etiqueta);
+  line-height: 1.3;
+}
+
+.action {
+  flex-shrink: 0;
+}
+
+@media (min-width: 900px) {
+  .bar {
+    display: none;
+  }
+
+  :global(body):has(.bar) {
+    padding-bottom: 0;
+  }
+}

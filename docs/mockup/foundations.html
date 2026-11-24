@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>00 · Foundations — iPuente (Bosque)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Mismas variables que la web -->
+<link rel="stylesheet" href="../../client/styles/style.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:var(--bosque);color:var(--crema);font:400 var(--text-interfaz)/1.5 var(--font-body)}
+.page{width:1440px;margin:0 auto;padding:64px}
+h1,h2,h3,.disp{font-family:var(--font-display);font-weight:400;letter-spacing:var(--tracking-titular);margin:0}
+h1{font-size:76px;line-height:1.08}
+h2{font-size:40px;line-height:1.1;margin-top:96px;padding-top:24px;border-top:1px solid var(--linea)}
+h3{font-size:26px;line-height:1.15;margin:40px 0 16px;color:var(--crema)}
+.lead{font-size:18px;color:var(--crema-suave);max-width:760px}
+.cap{font-size:13px;font-weight:500;color:var(--crema-suave);margin:0 0 8px}
+.row{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:12px}
+.cell{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.panel{background:var(--bosque-elevado);border:1px solid var(--linea);border-radius:16px;padding:24px}
+.light{background:var(--papel);color:var(--bosque-profundo)}
+em{font-style:italic}
+h2+.row,h2+.al,h2+.col{margin-top:28px}
+.card .bd .badge,.card .bd .chip{align-self:flex-start}
+
+/* --- color --- */
+.sw{width:176px}.sw i{display:block;height:96px;border-radius:8px;border:1px solid var(--linea);margin-bottom:8px}
+.sw b{display:block;font-size:13px;font-weight:500}.sw span{font-size:14px;color:var(--crema-suave)}
+/* --- estados de sala --- */
+.est{display:flex;gap:12px;align-items:center;padding:16px 20px;border-radius:8px;width:290px}
+.est .s{font-family:var(--font-display);font-size:26px;line-height:1}
+.est b{display:block;font-weight:600}.est span{font-size:14px}
+.est--libre{background:var(--libre);color:var(--libre-texto);border:1.5px solid var(--libre-texto)}
+.est--ocupada{background:var(--ocupada);color:var(--ocupada-texto);border:4px solid var(--ocupada-texto)}
+.est--no{background:repeating-linear-gradient(135deg,var(--no-alquila) 0 8px,var(--trama-no-alquila) 8px 10px);color:var(--no-alquila-texto);border:2px dashed var(--no-alquila-texto)}
+/* --- foco --- */
+.focus{outline:2px solid var(--lima);outline-offset:2px}
+.light .focus{outline-color:var(--bosque)}
+
+/* --- logo --- */
+.logo{display:inline-flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:26px;letter-spacing:-.015em;color:var(--crema)}
+.logo svg{width:32px;height:32px}
+/* --- botones --- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 22px;border-radius:999px;border:1.5px solid transparent;font:600 16px/1 var(--font-body);cursor:pointer;color:inherit;background:none}
+.btn--lg{min-height:52px;padding:0 30px}
+.btn--p{background:var(--crema);color:var(--bosque-profundo)}
+.btn--p.h{background:var(--papel);box-shadow:0 0 0 4px rgb(243 236 220/.25)}
+.btn--s{border-color:var(--crema-suave);color:var(--crema)}
+.btn--s.h{background:var(--bosque-elevado);border-color:var(--crema)}
+.btn--g{color:var(--crema)}
+.btn--g.h{background:var(--bosque-elevado)}
+.btn.f{outline:2px solid var(--lima);outline-offset:3px}
+.btn.d{opacity:1;background:var(--bosque-elevado);color:var(--campo-desactivado-texto);border-color:var(--linea);cursor:not-allowed}
+.btn--g.d{background:none;border-color:transparent}
+.btn.l::before{content:"";width:16px;height:16px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ib{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--crema-suave);display:inline-grid;place-items:center;font-size:18px;background:none;color:var(--crema)}
+.ib.h{background:var(--bosque-elevado)}.ib.f{outline:2px solid var(--lima);outline-offset:2px}.ib.d{color:var(--campo-desactivado-texto);border-color:var(--linea)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:1px solid var(--crema-suave);font-size:14px;font-weight:500;background:none;color:var(--crema)}
+.chip.h{background:var(--bosque-elevado)}
+.chip.sel{background:var(--lima);color:var(--bosque-profundo);border-color:var(--lima)}
+.chip.sel::before{content:"✓"}
+.chip.d{color:var(--campo-desactivado-texto);border-color:var(--linea)}
+.chip.f{outline:2px solid var(--lima);outline-offset:2px}
+.chip.tag{border-radius:4px;border-color:var(--bronce);color:var(--bronce-claro)}
+.menu{background:var(--bosque-elevado);border:1px solid var(--linea);border-radius:12px;box-shadow:var(--sombra-flotante);padding:6px;width:220px}
+.menu div{padding:10px 12px;border-radius:8px;font-size:15px}
+.menu .h{background:var(--bosque)}.menu .danger{color:var(--error)}.menu .sep{border-top:1px solid var(--linea);border-radius:0;margin-top:4px;padding-top:12px}.menu .d{color:var(--campo-desactivado-texto)}
+/* --- formularios --- */
+.fld{display:flex;flex-direction:column;gap:6px;width:300px}
+.fld label{font-size:14px;font-weight:500}
+.fld .in{min-height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:var(--campo-fondo);border:1.5px solid var(--campo-borde);border-radius:8px;color:var(--crema)}
+.fld .in.ph{color:var(--campo-placeholder)}
+.fld .in.f{border-color:var(--lima);outline:2px solid var(--lima);outline-offset:1px}
+.fld .in.e{border-color:var(--error)}
+.fld .in.d{background:var(--campo-desactivado-fondo);color:var(--campo-desactivado-texto);border-color:var(--linea)}
+.fld small{font-size:13px;color:var(--crema-suave)}.fld small.e{color:var(--error)}.fld small.e::before{content:"⚠ "}
+.fld textarea,.fld .ta{min-height:96px;align-items:flex-start;padding-top:12px}
+.step{display:flex;align-items:center;gap:0}
+.step .in{width:72px;justify-content:center;border-radius:0;border-left:0;border-right:0}
+.step .bt{width:44px;height:44px;display:grid;place-items:center;border:1.5px solid var(--campo-borde);font-size:20px;background:var(--campo-fondo)}
+.step .bt:first-child{border-radius:8px 0 0 8px}.step .bt:last-child{border-radius:0 8px 8px 0}.step .bt.d{color:var(--campo-desactivado-texto)}
+.chk{display:flex;gap:12px;align-items:center;font-size:15px;min-height:44px}
+.chk i{width:22px;height:22px;border-radius:4px;border:1.5px solid var(--crema-suave);display:grid;place-items:center;font-style:normal;font-size:14px;line-height:1}
+.chk.on i{background:var(--lima);border-color:var(--lima);color:var(--bosque-profundo)}
+.chk.f i{outline:2px solid var(--lima);outline-offset:2px}.chk.d{color:var(--campo-desactivado-texto)}.chk.d i{border-color:var(--linea)}
+.chk.rd i{border-radius:50%}.chk.rd.on i{background:none;border-color:var(--lima)}.chk.rd.on i::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--lima)}
+/* --- feedback --- */
+.al{display:flex;gap:12px;padding:14px 16px;border-radius:8px;border:1px solid;width:420px;font-size:15px;background:var(--bosque-profundo)}
+.al b{display:block}.al--e{border-color:var(--error);color:var(--error)}.al--a{border-color:var(--aviso);color:var(--aviso)}.al--x{border-color:var(--exito);color:var(--exito)}.al--i{border-color:var(--info);color:var(--info)}
+.al span{color:var(--crema)}
+.toast{display:flex;gap:12px;align-items:center;padding:14px 18px;background:var(--crema);color:var(--bosque-profundo);border-radius:12px;box-shadow:var(--sombra-flotante);width:380px;font-weight:500}
+.spin{width:32px;height:32px;border-radius:50%;border:3px solid var(--linea);border-top-color:var(--lima);animation:spin 1s linear infinite}
+.sk{background:linear-gradient(90deg,var(--bosque-elevado),var(--foto-hueco),var(--bosque-elevado));border-radius:8px}
+.empty{width:420px;text-align:center;padding:32px;border:1px dashed var(--linea);border-radius:16px;display:flex;flex-direction:column;gap:12px;align-items:center}
+.empty .disp{font-size:26px}.empty p{margin:0;color:var(--crema-suave)}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:600;border:1.5px solid}
+.b-libre{background:var(--libre);color:var(--libre-texto);border-color:var(--libre-texto)}
+.b-ocup{background:var(--ocupada);color:var(--ocupada-texto);border-color:var(--ocupada-texto);border-width:2.5px}
+.b-no{background:var(--no-alquila);color:var(--no-alquila-texto);border-style:dashed}
+.b-ok{background:transparent;color:var(--exito);border-color:var(--exito)}.b-pend{background:transparent;color:var(--aviso);border-color:var(--aviso)}
+.b-can{background:transparent;color:var(--crema-suave);border-color:var(--crema-suave)}.b-exp{background:transparent;color:var(--error);border-color:var(--error);border-style:dashed}
+/* --- overlays --- */
+.modal{width:480px;background:var(--bosque-elevado);border:1px solid var(--linea);border-radius:16px;box-shadow:var(--sombra-flotante);padding:28px;display:flex;flex-direction:column;gap:16px}
+.modal h4{margin:0;font:400 30px/1.15 var(--font-display);letter-spacing:-.015em}.modal p{margin:0;color:var(--crema-suave)}
+.modal .ft{display:flex;gap:12px;justify-content:flex-end;margin-top:8px}
+.veil{background:var(--velo-modal);padding:32px;border-radius:16px}
+.phone{width:390px;background:var(--bosque);border:1px solid var(--linea);border-radius:24px;overflow:hidden;position:relative}
+.sheet{background:var(--bosque-elevado);border-radius:20px 20px 0 0;padding:12px 20px 24px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--sombra-flotante)}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--linea);align-self:center}
+.side{width:400px;background:var(--bosque-elevado);border:1px solid var(--linea);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px}
+.side header{display:flex;justify-content:space-between;align-items:flex-start}
+.side h4{margin:0;font:400 30px/1.1 var(--font-display)}
+.sab{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;background:var(--bosque-profundo);border-top:1px solid var(--linea)}
+.sab b{font:400 26px/1 var(--font-display)}.sab small{display:block;color:var(--crema-suave);font-size:13px}
+.tip{background:var(--crema);color:var(--bosque-profundo);padding:8px 12px;border-radius:8px;font-size:13px;font-weight:500;position:relative}
+.cookie{display:flex;gap:24px;align-items:center;justify-content:space-between;background:var(--bosque-elevado);border:1px solid var(--linea);border-radius:16px;padding:20px 24px;width:880px;box-shadow:var(--sombra-flotante)}
+.cookie p{margin:0;font-size:15px;color:var(--crema-suave);max-width:520px}
+/* --- layout --- */
+.hdr{display:flex;align-items:center;justify-content:space-between;height:80px;padding:0 40px;border-bottom:1px solid var(--linea);background:var(--bosque);width:100%}
+.hdr nav{display:flex;gap:32px;font-size:15px;font-weight:500}.hdr nav .act{font-family:var(--font-display);font-style:italic;color:var(--lima);font-size:18px}
+.hdr .acts{display:flex;gap:12px;align-items:center}
+.av{width:40px;height:40px;border-radius:50%;background:var(--bronce);color:var(--bosque-profundo);display:grid;place-items:center;font-weight:600}
+.ftr{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;padding:48px 40px;background:var(--bosque-profundo);width:100%;font-size:15px;color:var(--crema-suave)}
+.ftr b{display:block;color:var(--crema);margin-bottom:8px}
+.mm{background:var(--bosque);padding:20px;display:flex;flex-direction:column;gap:20px;height:520px}
+.mm a{font:400 30px/1.2 var(--font-display)}.mm a.act{font-style:italic;color:var(--lima)}
+.auth{width:480px;padding:40px;border-radius:16px;background:var(--bosque-elevado);border:1px solid var(--linea);display:flex;flex-direction:column;gap:16px}
+.crumbs{display:flex;gap:8px;font-size:14px;color:var(--crema-suave)}.crumbs b{color:var(--crema);font-weight:500}
+.back{font-size:15px;font-weight:500;display:inline-flex;gap:8px}
+/* --- dominio --- */
+.search{display:flex;align-items:stretch;background:var(--crema);color:var(--bosque-profundo);border-radius:18px;padding:8px;gap:4px;width:880px}
+.search .f1{flex:1;padding:8px 18px;border-right:1px solid #cfc7b2}.search .f1:nth-child(3){border:0}
+.search small{display:block;font-size:12px;font-weight:600;color:var(--bronce-oscuro);text-transform:none}
+.search .btn{border-radius:12px;background:var(--bosque-profundo);color:var(--crema)}
+.card{width:380px;background:var(--bosque-elevado);border:1px solid var(--linea);border-radius:16px;overflow:hidden}
+.card .ph{height:190px;background:var(--foto-hueco);display:grid;place-items:center;color:var(--crema-suave);font-size:13px}
+.card .bd{padding:18px;display:flex;flex-direction:column;gap:8px}
+.card h4{margin:0;font:400 26px/1.15 var(--font-display)}.card p{margin:0;color:var(--crema-suave);font-size:15px}
+.card.h{border-color:var(--crema-suave);box-shadow:var(--sombra-flotante)}
+.pr{font-weight:600}
+.fs{display:flex;flex-direction:column;gap:6px;width:200px;position:relative}
+.fs div{display:flex;justify-content:space-between;padding:12px 14px;border-radius:8px;border:1px solid var(--linea);font-size:15px}
+.fs .act{border-color:var(--lima);color:var(--lima);font-family:var(--font-display);font-style:italic;font-size:18px}
+.fs .h{background:var(--bosque-elevado)}
+.plan{width:640px;background:var(--papel);border:1px solid var(--linea-plano);border-radius:8px;padding:12px}
+.plan text{font-family:var(--font-body);font-size:13px;font-weight:600}
+.leg{display:flex;gap:20px;font-size:14px;align-items:center}.leg span{display:inline-flex;gap:8px;align-items:center}
+.leg i{width:22px;height:16px;border-radius:3px;display:inline-block}
+.gal{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:140px 140px;gap:8px;width:560px}
+.gal div{background:var(--foto-hueco);border-radius:8px;display:grid;place-items:center;color:var(--crema-suave);font-size:13px}.gal div:first-child{grid-row:span 2}
+.am{display:flex;flex-wrap:wrap;gap:10px 24px;width:420px}.am span{display:inline-flex;gap:8px;align-items:center;font-size:15px}.am i{width:28px;height:28px;border-radius:8px;border:1px solid var(--linea);display:grid;place-items:center;font-style:normal;font-size:14px}
+.cal{width:520px}.cal .days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:12px}
+.cal .d1{padding:10px 0;text-align:center;border-radius:8px;border:1px solid var(--linea);font-size:14px}.cal .d1.sel{background:var(--lima);color:var(--bosque-profundo);border-color:var(--lima);font-weight:600}.cal .d1.off{color:var(--campo-desactivado-texto);text-decoration:line-through}
+.cal .hrs{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.cal .h1{padding:10px 0;text-align:center;border-radius:8px;font-size:14px;border:1.5px solid var(--libre);color:var(--libre)}
+.cal .h1.sel{background:var(--lima);color:var(--bosque-profundo);border-color:var(--lima);font-weight:600}
+.cal .h1.oc{border:3px solid var(--ocupada);color:var(--crema);background:rgb(198 78 52/.15)}.cal .h1.oc::before{content:"● "}
+.cal .h1.no{border:1.5px dashed var(--no-alquila);color:var(--no-alquila)}
+.sum{width:420px;display:flex;flex-direction:column;gap:12px}.sum .ln{display:flex;justify-content:space-between;font-size:15px}.sum .tot{border-top:1px solid var(--linea);padding-top:12px;font:400 30px/1 var(--font-display)}
+.bk{display:flex;gap:20px;align-items:center;justify-content:space-between;padding:20px 24px;width:880px;background:var(--bosque-elevado);border:1px solid var(--linea);border-radius:16px}
+.bk h4{margin:0;font:400 26px/1.15 var(--font-display)}.bk p{margin:4px 0 0;color:var(--crema-suave);font-size:15px}
+.bk.past{opacity:.85}
+.hero3d{width:560px;height:300px;border-radius:16px;background:linear-gradient(180deg,var(--bosque-profundo),var(--bosque-elevado));position:relative;overflow:hidden;border:1px solid var(--linea)}
+.hero3d .fl{position:absolute;left:150px;width:260px;height:44px;border:1.5px solid var(--bronce);background:rgb(184 137 74/.12);display:flex;justify-content:space-between;align-items:center;padding:0 12px;font-size:13px;font-weight:500}
+.hero3d .fl.act{border-color:var(--lima);background:rgb(207 227 106/.18);color:var(--lima);font-family:var(--font-display);font-style:italic;font-size:16px}
+.map{width:420px;height:260px;border-radius:16px;position:relative;border:1px solid var(--linea);background:
+ repeating-linear-gradient(0deg,transparent 0 38px,var(--linea) 38px 39px),repeating-linear-gradient(90deg,transparent 0 58px,var(--linea) 58px 59px),var(--bosque-profundo)}
+.pin{position:absolute;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.pin i{width:26px;height:26px;border-radius:50%;background:var(--crema);color:var(--bosque-profundo);display:grid;place-items:center;font-style:normal}
+.pin.act i{background:var(--lima)}.pin.act{color:var(--lima)}
+.pin.me i{background:var(--bronce);width:32px;height:32px}
+.note{font-size:13px;color:var(--crema-suave);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>00 · <em>Foundations</em></h1>
+<p class="lead">Tema Bosque del mockup de cliente. Esta hoja usa las variables reales de <code>client/styles/style.css</code>. Cada componente se muestra con sus variantes de estado: normal, hover, foco (anillo lima), seleccionado, deshabilitado, cargando y error.</p>
+
+<!-- ============ FOUNDATIONS ============ -->
+<h2>Color</h2>
+<div class="row">
+  <div class="sw"><i style="background:var(--bosque)"></i><b>fondo / página</b><span>#24331F</span></div>
+  <div class="sw"><i style="background:var(--bosque-elevado)"></i><b>fondo / elevado</b><span>#2F4329</span></div>
+  <div class="sw"><i style="background:var(--bosque-profundo)"></i><b>fondo / profundo</b><span>#18240F</span></div>
+  <div class="sw"><i style="background:var(--foto-hueco)"></i><b>fondo / foto-hueco</b><span>#3D5535</span></div>
+  <div class="sw"><i style="background:var(--crema)"></i><b>crema</b><span>#F3ECDC</span></div>
+  <div class="sw"><i style="background:var(--papel)"></i><b>papel</b><span>#FDFAF0</span></div>
+</div>
+<div class="row" style="margin-top:24px">
+  <div class="sw"><i style="background:var(--crema-suave)"></i><b>crema suave</b><span>#C4C9B4</span></div>
+  <div class="sw"><i style="background:var(--linea)"></i><b>línea</b><span>#506A49</span></div>
+  <div class="sw"><i style="background:var(--lima)"></i><b>lima · activo/foco</b><span>#CFE36A</span></div>
+  <div class="sw"><i style="background:var(--bronce)"></i><b>bronce</b><span>#B8894A</span></div>
+  <div class="sw"><i style="background:var(--bronce-oscuro)"></i><b>bronce oscuro</b><span>#8A5A24</span></div>
+  <div class="sw"><i style="background:var(--error)"></i><b>error</b><span>#F2937A</span></div>
+  <div class="sw"><i style="background:var(--aviso)"></i><b>aviso</b><span>#E9C46A</span></div>
+  <div class="sw"><i style="background:var(--exito)"></i><b>éxito</b><span>#A9D98F</span></div>
+  <div class="sw"><i style="background:var(--info)"></i><b>info</b><span>#9FC9E3</span></div>
+</div>
+
+<h2>Estado de una sala</h2>
+<p class="lead">Nunca solo por color: símbolo, texto y trazo distinto (continuo, grueso, discontinuo con trama).</p>
+<div class="row" style="margin-top:20px">
+  <div class="est est--libre"><span class="s">✓</span><div><b>Libre</b><span>Sala libre · 25 €/h</span></div></div>
+  <div class="est est--ocupada"><span class="s">●</span><div><b>Ocupada</b><span>Reservada en esta franja</span></div></div>
+  <div class="est est--no"><span class="s">⊘</span><div><b>No se alquila</b><span>Solo uso interno</span></div></div>
+</div>
+
+<h2>Tipografía</h2>
+<div class="col" style="gap:28px">
+  <div><p class="cap">Titular/Hero · Newsreader 116/109</p><div class="disp" style="font-size:116px;line-height:.94">Salas con vistas al río</div></div>
+  <div><p class="cap">Titular/Sección · 76/82</p><div class="disp" style="font-size:76px;line-height:1.08">Elige tu planta</div></div>
+  <div><p class="cap">Titular/Declaración · 72/78</p><div class="disp" style="font-size:72px;line-height:1.08">Reserva hoy, trabaja mañana</div></div>
+  <div><p class="cap">Titular/Sala · 50/55</p><div class="disp" style="font-size:50px;line-height:1.1">Sala Giralda, planta 4</div></div>
+  <div><p class="cap">Titular/Paso 30 · Lista 26 · Activo cursiva 26</p><div class="disp" style="font-size:30px">Revisa tu reserva &nbsp;·&nbsp; <span style="font-size:26px">Black Room I</span> &nbsp;·&nbsp; <em style="font-size:26px;color:var(--lima)">Planta 4 seleccionada</em></div></div>
+  <div><p class="cap">Cuerpo/Lead · Hanken Grotesk 18/28</p><div style="font-size:18px;line-height:28px">Explora el edificio por plantas y reserva la sala que necesitas.</div></div>
+  <div><p class="cap">Cuerpo/Normal 17/26 · Interfaz/Base 16/24 · Menú 15 · Pequeño 14 · Etiqueta 13</p>
+    <div style="font-size:17px;line-height:26px">Sala para 8 personas con pantalla, pizarra y luz natural.</div>
+    <div style="font-size:16px">Fecha de la reserva · <b style="font-weight:600">Ir a pagar</b></div>
+    <div style="font-size:15px;font-weight:500">Mis reservas</div><div style="font-size:14px">Cancelación gratuita hasta 24 h antes</div><div style="font-size:13px;font-weight:500">Capacidad</div></div>
+  <div><p class="cap">Móvil (390): Hero 54/51 · Sección 40/43 · Declaración 34/37 · Sala 30/33 · Lista 22/26</p>
+    <div class="disp" style="font-size:54px;line-height:.94">Salas con vistas al río</div></div>
+</div>
+
+<h2>Espaciado, radios, sombra y foco</h2>
+<div class="row" style="align-items:flex-end">
+  <div class="cell"><i style="display:block;width:4px;height:24px;background:var(--bronce)"></i><span class="cap">4</span></div>
+  <div class="cell"><i style="display:block;width:8px;height:24px;background:var(--bronce)"></i><span class="cap">8</span></div>
+  <div class="cell"><i style="display:block;width:12px;height:24px;background:var(--bronce)"></i><span class="cap">12</span></div>
+  <div class="cell"><i style="display:block;width:16px;height:24px;background:var(--bronce)"></i><span class="cap">16</span></div>
+  <div class="cell"><i style="display:block;width:24px;height:24px;background:var(--bronce)"></i><span class="cap">24</span></div>
+  <div class="cell"><i style="display:block;width:32px;height:24px;background:var(--bronce)"></i><span class="cap">32</span></div>
+  <div class="cell"><i style="display:block;width:48px;height:24px;background:var(--bronce)"></i><span class="cap">48</span></div>
+  <div class="cell"><i style="display:block;width:64px;height:24px;background:var(--bronce)"></i><span class="cap">64</span></div>
+  <div class="cell"><i style="display:block;width:96px;height:24px;background:var(--bronce)"></i><span class="cap">96</span></div>
+</div>
+<div class="row" style="margin-top:28px">
+  <div class="cell"><i style="display:block;width:96px;height:64px;border-radius:4px;background:var(--bosque-elevado);border:1px solid var(--crema-suave)"></i><span class="cap">chip · 4</span></div>
+  <div class="cell"><i style="display:block;width:96px;height:64px;border-radius:8px;background:var(--bosque-elevado);border:1px solid var(--crema-suave)"></i><span class="cap">plano · 8</span></div>
+  <div class="cell"><i style="display:block;width:96px;height:64px;border-radius:16px;background:var(--bosque-elevado);border:1px solid var(--crema-suave)"></i><span class="cap">tarjeta · 16</span></div>
+  <div class="cell"><i style="display:block;width:96px;height:64px;border-radius:18px;background:var(--bosque-elevado);border:1px solid var(--crema-suave)"></i><span class="cap">buscador · 18</span></div>
+  <div class="cell"><i style="display:block;width:96px;height:64px;border-radius:999px;background:var(--bosque-elevado);border:1px solid var(--crema-suave)"></i><span class="cap">píldora · 999</span></div>
+  <div class="panel" style="box-shadow:var(--sombra-flotante);width:240px"><b>Sombra flotante</b><br><span class="cap">0 8 24 · negro 35 %</span></div>
+  <div class="cell"><div class="fld"><div class="in f">Foco sobre bosque</div></div></div>
+  <div class="cell"><div class="fld light" style="padding:12px;border-radius:8px"><div class="in f" style="background:var(--papel);color:var(--bosque-profundo);border-color:var(--bosque)">Foco sobre crema</div></div></div>
+</div>
+
+<!-- ============ 1 MARCA Y LAYOUT ============ -->
+<h2 id="s1">1 · Marca y layout</h2>
+<h3>Logo</h3>
+<div class="row">
+  <div class="logo"><svg viewBox="0 0 32 32" fill="none" stroke="var(--bronce)" stroke-width="2"><path d="M2 24h28M4 24c0-8 6-12 12-12s12 4 12 12M10 24v-6M16 24v-12M22 24v-6"/></svg><span><em>i</em>Puente</span></div>
+  <div class="logo" style="font-size:20px"><svg viewBox="0 0 32 32" fill="none" stroke="var(--bronce)" stroke-width="2"><path d="M2 24h28M4 24c0-8 6-12 12-12s12 4 12 12"/></svg><span><em>i</em>Puente</span></div>
+  <div class="logo" style="color:var(--bosque-profundo);background:var(--crema);padding:10px 16px;border-radius:8px"><svg viewBox="0 0 32 32" fill="none" stroke="var(--bronce-oscuro)" stroke-width="2"><path d="M2 24h28M4 24c0-8 6-12 12-12s12 4 12 12M10 24v-6M16 24v-12M22 24v-6"/></svg><span><em>i</em>Puente</span></div>
+</div>
+<h3>Header · sin sesión / con sesión</h3>
+<div class="col" style="gap:16px">
+  <div class="hdr"><div class="logo"><svg viewBox="0 0 32 32" fill="none" stroke="var(--bronce)" stroke-width="2"><path d="M2 24h28M4 24c0-8 6-12 12-12s12 4 12 12"/></svg><span><em>i</em>Puente</span></div><nav><span class="act">Explorar</span><span>Cómo funciona</span><span>Para empresas</span></nav><div class="acts"><button class="btn btn--g">Entrar</button><button class="btn btn--p">Crear cuenta</button></div></div>
+  <div class="hdr"><div class="logo"><svg viewBox="0 0 32 32" fill="none" stroke="var(--bronce)" stroke-width="2"><path d="M2 24h28M4 24c0-8 6-12 12-12s12 4 12 12"/></svg><span><em>i</em>Puente</span></div><nav><span class="act">Explorar</span><span>Cómo funciona</span><span>Mis reservas</span></nav><div class="acts"><span style="font-size:15px">Lucía Prieto</span><div class="av">LP</div></div></div>
+</div>
+<h3>UserMenu · MobileMenu · AuthLayout</h3>
+<div class="row">
+  <div class="menu"><div style="color:var(--crema-suave);font-size:13px">lucia@correo.es</div><div class="h">Mis reservas</div><div>Mi cuenta</div><div>Panel de empresa</div><div class="sep">Cerrar sesión</div></div>
+  <div class="phone" style="width:300px"><div class="mm"><div style="display:flex;justify-content:space-between;align-items:center"><div class="logo" style="font-size:22px"><span><em>i</em>Puente</span></div><span class="ib">✕</span></div><a class="act">Explorar</a><a>Cómo funciona</a><a>Mis reservas</a><a>Mi cuenta</a><button class="btn btn--s" style="margin-top:auto">Cerrar sesión</button></div></div>
+  <div class="auth"><div class="logo" style="font-size:22px"><span><em>i</em>Puente</span></div><h3 style="margin:0">Entra en tu cuenta</h3><div class="fld" style="width:100%"><label>Correo</label><div class="in ph">tu@correo.es</div></div><button class="btn btn--p btn--lg">Entrar</button></div>
+</div>
+<h3>Footer · Breadcrumbs · BackLink</h3>
+<div class="ftr"><div><div class="logo" style="font-size:22px"><span><em>i</em>Puente</span></div><p>Oficinas y salas por plantas, reservables online.</p></div><div><b>Explorar</b>Edificios<br>Cómo funciona</div><div><b>Empresas</b>Publica tu oficina<br>Panel</div><div><b>Cuenta</b>Mis reservas<br>Entrar</div></div>
+<div class="row" style="margin-top:24px"><div class="crumbs"><span>Sevilla</span>›<span>Torre Puente</span>›<b>Planta 4</b></div><span class="back"><span aria-hidden="true">←</span> Volver a Torre Puente</span><span class="back focus" style="padding:4px 8px;border-radius:6px"><span aria-hidden="true">←</span> Con foco</span></div>
+
+<!-- ============ 2 ACCIONES ============ -->
+<h2 id="s2">2 · Acciones</h2>
+<h3>Button · variante × estado</h3>
+<div class="row">
+  <div class="col"><p class="cap">Primario</p><button class="btn btn--p">Reservar</button><button class="btn btn--p h">Reservar</button><button class="btn btn--p f">Reservar</button><button class="btn btn--p l">Cargando</button><button class="btn btn--p d">Reservar</button><button class="btn btn--p btn--lg">Reservar sala</button></div>
+  <div class="col"><p class="cap">Secundario</p><button class="btn btn--s">Cancelar</button><button class="btn btn--s h">Cancelar</button><button class="btn btn--s f">Cancelar</button><button class="btn btn--s l">Cargando</button><button class="btn btn--s d">Cancelar</button><button class="btn btn--s btn--lg">Ver detalle</button></div>
+  <div class="col"><p class="cap">Fantasma</p><button class="btn btn--g">Entrar</button><button class="btn btn--g h">Entrar</button><button class="btn btn--g f">Entrar</button><button class="btn btn--g l">Cargando</button><button class="btn btn--g d">Entrar</button></div>
+  <div class="col"><p class="cap">IconButton</p><span class="ib" aria-label="Cerrar">✕</span><span class="ib h">✕</span><span class="ib f">✕</span><span class="ib d">✕</span></div>
+</div>
+<h3>Chip · ActionMenu</h3>
+<div class="row">
+  <div class="col"><span class="chip">Reuniones</span><span class="chip h">Reuniones</span><span class="chip sel">Reuniones</span><span class="chip f">Reuniones</span><span class="chip d">Eventos</span><span class="chip tag">Black Room I · 25 €/h</span></div>
+  <div class="menu"><div class="h">Editar</div><div>Duplicar</div><div class="d">Ver ficha pública (no disponible)</div><div class="danger sep">Eliminar</div></div>
+</div>
+
+<!-- ============ 3 FORMULARIOS ============ -->
+<h2 id="s3">3 · Formularios</h2>
+<div class="row">
+  <div class="fld"><label>Correo</label><div class="in ph">tu@correo.es</div><small>Normal con ayuda</small></div>
+  <div class="fld"><label>Correo</label><div class="in f">lucia@correo.es</div><small>Foco</small></div>
+  <div class="fld"><label>Correo</label><div class="in e">lucia@correo</div><small class="e">Escribe un correo válido</small></div>
+  <div class="fld"><label>Correo</label><div class="in d">lucia@correo.es</div><small>Deshabilitado</small></div>
+</div>
+<div class="row" style="margin-top:28px">
+  <div class="fld"><label>Contraseña</label><div class="in"><span>••••••••</span><span style="color:var(--crema-suave);font-size:14px">Mostrar</span></div></div>
+  <div class="fld"><label>Personas</label><div class="step"><span class="bt">−</span><div class="in">4</div><span class="bt">+</span></div></div>
+  <div class="fld"><label>Personas (mín.)</label><div class="step"><span class="bt d">−</span><div class="in">1</div><span class="bt">+</span></div></div>
+  <div class="fld"><label>Ciudad</label><div class="in"><span>Sevilla</span><span>⌄</span></div></div>
+  <div class="fld"><label>Ciudad (abierto)</label><div class="in f"><span>Sevilla</span><span>⌃</span></div><div class="menu" style="width:100%"><div class="h">Sevilla</div><div>Málaga</div><div>Cádiz</div></div></div>
+</div>
+<div class="row" style="margin-top:28px">
+  <div class="fld"><label>Motivo</label><div class="in ta ph">Cuéntanos qué ha pasado</div><small>0 / 500</small></div>
+  <div class="col"><div class="chk"><i></i>Pantalla</div><div class="chk on"><i>✓</i>Pizarra</div><div class="chk f"><i></i>Con foco</div><div class="chk d"><i></i>No disponible</div></div>
+  <div class="col"><div class="chk rd on"><i></i>Reembolso total</div><div class="chk rd"><i></i>Reembolso parcial</div><div class="chk rd d"><i></i>Deshabilitada</div></div>
+  <div class="cal"><p class="cap">DatePicker</p><div class="days"><div class="d1 off">13</div><div class="d1">14</div><div class="d1 sel">15</div><div class="d1">16</div><div class="d1">17</div><div class="d1 focus">18</div><div class="d1 off">19</div></div><p class="cap">TimeRangePicker · 10:00 – 12:00</p><div class="hrs"><div class="h1">8:00</div><div class="h1">9:00</div><div class="h1 sel">10:00</div><div class="h1 sel">11:00</div><div class="h1 oc">12:00</div><div class="h1 no">13:00</div></div></div>
+</div>
+
+<!-- ============ 4 FEEDBACK ============ -->
+<h2 id="s4">4 · Feedback</h2>
+<div class="row">
+  <div class="col">
+    <div class="al al--e"><span aria-hidden="true">⚠</span><div><b>No se ha podido guardar</b><span>Revisa los datos e inténtalo de nuevo.</span></div></div>
+    <div class="al al--a"><span aria-hidden="true">!</span><div><b>Quedan 12 minutos</b><span>Tu reserva se libera si no pagas.</span></div></div>
+    <div class="al al--x"><span aria-hidden="true">✓</span><div><b>Reserva confirmada</b><span>Te hemos enviado el resumen por correo.</span></div></div>
+    <div class="al al--i"><span aria-hidden="true">i</span><div><b>Mantenimiento</b><span>El sábado habrá cortes breves.</span></div></div>
+  </div>
+  <div class="col"><div class="toast"><span aria-hidden="true">✓</span>Reserva cancelada</div><div class="toast" style="background:var(--error);color:var(--bosque-profundo)"><span aria-hidden="true">⚠</span>No hemos podido cancelar</div>
+    <div class="row" style="align-items:center"><div class="spin" role="status" aria-label="Cargando"></div><span>Cargando…</span></div>
+    <div class="row"><span class="badge b-libre">✓ Libre</span><span class="badge b-ocup">● Ocupada</span><span class="badge b-no">⊘ No se alquila</span></div>
+    <div class="row"><span class="badge b-ok">✓ Confirmada</span><span class="badge b-pend">◔ Pendiente de pago</span><span class="badge b-can">✕ Cancelada</span><span class="badge b-exp">◌ Caducada</span></div>
+  </div>
+  <div class="col" style="width:380px"><p class="cap">Skeleton · tarjeta cargando</p><div class="sk" style="height:150px"></div><div class="sk" style="height:22px;width:70%"></div><div class="sk" style="height:16px;width:45%"></div></div>
+</div>
+<div class="row" style="margin-top:28px">
+  <div class="empty"><div class="disp">Aún no tienes reservas</div><p>Cuando reserves una sala aparecerá aquí.</p><button class="btn btn--p">Explorar edificios</button></div>
+  <div class="empty" style="border-style:solid;border-color:var(--error)"><div class="disp" style="color:var(--error)">No hemos podido cargar</div><p>Comprueba tu conexión e inténtalo de nuevo.</p><button class="btn btn--s">Reintentar</button></div>
+</div>
+
+<!-- ============ 5 OVERLAYS ============ -->
+<h2 id="s5">5 · Overlays</h2>
+<div class="row">
+  <div class="veil"><div class="modal"><h4>¿Cancelar la reserva?</h4><p>Sala Giralda · 15 jun, 10:00–12:00. Te reembolsaremos 50,00 €.</p><div class="fld" style="width:100%"><label>Motivo</label><div class="in ph">Elige un motivo</div></div><div class="ft"><button class="btn btn--s">Mantener reserva</button><button class="btn btn--p" style="background:var(--error)">Cancelar reserva</button></div></div></div>
+  <div class="phone"><div style="height:210px;display:grid;place-items:center;color:var(--crema-suave);background:var(--velo-modal)">Página detrás</div><div class="sheet"><div class="grab"></div><h4 style="margin:0;font:400 26px/1.1 var(--font-display)">Sala Giralda</h4><div class="row" style="gap:8px"><span class="badge b-libre">✓ Libre</span><span class="chip">8 personas</span></div><button class="btn btn--p btn--lg" style="width:100%">Ver sala y reservar</button></div></div>
+  <div class="side"><header><h4>Reserva IP-2041</h4><span class="ib">✕</span></header><span class="badge b-ok" style="align-self:flex-start">✓ Confirmada</span><div class="sum" style="width:100%"><div class="ln"><span>Sala</span><b>Giralda · planta 4</b></div><div class="ln"><span>Fecha</span><b>15 jun · 10:00–12:00</b></div><div class="ln"><span>Importe</span><b>50,00 €</b></div></div><button class="btn btn--s">Cancelar reserva</button></div>
+</div>
+<div class="row" style="margin-top:28px">
+  <div class="phone"><div class="sab"><div><b>50,00 €</b><small>2 h · 25 €/h</small></div><button class="btn btn--p">Reservar</button></div></div>
+  <div class="phone"><div class="sab"><div><b>50,00 €</b><small>Elige una franja</small></div><button class="btn btn--p d">Reservar</button></div></div>
+  <div class="cell"><div class="tip">Planta 4 · 3 salas libres</div><div class="tip" style="background:var(--bosque-profundo);color:var(--crema);border:1px solid var(--linea)">Tooltip oscuro</div></div>
+  <div class="cookie"><p>Usamos cookies para que la web funcione y para medir su uso. Puedes aceptarlas o rechazarlas.</p><div class="row" style="gap:12px;flex-wrap:nowrap"><button class="btn btn--s">Rechazar</button><button class="btn btn--p">Aceptar</button></div></div>
+</div>
+
+<!-- ============ 6 DOMINIO ============ -->
+<h2 id="s6">6 · Dominio</h2>
+<h3>SearchBar · CategoryFilters</h3>
+<div class="col" style="gap:20px">
+  <div class="search"><div class="f1"><small>Ciudad</small>Sevilla</div><div class="f1"><small>Fecha</small>15 jun 2027</div><div class="f1"><small>Personas</small>6</div><button class="btn btn--lg">Buscar</button></div>
+  <div class="row" style="gap:10px"><span class="chip sel">Todas</span><span class="chip">Reuniones</span><span class="chip h">Eventos</span><span class="chip">Formación</span><span class="chip f">Boxes privados</span></div>
+</div>
+<h3>BuildingCard · RoomCard</h3>
+<div class="row">
+  <div class="card"><div class="ph">Foto del edificio</div><div class="bd"><h4>Torre Puente</h4><p>Av. de la Constitución 12, Sevilla</p><div class="row" style="gap:8px"><span class="badge b-libre">✓ 7 salas libres</span></div><span class="pr">Desde 18 €/h</span></div></div>
+  <div class="card h"><div class="ph">Hover</div><div class="bd"><h4>Torre Puente</h4><p>Av. de la Constitución 12, Sevilla</p><span class="badge b-libre">✓ 7 salas libres</span><span class="pr">Desde 18 €/h</span></div></div>
+  <div class="card" style="width:300px"><div class="bd"><span class="chip tag" style="align-self:flex-start">Reunión</span><h4>Sala Giralda</h4><p>8 personas · 24 m²</p><div class="row" style="justify-content:space-between;width:100%"><span class="pr">25 €/h</span><span class="badge b-libre">✓ Libre</span></div></div></div>
+  <div class="card" style="width:300px;border-style:dashed"><div class="bd"><span class="chip tag" style="align-self:flex-start">Box</span><h4>Box 2</h4><p>2 personas</p><div class="row" style="justify-content:space-between;width:100%"><span class="pr">Gratis</span><span class="badge b-ocup">● Ocupada</span></div></div></div>
+</div>
+<h3 id="s7">FloorSelector · FloorPlan · RoomShape · Legend · RoomSidePanel</h3>
+<div class="row">
+  <div class="fs"><div>Planta 6 <span style="color:var(--crema-suave)">2 libres</span></div><div class="act">Planta 5 <span style="font:500 14px var(--font-body)">3 libres</span></div><div class="h">Planta 4 <span style="color:var(--crema-suave)">1 libre</span></div><div>Planta 3 <span style="color:var(--crema-suave)">0</span></div></div>
+  <div class="col">
+    <div class="plan"><svg viewBox="0 0 640 360" width="616" role="img" aria-label="Plano de la planta 5">
+      <rect x="1" y="1" width="638" height="358" fill="none" stroke="#5d7656" stroke-width="2"/>
+      <g><rect x="24" y="24" width="190" height="130" rx="4" fill="#c3e3b0" stroke="#14230f" stroke-width="1.5"/><text x="40" y="60" fill="#14230f">✓ S-01 · Giralda</text><text x="40" y="82" fill="#14230f" style="font-weight:400">8 pers · 25 €/h</text></g>
+      <g><rect x="226" y="24" width="190" height="130" rx="4" fill="#c64e34" stroke="#fff" stroke-width="4"/><text x="242" y="60" fill="#fff">● S-02 · Triana</text><text x="242" y="82" fill="#fff" style="font-weight:400">Ocupada</text></g>
+      <g><defs><pattern id="tr" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="#9aa793"/><rect width="2" height="10" fill="#76846d"/></pattern></defs><rect x="428" y="24" width="188" height="130" rx="4" fill="url(#tr)" stroke="#050a03" stroke-width="2" stroke-dasharray="8 6"/><text x="444" y="60" fill="#050a03">⊘ Zona común</text></g>
+      <g><rect x="24" y="170" width="260" height="166" rx="4" fill="#c3e3b0" stroke="#cfe36a" stroke-width="4"/><rect x="24" y="170" width="260" height="166" rx="4" fill="none" stroke="#14230f" stroke-width="1.5"/><text x="40" y="206" fill="#14230f">✓ S-03 · Alameda (seleccionada)</text><text x="40" y="228" fill="#14230f" style="font-weight:400">12 pers · 40 €/h</text></g>
+      <g opacity=".35"><rect x="296" y="170" width="320" height="166" rx="4" fill="#c3e3b0" stroke="#14230f" stroke-width="1.5"/><text x="312" y="206" fill="#14230f">S-04 · no encaja (atenuada)</text></g>
+    </svg></div>
+    <div class="leg"><span><i style="background:var(--libre);border:1.5px solid var(--libre-texto)"></i>✓ Libre</span><span><i style="background:var(--ocupada);border:3px solid #fff"></i>● Ocupada</span><span><i style="background:var(--no-alquila);border:2px dashed #050a03"></i>⊘ No se alquila</span></div>
+  </div>
+  <div class="side" style="width:340px"><header><h4>Alameda</h4><span class="ib">✕</span></header><span class="badge b-libre" style="align-self:flex-start">✓ Libre</span><div class="row" style="gap:8px"><span class="chip">12 personas</span><span class="chip">40 m²</span></div><span class="pr" style="font-size:20px">40 €/h</span><button class="btn btn--p">Ver sala y reservar</button></div>
+</div>
+<h3>RoomGallery · AmenitiesList · AvailabilityCalendar</h3>
+<div class="row">
+  <div class="gal"><div>Foto 1 de 4 (portada)</div><div>Foto 2</div><div>+2 fotos</div></div>
+  <div class="col"><div class="am"><span><i>▭</i>Pantalla</span><span><i>▤</i>Pizarra</span><span><i>≋</i>Wi-Fi</span><span><i>☀</i>Luz natural</span><span><i>♨</i>Aire acondicionado</span></div><div class="alt"></div></div>
+  <div class="cal"><p class="cap">Lunes 15 · franjas</p><div class="days"><div class="d1">14</div><div class="d1 sel">15</div><div class="d1">16</div><div class="d1">17</div><div class="d1 off">18</div><div class="d1">19</div><div class="d1">20</div></div><div class="hrs"><div class="h1">8:00</div><div class="h1 sel">9:00</div><div class="h1 sel">10:00</div><div class="h1 oc">11:00</div><div class="h1 oc">12:00</div><div class="h1 no">13:00</div></div><p class="note">✓ libre · ● ocupada · discontinuo = no disponible</p></div>
+</div>
+<h3 id="s8">BookingForm · BookingSummary · BookingCard · BookingDetail</h3>
+<div class="row">
+  <div class="panel col" style="width:380px"><div class="fld" style="width:100%"><label>Fecha</label><div class="in">15 jun 2027</div></div><div class="row" style="gap:12px;flex-wrap:nowrap"><div class="fld" style="width:50%"><label>Desde</label><div class="in">10:00</div></div><div class="fld" style="width:50%"><label>Hasta</label><div class="in e">09:00</div></div></div><small style="color:var(--error)">⚠ La hora de fin debe ser posterior</small><button class="btn btn--p d">Continuar</button></div>
+  <div class="panel sum"><h3 style="margin:0;font-size:26px">Revisa tu reserva</h3><div class="ln"><span>Sala Giralda · planta 4</span></div><div class="ln"><span>15 jun · 10:00–12:00</span></div><div class="ln"><span>2 h × 25,00 €</span><span>50,00 €</span></div><div class="tot ln"><span>Total</span><span>50,00 €</span></div><span class="badge b-pend" style="align-self:flex-start">◔ Retenida 14:32</span><button class="btn btn--p btn--lg">Ir a pagar</button></div>
+</div>
+<div class="col" style="margin-top:24px;gap:12px">
+  <div class="bk"><div><h4>Sala Giralda · Torre Puente</h4><p>15 jun · 10:00–12:00 · IP-2041</p></div><span class="badge b-ok">✓ Confirmada</span><span class="pr">50,00 €</span><button class="btn btn--s">Ver detalle</button></div>
+  <div class="bk"><div><h4>Sala Triana · Torre Puente</h4><p>16 jun · 09:00–10:00 · IP-2042</p></div><span class="badge b-pend">◔ Pendiente de pago</span><span class="pr">25,00 €</span><button class="btn btn--p">Pagar ahora</button></div>
+  <div class="bk past"><div><h4>Box 2 · Torre Puente</h4><p>2 may · 16:00–17:00 · IP-1998</p></div><span class="badge b-can">✕ Cancelada por ti</span><span class="pr">Gratis</span><button class="btn btn--g">Ver detalle</button></div>
+</div>
+<div class="panel col" style="width:640px;margin-top:24px;gap:10px"><div class="crumbs"><span>Mis reservas</span>›<b>IP-2041</b></div><h3 style="margin:0;font-size:30px">Sala Giralda</h3><span class="badge b-ok" style="align-self:flex-start">✓ Confirmada</span><div class="sum"><div class="ln"><span>Planta</span><b>4</b></div><div class="ln"><span>Fecha</span><b>15 jun · 10:00–12:00</b></div><div class="ln"><span>Importe</span><b>50,00 €</b></div></div><div class="row" style="gap:12px"><button class="btn btn--s">Cómo llegar</button><button class="btn btn--s" style="color:var(--error);border-color:var(--error)">Cancelar reserva</button></div></div>
+<h3>BuildingHero · NearbyMap · PoiMarker · SearchMap</h3>
+<div class="row">
+  <div class="hero3d"><div class="fl" style="top:30px"><span>Planta 6</span><span>2 libres</span></div><div class="fl act" style="top:84px"><span>Planta 5</span><span>3 libres</span></div><div class="fl" style="top:138px"><span>Planta 4</span><span>1 libre</span></div><div class="fl" style="top:192px"><span>Planta 3</span><span>0 libres</span></div><div class="note" style="position:absolute;left:12px;bottom:8px">Imagen estática (en la web es 3D interactivo)</div></div>
+  <div class="map"><div class="pin me" style="left:190px;top:104px"><i>i</i></div><div class="pin act" style="left:80px;top:60px"><i>1</i>Estación Santa Justa</div><div class="pin" style="left:270px;top:170px"><i>2</i>Parque</div><div class="pin" style="left:60px;top:190px"><i>3</i>Metro</div></div>
+  <div class="map"><div class="pin act" style="left:90px;top:70px"><i>1</i>Torre Puente</div><div class="pin" style="left:240px;top:120px"><i>2</i></div><div class="pin" style="left:150px;top:190px"><i>3</i></div></div>
+</div>
+
+</div>
+<script data-shift>var m=location.hash.match(/y=(\d+)/);if(m){document.querySelector(".page").style.marginTop=(-m[1])+"px";document.documentElement.style.overflow="hidden"}</script>
+</body>
+</html>

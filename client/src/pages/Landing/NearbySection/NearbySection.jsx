@@ -5,20 +5,29 @@ import { useNearViewport } from '@/hooks/useNearViewport.js';
 import ErrorBoundary from '@/components/three/ErrorBoundary/ErrorBoundary.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
-import pois from '@/data/poi.json';
 import styles from './NearbySection.module.css';
 
 const NearbyMap = lazy(() => import('@/components/building/NearbyMap/NearbyMap.jsx'));
 
+// Texto visible de los tiempos: siempre «a pie» y «en coche»; «—» si ese modo no aplica.
 function tiempos(poi) {
-  const partes = [];
-  if (poi.minPie) partes.push(`${poi.minPie} min a pie`);
-  if (poi.minCoche) partes.push(`${poi.minCoche} min en coche`);
-  return partes.join(' · ');
+  const pie = poi.minPie ? `${poi.minPie} min` : '—';
+  const coche = poi.minCoche ? `${poi.minCoche} min` : '—';
+  return `${pie} a pie · ${coche} en coche`;
 }
 
+// Lo mismo para lectores de pantalla, que no leen bien «—»: dice «no aplica» y ya no se repite el signo.
+function tiemposLectura(poi) {
+  const pie = poi.minPie ? `${poi.minPie} minutos a pie` : 'a pie no aplica';
+  const coche = poi.minCoche ? `${poi.minCoche} minutos en coche` : 'en coche no aplica';
+  return `${pie}, ${coche}`;
+}
+
+// `edificio`: { nombre, latitud, longitud, huella?, altura? } (ver NearbyMap). `pois`: lugares cercanos
+// [{ id, nombre, minPie, minCoche?, descripcion, lat, lng, ruta }]. Sin lugares (o sin coordenadas del
+// edificio) la sección no se muestra.
 // `tone` es el fondo de la sección: 'elevated' (espresso, por defecto) o 'crema' (banda clara con el texto en bosque).
-export default function NearbySection({ tone = 'elevated' }) {
+export default function NearbySection({ edificio, pois = [], tone = 'elevated' }) {
   const [activeId, setActiveId] = useState(null); // elegido con clic o Enter: mueve la cámara
   const [hoverId, setHoverId] = useState(null); // ratón o foco: solo resalta
   const [announcement, setAnnouncement] = useState('');
@@ -29,13 +38,17 @@ export default function NearbySection({ tone = 'elevated' }) {
 
   const choose = (poi) => {
     setActiveId(poi.id);
-    setAnnouncement(`${poi.nombre}: ${tiempos(poi)}. ${poi.descripcion}`);
+    setAnnouncement(`${poi.nombre}: ${tiemposLectura(poi)}. ${poi.descripcion}`);
   };
   const reset = () => {
     setActiveId(null);
     setAnnouncement('Mapa centrado en el edificio.');
   };
   const onUnavailable = useCallback(() => setMapaFallido(true), []);
+
+  // Los hooks ya se han llamado: con esto, un edificio sin lugares cercanos no enseña la sección.
+  const sinUbicacion = !Number.isFinite(edificio?.latitud) || !Number.isFinite(edificio?.longitud);
+  if (pois.length === 0 || sinUbicacion) return null;
 
   const sinMapa = (
     <p className={styles.note} role="note">
@@ -61,6 +74,7 @@ export default function NearbySection({ tone = 'elevated' }) {
             <Suspense fallback={<p className={styles.note}>Cargando el mapa…</p>}>
               {mapNear ? (
                 <NearbyMap
+                  edificio={edificio}
                   pois={pois}
                   activeId={activeId}
                   hoverId={hoverId}
@@ -105,8 +119,14 @@ export default function NearbySection({ tone = 'elevated' }) {
                 <span className={styles.number} aria-hidden="true">
                   {i + 1}
                 </span>
-                <span className={styles.name}>{poi.nombre}</span>
-                <span className={styles.time}>{tiempos(poi)}</span>
+                <span className={styles.name}>
+                  {poi.nombre}
+                  {poi.principal && <span className={styles.badge}> Principal</span>}
+                </span>
+                <span className={styles.time} aria-hidden="true">
+                  {tiempos(poi)}
+                </span>
+                <span className={styles.srOnly}>{tiemposLectura(poi)}</span>
               </button>
             );
           })}

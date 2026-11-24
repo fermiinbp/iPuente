@@ -14,3 +14,14 @@
 .loginHint {
   text-align: center;
 }
+
+/* Móvil: el botón vive en la barra fija de la página. */
+.inlineAction {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .inlineAction {
+    display: grid;
+  }
+}
