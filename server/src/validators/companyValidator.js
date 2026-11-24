@@ -64,7 +64,35 @@ function atLeastOne(fields) {
   });
 }
 
-const BUILDING_FIELDS = ['nombre', 'direccion', 'ciudad', 'descripcion', 'fotos'];
+// Coordenada opcional (null la quita): número o texto numérico dentro del rango; se guarda como número.
+const coordinate = (field, limit) =>
+  body(field)
+    .optional({ values: 'null' })
+    .custom(scalarNumber(field))
+    .bail()
+    .isFloat({ min: -limit, max: limit })
+    .withMessage(`${field} debe ser un número entre -${limit} y ${limit}`)
+    .toFloat();
+
+// Latitud y longitud van juntas: las dos ausentes, las dos null o las dos con valor.
+const coordinatesTogether = body('longitud').custom((_, { req }) => {
+  const { latitud, longitud } = req.body ?? {};
+  const state = (v) => (v === undefined ? 'absent' : v === null ? 'null' : 'value');
+  if (state(latitud) === state(longitud)) return true;
+  throw new Error('latitud y longitud deben enviarse juntas (las dos con valor o las dos null)');
+});
+
+const coordinates = [coordinate('latitud', 90), coordinate('longitud', 180), coordinatesTogether];
+
+const BUILDING_FIELDS = [
+  'nombre',
+  'direccion',
+  'ciudad',
+  'descripcion',
+  'fotos',
+  'latitud',
+  'longitud',
+];
 const FLOOR_FIELDS = ['numero', 'nombre'];
 const ROOM_FIELDS = [
   'nombre',
@@ -84,6 +112,7 @@ export const createBuilding = [
   descripcion,
   fotos,
   fotosItems,
+  ...coordinates,
 ];
 
 export const updateBuilding = [
@@ -95,6 +124,7 @@ export const updateBuilding = [
   descripcion,
   fotos,
   fotosItems,
+  ...coordinates,
 ];
 
 export const createFloor = [idParam, numero(true), text('nombre', 100)];

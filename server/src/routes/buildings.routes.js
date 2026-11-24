@@ -110,8 +110,10 @@ const router = Router();
  *                         type: string
  *                       latitud:
  *                         type: number
+ *                         nullable: true
  *                       longitud:
  *                         type: number
+ *                         nullable: true
  *                       numPlantas:
  *                         type: integer
  *                       foto:
@@ -198,8 +200,10 @@ router.get('/buildings', ...buildingValidator.search, validate, asyncHandler(lis
  *                   type: string
  *                 latitud:
  *                   type: number
+ *                   nullable: true
  *                 longitud:
  *                   type: number
+ *                   nullable: true
  *                 numPlantas:
  *                   type: integer
  *                 salasLibres:

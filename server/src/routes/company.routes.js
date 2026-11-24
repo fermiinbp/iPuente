@@ -283,7 +283,7 @@ router.get(
  *   get:
  *     tags: [Empresa]
  *     summary: Lista los edificios de la empresa
- *     description: 'Devuelve `{ id, nombre, direccion, ciudad, descripcion, fotos, publicado, plantas }`, donde `plantas` es `[{ id, numero, nombre, publicado, salas }]` ordenadas por número (`salas` = salas activas). Solo para empresas aprobadas.'
+ *     description: 'Devuelve `{ id, nombre, direccion, ciudad, descripcion, fotos, latitud, longitud, publicado, plantas }` (`latitud` y `longitud` son `null` si no hay ubicación), donde `plantas` es `[{ id, numero, nombre, publicado, salas }]` ordenadas por número (`salas` = salas activas). Solo para empresas aprobadas.'
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -308,7 +308,7 @@ router.get(
  *   post:
  *     tags: [Empresa]
  *     summary: Crea un edificio
- *     description: 'Se crea en borrador (`publicado: false`). Obligatorios `nombre`, `direccion` y `ciudad`; opcionales `descripcion` y `fotos` (URLs de imágenes de tu carpeta `companies/{companyId}/` en Firebase Storage). Solo para empresas aprobadas.'
+ *     description: 'Se crea en borrador (`publicado: false`). Obligatorios `nombre`, `direccion` y `ciudad`; opcionales `descripcion` y `fotos` (URLs de imágenes de tu carpeta `companies/{companyId}/` en Firebase Storage); opcionales y siempre juntas `latitud` (-90 a 90) y `longitud` (-180 a 180), números o texto numérico (se guardan como número); si falta una, 400. Solo para empresas aprobadas.'
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -337,7 +337,7 @@ router.post(
  *   patch:
  *     tags: [Empresa]
  *     summary: Edita un edificio propio
- *     description: 'Todos los campos son opcionales, pero hay que enviar al menos uno de `nombre`, `direccion`, `ciudad`, `descripcion` o `fotos`. Solo para empresas aprobadas; cada empresa solo accede a lo suyo (un recurso ajeno o inexistente responde el mismo 404).'
+ *     description: 'Todos los campos son opcionales, pero hay que enviar al menos uno de `nombre`, `direccion`, `ciudad`, `descripcion`, `fotos` o `latitud` y `longitud`. La ubicación se envía siempre con las dos coordenadas (`latitud` -90 a 90, `longitud` -180 a 180) o con las dos en `null` para quitarla; si se envía una sola, 400 aunque la otra ya exista; si no se envían, se conservan. Solo para empresas aprobadas; cada empresa solo accede a lo suyo (un recurso ajeno o inexistente responde el mismo 404).'
  *     security:
  *       - bearerAuth: []
  *     parameters:
