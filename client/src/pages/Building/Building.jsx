@@ -266,7 +266,16 @@ export default function Building() {
         </div>
       </Section>
 
-      <NearbySection tone="crema" />
+      {/* TODO(EMP006): pasar aquí los lugares cercanos del edificio. Sin ellos, la sección no se muestra. */}
+      <NearbySection
+        tone="crema"
+        edificio={{
+          nombre: building.nombre,
+          latitud: building.latitud,
+          longitud: building.longitud,
+        }}
+        pois={[]}
+      />
     </div>
   );
 }

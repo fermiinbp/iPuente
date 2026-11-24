@@ -1,6 +1,8 @@
 // Home: hero con el edificio por plantas, buscador, salas destacadas, cómo funciona y llamada a empresas.
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { BUILDING as NEARBY_BUILDING } from '@/config/nearby.js';
+import pois from '@/data/poi.json';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import RoomCard from '@/components/room/RoomCard/RoomCard.jsx';
 import SearchBar from '@/components/search/SearchBar/SearchBar.jsx';
@@ -19,6 +21,14 @@ import LandingLoader from './LandingLoader/LandingLoader.jsx';
 import { heroEntranceDelay } from './loaderSession.js';
 import NearbySection from './NearbySection/NearbySection.jsx';
 import CategoryFilters from '@/components/search/CategoryFilters/CategoryFilters.jsx';
+
+// Edificio de demostración de «Alrededor»: la sección ya no lee la config, se lo pasa la página.
+const NEARBY_DEMO = {
+  nombre: NEARBY_BUILDING.name,
+  latitud: NEARBY_BUILDING.lat,
+  longitud: NEARBY_BUILDING.lng,
+  huella: NEARBY_BUILDING.footprint,
+};
 
 export default function Landing() {
   usePageTitle('Salas por horas');
@@ -96,7 +106,7 @@ export default function Landing() {
 
       <FloorSection buildingName={BUILDING.name} />
       <HowItWorks />
-      <NearbySection />
+      <NearbySection edificio={NEARBY_DEMO} pois={pois} />
 
       <Section id="salas" titleId="salas-titulo" decor="grid">
         <div className={styles.roomsHead}>

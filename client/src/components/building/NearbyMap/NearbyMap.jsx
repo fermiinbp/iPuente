@@ -4,7 +4,7 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MapGL, { Layer, Marker, Source } from 'react-map-gl/maplibre';
-import { BUILDING, VIEW } from '@/config/nearby.js';
+import { VIEW } from '@/config/nearby.js';
 import PoiMarker from './PoiMarker/PoiMarker.jsx';
 import { loadBosqueStyle, readMapColors } from './mapStyle.js';
 import styles from './NearbyMap.module.css';
@@ -27,11 +27,16 @@ const line = (coordinates) => ({
   properties: {},
 });
 
-const footprint = {
-  type: 'Feature',
-  geometry: { type: 'Polygon', coordinates: [BUILDING.footprint] },
-  properties: {},
-};
+// Huella del edificio como polígono GeoJSON. Sin huella propia (anillo de 4 puntos o más) no se dibuja:
+// el edificio queda marcado solo con su `Marker`.
+function huellaGeoJson(huella) {
+  if (!Array.isArray(huella) || huella.length < 4) return null;
+  return {
+    type: 'Feature',
+    geometry: { type: 'Polygon', coordinates: [huella] },
+    properties: {},
+  };
+}
 
 function boundsOf(puntos) {
   const lngs = puntos.map((p) => p[0]);
@@ -42,7 +47,10 @@ function boundsOf(puntos) {
   ];
 }
 
+// `edificio`: { nombre, latitud, longitud, huella?, altura? }. `huella` es un anillo cerrado de puntos
+// [lng, lat]; `altura` son los metros de la extrusión (por defecto, `VIEW.alturaEdificio`).
 export default function NearbyMap({
+  edificio,
   pois,
   activeId,
   hoverId,
@@ -57,6 +65,8 @@ export default function NearbyMap({
   const [mobile] = useState(() => window.matchMedia(MOBILE).matches);
   const c = useMemo(() => readMapColors(), []);
   const active = pois.find((poi) => poi.id === activeId) ?? null;
+  const { nombre, latitud, longitud, huella, altura = VIEW.alturaEdificio } = edificio;
+  const footprint = useMemo(() => huellaGeoJson(huella), [huella]);
 
   useEffect(() => {
     let vivo = true;
@@ -78,7 +88,7 @@ export default function NearbyMap({
     const duration = window.matchMedia(REDUCED).matches ? 0 : VIEW.flyMs;
     if (!active) {
       map.flyTo({
-        center: [BUILDING.lng, BUILDING.lat],
+        center: [longitud, latitud],
         zoom: VIEW.zoom,
         pitch,
         bearing: VIEW.bearing,
@@ -96,7 +106,7 @@ export default function NearbyMap({
       duration,
       easing: easeInOut,
     });
-  }, [activeId, active, mobile]);
+  }, [activeId, active, mobile, latitud, longitud]);
 
   const habilitarRueda = () => mapRef.current?.scrollZoom.enable();
   const deshabilitarRueda = () => mapRef.current?.scrollZoom.disable();
@@ -107,15 +117,15 @@ export default function NearbyMap({
     <div
       className={styles.wrap}
       role="region"
-      aria-label={`Mapa de los alrededores de ${BUILDING.name}`}
+      aria-label={`Mapa de los alrededores de ${nombre}`}
       onMouseLeave={deshabilitarRueda}
     >
       <MapGL
         ref={mapRef}
         mapStyle={style}
         initialViewState={{
-          longitude: BUILDING.lng,
-          latitude: BUILDING.lat,
+          longitude: longitud,
+          latitude: latitud,
           zoom: VIEW.zoom,
           pitch: mobile ? VIEW.pitchMobile : VIEW.pitch,
           bearing: VIEW.bearing,
@@ -143,28 +153,30 @@ export default function NearbyMap({
           }}
         />
 
-        <Source id="ipuente" type="geojson" data={footprint}>
-          <Layer
-            id="ipuente-halo"
-            type="line"
-            paint={{
-              'line-color': c['bronce-claro'],
-              'line-width': 14,
-              'line-blur': 10,
-              'line-opacity': 0.55,
-            }}
-          />
-          <Layer
-            id="ipuente-3d"
-            type="fill-extrusion"
-            paint={{
-              'fill-extrusion-color': c.bronce,
-              'fill-extrusion-opacity': 1,
-              'fill-extrusion-height': BUILDING.height,
-              'fill-extrusion-base': 0,
-            }}
-          />
-        </Source>
+        {footprint && (
+          <Source id="ipuente" type="geojson" data={footprint}>
+            <Layer
+              id="ipuente-halo"
+              type="line"
+              paint={{
+                'line-color': c['bronce-claro'],
+                'line-width': 14,
+                'line-blur': 10,
+                'line-opacity': 0.55,
+              }}
+            />
+            <Layer
+              id="ipuente-3d"
+              type="fill-extrusion"
+              paint={{
+                'fill-extrusion-color': c.bronce,
+                'fill-extrusion-opacity': 1,
+                'fill-extrusion-height': altura,
+                'fill-extrusion-base': 0,
+              }}
+            />
+          </Source>
+        )}
 
         {active && (
           <Source id="ruta" type="geojson" data={line(active.ruta)}>
@@ -181,9 +193,9 @@ export default function NearbyMap({
           </Source>
         )}
 
-        <Marker longitude={BUILDING.lng} latitude={BUILDING.lat} anchor="bottom">
+        <Marker longitude={longitud} latitude={latitud} anchor="bottom">
           <div aria-hidden="true" className={styles.here}>
-            {BUILDING.name}
+            {nombre}
           </div>
         </Marker>
 
