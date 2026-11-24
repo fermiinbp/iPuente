@@ -28,7 +28,7 @@ export function updateMyCompany(datos, options) {
 }
 
 // Edificios de la empresa con sus plantas (GET /company/buildings):
-// [{ id, nombre, direccion, ciudad, descripcion, fotos, publicado,
+// [{ id, nombre, direccion, ciudad, descripcion, fotos, latitud, longitud (null si no hay), publicado,
 //   plantas: [{ id, numero, nombre, publicado, salas }] }]. Las plantas llegan ordenadas por número; `salas` cuenta
 // las activas. No incluye lo eliminado.
 export function getBuildings(options) {
@@ -69,13 +69,14 @@ export async function getBuilding(id, options) {
 }
 
 // Crea un edificio en borrador. `datos`: { nombre, direccion, ciudad, descripcion?, fotos? } (fotos: URLs de
-// Storage de la empresa, la primera es la fachada). Responde { id, nombre, direccion, ciudad, descripcion, fotos,
+// Storage de la empresa, la primera es la fachada; latitud y longitud opcionales, siempre juntas). Responde { id, nombre, direccion, ciudad, descripcion, fotos,
 // publicado: false }, sin plantas.
 export function createBuilding(datos, options) {
   return post('/company/buildings', datos, options);
 }
 
-// Edita un edificio propio (cualquiera de los campos de createBuilding; al menos uno). No cambia si está publicado.
+// Edita un edificio propio (cualquiera de los campos de createBuilding; al menos uno; `latitud` y `longitud`
+// van juntas y con null y null se quita la ubicación). No cambia si está publicado.
 export function updateBuilding(id, datos, options) {
   return patch(`/company/buildings/${encodeURIComponent(id)}`, datos, options);
 }
