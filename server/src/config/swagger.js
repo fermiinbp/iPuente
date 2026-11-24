@@ -9,14 +9,17 @@ import swaggerUi from 'swagger-ui-express';
 import { isProduction } from './config.js';
 
 // Carpeta de las rutas. Desde este archivo funciona en local, en los tests y en Vercel (función ESM);
-// si import.meta.url no apuntara aquí, se usa la copia que añade includeFiles (vercel.json) desde la raíz.
+// si import.meta.url no apuntara aquí, se usa la copia que añade includeFiles (vercel.json): en el
+// servicio «server» de Vercel la raíz es server/ (src/routes); desde la raíz del repo, server/src/routes.
 const sourceRoutesDir = import.meta.url
   ? fileURLToPath(new URL('../routes', import.meta.url))
   : null;
 const routesDir =
-  sourceRoutesDir && existsSync(sourceRoutesDir)
-    ? sourceRoutesDir
-    : path.join(process.cwd(), 'server/src/routes');
+  [
+    sourceRoutesDir,
+    path.join(process.cwd(), 'src/routes'),
+    path.join(process.cwd(), 'server/src/routes'),
+  ].find((dir) => dir && existsSync(dir)) ?? path.join(process.cwd(), 'server/src/routes');
 const routesGlob = path.join(routesDir, '*.js').replace(/\\/g, '/');
 
 const errorResponse = (description) => ({
