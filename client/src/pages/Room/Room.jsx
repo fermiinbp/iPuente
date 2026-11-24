@@ -5,13 +5,16 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs/Breadcrumbs.jsx';
 import BookingForm from '@/components/booking/BookingForm/BookingForm.jsx';
 import AmenitiesList from '@/components/room/AmenitiesList/AmenitiesList.jsx';
 import RoomGallery from '@/components/room/RoomGallery/RoomGallery.jsx';
+import Button from '@/components/ui/Button/Button.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
+import StickyActionBar from '@/components/ui/StickyActionBar/StickyActionBar.jsx';
 import { useAuth } from '@/hooks/useAuth.js';
 import { useFetch } from '@/hooks/useFetch.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import { createBooking } from '@/services/bookingsService.js';
 import { getAvailability, getRoom } from '@/services/roomsService.js';
+import { attendeesError, barSummary } from '@/utils/bookingForm.js';
 import { todayString } from '@/utils/dates.js';
 import { formatPrice } from '@/utils/formatPrice.js';
 import { DEMO_FREE_HOURS, demoRoom } from './demoRoom.js';
@@ -165,6 +168,9 @@ export default function Room() {
     ...(room.planta ? [{ label: room.planta.nombre, to: floorTo }] : []),
     { label: room.nombre },
   ];
+  // Barra fija de móvil: mismo total y mismas reglas que el botón del formulario (`BookingForm`).
+  const bar = barSummary({ selection: activeSelection, pricePerHour: room.precioHora ?? 0 });
+  const canReserve = Boolean(activeSelection) && !attendeesError(attendees, room.capacidad ?? null);
 
   return (
     <div className={styles.page} data-superficie="clara">
@@ -265,6 +271,20 @@ export default function Room() {
           />
         </aside>
       </div>
+
+      {/* Solo en móvil (< 900 px). El botón está fuera del formulario y se asocia a él con `form`. */}
+      {room.reservable && (
+        <StickyActionBar
+          label="Resumen de la reserva"
+          amount={bar.amount}
+          detail={bar.detail}
+          action={
+            <Button type="submit" form="reserva-form" loading={submitting} disabled={!canReserve}>
+              {user ? 'Reservar' : 'Iniciar sesión'}
+            </Button>
+          }
+        />
+      )}
     </div>
   );
 }

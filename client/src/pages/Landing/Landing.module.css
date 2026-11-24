@@ -9,7 +9,8 @@
 .hero {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  /* `clip` y no `hidden`: así no crea un contenedor de scroll y el escenario del edificio puede fijarse (sticky). */
+  overflow: clip;
   background: var(--tinta);
 }
 
@@ -58,6 +59,11 @@
   max-width: var(--ancho-max);
   margin: 0 auto;
   padding: var(--space-5) var(--gutter) clamp(56px, 7vw, 104px);
+}
+
+/* Móvil: el envoltorio no existe y texto y buscador siguen colocándose por áreas (texto, edificio, buscador). */
+.heroLeft {
+  display: contents;
 }
 
 .heroText {
@@ -245,20 +251,34 @@
     display: none;
   }
 
-  /* Escritorio: texto y buscador a la izquierda, uno bajo otro; el edificio a la derecha ocupa las dos filas. */
+  /* Escritorio: texto y buscador a la izquierda, uno bajo otro, y el edificio a la derecha. Mientras el escenario del
+     edificio está fijado, la columna izquierda se fija con él (sticky) para que no quede un hueco vacío. */
   .heroInner {
     grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      'texto edificio'
-      'buscador edificio';
-    grid-template-rows: auto 1fr;
+    grid-template-areas: 'izquierda edificio';
+    grid-template-rows: auto;
     column-gap: var(--space-8);
     row-gap: 0;
     padding-top: var(--space-7);
   }
 
-  .heroText {
+  .heroLeft {
+    display: flex;
+    flex-direction: column;
+    grid-area: izquierda;
     align-self: start;
+    position: sticky;
+    top: calc(var(--alto-cabecera) + var(--space-4));
+  }
+
+  .heroText,
+  .search {
+    grid-area: auto;
+  }
+
+  /* El titular se ajusta a la altura de la ventana para que texto y buscador quepan juntos mientras están fijados. */
+  .heroTitle {
+    font-size: clamp(42px, min(5.6vw, 8.5vh), 84px);
   }
 
   .search {

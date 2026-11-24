@@ -1,0 +1,44 @@
+/* Estilos de RoomSheet (CSS Module). Mobile first; solo variables del :root. */
+.cuerpo {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.estado {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--crema-suave);
+}
+
+.datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin: 0;
+}
+
+.datos dt {
+  font-size: var(--text-etiqueta);
+  color: var(--crema-suave);
+}
+
+.datos dd {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-lead);
+  font-weight: 600;
+}
+
+.nota {
+  margin: 0;
+  font-size: var(--text-interfaz);
+  line-height: var(--leading-cuerpo);
+  color: var(--crema-suave);
+}
+
+.enlace {
+  width: fit-content;
+  color: var(--crema);
+}

@@ -1,0 +1,96 @@
+/* Estilos de BuildingBackdrop (CSS Module). Capas de atrás hacia delante; mobile first. Solo variables del :root. */
+.fondo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    var(--bosque-profundo) 0%,
+    var(--bosque) 55%,
+    var(--bosque-elevado) 100%
+  );
+}
+
+.fondo > span {
+  position: absolute;
+  display: block;
+}
+
+/* Formas orgánicas grandes, sin filtro de desenfoque (un degradado radial cuesta menos de pintar). */
+.forma {
+  width: min(90vw, 640px);
+  aspect-ratio: 1;
+  transform: translate3d(0, calc(var(--sy, 0px) * var(--paralaje, 0)), 0);
+}
+
+.formaLejana {
+  top: -12%;
+  right: -30%;
+  --paralaje: -0.1;
+  border-radius: 62% 38% 55% 45% / 48% 58% 42% 52%;
+  background: radial-gradient(
+    circle at 40% 40%,
+    color-mix(in srgb, var(--bosque-elevado) 95%, transparent),
+    transparent 70%
+  );
+}
+
+.formaCercana {
+  bottom: -22%;
+  left: -26%;
+  --paralaje: 0.08;
+  border-radius: 40% 60% 38% 62% / 56% 40% 60% 44%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    color-mix(in srgb, var(--bronce) 16%, transparent),
+    transparent 68%
+  );
+}
+
+/* Luz crema suave detrás de la silueta, para separarla del fondo. En móvil, centrada en el edificio. */
+.halo {
+  top: 46%;
+  left: 50%;
+  width: min(120vw, 760px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--crema) 11%, transparent),
+    transparent
+  );
+}
+
+/* Suelo: el fondo se oscurece hacia abajo, donde se apoya la sombra de contacto del 3D. */
+.suelo {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 26%;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--bosque-profundo) 85%, transparent));
+}
+
+/* Grano fino: ruido fractal en gris que se mezcla con suavidad. */
+.grano {
+  inset: 0;
+  opacity: 0.1;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+@media (min-width: 960px) {
+  /* Escritorio: el edificio está a la derecha, así que la luz también. */
+  .halo {
+    top: 42%;
+    left: 74%;
+    width: min(62vw, 820px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .forma {
+    transform: none;
+  }
+}

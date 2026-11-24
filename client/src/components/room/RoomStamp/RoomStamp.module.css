@@ -1,0 +1,95 @@
+/* Estilos de RoomStamp (CSS Module). Sello crema sobre el edificio. Mobile first; solo variables del :root. */
+.estampa {
+  /* `--k` (0 a 1) y `--giro` los pone quien la contiene; sin ellos se ve entera y recta. */
+  --foco: var(--foco-sobre-claro);
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  width: 100%;
+  min-width: 0;
+  min-height: 112px;
+  padding: var(--space-3);
+  border: 2px solid var(--bosque);
+  border-radius: var(--radio-chip);
+  background-color: var(--crema);
+  color: var(--bosque);
+  font-family: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--sombra-2);
+  opacity: var(--k, 1);
+  transform: translate3d(0, calc((1 - var(--k, 1)) * -28px), 0)
+    rotate(calc(var(--giro, 0deg) + (1 - var(--k, 1)) * 6deg)) scale(calc(1 + (1 - var(--k, 1)) * 0.18));
+  transition: box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.estampa:hover {
+  box-shadow: var(--sombra-3);
+}
+
+/* Trazo del borde: la otra pista del estado, además del texto. */
+.libre {
+  border-width: 2px;
+}
+
+.ocupada {
+  border-width: 5px;
+}
+
+.noAlquila {
+  border-style: dashed;
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 9px,
+    color-mix(in srgb, var(--bosque) 14%, transparent) 9px 10px
+  );
+}
+
+.compacta {
+  min-height: 0;
+  padding: var(--space-2) var(--space-3);
+}
+
+.compacta .datos {
+  display: none;
+}
+
+.nombre {
+  font-weight: 700;
+  font-size: var(--text-interfaz);
+  line-height: 1.2;
+}
+
+.precio {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.datos {
+  font-size: var(--text-etiqueta);
+}
+
+.estado {
+  margin-top: var(--space-1);
+  font-size: var(--text-etiqueta);
+  font-weight: 700;
+}
+
+@media (min-width: 760px) {
+  .estampa {
+    min-height: 128px;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .compacta {
+    min-height: 0;
+    padding: var(--space-2) var(--space-3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .estampa {
+    transition: none;
+  }
+}

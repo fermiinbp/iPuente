@@ -75,8 +75,12 @@ const CAMERA = { fov: 30, near: 1, far: 400, position: [60, 40, 90] };
 const AZIMUTH = 0.62; // 3/4: unos 35° desde el frente
 const ELEVATION = 0.34; // ligeramente picada (~19°)
 const KEY_STEP = 0.15; // radianes por pulsación de flecha
+const AUTO_SPEED = 1.5; // giro automático de OrbitControls: una vuelta en unos 40 s
+const RESUME_MS = 3000; // tras arrastrar, el giro automático espera 3 s para reanudarse
+const SPREAD = 0.2; // metros que sube cada planta por nivel cuando `openRef` vale 1 (la apertura del scroll)
 const NO_RAYCAST = () => null;
 const UP = new Vector3(0, 1, 0);
+const ANCHOR_POINT = new Vector3();
 const EXPOSURE = 1;
 const GLASS_OPACITY = 0.35;
 const GLASS_OPACITY_GROUND = 0.22; // vestíbulo más transparente
@@ -383,6 +387,7 @@ function Floor({
   resources,
   colors,
   reduced,
+  openRef,
   onHover,
   onSelect,
 }) {
@@ -432,13 +437,24 @@ function Floor({
   );
   const applyShell = useCallback((value) => applyFade(shell.current, fades, value), [fades]);
   useTween(selected ? 0 : 1, reduced, applyShell);
+  // Altura de la planta = base + subida al abrir otra planta + apertura del scroll (`openRef`, de 0 a 1).
+  const liftRef = useRef(0);
+  const spread = () => (openRef ? openRef.current * floor.number * SPREAD : 0);
   const applyLift = useCallback(
     (value) => {
-      if (group.current) group.current.position.y = y0 + value;
+      liftRef.current = value;
+      if (group.current) {
+        group.current.position.y = y0 + value + (openRef ? openRef.current * floor.number * SPREAD : 0);
+      }
     },
-    [y0],
+    [y0, openRef, floor.number],
   );
   useTween(above ? LIFT : 0, reduced, applyLift);
+  useFrame(() => {
+    if (!openRef || !group.current) return;
+    const y = y0 + liftRef.current + spread();
+    if (group.current.position.y !== y) group.current.position.y = y;
+  });
 
   const interior = useMemo(
     () => buildInterior(plan, floor, resources.palette),
@@ -626,6 +642,11 @@ function Scene({
   reduced,
   turnRef,
   zoom,
+  autoRotate,
+  spinKickRef,
+  openRef,
+  anchorFloorIds,
+  onFloorAnchors,
 }) {
   const colors = useCssColors(TOKENS);
   const resources = useMemo(() => crearRecursos(colors), [colors]);
@@ -740,8 +761,71 @@ function Scene({
     else cameraTween.current = null;
   });
 
-  // Giro con el teclado (flechas del contenedor): un paso fijo alrededor del edificio.
+  // Giro automático (solo si `autoRotate`): lento y continuo, con el empuje extra del scroll (`spinKickRef`).
+  // Se pausa fuera de pantalla, con la pestaña oculta, mientras se arrastra y 3 s después de soltar. Como el render
+  // es bajo demanda, mientras gira pide un fotograma tras otro; en pausa no gasta nada.
+  const gl = useThree((state) => state.gl);
+  const onScreen = useRef(true);
+  const dragging = useRef(false);
+  const lastDragEnd = useRef(-Infinity);
+  const kickApplied = useRef(0);
   useEffect(() => {
+    if (!autoRotate || typeof IntersectionObserver === 'undefined') return undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      onScreen.current = entry.isIntersecting;
+    });
+    observer.observe(gl.domElement);
+    return () => observer.disconnect();
+  }, [autoRotate, gl]);
+
+  const anchorEntries = useMemo(
+    () =>
+      (anchorFloorIds ?? []).map((id) => layout.find((entry) => entry.floor.id === id)).filter(Boolean),
+    [anchorFloorIds, layout],
+  );
+
+  useFrame(() => {
+    const ctl = controls.current;
+    if (!ctl) return;
+    if (autoRotate) {
+      const idle = performance.now() - lastDragEnd.current > RESUME_MS;
+      const spinning =
+        onScreen.current &&
+        !document.hidden &&
+        !dragging.current &&
+        idle &&
+        !cameraTween.current;
+      ctl.autoRotate = spinning;
+      if (spinning) invalidate();
+      const kick = spinKickRef?.current ?? 0;
+      const delta = kick - kickApplied.current;
+      if (onScreen.current && Math.abs(delta) > 1e-4) {
+        const offset = camera.position.clone().sub(ctl.target).applyAxisAngle(UP, -delta);
+        camera.position.copy(ctl.target).add(offset);
+        camera.lookAt(ctl.target);
+        kickApplied.current = kick;
+        ctl.update();
+        invalidate();
+      }
+    }
+    // Posición en pantalla (px del lienzo) de cada planta pedida, para colocar las estampas a su altura.
+    if (onFloorAnchors && anchorEntries.length > 0) {
+      const anchors = {};
+      for (const entry of anchorEntries) {
+        const spread = openRef ? openRef.current * entry.floor.number * SPREAD : 0;
+        ANCHOR_POINT.set(1.2, entry.y0 + entry.h * 0.5 + spread, 0.8).project(camera);
+        anchors[entry.floor.id] = {
+          x: (ANCHOR_POINT.x * 0.5 + 0.5) * width,
+          y: (-ANCHOR_POINT.y * 0.5 + 0.5) * height,
+        };
+      }
+      onFloorAnchors(anchors);
+    }
+  });
+
+  // Giro con el teclado (flechas del contenedor): un paso fijo alrededor del edificio. Solo si `turnRef` existe.
+  useEffect(() => {
+    if (!turnRef) return undefined;
     turnRef.current = (step) => {
       const ctl = controls.current;
       if (!ctl) return;
@@ -818,6 +902,14 @@ function Scene({
         enableDamping={!reduced}
         dampingFactor={0.08}
         rotateSpeed={0.7}
+        autoRotateSpeed={AUTO_SPEED}
+        onStart={() => {
+          dragging.current = true;
+        }}
+        onEnd={() => {
+          dragging.current = false;
+          lastDragEnd.current = performance.now();
+        }}
         minPolarAngle={0.55}
         maxPolarAngle={Math.PI / 2 - 0.1}
         minDistance={Math.min(closedView.distance, view.distance) * 0.55}
@@ -852,6 +944,7 @@ function Scene({
           resources={resources}
           colors={colors}
           reduced={reduced}
+          openRef={autoRotate ? openRef : undefined}
           onHover={onHoverFloor}
           onSelect={onSelectFloor}
         />
@@ -868,6 +961,15 @@ export default function Building3D({
   onSelectFloor,
   label,
   fallback = null,
+  // Giro automático y estampas (opcionales; por defecto, el comportamiento de siempre). `spinKickRef` y `openRef`
+  // son refs con un número que el scroll actualiza; `onFloorAnchors` recibe { idPlanta: { x, y } } en px del lienzo.
+  autoRotate = false,
+  spinKickRef,
+  openRef,
+  anchorFloorIds,
+  onFloorAnchors,
+  // Con `false` no hay giro con las flechas ni rueda de zoom con el foco (la landing usa las estampas como teclado).
+  keyboardTurn = true,
 }) {
   const reduced = useReducedMotion();
   const turnRef = useRef(null);
@@ -878,16 +980,18 @@ export default function Building3D({
     event.preventDefault();
     turnRef.current?.(event.key === 'ArrowLeft' ? -KEY_STEP : KEY_STEP);
   };
+  const keyboardProps = keyboardTurn
+    ? {
+        tabIndex: 0,
+        role: 'group',
+        'aria-label': 'Edificio en 3D. Gira con las flechas izquierda y derecha',
+        onKeyDown,
+        onFocus: () => setZoom(true),
+        onBlur: () => setZoom(false),
+      }
+    : {};
   return (
-    <div
-      className={styles.grupo}
-      tabIndex={0}
-      role="group"
-      aria-label="Edificio en 3D. Gira con las flechas izquierda y derecha"
-      onKeyDown={onKeyDown}
-      onFocus={() => setZoom(true)}
-      onBlur={() => setZoom(false)}
-    >
+    <div className={styles.grupo} {...keyboardProps}>
       <LazyCanvas
         label={label}
         fallback={fallback}
@@ -902,8 +1006,13 @@ export default function Building3D({
           onHoverFloor={onHoverFloor}
           onSelectFloor={onSelectFloor}
           reduced={reduced}
-          turnRef={turnRef}
+          turnRef={keyboardTurn ? turnRef : null}
           zoom={zoom}
+          autoRotate={autoRotate && !reduced}
+          spinKickRef={spinKickRef}
+          openRef={openRef}
+          anchorFloorIds={anchorFloorIds}
+          onFloorAnchors={onFloorAnchors}
         />
       </LazyCanvas>
     </div>

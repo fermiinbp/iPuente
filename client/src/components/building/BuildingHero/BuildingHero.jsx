@@ -25,11 +25,15 @@ export default function BuildingHero({
   // Con `false` no se pinta la rejilla de botones de planta: quien lo usa pone su propio selector.
   showFloorList = true,
   hint = 'Arrastra para girar y pulsa una planta para abrirla',
+  // Con `false` no se monta el 3D aunque haya WebGL (la landing lo apaga en móvil y con ahorro de datos).
+  allow3d = true,
+  // Props extra para Building3D: giro automático, anclas de las estampas, etc. (ver Building3D).
+  building3dProps,
   children,
 }) {
   const active = floors.find((floor) => floor.id === activeFloorId);
   const [webgl] = useState(() => hasWebGL());
-  const use3d = webgl;
+  const use3d = webgl && allow3d;
   // Última planta confirmada por clic o teclado: es lo único que anuncia el lector de pantalla.
   const [announced, setAnnounced] = useState('');
   const announcedFloor = floors.find((floor) => floor.id === announced);
@@ -66,6 +70,7 @@ export default function BuildingHero({
                 onHoverFloor={onSelectFloor}
                 onSelectFloor={handleSelect}
                 label={`Maqueta 3D del ${buildingName}`}
+                {...building3dProps}
               />
             </Suspense>
           </ErrorBoundary>
