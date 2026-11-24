@@ -3,7 +3,7 @@
   position: relative;
   isolation: isolate;
   overflow: clip;
-  background: var(--bosque);
+  background: var(--papel-calido);
   color: var(--crema);
 }
 
@@ -36,7 +36,7 @@
   right: -10%;
   width: min(60vw, 700px);
   aspect-ratio: 1;
-  background: color-mix(in srgb, var(--foto-hueco) 85%, transparent);
+  background: color-mix(in srgb, var(--albero) 30%, transparent);
   animation: deriva 24s ease-in-out infinite alternate;
 }
 
@@ -45,7 +45,7 @@
   left: -10%;
   width: min(46vw, 520px);
   aspect-ratio: 1;
-  background: color-mix(in srgb, var(--bronce) 24%, transparent);
+  background: color-mix(in srgb, var(--teja) 14%, transparent);
   animation: deriva 30s ease-in-out infinite alternate-reverse;
 }
 
@@ -75,7 +75,7 @@
 }
 
 .back:hover {
-  color: var(--lima);
+  color: var(--acento-texto, var(--lima));
 }
 
 .back:focus-visible {
@@ -89,7 +89,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--bronce-claro);
+  color: var(--teja-oscuro);
 }
 
 .title {
@@ -151,9 +151,10 @@
   display: grid;
   gap: var(--space-5);
   padding: var(--space-5);
-  border: 1px solid var(--linea);
   border-radius: var(--radio-tarjeta);
-  background: color-mix(in srgb, var(--bosque-profundo) 85%, transparent);
+  background: var(--tinta);
+  color: var(--crema);
+  box-shadow: 8px 8px 0 0 var(--albero);
 }
 
 .bookingTitle {
@@ -181,7 +182,7 @@
   align-items: center;
   min-height: 44px;
   font-weight: 600;
-  color: var(--lima);
+  color: var(--acento-texto, var(--lima));
 }
 
 .mapLink:focus-visible {

@@ -7,7 +7,7 @@
   border: 1px solid var(--alert-color);
   border-left-width: 4px;
   border-radius: var(--radio-plano);
-  background: var(--bosque-elevado);
+  background: var(--alerta-fondo, var(--bosque-elevado));
   color: var(--crema);
   font-size: var(--text-cuerpo);
   line-height: 1.5;

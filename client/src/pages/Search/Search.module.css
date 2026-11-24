@@ -4,11 +4,11 @@
   isolation: isolate;
   min-height: 60vh;
   overflow: clip;
-  background: var(--bosque);
+  background: var(--papel-calido);
   color: var(--crema);
 }
 
-/* Fondo con luz, como la cabecera de edificio, planta y sala: resplandor verde arriba a la derecha y toque de bronce abajo. */
+/* Superficie clara (data-superficie="clara"): luz de albero arriba a la derecha y un toque de teja abajo. */
 .page::before {
   content: '';
   position: absolute;
@@ -18,12 +18,12 @@
   background:
     radial-gradient(
       45% 40% at 85% 8%,
-      color-mix(in srgb, var(--foto-hueco) 90%, transparent),
+      color-mix(in srgb, var(--albero) 28%, transparent),
       transparent 70%
     ),
     radial-gradient(
       35% 35% at 4% 92%,
-      color-mix(in srgb, var(--bronce) 14%, transparent),
+      color-mix(in srgb, var(--teja) 12%, transparent),
       transparent 70%
     );
 }
@@ -102,6 +102,9 @@
 .mapPane {
   display: none;
   height: min(70vh, 560px);
+  overflow: hidden;
+  border-radius: var(--radio-tarjeta);
+  background: var(--bosque);
 }
 
 .mapPaneOpen {
@@ -118,7 +121,7 @@
 }
 
 .cardActive > a {
-  border-color: var(--lima);
+  border-color: var(--tinta);
   transform: translateY(-4px);
 }
 

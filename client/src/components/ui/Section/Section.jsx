@@ -7,6 +7,9 @@ const TONES = {
   elevated: styles.toneElevated,
   deep: styles.toneDeep,
   crema: styles.toneCrema, // superficie clara: texto bosque
+  papel: styles.tonePapel, // superficie clara cálida: texto bosque
+  albero: styles.toneAlbero, // banda a todo color: texto tinta
+  tinta: styles.toneTinta, // casi negro verdoso
 };
 // Decoración de fondo opcional: 'glow' (resplandor de bronce) o 'grid' (cuadrícula de plano que se desvanece).
 const DECORS = { glow: styles.decorGlow, grid: styles.decorGrid };

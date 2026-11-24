@@ -1,5 +1,5 @@
 // Botón en píldora. Con `to` se pinta como enlace (<a href>); sin `to`, como <button>.
-// Variantes: primary (por defecto), secondary y ghost. `loading` muestra un spinner y bloquea el clic.
+// Variantes: primary (albero, por defecto), dark (tinta, para bandas albero y superficies claras), secondary y ghost. `loading` muestra un spinner y bloquea el clic.
 // Tamaños: md (44 px) y lg (52 px). Sin `size`, primary es lg y el resto md.
 import { Link } from 'react-router';
 import Spinner from '../Spinner/Spinner';

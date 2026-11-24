@@ -1,7 +1,7 @@
 /* Estilos de Footer (CSS Module). */
 .footer {
-  border-top: 1px solid var(--linea);
-  background: var(--bosque-profundo);
+  border-top: 4px solid var(--teja);
+  background: var(--tinta);
   color: var(--crema-suave);
 }
 
@@ -34,8 +34,11 @@
 
 .columnTitle {
   margin: 0 0 var(--space-2);
-  color: var(--crema);
-  font-weight: 600;
+  color: var(--albero);
+  font-size: var(--text-etiqueta);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .link {

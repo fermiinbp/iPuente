@@ -48,12 +48,18 @@ export default function CompaniesCta() {
       id="empresas"
       titleId="empresas-titulo"
       tone="elevated"
-      bordered={false}
+      decor="glow"
       innerClassName={styles.inner}
     >
       <div className={styles.text}>
-        <SectionTitle id="empresas-titulo">Tus oficinas, publicadas en minutos</SectionTitle>
-        <p className={styles.lead}>Sube la imagen del plano y dibuja tus salas encima.</p>
+        <p className={styles.eyebrow}>Para empresas</p>
+        <SectionTitle id="empresas-titulo">
+          ¿Tienes oficinas? <em>Ponlas a trabajar</em>
+        </SectionTitle>
+        <p className={styles.lead}>
+          Sube la imagen del plano y dibuja tus salas encima. Tus clientes las ven libres en el
+          plano, reservan por horas y pagan online.
+        </p>
         <ol className={styles.steps}>
           {COMPANY_STEPS.map((step, index) => (
             <li key={step} className={styles.step}>
@@ -65,7 +71,9 @@ export default function CompaniesCta() {
           ))}
         </ol>
         <div>
-          <Button to="/company/register">Publica tu oficina</Button>
+          <Button to="/company/register" variant="primary" size="lg">
+            Publica tu oficina
+          </Button>
         </div>
       </div>
 

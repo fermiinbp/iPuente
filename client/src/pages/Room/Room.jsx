@@ -164,7 +164,7 @@ export default function Room() {
   ];
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-superficie="clara">
       <div className={styles.aurora} aria-hidden="true">
         <span className={styles.blobA} />
         <span className={styles.blobB} />
@@ -233,7 +233,7 @@ export default function Room() {
           )}
         </div>
 
-        <aside className={styles.booking} aria-labelledby="reserva-titulo">
+        <aside className={styles.booking} aria-labelledby="reserva-titulo" data-superficie="oscura">
           <h2 className={styles.bookingTitle} id="reserva-titulo">
             Reserva esta sala
           </h2>

@@ -1,4 +1,5 @@
-// Tarjeta resumen de una sala (tipo, nombre, lugar, capacidad y precio). Toda la tarjeta es un enlace a la ficha.
+// Tarjeta resumen de una sala (tipo, nombre, lugar, capacidad, precio y llamada a la ficha). Toda la tarjeta es un enlace.
+// Es una tarjeta clara con su propio fondo: se lee igual sobre superficies claras u oscuras.
 import { Link } from 'react-router';
 import { priceLabel } from '@/utils/formatPrice.js';
 import styles from './RoomCard.module.css';
@@ -17,8 +18,13 @@ export default function RoomCard({ room, variant = 'default' }) {
         <span className={styles.name}>{room.name}</span>
         <span className={styles.place}>{room.place}</span>
         <span className={styles.meta}>
-          <span>hasta {room.people} personas</span>
-          <span>{priceLabel(room.price, { gratis: room.gratis, perHour: true })}</span>
+          <span className={styles.people}>hasta {room.people} personas</span>
+          <span className={styles.price}>
+            {priceLabel(room.price, { gratis: room.gratis, perHour: true })}
+          </span>
+        </span>
+        <span className={styles.cta} aria-hidden="true">
+          Ver sala y reservar <span className={styles.arrow}>→</span>
         </span>
       </span>
     </Link>

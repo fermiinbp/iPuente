@@ -2,3 +2,9 @@
   font-size: var(--text-seccion);
   line-height: 1;
 }
+
+/* Palabra clave del titular: cursiva y color de acento de la superficie (--acento-titular la fija Section). */
+.title em {
+  font-style: italic;
+  color: var(--acento-titular, var(--albero));
+}

@@ -62,15 +62,19 @@ export default function Landing() {
       >
         <div className={styles.heroInner}>
           <div className={styles.heroText}>
-            <p className={styles.eyebrow}>Salas de oficina por horas</p>
+            <p className={styles.eyebrow}>Salas de oficina por horas en Sevilla</p>
             <h1 className={styles.heroTitle} id="hero-titulo">
-              Elige tu sala en el plano y resérvala por horas.
+              Mira qué sala está libre en el plano y <em>resérvala</em> por horas.
             </h1>
             <p className={styles.lead}>
-              iPuente te enseña cada planta del edificio con sus salas libres, su precio y su
-              capacidad. Para equipos y profesionales que necesitan una sala unas horas: eliges las
-              horas y listo.
+              Recorre el edificio planta a planta, ve el precio y la capacidad de cada sala y paga
+              online. Sin llamadas ni presupuestos: eliges las horas y listo.
             </p>
+            <ul className={styles.perks}>
+              <li>Salas libres en el plano</li>
+              <li>Precio claro por hora</li>
+              <li>Pago online</li>
+            </ul>
           </div>
 
           <div className={styles.heroBuilding}>
@@ -86,13 +90,15 @@ export default function Landing() {
         </div>
       </section>
 
-      <FloorSection buildingName={BUILDING.name} />
+      {/* Ritmo de superficies: hero oscuro, cómo funciona claro, planta oscura, salas claras, alrededor oscuro y banda albero. */}
       <HowItWorks />
-      <NearbySection />
+      <FloorSection buildingName={BUILDING.name} />
 
-      <Section id="salas" titleId="salas-titulo" decor="grid">
+      <Section id="salas" titleId="salas-titulo" tone="papel" bordered={false}>
         <div className={styles.roomsHead}>
-          <SectionTitle id="salas-titulo">Salas destacadas</SectionTitle>
+          <SectionTitle id="salas-titulo">
+            Salas <em>destacadas</em>
+          </SectionTitle>
           <CategoryFilters filters={ROOM_FILTERS} active={filter} onChange={setFilter} />
         </div>
         {rooms.length > 0 ? (
@@ -116,6 +122,7 @@ export default function Landing() {
         )}
       </Section>
 
+      <NearbySection />
       <CompaniesCta />
     </div>
   );

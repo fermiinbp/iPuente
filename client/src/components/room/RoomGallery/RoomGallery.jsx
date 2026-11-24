@@ -13,7 +13,7 @@ export default function RoomGallery({ photos = [], name }) {
 
   if (urls.length === 0) {
     return (
-      <div className={styles.placeholder} role="img" aria-label={`Sin fotos de ${name}`}>
+      <div className={styles.placeholder} data-superficie="oscura" role="img" aria-label={`Sin fotos de ${name}`}>
         <img className={styles.symbol} src={symbol} alt="" />
         <span className={styles.caption}>Todavía no hay fotos de esta sala</span>
       </div>

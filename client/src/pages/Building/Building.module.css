@@ -18,7 +18,8 @@
   position: relative;
   isolation: isolate;
   overflow: clip;
-  background: var(--bosque);
+  background: var(--papel-calido); /* cabecera clara (data-superficie="clara") */
+  color: var(--crema);
 }
 
 .aurora {
@@ -42,7 +43,7 @@
   right: -10%;
   width: min(60vw, 720px);
   aspect-ratio: 1;
-  background: color-mix(in srgb, var(--foto-hueco) 90%, transparent);
+  background: color-mix(in srgb, var(--albero) 34%, transparent);
   animation: deriva 22s ease-in-out infinite alternate;
 }
 
@@ -51,7 +52,7 @@
   left: -12%;
   width: min(50vw, 600px);
   aspect-ratio: 1;
-  background: color-mix(in srgb, var(--bronce) 42%, transparent);
+  background: color-mix(in srgb, var(--teja) 20%, transparent);
   animation: deriva 28s ease-in-out infinite alternate-reverse;
 }
 
@@ -60,7 +61,7 @@
   left: 38%;
   width: min(34vw, 420px);
   aspect-ratio: 1;
-  background: color-mix(in srgb, var(--lima) 14%, transparent);
+  background: color-mix(in srgb, var(--albero) 20%, transparent);
   animation: deriva 34s ease-in-out infinite alternate;
 }
 
@@ -116,7 +117,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--bronce-claro);
+  color: var(--teja-oscuro);
 }
 
 .title {
@@ -197,7 +198,7 @@
   margin-top: var(--space-6);
 }
 
-/* Foco de luz detrás del 3D (verde claro) y un toque de bronce al otro lado: da profundidad al fondo plano. */
+/* Foco de luz detrás del 3D y un toque de bronce al otro lado: da profundidad al fondo plano. */
 .explorer::before {
   content: '';
   position: absolute;

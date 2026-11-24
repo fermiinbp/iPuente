@@ -40,7 +40,7 @@
 }
 
 .preview {
-  fill: rgb(207 227 106 / 0.15);
+  fill: color-mix(in srgb, var(--lima) 15%, transparent);
   stroke: var(--lima);
   stroke-dasharray: 6 4;
   stroke-width: 2;

@@ -18,7 +18,7 @@
 }
 
 .selected .body {
-  fill: rgb(207 227 106 / 0.18);
+  fill: color-mix(in srgb, var(--lima) 18%, transparent);
   stroke: var(--lima);
   stroke-dasharray: none;
   stroke-width: 2.5;

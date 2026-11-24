@@ -17,7 +17,7 @@ function tiempos(poi) {
   return partes.join(' · ');
 }
 
-// `tone` es el fondo de la sección: 'elevated' (verde, por defecto) o 'crema' (banda clara con el texto en bosque).
+// `tone` es el fondo de la sección: 'elevated' (espresso, por defecto) o 'crema' (banda clara con el texto en bosque).
 export default function NearbySection({ tone = 'elevated' }) {
   const [activeId, setActiveId] = useState(null); // elegido con clic o Enter: mueve la cámara
   const [hoverId, setHoverId] = useState(null); // ratón o foco: solo resalta

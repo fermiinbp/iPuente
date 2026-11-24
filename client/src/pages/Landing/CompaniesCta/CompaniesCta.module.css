@@ -13,6 +13,19 @@
   gap: var(--space-5);
 }
 
+.eyebrow {
+  align-self: flex-start;
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--albero);
+  border-radius: var(--radio-pildora);
+  font-size: var(--text-etiqueta);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--albero);
+}
+
 .lead {
   max-width: 30em;
   margin: 0;
@@ -27,7 +40,8 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid var(--linea);
+  border-top: 1px solid color-mix(in srgb, var(--albero) 45%, transparent);
+  font-weight: 600;
 }
 
 .step {
@@ -42,7 +56,7 @@
   font-family: var(--font-display);
   font-style: italic;
   font-size: var(--text-lista-movil);
-  color: var(--bronce-claro);
+  color: var(--albero);
 }
 
 .editor {
@@ -50,9 +64,15 @@
   flex: 1.2 1 min(440px, 100%);
   min-width: 0;
   padding: var(--space-4);
-  border: 1px solid var(--linea);
+  border: 1px solid color-mix(in srgb, var(--crema) 10%, transparent);
   border-radius: var(--radio-tarjeta);
-  background: var(--bosque-elevado);
+  background: var(--superficie-elevada);
+  color: var(--crema);
+  /* Ventana flotando sobre la banda, con un halo de albero detrás. */
+  box-shadow:
+    var(--brillo),
+    0 0 64px -16px color-mix(in srgb, var(--albero) 28%, transparent),
+    var(--sombra-flotante);
 }
 
 .editorBar {
@@ -181,20 +201,6 @@
 
 .editor[data-phase='play'] .room4 {
   animation-delay: 1050ms;
-}
-
-/* Resplandor pegado al plano: va con él en móvil y en escritorio, sin quedar lejos. */
-.editor::before {
-  content: '';
-  position: absolute;
-  inset: -22% -14%;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(
-    closest-side,
-    color-mix(in srgb, var(--foto-hueco) 80%, transparent),
-    transparent
-  );
 }
 
 @keyframes salaDibujada {

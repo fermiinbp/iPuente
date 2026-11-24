@@ -4,9 +4,10 @@
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4);
-  border: 1px solid var(--linea);
+  border: 1px solid var(--borde-control);
   border-radius: var(--radio-buscador);
-  background: var(--bosque-elevado);
+  background: var(--papel);
+  box-shadow: var(--sombra-clara);
 }
 
 .field {
@@ -17,8 +18,15 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-2);
-  border-color: var(--borde-control);
+  padding: var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--albero) 55%, transparent);
+  background: var(--superficie-elevada);
+  color: var(--crema);
+  box-shadow:
+    var(--brillo),
+    0 0 0 6px color-mix(in srgb, var(--albero) 8%, transparent),
+    0 0 48px -8px color-mix(in srgb, var(--albero) 22%, transparent),
+    var(--sombra-flotante);
 }
 
 .hero .field + .field {

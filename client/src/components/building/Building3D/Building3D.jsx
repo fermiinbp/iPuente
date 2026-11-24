@@ -135,7 +135,7 @@ function crearRecursos(colors) {
     new MeshStandardMaterial({ color, roughness, metalness, ...extra });
   const glass = () =>
     new MeshPhysicalMaterial({
-      color: colors.libre,
+      color: colors['crema-suave'],
       transparent: true,
       opacity: GLASS_OPACITY,
       roughness: 0.05,
@@ -209,7 +209,8 @@ function crearRecursos(colors) {
       canopy: std(0xffffff, 0.65, 0.05, { vertexColors: true }),
       plaza: std(0xffffff, 0.95, 0, { vertexColors: true }),
       trunk: std(colors.bronce.clone().multiplyScalar(0.6), 0.9),
-      crown: std(colors['linea-plano'].clone().lerp(colors.libre, 0.35), 0.85, 0, {
+      // Copas en tonos albero y terracota (la plaza no es verde).
+      crown: std(colors['bronce-claro'].clone().lerp(colors.bronce, 0.3), 0.85, 0, {
         flatShading: true,
       }),
     },

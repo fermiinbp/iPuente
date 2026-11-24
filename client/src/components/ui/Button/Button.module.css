@@ -27,9 +27,35 @@
   transform: scale(0.97);
 }
 
+.primary:active {
+  border-color: var(--albero-pulsado);
+  background: var(--albero-pulsado);
+  box-shadow: none;
+}
+
+/* Acción principal: albero con texto tinta (8,9:1). Nunca texto blanco sobre albero. */
 .primary {
-  background: var(--crema);
-  color: var(--bosque);
+  border-color: var(--albero-pulsado);
+  background: linear-gradient(
+    180deg,
+    var(--albero-hover),
+    var(--albero) 55%,
+    var(--albero-pulsado)
+  );
+  color: var(--tinta);
+  font-weight: 700;
+  box-shadow:
+    var(--brillo-fuerte),
+    0 1px 2px rgb(2 10 6 / 0.3),
+    0 8px 20px -10px color-mix(in srgb, var(--albero) 80%, transparent);
+}
+
+/* Sobre bandas albero o teja y superficies claras: tinta con texto crema. */
+.dark {
+  background: linear-gradient(180deg, var(--bosque-elevado), var(--tinta));
+  color: var(--papel);
+  font-weight: 700;
+  box-shadow: var(--brillo), var(--sombra-1);
 }
 
 /* Tamaños. Van después de .button para ganarle en la cascada. */
@@ -43,8 +69,9 @@
 
 .secondary {
   border-color: var(--crema-suave);
-  background: transparent;
+  background: color-mix(in srgb, var(--crema) 4%, transparent);
   color: var(--crema);
+  box-shadow: var(--brillo);
 }
 
 .ghost {
@@ -61,12 +88,29 @@
 
 @media (hover: hover) and (pointer: fine) {
   .primary:hover {
-    background: var(--crema-suave);
+    border-color: var(--albero);
+    background: linear-gradient(180deg, #ffc65c, var(--albero-hover) 55%, var(--albero));
+    transform: translateY(-2px);
+    box-shadow:
+      var(--brillo-fuerte),
+      0 2px 4px rgb(2 10 6 / 0.3),
+      0 16px 32px -10px color-mix(in srgb, var(--albero) 85%, transparent);
+  }
+
+  .primary:active:hover {
+    border-color: var(--albero-pulsado);
+    background: var(--albero-pulsado);
+    transform: scale(0.97);
+    box-shadow: none;
+  }
+
+  .dark:hover {
+    background: var(--bosque-elevado);
     transform: translateY(-2px);
     box-shadow: 0 8px 20px -8px rgb(0 0 0 / 0.5);
   }
 
-  .primary:active:hover {
+  .dark:active:hover {
     transform: scale(0.97);
     box-shadow: none;
   }
@@ -77,7 +121,7 @@
   }
 
   .ghost:hover {
-    background: var(--bosque-elevado);
+    background: color-mix(in srgb, var(--crema) 12%, transparent);
     transform: translateY(-2px);
   }
 
@@ -94,6 +138,7 @@
 
   .button:active,
   .primary:hover,
+  .dark:hover,
   .secondary:hover,
   .ghost:hover {
     transform: none;

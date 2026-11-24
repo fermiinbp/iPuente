@@ -1,19 +1,21 @@
-/* Estilos de BuildingCard (CSS Module). Mobile first. */
+/* Estilos de BuildingCard (CSS Module). Mobile first. Tarjeta clara con foto oscura, precio y llamada en albero. */
 .card {
   display: grid;
   overflow: hidden;
-  border: 1px solid var(--linea);
+  border: 1px solid var(--borde-control);
   border-radius: var(--radio-tarjeta);
-  background: color-mix(in srgb, var(--bosque-elevado) 75%, transparent);
-  color: var(--crema);
+  background: var(--papel);
+  color: var(--tinta);
   text-decoration: none;
+  box-shadow: var(--sombra-clara);
   transition:
     transform var(--dur-media) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-media) var(--ease-out);
 }
 
 .card:focus-visible {
-  outline: 2px solid var(--foco);
+  outline: 3px solid var(--foco-sobre-claro);
   outline-offset: 3px;
 }
 
@@ -21,15 +23,12 @@
   display: grid;
   place-items: center;
   aspect-ratio: 16 / 9;
+  overflow: hidden;
   background: radial-gradient(
     closest-side,
-    color-mix(in srgb, var(--foto-hueco) 95%, transparent),
-    var(--bosque-profundo)
+    var(--papel),
+    color-mix(in srgb, var(--albero) 35%, var(--papel))
   );
-}
-
-.photo {
-  overflow: hidden;
 }
 
 .image {
@@ -38,13 +37,19 @@
   object-fit: cover;
 }
 
+/* Precio visible: píldora albero con texto tinta. */
 .price {
-  font-weight: 600;
+  justify-self: start;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radio-pildora);
+  background: var(--albero);
+  font-weight: 700;
+  color: var(--tinta);
 }
 
 .free {
   font-size: var(--text-interfaz);
-  color: var(--lima);
+  color: var(--albero-profundo);
 }
 
 .symbol {
@@ -57,6 +62,7 @@
 .body {
   display: grid;
   gap: var(--space-2);
+  align-content: start;
   padding: var(--space-5);
 }
 
@@ -72,10 +78,11 @@
   color: var(--crema-suave);
 }
 
+/* Llamada a la acción: texto en teja oscuro (5:1 sobre papel). */
 .meta {
   margin-top: var(--space-2);
-  font-weight: 600;
-  color: var(--bronce-claro);
+  font-weight: 700;
+  color: var(--teja-oscuro);
 }
 
 @media (min-width: 600px) {
@@ -93,7 +100,8 @@
 @media (hover: hover) {
   .card:hover {
     transform: translateY(-4px);
-    border-color: var(--lima);
+    border-color: var(--tinta);
+    box-shadow: var(--sombra-clara-alta);
   }
 }
 

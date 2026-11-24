@@ -164,7 +164,7 @@ export default function Building() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.hero} aria-labelledby="edificio-titulo">
+      <header className={styles.hero} aria-labelledby="edificio-titulo" data-superficie="clara">
         <div className={styles.aurora} aria-hidden="true">
           <span className={styles.blobA} />
           <span className={styles.blobB} />

@@ -222,7 +222,7 @@ export default function Search() {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-superficie="clara">
       <div className={styles.inner}>
         <h1 className={styles.title}>Encuentra tu sala</h1>
         <div ref={barRef}>
@@ -287,7 +287,10 @@ export default function Search() {
         <div className={`${styles.layout} ${mapAvailable ? styles.withMap : ''}`}>
           <div className={showMap ? styles.listHidden : styles.list}>{results}</div>
           {mapAvailable && (
-            <div className={`${styles.mapPane} ${showMap ? styles.mapPaneOpen : ''}`}>
+            <div
+              className={`${styles.mapPane} ${showMap ? styles.mapPaneOpen : ''}`}
+              data-superficie="oscura"
+            >
               {(wide || showMap) && (
                 <ErrorBoundary fallback={null}>
                   <Suspense fallback={<p className={styles.mapNote}>Cargando el mapa…</p>}>

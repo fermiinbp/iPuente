@@ -26,7 +26,7 @@
 }
 
 .link:hover {
-  color: var(--lima);
+  color: var(--acento-texto, var(--lima));
   text-decoration: underline;
 }
 

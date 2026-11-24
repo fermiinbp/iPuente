@@ -1,3 +1,4 @@
+/* Los colores salen de variables que fija la superficie (Section clara); por defecto, el aspecto sobre bosque. */
 .group {
   display: flex;
   flex-wrap: wrap;
@@ -7,10 +8,10 @@
 .chip {
   min-height: var(--campo-alto);
   padding: 0 18px;
-  border: 1px solid var(--borde-control);
+  border: 1px solid var(--filtro-borde, var(--borde-control));
   border-radius: var(--radio-pildora);
   background: transparent;
-  color: var(--crema);
+  color: var(--filtro-texto, var(--crema));
   font-family: var(--font-body);
   font-size: var(--text-menu);
   font-weight: 500;
@@ -27,15 +28,15 @@
 }
 
 .active {
-  border-color: var(--lima);
-  background: var(--lima);
-  color: var(--bosque-profundo);
+  border-color: var(--filtro-activo-fondo, var(--lima));
+  background: var(--filtro-activo-fondo, var(--lima));
+  color: var(--filtro-activo-texto, var(--bosque-profundo));
 }
 
 @media (hover: hover) and (pointer: fine) {
   .chip:not(.active):hover {
-    border-color: var(--crema);
-    background: var(--bosque-elevado);
+    border-color: var(--filtro-borde-hover, var(--crema));
+    background: var(--filtro-hover-fondo, var(--bosque-elevado));
     transform: translateY(-1px);
   }
 

@@ -28,7 +28,7 @@
   border: 0;
   background: transparent;
   color: var(--crema);
-  color-scheme: dark;
+  color-scheme: var(--esquema, dark);
   font-family: var(--font-body);
   font-size: var(--text-cuerpo);
   font-weight: 500;

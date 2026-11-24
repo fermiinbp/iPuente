@@ -4,9 +4,13 @@
   position: sticky;
   top: 0;
   z-index: 30;
-  border-bottom: 1px solid var(--linea);
-  background: var(--bosque);
+  border-bottom: 1px solid color-mix(in srgb, var(--crema) 8%, transparent);
+  /* Vidrio: deja ver el contenido al pasar por debajo, desenfocado. */
+  background: var(--superficie-vidrio);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
   color: var(--crema);
+  box-shadow: 0 8px 24px -16px rgb(2 10 6 / 0.8);
 }
 
 .inner {
@@ -90,7 +94,8 @@
   padding: 0 18px;
   border: 1px solid var(--linea);
   border-radius: var(--radio-pildora);
-  background: var(--bosque-elevado);
+  background: var(--superficie-elevada);
+  box-shadow: var(--brillo);
   color: var(--crema);
   font-family: inherit;
   font-size: var(--text-menu);

@@ -1,34 +1,47 @@
-/* Estilos globales de la web (diseño Bosque): variables en :root, reset y estilos base. Los estilos de cada componente van en su .module.css (CSS Modules). @media y @keyframes siempre al final. */
+/* Estilos globales de la web (paleta bosque profundo, albero y crema): variables en :root, reset y estilos base. Los estilos de cada componente van en su .module.css (CSS Modules). @media y @keyframes siempre al final.
+   Verde bosque frío y profundo como base, albero (dorado cálido) como acción y crema como superficie clara: el contraste frío/cálido da el carácter. Profundidad con capas (--bosque-* y --superficie-*), sombras en capas teñidas de verde, brillo superior y grano. El 3D y el mapa leen los colores de :root, por eso los valores son hex literales. */
 
 :root {
-  /* Fondos */
-  --bosque: #24331f;
-  --bosque-elevado: #2f4329;
-  --bosque-profundo: #18240f;
-  --foto-hueco: #3d5535;
+  /* Fondos (bosque, de más profundo a más elevado) */
+  --tinta: #08150f; /* casi negro verdoso: hero, cabecera, pie y texto sobre albero o teja */
+  --bosque-profundo: #0b1b14; /* literal porque el mapa lo lee de :root */
+  --bosque: #0f241a;
+  --bosque-elevado: #163426;
+  --bosque-alto: #1d4130; /* tarjetas y paneles sobre --bosque-elevado */
+  --foto-hueco: #24503b;
+  --musgo: #3f7a5a; /* verde medio: resplandores y detalles, nunca texto */
 
   /* Texto y líneas */
   --crema: #f3ecdc;
-  --crema-suave: #c4c9b4;
-  --linea: #506a49; /* decorativo, nunca texto */
+  --crema-suave: #c3d0c4;
+  --linea: #2a4a3a; /* decorativo, nunca texto */
 
   /* Acentos */
-  --lima: #cfe36a; /* solo activo, seleccionado y foco */
+  --lima: #ffd166; /* nombre histórico: amarillo cálido para activo, seleccionado y foco */
   --bronce: #b8894a;
   --bronce-oscuro: #8a5a24; /* bronce sobre fondo crema */
+
+  /* Albero y teja (Sevilla). Acción principal y bandas a todo color: siempre con texto --tinta (8,9:1 sobre albero, 5:1 sobre teja), nunca blanco. Teja solo para detalles puntuales. */
+  --albero: #f5a524;
+  --albero-hover: #ffb93d;
+  --albero-pulsado: #e0900f;
+  --albero-profundo: #7a4a00; /* albero como texto o línea sobre crema o papel (6,2:1 sobre crema) */
+  --teja: #e8552d;
+  --teja-oscuro: #b53a16; /* teja como texto sobre crema o papel (5:1) */
+  --papel-calido: #f6efdd; /* superficie clara alternativa a --crema */
 
   /* Estados de sala (siempre con texto; "no se alquila" con trama) */
   --libre: #c3e3b0;
   --libre-texto: #14230f;
   --ocupada: #c64e34;
   --ocupada-texto: #ffffff;
-  --no-alquila: #9aa793;
-  --no-alquila-texto: #050a03;
+  --no-alquila: #9fac9f;
+  --no-alquila-texto: #04100a;
 
   /* Secundarios (plano y edificio) */
-  --linea-plano: #5d7656;
+  --linea-plano: #4d7260;
   --papel: #fdfaf0;
-  --trama-no-alquila: #76846d;
+  --trama-no-alquila: #748676;
   --bronce-claro: #dcb67a;
   --bronce-borde: #8a6330;
   --bronce-ventana: #6f4f26;
@@ -59,6 +72,7 @@
 
   /* Foco y controles. --foco se redefine dentro de superficies claras (crema, papel, libre): el lima no se ve sobre ellas. */
   --foco: var(--lima);
+  --esquema: dark; /* color-scheme de los campos; las superficies claras lo cambian a light */
   --foco-sobre-claro: var(--bosque); /* 11,4:1 sobre crema */
   /* Bordes de chips y campos: 6,3:1 sobre bosque elevado (--linea no llega a 3:1). */
   --borde-control: var(--crema-suave);
@@ -102,13 +116,25 @@
   --campo-borde-foco: var(--foco);
   --campo-placeholder: var(--crema-suave);
   --campo-desactivado-fondo: var(--bosque);
-  --campo-desactivado-texto: #8b947f;
+  --campo-desactivado-texto: #8fa394;
   --campo-alto: 44px; /* objetivo táctil */
   /* Radio de los campos: --radio-plano */
 
-  /* Elevación: una sola sombra, solo para lo que flota (modal, menús, banner, hoja inferior) */
-  --sombra-flotante: 0 8px 24px rgb(0 0 0 / 0.35);
-  --velo-modal: rgb(10 16 8 / 0.72);
+  /* Profundidad. Sombras en capas teñidas de verde (nunca negro plano): contacto + ambiente.
+     --brillo: filo de luz arriba de las superficies oscuras, como un canto iluminado. */
+  --sombra-1: 0 1px 2px rgb(2 10 6 / 0.28), 0 4px 12px -4px rgb(2 10 6 / 0.35);
+  --sombra-2: 0 2px 4px rgb(2 10 6 / 0.22), 0 18px 40px -14px rgb(2 10 6 / 0.6);
+  --sombra-flotante: 0 4px 10px rgb(2 10 6 / 0.3), 0 28px 64px -16px rgb(2 10 6 / 0.7);
+  --sombra-clara:
+    0 1px 2px rgb(15 36 26 / 0.08), 0 12px 32px -16px rgb(15 36 26 / 0.28); /* tarjetas sobre crema o papel */
+  --sombra-clara-alta: 0 2px 4px rgb(15 36 26 / 0.08), 0 24px 48px -20px rgb(15 36 26 / 0.4);
+  --brillo: inset 0 1px 0 rgb(243 236 220 / 0.07);
+  --brillo-fuerte: inset 0 1px 0 rgb(255 255 255 / 0.35); /* botón albero */
+  --superficie-elevada: linear-gradient(180deg, var(--bosque-alto), var(--bosque-elevado));
+  --superficie-vidrio: color-mix(in srgb, var(--tinta) 72%, transparent);
+  --velo-modal: rgb(4 12 8 / 0.74);
+  /* Grano de papel: ruido SVG muy suave encima de todo (body::after) para quitar lo plano. */
+  --grano: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
   /* Capas */
   --z-cabecera: 100;
@@ -121,6 +147,60 @@
   /* Breakpoints (convención; una variable no funciona dentro de @media):
      móvil < 600px · tablet 600px–899px · escritorio >= 900px.
      Excepciones existentes: DashboardLayout 48rem, Landing 960px. */
+}
+
+/* Superficies claras: los componentes (Input, Select, Chip, Button, Alert…) leen --crema, --crema-suave, --campo-* y --foco, que en :root son para fondo oscuro. Con data-superficie="clara" se invierten para texto espresso sobre papel (AA: texto 14:1, texto suave 7:1, bordes de campo 6:1).
+   data-superficie="oscura" devuelve los valores de :root dentro de una zona clara (mapa, plano 3D, tarjeta de reserva). Son literales porque una variable no puede referirse a su propio valor. */
+[data-superficie='clara'] {
+  --foco: var(--foco-sobre-claro);
+  --crema: #0f241a;
+  --crema-suave: #4a5d51;
+  --linea: #d9dccb; /* decorativo */
+  --borde-control: #5d6f63;
+  --campo-fondo: var(--papel);
+  --campo-borde: #5d6f63;
+  --campo-borde-foco: var(--foco-sobre-claro);
+  --campo-placeholder: #5d6f63;
+  --campo-desactivado-fondo: #e8e6d6;
+  --campo-desactivado-texto: #6b7a6f;
+  --error: #b3261e;
+  --aviso: #8a5a00;
+  --info: #1d5f8a;
+  --exito: #2d6a2a;
+  --esquema: light;
+  --acento-texto: #b53a16; /* enlaces y acentos de texto sobre claro (teja oscuro, 5:1) */
+  --alerta-fondo: #fdfaf0;
+  --filtro-activo-fondo: #0f241a;
+  --filtro-activo-texto: #fdfaf0;
+  --filtro-hover-fondo: #ebe8d8;
+  --filtro-borde-hover: #0f241a;
+  color: var(--crema);
+}
+
+[data-superficie='oscura'] {
+  --foco: #ffd166;
+  --crema: #f3ecdc;
+  --crema-suave: #c3d0c4;
+  --linea: #2a4a3a;
+  --borde-control: #c3d0c4;
+  --campo-fondo: #0b1b14;
+  --campo-borde: #c3d0c4;
+  --campo-borde-foco: #ffd166;
+  --campo-placeholder: #c3d0c4;
+  --campo-desactivado-fondo: #0f241a;
+  --campo-desactivado-texto: #8fa394;
+  --error: #f2937a;
+  --aviso: #e9c46a;
+  --info: #9fc9e3;
+  --exito: #a9d98f;
+  --esquema: dark;
+  --acento-texto: #ffd166;
+  --alerta-fondo: #163426;
+  --filtro-activo-fondo: #ffd166;
+  --filtro-activo-texto: #08150f;
+  --filtro-hover-fondo: #163426;
+  --filtro-borde-hover: #f3ecdc;
+  color: var(--crema);
 }
 
 /* Reset mínimo */
@@ -146,7 +226,13 @@ svg {
 
 /* Base */
 body {
-  background: var(--bosque);
+  background:
+    radial-gradient(
+      120% 60% at 50% 0%,
+      color-mix(in srgb, var(--musgo) 14%, transparent),
+      transparent 70%
+    ),
+    var(--bosque);
   color: var(--crema);
   font-family: var(--font-body);
   font-size: var(--text-cuerpo);
@@ -173,6 +259,23 @@ a {
 :focus-visible {
   outline: 3px solid var(--foco);
   outline-offset: 3px;
+}
+
+/* Grano: textura fija y casi invisible sobre toda la web. No captura clics. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  background-image: var(--grano);
+  opacity: 0.09;
+  mix-blend-mode: soft-light;
+}
+
+::selection {
+  background: var(--albero);
+  color: var(--tinta);
 }
 
 /* Al final: media queries y keyframes */

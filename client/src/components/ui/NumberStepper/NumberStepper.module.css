@@ -24,7 +24,7 @@
 }
 
 .button:hover:not(:disabled) {
-  background: var(--bosque-elevado);
+  background: color-mix(in srgb, var(--crema) 12%, transparent);
   color: var(--crema);
 }
 

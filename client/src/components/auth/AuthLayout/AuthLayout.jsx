@@ -12,7 +12,7 @@ export default function AuthLayout({ title, lead, footer, children }) {
         <img className={styles.symbol} src={symbol} alt="" />
         <p className={styles.claim}>Elige tu sala en el plano y resérvala por horas.</p>
       </div>
-      <div className={styles.panel}>
+      <div className={styles.panel} data-superficie="clara">
         <div className={styles.aurora} aria-hidden="true">
           <span className={styles.blobA} />
           <span className={styles.blobB} />
