@@ -1,0 +1,46 @@
+/* Estilos de StampLayer (CSS Module). Mobile first: la rejilla es lo básico; la capa sobre el 3D es del nivel 'full'. */
+.lista,
+.capa {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.celda {
+  min-width: 0;
+}
+
+/* Sobre el edificio: capa que no tapa el arrastre; solo las estampas reciben el puntero. */
+.capa {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.item {
+  position: absolute;
+  top: var(--y, 50%);
+  width: min(9.5rem, 34%);
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+
+.izquierda {
+  left: 0;
+}
+
+.derecha {
+  right: 0;
+}
+
+@media (min-width: 600px) {
+  .lista {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

@@ -1,0 +1,24 @@
+/* Estilos de BuildingStamps (CSS Module). Mobile first: lo básico es la lista de estampas; el escenario fijado es del nivel 'full'. */
+.raiz {
+  position: relative;
+  min-width: 0;
+}
+
+.pista {
+  position: relative;
+}
+
+.escena {
+  position: relative;
+}
+
+/* Nivel 'full': el escenario se fija bajo la cabecera mientras se recorre la pista (`.carrera`). */
+.fija {
+  position: sticky;
+  top: calc(var(--alto-cabecera) + var(--space-4));
+}
+
+/* Recorrido de scroll durante el que el escenario está fijado: de ahí sale el progreso de las estampas. */
+.carrera {
+  height: 110vh;
+}
