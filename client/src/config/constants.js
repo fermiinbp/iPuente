@@ -1,6 +1,9 @@
 // Constantes compartidas del front: URL de la API, roles (CLIENT, COMPANY, ADMIN), estados de sala, edificio y planta, reserva, pago, empresa y cuenta de cobro, y horario reservable.
 export const API_URL = import.meta.env.VITE_API_URL ?? '/api';
 
+// Email de contacto de iPuente (pie, cabecera y «Contactar con iPuente»). Ficticio por ahora.
+export const CONTACT_EMAIL = 'contacto@ipuente.es';
+
 export const ROLES = Object.freeze({
   CLIENT: 'CLIENT',
   COMPANY: 'COMPANY',

@@ -124,10 +124,8 @@ export default function BuildingFloorsEditor({ rows, onChange, errors = {} }) {
                   onChange={(event) => update(row.key, { nombre: event.target.value })}
                 />
                 <div className={styles.actions}>
-                  {/* TODO(EMP005): dibujar la zona de la planta sobre la foto de la fachada. */}
-                  <Button variant="ghost" size="md" disabled title="Próximamente">
-                    Dibujar zona
-                  </Button>
+                  {/* «Dibujar zona» (EMP005, zona de la planta sobre la foto de la fachada) se ha
+                      quitado hasta que exista: un botón desactivado sin función confundía. */}
                   <Button variant="ghost" size="md" onClick={() => remove(row)}>
                     Eliminar<span className={styles.srOnly}> {label}</span>
                   </Button>

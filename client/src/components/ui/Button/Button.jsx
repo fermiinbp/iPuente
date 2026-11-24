@@ -1,4 +1,5 @@
-// Botón en píldora. Con `to` se pinta como enlace (<a href>); sin `to`, como <button>.
+// Botón en píldora. Con `to` se pinta como enlace interno (Link de React Router); con `href`, como
+// enlace externo (<a>, p. ej. mailto:); sin ninguno, como <button>.
 // Variantes: primary (albero, por defecto), dark (tinta, para bandas albero y superficies claras), secondary y ghost. `loading` muestra un spinner y bloquea el clic.
 // Tamaños: md (44 px) y lg (52 px). Sin `size`, primary es lg y el resto md.
 import { Link } from 'react-router';
@@ -11,6 +12,7 @@ export default function Button({
   variant = 'primary',
   size,
   to,
+  href,
   loading = false,
   disabled = false,
   type = 'button',
@@ -30,6 +32,14 @@ export default function Button({
       {children}
     </>
   );
+
+  if (href) {
+    return (
+      <a {...rest} className={classes} href={href}>
+        {content}
+      </a>
+    );
+  }
 
   if (to) {
     const handleClick = (event) => {

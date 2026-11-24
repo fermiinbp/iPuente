@@ -12,6 +12,7 @@ import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
 import PageContainer from '@/components/ui/PageContainer/PageContainer.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import Stepper from '@/components/ui/Stepper/Stepper.jsx';
+import { CONTACT_EMAIL } from '@/config/constants.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import { refreshSession } from '@/services/authService.js';
 import { getMyCompany, updateMyCompany } from '@/services/companyService.js';
@@ -183,9 +184,12 @@ export default function CompanyRequestStatus() {
               <Button size="md" onClick={openEditor}>
                 Corregir y reenviar
               </Button>
-              {/* TODO: decidir a dónde lleva «Contactar con iPuente» (email, formulario o página de contacto);
-                  ver la decisión 5 de docs/back-pendiente-emp.md. De momento solo es visual. */}
-              <Button variant="secondary">Contactar con iPuente</Button>
+              <Button
+                variant="secondary"
+                href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent('Solicitud de empresa rechazada')}`}
+              >
+                Contactar con iPuente
+              </Button>
             </div>
           </>
         );

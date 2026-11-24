@@ -1,6 +1,7 @@
 // Pie de página: logo, enlaces a rutas existentes y copyright.
 import { Link } from 'react-router';
 import logo from '@/assets/images/ipuente-logo-sobre-oscuro.svg';
+import { CONTACT_EMAIL } from '@/config/constants.js';
 import styles from './Footer.module.css';
 
 const COLUMNS = [
@@ -15,6 +16,10 @@ const COLUMNS = [
     title: 'Empresas',
     links: [{ to: '/company/register', label: 'Publica tu oficina' }],
   },
+  {
+    title: 'Contacto',
+    links: [{ href: `mailto:${CONTACT_EMAIL}`, label: CONTACT_EMAIL }],
+  },
 ];
 
 export default function Footer() {
@@ -27,11 +32,17 @@ export default function Footer() {
         {COLUMNS.map(({ title, links }) => (
           <nav key={title} className={styles.column} aria-label={title}>
             <p className={styles.columnTitle}>{title}</p>
-            {links.map(({ to, label }) => (
-              <Link key={to} to={to} className={styles.link}>
-                {label}
-              </Link>
-            ))}
+            {links.map(({ to, href, label }) =>
+              href ? (
+                <a key={href} href={href} className={styles.link}>
+                  {label}
+                </a>
+              ) : (
+                <Link key={to} to={to} className={styles.link}>
+                  {label}
+                </Link>
+              ),
+            )}
           </nav>
         ))}
       </div>
