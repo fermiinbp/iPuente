@@ -46,8 +46,9 @@ export default function Room() {
     `${roomId}|${fecha}`,
   );
 
-  // Sin API, las salas de ejemplo de la landing se ven con datos de muestra.
-  const demo = roomFetch.error ? demoRoom(roomId) : null;
+  // Solo en desarrollo y sin API, las salas de ejemplo de la landing se ven con datos de muestra.
+  // En producción, un fallo se enseña como error: nunca una sala inventada que no se puede reservar.
+  const demo = import.meta.env.DEV && roomFetch.error ? demoRoom(roomId) : null;
   const room = roomFetch.data ?? demo;
   const freeHours = demo ? DEMO_FREE_HOURS : (hours.data?.horasLibres ?? []);
   usePageTitle(room?.nombre ?? 'Sala');

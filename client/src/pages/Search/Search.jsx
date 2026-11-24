@@ -56,9 +56,12 @@ const DEMO_BUILDINGS = [
   },
 ];
 
-// Sin API (sin red, 404 o error 5xx) se pasa a datos de ejemplo; el resto de 4xx (p. ej. un 400) es un error de verdad.
+// Solo en desarrollo: sin API (sin red, 404 o error 5xx) se pasa a datos de ejemplo; el resto de 4xx (p. ej. un 400) es un error de verdad.
+// En producción cualquier fallo se enseña como error, con «Reintentar»: nunca datos inventados.
 const isUnavailable = (error) =>
-  Boolean(error) && (!error.status || error.status === 404 || error.status >= 500);
+  import.meta.env.DEV &&
+  Boolean(error) &&
+  (!error.status || error.status === 404 || error.status >= 500);
 
 export default function Search() {
   usePageTitle('Buscar salas');

@@ -93,7 +93,8 @@ export default function Building() {
     `${buildingId}|${fecha}`,
   );
 
-  const isDemo = Boolean(error) && buildingId === BUILDING.id;
+  // Solo en desarrollo y sin API se ve el edificio de ejemplo; en producción, el error.
+  const isDemo = import.meta.env.DEV && Boolean(error) && buildingId === BUILDING.id;
   const building = isDemo ? demoBuilding() : data;
   usePageTitle(building?.nombre ?? 'Edificio');
 

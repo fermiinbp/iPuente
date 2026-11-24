@@ -1,14 +1,19 @@
 // Home: hero con el edificio por plantas, buscador, salas destacadas, cómo funciona y llamada a empresas.
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useFetch } from '@/hooks/useFetch.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
 import RoomCard from '@/components/room/RoomCard/RoomCard.jsx';
 import SearchBar from '@/components/search/SearchBar/SearchBar.jsx';
+import Button from '@/components/ui/Button/Button.jsx';
 import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
+import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
 import CompaniesCta from './CompaniesCta/CompaniesCta.jsx';
-import { BUILDING, FEATURED_ROOMS, ROOM_FILTERS } from './data.js';
+import { getFeaturedRooms } from '@/services/roomsService.js';
+import { TYPE_LABELS } from '@/utils/roomData.js';
+import { BUILDING, DEMO_FEATURED_ROOMS, ROOM_FILTERS } from './data.js';
 import FloorSection from './FloorSection/FloorSection.jsx';
 import HeroStory from './HeroStory.jsx';
 import HowItWorks from './HowItWorks/HowItWorks.jsx';
@@ -32,10 +37,14 @@ export default function Landing() {
     heroRef.current?.style.setProperty('--mx', `${event.clientX - box.left}px`);
     heroRef.current?.style.setProperty('--my', `${event.clientY - box.top}px`);
   }
-  const [filter, setFilter] = useState(ROOM_FILTERS[0]);
+  const [filter, setFilter] = useState(ROOM_FILTERS[0].label);
 
-  const rooms =
-    filter === ROOM_FILTERS[0] ? FEATURED_ROOMS : FEATURED_ROOMS.filter((r) => r.type === filter);
+  // Salas destacadas de la API. Solo en desarrollo, si la API no responde, se ven las de ejemplo.
+  const featured = useFetch((signal) => getFeaturedRooms({ signal }), 'destacadas');
+  const isDemo = import.meta.env.DEV && Boolean(featured.error);
+  const allRooms = (featured.data ?? (isDemo ? DEMO_FEATURED_ROOMS : [])).map(toCard);
+  const tipo = ROOM_FILTERS.find((f) => f.label === filter)?.tipo;
+  const rooms = tipo ? allRooms.filter((r) => r.tipo === tipo) : allRooms;
   // Con tres salas o más, la primera va grande y las demás en fila; con menos, tarjetas iguales.
   const featuredLayout = rooms.length >= 3;
 
@@ -99,9 +108,29 @@ export default function Landing() {
           <SectionTitle id="salas-titulo">
             Salas <em>destacadas</em>
           </SectionTitle>
-          <CategoryFilters filters={ROOM_FILTERS} active={filter} onChange={setFilter} />
+          <CategoryFilters
+            filters={ROOM_FILTERS.map((f) => f.label)}
+            active={filter}
+            onChange={setFilter}
+          />
         </div>
-        {rooms.length > 0 ? (
+        {featured.loading ? (
+          <div className={styles.empty}>
+            <Spinner label="Cargando salas…" />
+          </div>
+        ) : featured.error && !isDemo ? (
+          <div className={styles.empty} role="status">
+            <EmptyState
+              title="No hemos podido cargar las salas."
+              text="Inténtalo de nuevo en un momento."
+              actions={
+                <Button variant="dark" onClick={featured.reload}>
+                  Reintentar
+                </Button>
+              }
+            />
+          </div>
+        ) : rooms.length > 0 ? (
           <ul className={`${styles.grid} ${featuredLayout ? styles.gridFeatured : ''}`}>
             {rooms.map((room, index) => (
               <li
@@ -117,7 +146,14 @@ export default function Landing() {
           </ul>
         ) : (
           <div className={styles.empty} role="status">
-            <EmptyState title="No hay salas de este tipo todavía." text="Prueba con otro filtro." />
+            <EmptyState
+              title={
+                allRooms.length > 0
+                  ? 'No hay salas de este tipo todavía.'
+                  : 'Todavía no hay salas publicadas.'
+              }
+              text={allRooms.length > 0 ? 'Prueba con otro filtro.' : 'Vuelve pronto.'}
+            />
           </div>
         )}
       </Section>
@@ -126,4 +162,18 @@ export default function Landing() {
       <CompaniesCta />
     </div>
   );
+}
+
+// Sala de getFeaturedRooms → props de RoomCard.
+function toCard(sala) {
+  return {
+    id: sala.id,
+    tipo: sala.tipo,
+    name: sala.nombre,
+    type: TYPE_LABELS[sala.tipo] ?? 'Sala',
+    place: [sala.edificio, sala.ciudad].filter(Boolean).join(', '),
+    people: sala.capacidad,
+    price: sala.precioHora,
+    gratis: sala.gratis,
+  };
 }

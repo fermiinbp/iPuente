@@ -8,48 +8,21 @@ export const BUILDING = {
 
 export const DEFAULT_FLOOR_ID = 'planta-2';
 
+// Filtros de «Salas destacadas»: etiqueta → tipo de sala de la API (null = todas).
 export const ROOM_FILTERS = [
-  'Todas',
-  'Reuniones',
-  'Eventos y charlas',
-  'Formación',
-  'Boxes privados',
+  { label: 'Todas', tipo: null },
+  { label: 'Salas', tipo: 'sala' },
+  { label: 'Boxes', tipo: 'box' },
 ];
 
-export const FEATURED_ROOMS = [
-  {
-    id: 'black-room-i', // ejemplo
-    name: 'Black Room I',
-    type: 'Reuniones',
-    place: 'Edificio Puerta Sur, Sevilla',
-    people: 12,
-    price: 25,
-  },
-  {
-    id: 'sala-grande', // ejemplo
-    name: 'Sala Grande',
-    type: 'Eventos y charlas',
-    place: 'Edificio Puerta Sur, Sevilla',
-    people: 40, // ejemplo
-    price: 60, // ejemplo
-  },
-  {
-    id: 'zona-azul', // ejemplo
-    name: 'Zona Azul',
-    type: 'Formación',
-    place: 'Edificio Puerta Sur, Sevilla',
-    people: 20, // ejemplo
-    price: 35, // ejemplo
-  },
-  {
-    id: 'box22', // ejemplo
-    name: 'Box22',
-    type: 'Boxes privados',
-    place: 'Edificio Puerta Sur, Sevilla',
-    people: 4, // ejemplo
-    price: 12, // ejemplo
-  },
-];
+// Salas de ejemplo con la forma de getFeaturedRooms. Solo en desarrollo y si la API no responde:
+// en producción nunca se enseñan datos inventados (sus ids no existen en Firestore).
+export const DEMO_FEATURED_ROOMS = [
+  { id: 'black-room-i', nombre: 'Black Room I', tipo: 'sala', capacidad: 12, precioHora: 25 },
+  { id: 'sala-grande', nombre: 'Sala Grande', tipo: 'sala', capacidad: 40, precioHora: 60 },
+  { id: 'zona-azul', nombre: 'Zona Azul', tipo: 'sala', capacidad: 20, precioHora: 35 },
+  { id: 'box22', nombre: 'Box22', tipo: 'box', capacidad: 4, precioHora: 12 },
+].map((sala) => ({ ...sala, edificio: 'Edificio Puerta Sur', ciudad: 'Sevilla', gratis: false }));
 
 export const HOW_IT_WORKS_STEPS = [
   {

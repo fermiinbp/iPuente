@@ -18,7 +18,9 @@ export default function RoomCard({ room, variant = 'default' }) {
         <span className={styles.name}>{room.name}</span>
         <span className={styles.place}>{room.place}</span>
         <span className={styles.meta}>
-          <span className={styles.people}>hasta {room.people} personas</span>
+          <span className={styles.people}>
+            {room.people ? `hasta ${room.people} personas` : 'Capacidad sin indicar'}
+          </span>
           <span className={styles.price}>
             {priceLabel(room.price, { gratis: room.gratis, perHour: true })}
           </span>
