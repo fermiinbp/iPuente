@@ -2,6 +2,7 @@
 // El edificio iPuente destaca en bronce. Al elegir un lugar la cámara vuela hasta él y se dibuja su ruta.
 // Se importa con React.lazy desde NearbySection.
 import 'maplibre-gl/dist/maplibre-gl.css';
+import '@/config/maplibre.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MapGL, { Layer, Marker, Source } from 'react-map-gl/maplibre';
 import { BUILDING, VIEW } from '@/config/nearby.js';
@@ -98,8 +99,8 @@ export default function NearbyMap({
     });
   }, [activeId, active, mobile]);
 
-  const habilitarRueda = () => mapRef.current?.scrollZoom.enable();
-  const deshabilitarRueda = () => mapRef.current?.scrollZoom.disable();
+  const habilitarRueda = () => mapRef.current?.scrollZoom?.enable();
+  const deshabilitarRueda = () => mapRef.current?.scrollZoom?.disable();
 
   if (!style) return <p className={styles.note}>Cargando el mapa…</p>;
 

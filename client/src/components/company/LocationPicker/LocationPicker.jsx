@@ -5,6 +5,7 @@
 // `onValidityChange(false)` (y `true` al volver a ser válidos) para que la página no guarde coordenadas a medias.
 // Se importa con React.lazy desde BuildingForm para no meter MapLibre en el bundle del panel.
 import 'maplibre-gl/dist/maplibre-gl.css';
+import '@/config/maplibre.js';
 import { useEffect, useRef, useState } from 'react';
 import MapGL, { Marker } from 'react-map-gl/maplibre';
 import { loadBosqueStyle } from '@/components/building/NearbyMap/mapStyle.js';

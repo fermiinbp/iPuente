@@ -2,6 +2,7 @@
 // Pasar el ratón o el foco por una tarjeta resalta su pin, y al revés. Los pins son decorativos: la lista de
 // tarjetas es la alternativa accesible. Se importa con React.lazy desde la página de búsqueda.
 import 'maplibre-gl/dist/maplibre-gl.css';
+import '@/config/maplibre.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MapGL, { Marker } from 'react-map-gl/maplibre';
 import { loadBosqueStyle } from '@/components/building/NearbyMap/mapStyle.js';
