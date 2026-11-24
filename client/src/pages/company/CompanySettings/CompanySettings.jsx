@@ -2,13 +2,13 @@
 // - Empresa: datos del alta (GET /companies/me). Una empresa aprobada solo puede cambiar la persona de contacto, el
 //   teléfono y el email de contacto (PATCH /companies/me, solo lo que cambia); nombre, CIF y ciudad se ven pero no se
 //   editan (la API respondería FIELD_NOT_EDITABLE).
-// - Cobros: Stripe Connect todavía no existe en la API (decisión 2), así que solo se avisa de que llegará más adelante.
+// - Cobros: cuenta de Stripe Connect y movimientos (PayoutsPanel). La pestaña activa va en la URL (`?tab=cobros`).
 // La cuenta de acceso (email y contraseña) no va aquí: está en «Mi cuenta» (/account), en el menú del usuario.
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
+import PayoutsPanel from '@/components/company/PayoutsPanel/PayoutsPanel.jsx';
 import Alert from '@/components/ui/Alert/Alert.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
-import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
 import PageContainer from '@/components/ui/PageContainer/PageContainer.jsx';
@@ -168,17 +168,20 @@ function CompanyTab({ company, onSaved }) {
   );
 }
 
-function PayoutsTab() {
-  return (
-    <EmptyState
-      title="Cobros con Stripe"
-      text="Los cobros con Stripe estarán disponibles más adelante. Aquí podrás conectar tu cuenta y ver tus movimientos."
-    />
-  );
-}
+const TAB_IDS = ['empresa', 'cobros'];
 
 export default function CompanySettings() {
   usePageTitle('Ajustes');
+  // La pestaña va en la URL (`?tab=cobros`): así se llega desde el editor, el panel y la vuelta de Stripe.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const tab = TAB_IDS.includes(tabParam) ? tabParam : 'empresa';
+  const changeTab = (id) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', id);
+    next.delete('stripe');
+    setSearchParams(next, { replace: true });
+  };
   const company = useFetch((signal) => getMyCompany({ signal }), 'company-settings');
   // Tras guardar, la respuesta de la API sustituye a la leída al entrar.
   const [updated, setUpdated] = useState(null);
@@ -198,13 +201,15 @@ export default function CompanySettings() {
     content = (
       <Tabs
         label="Ajustes de la empresa"
+        value={tab}
+        onChange={changeTab}
         tabs={[
           {
             id: 'empresa',
             label: 'Empresa',
             content: <CompanyTab key={data?.id} company={data} onSaved={setUpdated} />,
           },
-          { id: 'cobros', label: 'Cobros', content: <PayoutsTab /> },
+          { id: 'cobros', label: 'Cobros', content: <PayoutsPanel /> },
         ]}
       />
     );

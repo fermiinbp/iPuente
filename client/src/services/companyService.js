@@ -28,7 +28,7 @@ export function updateMyCompany(datos, options) {
 }
 
 // Edificios de la empresa con sus plantas (GET /company/buildings):
-// [{ id, nombre, direccion, ciudad, descripcion, fotos, publicado,
+// [{ id, nombre, direccion, ciudad, descripcion, fotos, latitud, longitud (null si no hay), publicado,
 //   plantas: [{ id, numero, nombre, publicado, salas }] }]. Las plantas llegan ordenadas por número; `salas` cuenta
 // las activas. No incluye lo eliminado.
 export function getBuildings(options) {
@@ -69,13 +69,14 @@ export async function getBuilding(id, options) {
 }
 
 // Crea un edificio en borrador. `datos`: { nombre, direccion, ciudad, descripcion?, fotos? } (fotos: URLs de
-// Storage de la empresa, la primera es la fachada). Responde { id, nombre, direccion, ciudad, descripcion, fotos,
+// Storage de la empresa, la primera es la fachada; latitud y longitud opcionales, siempre juntas). Responde { id, nombre, direccion, ciudad, descripcion, fotos,
 // publicado: false }, sin plantas.
 export function createBuilding(datos, options) {
   return post('/company/buildings', datos, options);
 }
 
-// Edita un edificio propio (cualquiera de los campos de createBuilding; al menos uno). No cambia si está publicado.
+// Edita un edificio propio (cualquiera de los campos de createBuilding; al menos uno; `latitud` y `longitud`
+// van juntas y con null y null se quita la ubicación). No cambia si está publicado.
 export function updateBuilding(id, datos, options) {
   return patch(`/company/buildings/${encodeURIComponent(id)}`, datos, options);
 }
@@ -204,4 +205,26 @@ export function deleteBlock(id, options) {
 // 400 ROOM_WITHOUT_PRICE si se quiere mostrar sin precio ni «gratis»; 400 ROOM_INACTIVE si ya no está en el mapa.
 export function setRoomVisibility(id, visible, options) {
   return patch(`/company/rooms/${encodeURIComponent(id)}/visibility`, { visible }, options);
+}
+
+// Estado de la cuenta de cobros: { conectada, estado: 'none'|'pending'|'active'|'restricted',
+// requisitosPendientes, comprobadoEn, desactualizado?, aviso? }.
+export function getPayouts(options) {
+  return get('/company/payouts', options);
+}
+
+// Crea o continúa el alta en Stripe y devuelve { url }. 409 PAYOUTS_ALREADY_ACTIVE o PAYOUTS_BUSY.
+export function startPayoutsOnboarding(options) {
+  return post('/company/payouts/onboarding', undefined, options);
+}
+
+// Pagos de la empresa: { movimientos: [{ id, codigoReserva, sala, fechaReserva, importe, moneda,
+// estado, reembolsoPendiente, fecha }], total, page, limit, truncado }.
+export function getPayoutMovements(page = 1, options) {
+  return get(`/company/payouts/movements?page=${encodeURIComponent(page)}`, options);
+}
+
+// Enlace de un solo uso al panel de Stripe de la empresa: { url }. 409 PAYOUTS_REQUIRED sin cuenta.
+export function getPayoutsDashboardLink(options) {
+  return post('/company/payouts/dashboard', undefined, options);
 }

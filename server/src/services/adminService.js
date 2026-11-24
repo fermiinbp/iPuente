@@ -447,6 +447,8 @@ export async function getSummary({ readLimit = BOOKINGS_READ_LIMIT, now } = {}) 
   };
 }
 
+// «Ingresos» = volumen cobrado a los clientes (va a las cuentas de las empresas; la plataforma no cobra
+// comisión): se mantiene la clave `ingresosMes` por compatibilidad.
 // Ingresos de los pagos creados en [from, to): pagos SUCCEEDED menos los que tienen un reembolso
 // pendiente (los REFUNDED no cuentan). Dos agregaciones sobre `amountCents` (enteros) y se pasa a
 // euros al final; no usa `!=` porque excluiría los pagos sin `refundPending`. Si la consulta falla

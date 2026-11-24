@@ -68,10 +68,10 @@
   outline-offset: 3px;
 }
 
+/* El scroll, su barra y su espacio los pone ScrollArea. */
 .body {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
   font-size: var(--text-interfaz);
   line-height: var(--leading-cuerpo);
 }

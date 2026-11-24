@@ -64,6 +64,7 @@ export const PAYOUT_ACCOUNT_STATUS = Object.freeze({
   NOT_CONNECTED: 'NOT_CONNECTED',
   PENDING_VERIFICATION: 'PENDING_VERIFICATION',
   ACTIVE: 'ACTIVE',
+  RESTRICTED: 'RESTRICTED',
 });
 
 export const BOOKING_HOURS = Object.freeze({ start: 8, end: 20 });

@@ -82,7 +82,7 @@ describe('Reembolsos y cancelaciones de reservas pagadas', () => {
         livemode: false,
         mode: 'payment',
         client_reference_id: bookingId,
-        metadata: { bookingId, attempt: '1' },
+        metadata: { bookingId, attempt: '1', destination: 'acct_c1' },
       },
     },
   });

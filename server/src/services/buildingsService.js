@@ -27,8 +27,8 @@ const toPublic = (b) => ({
   ciudad: b.city,
   codigoPostal: b.postalCode,
   pais: b.country,
-  latitud: b.latitude,
-  longitud: b.longitude,
+  latitud: b.latitude ?? null,
+  longitud: b.longitude ?? null,
   numPlantas: b.floorCount,
 });
 

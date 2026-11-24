@@ -1,7 +1,7 @@
 // Resumen del panel de empresa (wireframes 11 y 11b), con GET /company/summary.
 // Con edificios: 4 cifras, próximas reservas (DataTable) y tareas pendientes con «Resolver →».
 // Primer acceso (`primerAcceso`, sin edificios): bienvenida con los 3 pasos, sin cifras y sin reservas; el nombre de
-// la empresa se pide solo en este caso (GET /companies/me). El paso de Stripe es de prueba hasta DAT033.
+// la empresa se pide solo en este caso (GET /companies/me). El paso de Stripe lee `getPayouts` y lleva a Cobros.
 import { Link } from 'react-router';
 import Alert from '@/components/ui/Alert/Alert.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
@@ -16,9 +16,17 @@ import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
 import { PAYOUT_ACCOUNT_STATUS } from '@/config/constants.js';
 import { useFetch } from '@/hooks/useFetch.js';
 import { usePageTitle } from '@/hooks/usePageTitle.js';
-import { getMyCompany, getSummary } from '@/services/companyService.js';
+import { getMyCompany, getPayouts, getSummary } from '@/services/companyService.js';
 import { formatPrice } from '@/utils/formatPrice.js';
 import styles from './CompanyDashboard.module.css';
+
+// Estado de la cuenta de cobros de la API → etiqueta del panel.
+const PAYOUT_STATUS_BY_ESTADO = {
+  none: PAYOUT_ACCOUNT_STATUS.NOT_CONNECTED,
+  pending: PAYOUT_ACCOUNT_STATUS.PENDING_VERIFICATION,
+  restricted: PAYOUT_ACCOUNT_STATUS.RESTRICTED,
+  active: PAYOUT_ACCOUNT_STATUS.ACTIVE,
+};
 
 // Plantas sin publicar que se listan una a una; el resto se resume en «y N más».
 const MAX_FLOOR_TASKS = 5;
@@ -109,6 +117,13 @@ function SummaryError({ error, onRetry }) {
 
 function Welcome() {
   const { data: company } = useFetch((signal) => getMyCompany({ signal }), 'company-me');
+  // Si no se puede leer el estado de cobros, el paso se queda como «Sin conectar» y se decide en Cobros.
+  const { data: payouts } = useFetch(
+    (signal) => getPayouts({ signal }).catch(() => null),
+    'company-payouts-welcome',
+  );
+  const payoutStatus =
+    PAYOUT_STATUS_BY_ESTADO[payouts?.estado] ?? PAYOUT_ACCOUNT_STATUS.NOT_CONNECTED;
 
   return (
     <section className={styles.welcome} aria-labelledby="bienvenida">
@@ -126,14 +141,13 @@ function Welcome() {
           <div className={styles.stepBody}>
             <div className={styles.stepHeading}>
               <h3 className={styles.stepTitle}>Conecta tu cuenta de cobro</h3>
-              {/* TODO(DAT033): estado real de la cuenta de Stripe cuando exista; ahora es fijo y de prueba. */}
-              <StatusBadge kind="payoutAccount" status={PAYOUT_ACCOUNT_STATUS.NOT_CONNECTED} />
-              <Chip>Datos de prueba</Chip>
+              <StatusBadge kind="payoutAccount" status={payoutStatus} />
+              <Chip>Modo prueba</Chip>
             </div>
             <p className={styles.stepText}>Con Stripe, para recibir el dinero de tus reservas.</p>
           </div>
-          <Button variant="secondary" disabled>
-            Conectar con Stripe
+          <Button variant="secondary" to="/company/settings?tab=cobros">
+            {payoutStatus === PAYOUT_ACCOUNT_STATUS.ACTIVE ? 'Ver cobros' : 'Ir a Cobros'}
           </Button>
         </li>
         <li className={styles.step}>

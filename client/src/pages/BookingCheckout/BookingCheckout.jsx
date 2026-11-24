@@ -39,6 +39,10 @@ function payErrorMessage(err) {
       return 'Se ha agotado el tiempo para pagar esta reserva.';
     case 'BOOKING_NOT_PENDING':
       return 'Esta reserva ya no está pendiente de pago.';
+    case 'PAYOUTS_REQUIRED':
+      return 'Esta sala no puede cobrarse online ahora mismo. Prueba con otra sala.';
+    case 'BUSY':
+      return 'Hay mucha actividad en este momento. Inténtalo de nuevo.';
     case 'PAYMENTS_UNAVAILABLE':
       return 'El pago online no está disponible ahora mismo. Tu reserva sigue guardada: inténtalo en unos minutos.';
     case 'PAYMENTS_ERROR':

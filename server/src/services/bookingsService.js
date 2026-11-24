@@ -29,6 +29,7 @@ import {
 } from './availabilityService.js';
 import { cancelBooking as cancelBookingCommon } from './cancellationService.js';
 import { readSlotPlan, writeSlotClaims } from './occupancyService.js';
+import { assertCompanyCanCharge } from './payoutsService.js';
 import { findPublicRoom } from './roomsService.js';
 
 // Date local de una fecha AAAA-MM-DD a una hora (24 pasa al día siguiente a las 00:00).
@@ -134,7 +135,8 @@ export function translateConflict(err) {
 // Crea una reserva y bloquea cada hora, todo en una transacción. Por defecto nace CONFIRMED; con
 // { pendingPayment: true } nace PENDING_PAYMENT con expiresAt a +15 min, salvo si importa 0 €
 // (sala gratis), que se confirma siempre y no necesita Stripe. Con importe > 0 y sin Stripe
-// disponible: 503 PAYMENTS_UNAVAILABLE antes de retener horas.
+// disponible: 503 PAYMENTS_UNAVAILABLE antes de retener horas; y si la empresa no está aprobada o su
+// cuenta de cobros no está activa (según Stripe): 409 PAYOUTS_REQUIRED, también antes de retener.
 export async function createBooking(
   uid,
   { roomId, fecha, inicio, fin },
@@ -144,6 +146,19 @@ export async function createBooking(
   const { room: publicRoom } = await findPublicRoom(roomId);
   assertBookable(publicRoom, inicio, fin);
   const horas = fin - inicio;
+  // Con importe > 0 la empresa debe poder cobrar: Stripe se consulta aquí, antes de retener horas y
+  // fuera de la transacción (409 PAYOUTS_REQUIRED; 503 si Stripe no está o no responde).
+  const precioPrevio = effectivePrice(publicRoom);
+  if (pendingPayment && precioPrevio > 0) {
+    if (!getStripe()) {
+      throw new HttpError(
+        503,
+        'PAYMENTS_UNAVAILABLE',
+        'Los pagos no están disponibles en este momento',
+      );
+    }
+    await assertCompanyCanCharge(publicRoom.companyId);
+  }
   let room;
   let importe;
   let codigo;
@@ -169,6 +184,10 @@ export async function createBooking(
           'PAYMENTS_UNAVAILABLE',
           'Los pagos no están disponibles en este momento',
         );
+      }
+      // Si el precio pasó de 0 a > 0 mientras tanto, no se comprobó la cuenta de cobros: se reintenta.
+      if (pendingPayment && importe > 0 && !(precioPrevio > 0)) {
+        throw new HttpError(409, 'BUSY', 'El precio de la sala ha cambiado; inténtalo de nuevo');
       }
       await assertSlotAvailable(roomId, fecha, inicio, fin, tx);
       // Todas las lecturas van antes que las escrituras: el contador y las fichas se leen aquí.

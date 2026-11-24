@@ -80,7 +80,7 @@ describe('Pagos con Stripe (checkout y webhook)', () => {
     livemode: false,
     mode: 'payment',
     client_reference_id: bookingId,
-    metadata: { bookingId, attempt: '1' },
+    metadata: { bookingId, attempt: '1', destination: 'acct_c1' },
     ...extra,
   });
   const completed = (bookingId, extra) =>
@@ -743,7 +743,7 @@ describe('Pagos con Stripe (checkout y webhook)', () => {
         livemode: false,
         mode: 'payment',
         client_reference_id: bookingId,
-        metadata: { bookingId, attempt },
+        metadata: { bookingId, attempt, destination: 'acct_c1' },
       });
 
     it('expira la reserva pendiente y libera solo sus fichas', async () => {
@@ -928,7 +928,7 @@ describe('Pagos con Stripe (checkout y webhook)', () => {
     }
     function withAttempt(e, attempt) {
       const { bookingId } = e.data.object.metadata;
-      return withSession(e, { metadata: { bookingId, attempt } });
+      return withSession(e, { metadata: { bookingId, attempt, destination: 'acct_c1' } });
     }
 
     const mutations = {
@@ -977,7 +977,11 @@ describe('Pagos con Stripe (checkout y webhook)', () => {
 
     it('un intento anterior legítimo sigue siendo pagable', async () => {
       await seedBooking('bk-a', { attempt: 3 });
-      await webhook(completed('bk-a', { metadata: { bookingId: 'bk-a', attempt: '1' } }));
+      await webhook(
+        completed('bk-a', {
+          metadata: { bookingId: 'bk-a', attempt: '1', destination: 'acct_c1' },
+        }),
+      );
       assert.equal((await bookingModel.findById('bk-a')).status, 'CONFIRMED');
       assert.equal((await paymentModel.findById('cs_test_paid')).status, 'SUCCEEDED');
     });

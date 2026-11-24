@@ -13,7 +13,7 @@
 // NO_PUBLISHED_FLOORS), y una planta solo se publica con su plano y sus salas desde el editor. Por eso el edificio
 // se queda en borrador y se publica después desde «Mis edificios»; la pantalla lo explica.
 // Fuera de esta issue: «Tiene salas» (falta en el back), «Dibujar zona» (EMP005) y «Qué hay cerca» (EMP006).
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import Alert from '@/components/ui/Alert/Alert.jsx';
 import BackLink from '@/components/ui/BackLink/BackLink.jsx';
@@ -38,13 +38,21 @@ import {
 import { levelsInRange, planFloorChanges, rowsFromFloors } from '@/utils/buildingFloors.js';
 import styles from './BuildingForm.module.css';
 
+// MapLibre pesa: solo se descarga al abrir este formulario.
+const LocationPicker = lazy(() => import('@/components/company/LocationPicker/LocationPicker.jsx'));
+
+const sameLocation = (a, b) =>
+  (!a && !b) || (a && b && a.latitud === b.latitud && a.longitud === b.longitud);
+
 // Límites de la API (companyValidator).
 const LIMITS = { nombre: 100, direccion: 200, ciudad: 100, descripcion: 2000 };
 const FIELDS = ['nombre', 'direccion', 'ciudad', 'descripcion'];
 const LABELS = { nombre: 'el nombre', direccion: 'la dirección', ciudad: 'la ciudad' };
 
-function validate(values, rows) {
+function validate(values, rows, locationValid) {
   const errors = {};
+  if (!locationValid)
+    errors.ubicacion = 'Completa o corrige las coordenadas, o quita la ubicación.';
   for (const field of ['nombre', 'direccion', 'ciudad']) {
     const value = values[field].trim();
     if (!value) errors[field] = `Escribe ${LABELS[field]}.`;
@@ -84,6 +92,13 @@ function BuildingEditor({ building, initialError, onPartialSave }) {
   const originalPhotos = building?.fotos ?? [];
   const [values, setValues] = useState(original);
   const [photo, setPhoto] = useState(originalPhotos[0] ?? null);
+  const originalLocation =
+    Number.isFinite(building?.latitud) && Number.isFinite(building?.longitud)
+      ? { latitud: building.latitud, longitud: building.longitud }
+      : null;
+  const [location, setLocation] = useState(originalLocation);
+  // false mientras las coordenadas estén a medias o fuera de rango: entonces no se puede guardar.
+  const [locationValid, setLocationValid] = useState(true);
   const [rows, setRows] = useState(() => rowsFromFloors(building?.plantas));
   const [errors, setErrors] = useState({});
   const [saveError, setSaveError] = useState(initialError);
@@ -102,7 +117,7 @@ function BuildingEditor({ building, initialError, onPartialSave }) {
 
   const onSubmit = async (event) => {
     event.preventDefault();
-    const found = validate(values, rows);
+    const found = validate(values, rows, locationValid);
     setErrors(found);
     setSaveError(null);
     if (Object.keys(found).length > 0) {
@@ -127,6 +142,11 @@ function BuildingEditor({ building, initialError, onPartialSave }) {
         const value = values[field].trim();
         if (isNew ? value || field !== 'descripcion' : value !== original[field])
           datos[field] = value;
+      }
+      // Latitud y longitud van siempre juntas; al editar, solo si cambiaron (null y null la quitan).
+      if (isNew ? location : !sameLocation(location, originalLocation)) {
+        datos.latitud = location?.latitud ?? null;
+        datos.longitud = location?.longitud ?? null;
       }
       if (photo !== (originalPhotos[0] ?? null)) {
         datos.fotos = photo ? [photo, ...originalPhotos.slice(1)] : originalPhotos.slice(1);
@@ -277,6 +297,29 @@ function BuildingEditor({ building, initialError, onPartialSave }) {
               rows={4}
               onChange={setField('descripcion')}
             />
+          </section>
+
+          <section className={styles.card} aria-labelledby="ubicacion-edificio">
+            <h2 id="ubicacion-edificio" className={styles.cardTitle}>
+              Ubicación
+            </h2>
+            <p className={styles.cardHint}>
+              Opcional. Sin ubicación el edificio se guarda, pero no sale en el mapa de resultados.
+            </p>
+            <Suspense fallback={<Spinner label="Cargando el mapa…" />}>
+              <LocationPicker
+                value={location}
+                onChange={(next) => {
+                  setLocation(next);
+                  setErrors((prev) => ({ ...prev, ubicacion: undefined }));
+                }}
+                onValidityChange={setLocationValid}
+                initialQuery={[values.direccion.trim(), values.ciudad.trim()]
+                  .filter(Boolean)
+                  .join(', ')}
+                error={errors.ubicacion}
+              />
+            </Suspense>
           </section>
 
           <section className={styles.card} aria-labelledby="plantas-edificio">

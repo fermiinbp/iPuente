@@ -59,6 +59,7 @@ const STATES = {
     NOT_CONNECTED: { label: 'Sin conectar', className: styles.neutral },
     PENDING_VERIFICATION: { label: 'Pendiente de verificación', className: styles.pending },
     ACTIVE: { label: 'Activa', className: styles.free },
+    RESTRICTED: { label: 'Restringida', className: styles.danger },
   },
 };
 

@@ -12,6 +12,7 @@
     "seed": "node --env-file=.env scripts/seed.js",
     "make-admin": "node --env-file=.env scripts/makeAdmin.js",
     "sync-company-claims": "node --env-file=.env scripts/syncCompanyClaims.js",
+    "backfill-payment-company": "node --env-file=.env scripts/backfillPaymentCompany.js",
     "get-token": "node --env-file=.env scripts/getToken.js"
   },
   "devDependencies": {

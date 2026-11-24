@@ -103,11 +103,13 @@ export default function Room() {
         navigate(`/my-bookings/${booking.id}`, { state: { created: true } });
       }
     } catch (error) {
-      setBookingError(
-        error.code === 'PAYMENTS_UNAVAILABLE'
-          ? 'El pago online no está disponible ahora mismo, así que no podemos crear la reserva. Inténtalo más tarde.'
-          : error.message,
-      );
+      const messages = {
+        PAYOUTS_REQUIRED: 'Esta sala no puede cobrarse online ahora mismo. Prueba con otra sala.',
+        PAYMENTS_UNAVAILABLE:
+          'El pago online no está disponible ahora mismo, así que no podemos crear la reserva. Inténtalo más tarde.',
+        BUSY: 'Hay mucha actividad en este momento. Inténtalo de nuevo.',
+      };
+      setBookingError(messages[error.code] || error.message);
       if (error.code === 'SLOT_TAKEN') {
         setSelection(null);
         hours.reload();

@@ -8,6 +8,7 @@ import { isDeleted } from '../utils/softDelete.js';
 import { countFutureBookings, futureBookingsNotice, joinNotices } from './futureBookingsService.js';
 import { hasPrice } from './availabilityService.js';
 import { getOwnedFloor } from './ownershipService.js';
+import { assertCompanyCanCharge } from './payoutsService.js';
 
 // Datos de una sala nueva: sin datos comerciales y oculta hasta que la empresa le ponga precio.
 function newRoomData(floor, sala) {
@@ -51,6 +52,20 @@ function hasBookableRoom(salas, roomsById) {
   return salas.some((s) => {
     const room = roomsById.get(s.id);
     return room && room.bookable === true && room.status !== 'INACTIVE' && hasPrice(room);
+  });
+}
+
+// true si alguna sala del mapa es reservable, está activa, tiene precio y NO es gratis (necesita cobrar).
+function hasPaidRoom(salas, roomsById) {
+  return salas.some((s) => {
+    const room = roomsById.get(s.id);
+    return (
+      room &&
+      room.bookable === true &&
+      room.status !== 'INACTIVE' &&
+      hasPrice(room) &&
+      room.isFree !== true
+    );
   });
 }
 
@@ -182,9 +197,27 @@ export async function saveMap(companyId, floorId, map) {
   });
 }
 
-// Publica una planta propia si tiene mapa y al menos una sala reservable con precio.
+// Publica una planta propia si tiene mapa y al menos una sala reservable con precio. Si alguna de sus
+// salas es de pago (no gratis), la cuenta de cobros de la empresa debe estar activa: Stripe se
+// consulta ANTES de la transacción (409 PAYOUTS_REQUIRED; 503 si Stripe no responde). Solo salas
+// gratis: no se exige. Publicar una planta que ya está publicada no cambia nada y no exige la cuenta
+// (sigue siendo idempotente); lo que protege el cobro es createBooking/createCheckout, que la exigen
+// siempre y también cubren una sala que pasa a ser de pago después de publicar.
 export async function publishFloor(companyId, floorId) {
   await getOwnedFloor(floorId, companyId);
+  const before = await runTransaction(async (tx) => {
+    const floor = await floorModel.findById(floorId, { tx });
+    if (!floor || isDeleted(floor)) return null;
+    const rooms = await roomModel.listByFloor(floorId, { tx });
+    const paid =
+      Array.isArray(floor.salas) && hasPaidRoom(floor.salas, new Map(rooms.map((r) => [r.id, r])));
+    return { paid, published: floor.status === 'PUBLISHED' };
+  });
+  let checked = false;
+  if (before?.paid && !before.published) {
+    await assertCompanyCanCharge(companyId, { forCompany: true });
+    checked = true;
+  }
   return runTransaction(async (tx) => {
     const floor = await floorModel.findById(floorId, { tx });
     if (!floor || isDeleted(floor))
@@ -200,6 +233,10 @@ export async function publishFloor(companyId, floorId) {
         'NO_BOOKABLE_ROOMS',
         'Necesitas al menos una sala reservable con precio',
       );
+    }
+    // Si las salas cambiaron a de pago mientras tanto y no se comprobó la cuenta, se reintenta.
+    if (floor.status !== 'PUBLISHED' && !checked && hasPaidRoom(floor.salas, roomsById)) {
+      throw new HttpError(409, 'BUSY', 'La planta ha cambiado; inténtalo de nuevo');
     }
     if (floor.status !== 'PUBLISHED') {
       await floorModel.update(floorId, { status: 'PUBLISHED' }, { tx });

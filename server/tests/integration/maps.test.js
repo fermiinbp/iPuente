@@ -5,11 +5,13 @@ import { readFileSync } from 'node:fs';
 import { after, before, beforeEach, describe, it } from 'node:test';
 
 import { setDbForTests } from '../../src/config/config.js';
+import { setStripeForTests } from '../../src/config/stripe.js';
 import { setTokenVerifier } from '../../src/middlewares/auth.js';
 import * as companyModel from '../../src/models/companyModel.js';
 import * as floorModel from '../../src/models/floorModel.js';
 import * as roomModel from '../../src/models/roomModel.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
+import { createStripeDouble } from '../helpers/stripeDouble.js';
 import { setStorageBucketForTests } from '../../src/config/config.js';
 import { listen, storageUrl, TEST_BUCKET } from '../helpers/publicData.js';
 
@@ -58,7 +60,12 @@ describe('Mapa de planta: leer, guardar y publicar', () => {
   beforeEach(async () => {
     setDbForTests(createFakeFirestore());
     setTokenVerifier(async (token) => tokens[token]);
-    await companyModel.create({ name: 'A', status: 'APPROVED', verified: true }, { id: 'c-a' });
+    // Publicar salas de pago exige la cuenta de cobros activa (el doble de Stripe la da por activa).
+    setStripeForTests({ client: createStripeDouble(), webhookSecret: 'whsec_test' });
+    await companyModel.create(
+      { name: 'A', status: 'APPROVED', verified: true, stripeAccountId: 'acct_a' },
+      { id: 'c-a' },
+    );
     await companyModel.create({ name: 'B', status: 'APPROVED', verified: true }, { id: 'c-b' });
     await companyModel.create({ name: 'P', status: 'PENDING', verified: false }, { id: 'c-pend' });
     await floorModel.create(
@@ -76,6 +83,7 @@ describe('Mapa de planta: leer, guardar y publicar', () => {
   });
 
   after(async () => {
+    setStripeForTests(null);
     setTokenVerifier(null);
     setDbForTests(null);
     await new Promise((resolve) => server.close(resolve));
