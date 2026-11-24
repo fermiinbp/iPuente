@@ -99,7 +99,7 @@ describe('GET /api/company/summary', () => {
     await companyModel.create({ name: 'D', ...approved }, { id: 'c-del' });
     await companyModel.create({ name: 'P', status: 'PENDING', verified: false }, { id: 'c-pend' });
     await userModel.create(
-      { name: 'Ana', email: 'ana@x.es', phone: '600111222', role: 'CLIENT' },
+      { name: 'Ana', surname: 'Ruiz', email: 'ana@x.es', phone: '600111222', role: 'CLIENT' },
       { id: 'u1' },
     );
 
@@ -312,7 +312,7 @@ describe('GET /api/company/summary', () => {
       assert.equal(lista[0].codigo, 'IP-f1');
       assert.equal(lista[0].importe, 11);
       assert.deepEqual(lista[0].sala, { nombre: 'Sala r-pub', codigo: 'R-PUB' });
-      assert.deepEqual(lista[0].cliente, { nombre: 'Ana', email: 'ana@x.es' });
+      assert.deepEqual(lista[0].cliente, { nombre: 'Ana Ruiz', email: 'ana@x.es' });
       assert.equal(r.text.includes('userId'), false);
       assert.equal(r.text.includes('600111222'), false);
       assert.equal(r.text.includes('u1'), false);
@@ -396,6 +396,18 @@ describe('GET /api/company/summary', () => {
         salasSinPrecio: 1,
         salasSinFotos: 2,
       });
+    });
+
+    it('las zonas comunes (aseos, pasillos…) no cuentan como sin precio ni sin fotos', async () => {
+      // Preparar: unos aseos sin precio ni fotos.
+      await mkRoom('r-aseos', 'c-a', 'b-a', 'f-a0', { type: 'comun', bookable: false });
+      // Actuar
+      const { tareas } = (await get(undefined, 'a')).body;
+      // Comprobar
+      const todas = [...tareas.salasSinPrecio, ...tareas.salasSinFotos].map((r) => r.id);
+      assert.equal(todas.includes('r-aseos'), false);
+      assert.equal(tareas.totales.salasSinPrecio, 1);
+      assert.equal(tareas.totales.salasSinFotos, 2);
     });
 
     it('una planta publicada con mapa no es tarea y sinMapa refleja si tiene salas', async () => {

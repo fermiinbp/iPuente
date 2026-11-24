@@ -8,7 +8,7 @@ import { monthRange } from '../utils/dates.js';
 import { notDeleted } from '../utils/softDelete.js';
 import { toItem } from './bookingsService.js';
 import { toCliente, toSala } from './companyBookingsService.js';
-import { roomEstado } from './companyService.js';
+import { isCommonArea, roomEstado } from './companyService.js';
 import { isActiveFuture } from './futureBookingsService.js';
 
 // Próximas reservas que devuelve el resumen (se piden algunas más por si alguna se descarta).
@@ -98,7 +98,8 @@ function byLocation(buildingName, level) {
     String(a.codigo ?? a.nombre ?? '').localeCompare(String(b.codigo ?? b.nombre ?? ''));
 }
 
-// Plantas sin publicar (con o sin mapa) y salas activas sin precio o sin fotos, con sus ids. Una
+// Plantas sin publicar (con o sin mapa) y salas activas sin precio o sin fotos (sin contar zonas
+// comunes), con sus ids. Una
 // sala sin precio y sin fotos sale en las dos listas (son dos tareas distintas); las salas de una
 // planta sin publicar también cuentan, porque precio y fotos se preparan antes de publicar.
 function pendingTasks(buildings, floors, activeRooms) {
@@ -127,7 +128,9 @@ function pendingTasks(buildings, floors, activeRooms) {
     .filter((r) => roomEstado(r) === 'sin_precio')
     .map(toTask)
     .sort(sort);
+  // Las zonas comunes (aseos, pasillos…) no se alquilan: no necesitan fotos.
   const sinFotos = activeRooms
+    .filter((r) => !isCommonArea(r))
     .filter((r) => !Array.isArray(r.photos) || r.photos.length === 0)
     .map(toTask)
     .sort(sort);

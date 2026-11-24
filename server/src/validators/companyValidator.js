@@ -212,8 +212,8 @@ export const listRooms = [
     .optional()
     .isString()
     .bail()
-    .isIn(['publicada', 'sin_precio', 'oculta'])
-    .withMessage('estado debe ser publicada, sin_precio u oculta'),
+    .isIn(['publicada', 'sin_precio', 'oculta', 'zona_comun'])
+    .withMessage('estado debe ser publicada, sin_precio, oculta o zona_comun'),
 ];
 
 // Resumen del panel: no admite parámetros (ni con corchetes ni desconocidos) para no ignorarlos en silencio.

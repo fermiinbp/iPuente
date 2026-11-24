@@ -36,8 +36,14 @@ const MAX_FUTURE = 500;
 export const toSala = (room) => (room ? { nombre: room.name, codigo: room.code } : null);
 
 // Nombre y email del cliente (sin id ni más datos personales).
+// Nombre completo (nombre + apellidos), como en el panel de admin.
 export const toCliente = (user) =>
-  user ? { nombre: user.name ?? null, email: user.email ?? null } : null;
+  user
+    ? {
+        nombre: [user.name, user.surname].filter(Boolean).join(' ') || null,
+        email: user.email ?? null,
+      }
+    : null;
 
 // Rango [from, to) en Date para la consulta, a partir de desde y hasta (inclusive) con sus
 // valores por defecto (desde = hoy - 30 días, hasta = desde + 90 días).

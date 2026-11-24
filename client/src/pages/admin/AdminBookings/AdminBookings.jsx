@@ -42,7 +42,7 @@ const ESTADO_OPTIONS = [
 const ESTADOS = ESTADO_OPTIONS.map((o) => o.value).filter(Boolean);
 
 // Fecha: por defecto (vacío) el rango de la API, de hace 30 días a dentro de 90; el resto, los del panel de empresa.
-const FECHA_OPTIONS = [{ value: '', label: 'Últimos 30 y próximos 90 días' }, ...DATE_RANGES];
+const FECHA_OPTIONS = [{ value: '', label: 'Recientes y próximas' }, ...DATE_RANGES];
 const FECHAS = DATE_RANGES.map((o) => o.value);
 
 const roomLine = (row) =>
@@ -211,6 +211,7 @@ export default function AdminBookings() {
           </Alert>
         )}
         <DataTable
+          minWidth={1040}
           caption="Reservas de todas las empresas"
           columns={COLUMNS}
           rows={data?.reservas ?? []}

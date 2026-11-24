@@ -1,6 +1,7 @@
 // Tabla de los paneles de empresa y admin.
 // `columns`: [{ key, label, render? }]; `render(row)` pinta la celda (StatusBadge, importes…) y, sin él, se muestra `row[key]`.
 // `actions(row)` añade la columna «Acciones» con los botones de cada fila.
+// `minWidth` (px, opcional): ancho mínimo en escritorio; si no cabe, la tabla se desplaza en horizontal.
 // Sin filas muestra EmptyState. En móvil cada fila pasa a tarjeta con «Columna: valor» (`data-label`).
 // Los `role` explícitos mantienen la tabla para lectores de pantalla cuando el CSS cambia el `display` en móvil.
 import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
@@ -19,13 +20,17 @@ export default function DataTable({
   emptyText,
   emptyAction,
   className = '',
+  minWidth,
 }) {
   if (rows.length === 0) {
     return <EmptyState title={emptyTitle} text={emptyText} action={emptyAction} />;
   }
 
   return (
-    <div className={[styles.wrapper, className].filter(Boolean).join(' ')}>
+    <div
+      className={[styles.wrapper, className].filter(Boolean).join(' ')}
+      style={minWidth ? { '--tabla-min': `${minWidth}px` } : undefined}
+    >
       <table className={styles.table} role="table">
         {caption && <caption className={styles.caption}>{caption}</caption>}
         <thead className={styles.head} role="rowgroup">

@@ -239,12 +239,6 @@ function ClientDetail({ booking, showHeader, onCancel }) {
             {canPay && (
               <Button to={`/checkout/${encodeURIComponent(booking.id)}`}>Pagar ahora</Button>
             )}
-            <Button variant="secondary" disabled aria-describedby="factura-nota">
-              Descargar factura
-            </Button>
-            <p className={styles.note} id="factura-nota">
-              La factura estará disponible cuando se active el pago online.
-            </p>
             {canCancel && (
               <Button variant="ghost" onClick={() => onCancel(booking)}>
                 Cancelar reserva
@@ -260,8 +254,8 @@ function ClientDetail({ booking, showHeader, onCancel }) {
             )}
           </div>
           <p className={styles.policy}>
-            Puedes cancelar mientras la reserva no haya empezado. Las horas quedan libres para otras
-            personas.
+            Puedes cancelar mientras la reserva no haya empezado. Si ya la habías pagado, te
+            devolvemos el importe completo y las horas quedan libres para otras personas.
           </p>
         </aside>
       </div>

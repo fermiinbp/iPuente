@@ -140,7 +140,7 @@ export function unpublishFloor(id, options) {
 // Salas activas de la empresa (GET /company/rooms), ordenadas por edificio, planta y código. Cada una:
 // { id, buildingId, floorId, codigo, nombre, capacidad, m2, precioHora (null si es gratis o no tiene), gratis,
 // equipamiento, reservable, fotos, estado }. `filtros` (opcionales): { buildingId, floorId, estado } (estado:
-// publicada, sin_precio u oculta).
+// publicada, sin_precio, oculta o zona_comun).
 export function getRooms(filtros = {}, options) {
   const params = new URLSearchParams();
   for (const key of ['buildingId', 'floorId', 'estado']) {

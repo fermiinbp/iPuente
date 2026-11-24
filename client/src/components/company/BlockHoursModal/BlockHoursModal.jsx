@@ -11,7 +11,7 @@ import Select from '@/components/ui/Select/Select.jsx';
 import { BOOKING_HOURS } from '@/config/constants.js';
 import { useFetch } from '@/hooks/useFetch.js';
 import { createBlock, getBlocks, getBookings } from '@/services/companyService.js';
-import { findConflicts, formatSlot } from '@/utils/companyBookings.js';
+import { findConflicts, formatSlot, shiftDate } from '@/utils/companyBookings.js';
 import { todayString } from '@/utils/dates.js';
 import styles from './BlockHoursModal.module.css';
 
@@ -20,6 +20,25 @@ const HOURS = Array.from(
   { length: BOOKING_HOURS.end - BOOKING_HOURS.start + 1 },
   (_, i) => BOOKING_HOURS.start + i,
 );
+
+// Horas de inicio que se pueden bloquear ese día: hoy, solo las que aún no han empezado (la API
+// rechaza las demás con la misma regla).
+function startHours(fecha) {
+  const starts = HOURS.slice(0, -1);
+  if (fecha !== todayString()) return starts;
+  const now = new Date().getHours();
+  return starts.filter((h) => h > now);
+}
+
+// Fecha inicial: hoy si aún queda alguna hora; si no, mañana.
+const initialFecha = () =>
+  startHours(todayString()).length > 0 ? todayString() : shiftDate(todayString(), 1);
+
+// Inicio por defecto: las 9 si se puede; si no, la primera hora libre del día.
+const defaultStart = (fecha) => {
+  const starts = startHours(fecha);
+  return starts.includes(9) ? 9 : (starts[0] ?? 9);
+};
 
 // Salas agrupadas por edificio, en el orden en que llegan.
 function groupRooms(rooms) {
@@ -67,16 +86,17 @@ export default function BlockHoursModal({ rooms, defaultRoomId = '', onClose, on
   const [roomId, setRoomId] = useState(
     rooms.some((r) => r.id === defaultRoomId) ? defaultRoomId : (rooms[0]?.id ?? ''),
   );
-  const [fecha, setFecha] = useState(todayString());
-  const [inicio, setInicio] = useState(9);
-  const [fin, setFin] = useState(14);
+  const [fecha, setFecha] = useState(initialFecha);
+  const [inicio, setInicio] = useState(() => defaultStart(initialFecha()));
+  const [fin, setFin] = useState(() => Math.max(14, defaultStart(initialFecha()) + 1));
   const [motivo, setMotivo] = useState('');
   const [motivoTouched, setMotivoTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
   const today = todayString();
-  const fechaValida = /^\d{4}-\d{2}-\d{2}$/.test(fecha) && fecha >= today;
+  const quedanHoras = startHours(fecha).length > 0;
+  const fechaValida = /^\d{4}-\d{2}-\d{2}$/.test(fecha) && fecha >= today && quedanHoras;
   const canCheck = Boolean(roomId) && fechaValida;
 
   // Lo que ya hay ese día en esa sala, para avisar antes de enviar.
@@ -96,7 +116,12 @@ export default function BlockHoursModal({ rooms, defaultRoomId = '', onClose, on
   const motivoLimpio = motivo.trim();
   const motivoError =
     motivoTouched && motivoLimpio.length === 0 ? 'Escribe el motivo del bloqueo.' : undefined;
-  const fechaError = fecha && !fechaValida ? 'Elige hoy o un día posterior.' : undefined;
+  const fechaError =
+    fecha && !fechaValida
+      ? quedanHoras
+        ? 'Elige hoy o un día posterior.'
+        : 'Hoy ya no quedan horas por bloquear. Elige otro día.'
+      : undefined;
 
   const changeInicio = (value) => {
     const start = Number(value);
@@ -153,17 +178,25 @@ export default function BlockHoursModal({ rooms, defaultRoomId = '', onClose, on
         </Select>
         <Input
           label="Fecha"
+          variant="boxed"
           type="date"
           min={today}
           value={fecha}
           error={fechaError}
           onChange={(event) => {
-            setFecha(event.target.value);
+            const next = event.target.value;
+            setFecha(next);
+            // Si la hora elegida ya ha empezado en el nuevo día, pasa a la primera posible.
+            if (!startHours(next).includes(inicio)) {
+              const start = defaultStart(next);
+              setInicio(start);
+              if (fin <= start) setFin(start + 1);
+            }
             setError(null);
           }}
         />
         <Select label="Desde" value={inicio} onChange={(event) => changeInicio(event.target.value)}>
-          {HOURS.slice(0, -1).map((h) => (
+          {startHours(fecha).map((h) => (
             <option key={h} value={h}>
               {h}:00
             </option>
@@ -185,6 +218,7 @@ export default function BlockHoursModal({ rooms, defaultRoomId = '', onClose, on
         </Select>
         <Input
           className={styles.full}
+          variant="boxed"
           label="Motivo (solo lo ves tú)"
           placeholder="Mantenimiento, uso interno…"
           maxLength={MOTIVO_MAX}

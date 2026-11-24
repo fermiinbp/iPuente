@@ -44,6 +44,7 @@ const STATES = {
     PUBLISHED: { label: 'Publicada', className: styles.free },
     NO_PRICE: { label: 'Sin precio', className: styles.pending },
     HIDDEN: { label: 'Oculta', className: styles.neutral },
+    COMMON: { label: 'Zona común', className: styles.neutral },
   },
   publish: {
     PUBLISHED: { label: 'Publicado', className: styles.free },

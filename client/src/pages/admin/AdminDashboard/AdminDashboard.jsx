@@ -49,12 +49,17 @@ function Stats({ summary, loading, error, onRetry }) {
   const ingresosTotal = summary.ingresosMes?.total;
   const ingresos = Number.isFinite(ingresosTotal) ? formatPrice(ingresosTotal) : '—';
 
-  // `reservas.total` sale de recuentos exactos; `truncado` solo afecta al reparto pendiente/caducada, que no se enseña.
+  // Reservas hechas de verdad (confirmadas o completadas), como en el resumen de empresa: sin canceladas,
+  // caducadas ni pendientes de pago. Sin `porEstado` (API antigua) se usa el total.
+  const porEstado = reservas.porEstado;
+  const reservasMes = porEstado
+    ? (porEstado.CONFIRMED ?? 0) + (porEstado.COMPLETED ?? 0)
+    : (reservas.total ?? 0);
   return (
     <div className={styles.stats}>
       <StatCard value={number.format(total)} label="Empresas" />
       <StatCard value={number.format(empresas.pendiente ?? 0)} label="Pendientes de aprobar" />
-      <StatCard value={number.format(reservas.total ?? 0)} label="Reservas este mes" />
+      <StatCard value={number.format(reservasMes)} label="Reservas este mes" />
       <StatCard value={ingresos} label="Volumen cobrado este mes" />
     </div>
   );

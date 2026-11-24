@@ -145,8 +145,14 @@ async function assertLevelFree(buildingId, level, exceptFloorId, tx) {
   }
 }
 
-// Estado calculado de una sala: sin_precio, publicada (reservable) u oculta.
+// Tipos que se alquilan (sala y box). Una sala sin tipo (datos antiguos) cuenta como sala.
+const CLIENT_TYPES = ['sala', 'box'];
+export const isCommonArea = (room) => room.type != null && !CLIENT_TYPES.includes(room.type);
+
+// Estado calculado de una sala: zona_comun (aseos, pasillos, cocina…: no se alquila ni pide
+// precio), sin_precio, publicada (reservable) u oculta.
 export function roomEstado(room) {
+  if (isCommonArea(room)) return 'zona_comun';
   if (!hasPrice(room)) return 'sin_precio';
   return room.bookable === true ? 'publicada' : 'oculta';
 }
@@ -274,6 +280,9 @@ export async function setRoomVisibility(companyId, id, visible) {
       throw new HttpError(400, 'ROOM_INACTIVE', 'La sala ya no está en el mapa');
     }
     const next = { ...room, bookable: visible };
+    if (visible && isCommonArea(room)) {
+      throw new HttpError(400, 'ROOM_NOT_RENTABLE', 'Las zonas comunes no se pueden reservar');
+    }
     if (visible) assertPriceIfBookable(next);
     await roomModel.update(id, { bookable: visible }, { tx });
     return next;

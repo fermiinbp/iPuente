@@ -87,6 +87,12 @@
     border-radius: var(--radio-plano);
   }
 
+  /* Con poco sitio (p. ej. con el panel de detalle abierto) la tabla se desplaza en horizontal en vez
+     de partir nombres y emails letra a letra. El mínimo lo fija cada tabla con `minWidth`. */
+  .table {
+    min-width: var(--tabla-min, 0);
+  }
+
   .head {
     position: static;
     width: auto;

@@ -563,7 +563,7 @@ router.post(
  *   get:
  *     tags: [Empresa]
  *     summary: Lista las salas de la empresa con su estado
- *     description: 'Solo salas activas, ordenadas por edificio, planta y código. Cada una incluye `estado`: `sin_precio` (sin precio mayor que 0), `publicada` (con precio y reservable) u `oculta`. Si se pasa `buildingId` o `floorId` deben ser propios (si son de otra empresa o no existen, 404). Solo para empresas aprobadas.'
+ *     description: 'Solo salas activas, ordenadas por edificio, planta y código. Cada una incluye `estado`: `zona_comun` (tipo distinto de sala o box: no se alquila), `sin_precio` (sin precio mayor que 0), `publicada` (con precio y reservable) u `oculta`. Si se pasa `buildingId` o `floorId` deben ser propios (si son de otra empresa o no existen, 404). Solo para empresas aprobadas.'
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -579,7 +579,7 @@ router.post(
  *         name: estado
  *         schema:
  *           type: string
- *           enum: [publicada, sin_precio, oculta]
+ *           enum: [publicada, sin_precio, oculta, zona_comun]
  *     responses:
  *       200:
  *         description: 'Lista de salas con `id, floorId, buildingId, codigo, nombre, capacidad, m2, precioHora, gratis, equipamiento, reservable, fotos, estado`.'
@@ -608,7 +608,7 @@ router.get(
  *   patch:
  *     tags: [Empresa]
  *     summary: Muestra u oculta una sala propia
- *     description: 'Body `{ visible }` (booleano). Mostrar una sala sin precio mayor que 0 y sin `gratis` da `ROOM_WITHOUT_PRICE` (con precio o gratis se puede mostrar); una sala que ya no está en el mapa da `ROOM_INACTIVE`. Con `visible: false` y reservas futuras (CONFIRMED o PENDING_PAYMENT) se devuelven `reservasFuturas` y un `aviso`; no se bloquea. Solo para empresas aprobadas; ajena o inexistente 404.'
+ *     description: 'Body `{ visible }` (booleano). Mostrar una sala sin precio mayor que 0 y sin `gratis` da `ROOM_WITHOUT_PRICE` (con precio o gratis se puede mostrar); una zona común (tipo distinto de sala o box) da `ROOM_NOT_RENTABLE`; una sala que ya no está en el mapa da `ROOM_INACTIVE`. Con `visible: false` y reservas futuras (CONFIRMED o PENDING_PAYMENT) se devuelven `reservasFuturas` y un `aviso`; no se bloquea. Solo para empresas aprobadas; ajena o inexistente 404.'
  *     security:
  *       - bearerAuth: []
  *     parameters:

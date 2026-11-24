@@ -720,7 +720,7 @@ describe('Eliminar edificio, planta o sala', () => {
       assert.equal(first.estado, 'PENDING_PAYMENT');
       assert.equal(first.fecha, FUTURO);
       assert.equal(first.sala.nombre, 'Sala r2');
-      assert.deepEqual(first.cliente, { nombre: 'Ana', email: 'ana@x.com' });
+      assert.deepEqual(first.cliente, { nombre: 'Ana Ruiz', email: 'ana@x.com' });
       assert.equal(r.text.includes('userId'), false);
       assert.equal(r.text.includes('u-cli'), false);
     });

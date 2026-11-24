@@ -1,4 +1,4 @@
-// Guarda de ruta por rol (COMPANY o ADMIN): si el usuario no lo tiene, vuelve a la home.
+// Guarda de ruta por rol (CLIENT, COMPANY o ADMIN): si el usuario no lo tiene, vuelve a la home.
 // Solo oculta pantallas; la seguridad real está en la API. Se usa como ruta de diseño: `<RoleRoute role={ROLES.ADMIN} />`.
 import { Navigate, Outlet } from 'react-router';
 import PageContainer from '@/components/ui/PageContainer/PageContainer.jsx';

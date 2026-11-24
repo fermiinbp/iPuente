@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 
 import { setDbForTests } from '../../src/config/config.js';
+import { getAvailability } from '../../src/services/roomsService.js';
 import { createFakeFirestore } from '../helpers/fakeFirestore.js';
 import {
   FECHA,
@@ -92,6 +93,20 @@ describe('Salas públicas', () => {
       );
       assert.deepEqual(cancel.body.horasLibres, HORAS);
       assert.deepEqual(privateWordsIn(busy.text + cancel.text), []);
+    });
+
+    it('hoy no ofrece las horas que ya han empezado (las demás fechas, todas)', async () => {
+      // Preparar: «ahora» es el día FECHA a las 12:30.
+      const [y, m, d] = FECHA.split('-').map(Number);
+      const now = new Date(y, m - 1, d, 12, 30);
+      // Actuar
+      const hoy = await getAvailability('r-cancel', FECHA, { now });
+      const manana = await getAvailability('r-cancel', FECHA, {
+        now: new Date(y, m - 1, d - 1, 12, 30),
+      });
+      // Comprobar
+      assert.deepEqual(hoy.horasLibres, [13, 14, 15, 16, 17, 18, 19]);
+      assert.deepEqual(manana.horasLibres, HORAS);
     });
 
     it('excluye la franja de un bloqueo', async () => {

@@ -58,9 +58,13 @@ export async function getPublicRoom(id) {
   };
 }
 
-export async function getAvailability(id, fecha = todayString()) {
+// Hoy no ofrece las horas que ya han empezado: la reserva las rechaza con la misma regla
+// (bookingValidator: inicio > hora actual). `now` se inyecta en los tests.
+export async function getAvailability(id, fecha = todayString(), { now = new Date() } = {}) {
   const { room } = await findBookablePublicRoom(id);
-  const horasLibres = freeSlots(await getDayItems(room.id, fecha), BOOKING_HOURS);
+  const libres = freeSlots(await getDayItems(room.id, fecha), BOOKING_HOURS);
+  const horasLibres =
+    fecha === todayString(now) ? libres.filter((h) => h > now.getHours()) : libres;
   return {
     roomId: room.id,
     fecha,

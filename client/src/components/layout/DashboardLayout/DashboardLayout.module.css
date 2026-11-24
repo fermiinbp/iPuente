@@ -101,8 +101,9 @@
   color: var(--crema);
 }
 
+/* En móvil el logo ya está en el menú lateral: en la barra no cabe y se veía aplastado. */
 .topbarBrand {
-  display: flex;
+  display: none;
   min-width: 0;
 }
 
@@ -245,5 +246,11 @@
 
   to {
     transform: translateX(0);
+  }
+}
+
+@media (min-width: 600px) {
+  .topbarBrand {
+    display: flex;
   }
 }

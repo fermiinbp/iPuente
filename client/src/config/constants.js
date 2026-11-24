@@ -36,6 +36,7 @@ export const ROOM_LISTING_STATUS = Object.freeze({
   PUBLISHED: 'PUBLISHED',
   NO_PRICE: 'NO_PRICE',
   HIDDEN: 'HIDDEN',
+  COMMON: 'COMMON', // zona común (aseos, pasillos…): no se alquila
 });
 
 // Estado de publicación de un edificio o una planta (wireframes 12 y 13).

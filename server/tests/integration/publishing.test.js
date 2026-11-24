@@ -422,6 +422,22 @@ describe('Publicar edificios y gestionar salas', () => {
       assert.notEqual((await roomModel.findById('r-sinprecio')).bookable, true);
     });
 
+    it('zona común: estado zona_comun y no se puede mostrar (400 ROOM_NOT_RENTABLE)', async () => {
+      // Preparar: unos aseos (tipo comun), aunque tuvieran precio.
+      await mkRoom('r-aseos', 'c-a', 'b-a', 'f-a0', { type: 'comun', price: 10, bookable: false });
+      // Actuar
+      const lista = await call('GET', '/api/company/rooms?estado=zona_comun', { token: 'a' });
+      const r = await patch('r-aseos', { visible: true });
+      // Comprobar
+      assert.deepEqual(
+        lista.body.map((x) => x.id),
+        ['r-aseos'],
+      );
+      assert.equal(r.status, 400);
+      assert.equal(r.body.error.code, 'ROOM_NOT_RENTABLE');
+      assert.notEqual((await roomModel.findById('r-aseos')).bookable, true);
+    });
+
     it('sala INACTIVE: 400 ROOM_INACTIVE', async () => {
       const r = await patch('r-inactiva', { visible: true });
       assert.equal(r.status, 400);

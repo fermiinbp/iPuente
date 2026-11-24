@@ -35,8 +35,11 @@
     align-items: flex-end;
   }
 
+  /* Al menos 200 px y, si una opción es más larga, lo que mida (sin cortar el texto). */
   .filter {
-    width: 200px;
+    width: auto;
+    min-width: 200px;
+    max-width: 320px;
   }
 
   .actions {

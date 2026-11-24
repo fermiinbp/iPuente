@@ -158,7 +158,7 @@ function CompanyTab({ company, onSaved }) {
       </form>
 
       <p className={styles.note}>
-        El email y la contraseña con los que entras se cambian en{' '}
+        La contraseña con la que entras se cambia en{' '}
         <Link className={styles.link} to="/account">
           Mi cuenta
         </Link>

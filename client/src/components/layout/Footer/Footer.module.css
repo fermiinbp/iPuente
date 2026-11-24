@@ -25,10 +25,11 @@
   width: auto;
 }
 
+/* Base de 8.5rem: en móvil estrecho la tercera columna (contacto) baja de fila en vez de salirse. */
 .column {
   display: flex;
   flex-direction: column;
-  flex: 1 1 0;
+  flex: 1 1 8.5rem;
   min-width: 0;
 }
 
@@ -45,7 +46,9 @@
   display: inline-flex;
   align-items: center;
   align-self: flex-start;
+  max-width: 100%;
   min-height: var(--campo-alto);
+  overflow-wrap: anywhere;
   color: var(--crema-suave);
   position: relative;
   text-decoration: none;

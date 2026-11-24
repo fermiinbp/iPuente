@@ -89,10 +89,13 @@ export default function App() {
 
           {/* Con sesión */}
           <Route element={<PrivateRoute />}>
-            <Route path="my-bookings" element={<MyBookings />} />
-            <Route path="my-bookings/:bookingId" element={<BookingDetailPage />} />
-            <Route path="checkout/:bookingId" element={<BookingCheckout />} />
-            <Route path="payment/result" element={<PaymentResult />} />
+            {/* Reservas y pagos: solo clientes (la API responde 403 a empresa y admin) */}
+            <Route element={<RoleRoute role={ROLES.CLIENT} />}>
+              <Route path="my-bookings" element={<MyBookings />} />
+              <Route path="my-bookings/:bookingId" element={<BookingDetailPage />} />
+              <Route path="checkout/:bookingId" element={<BookingCheckout />} />
+              <Route path="payment/result" element={<PaymentResult />} />
+            </Route>
             <Route path="account" element={<Account />} />
           </Route>
 

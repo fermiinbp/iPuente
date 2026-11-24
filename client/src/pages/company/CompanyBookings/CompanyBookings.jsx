@@ -108,17 +108,20 @@ async function loadCatalog(signal) {
   );
   return {
     buildings: buildings.map((b) => ({ id: b.id, nombre: b.nombre })),
-    rooms: rooms.map((r) => ({
-      id: r.id,
-      buildingId: r.buildingId,
-      group: buildingName.get(r.buildingId) ?? 'Otro edificio',
-      label: [
-        [r.codigo, r.nombre].filter(Boolean).join(' · '),
-        floorName.get(r.floorId) && `(${floorName.get(r.floorId)})`,
-      ]
-        .filter(Boolean)
-        .join(' '),
-    })),
+    // Las zonas comunes (aseos, pasillos…) no se reservan ni se bloquean.
+    rooms: rooms
+      .filter((r) => r.estado !== 'zona_comun')
+      .map((r) => ({
+        id: r.id,
+        buildingId: r.buildingId,
+        group: buildingName.get(r.buildingId) ?? 'Otro edificio',
+        label: [
+          [r.codigo, r.nombre].filter(Boolean).join(' · '),
+          floorName.get(r.floorId) && `(${floorName.get(r.floorId)})`,
+        ]
+          .filter(Boolean)
+          .join(' '),
+      })),
   };
 }
 
@@ -329,6 +332,7 @@ function Content({ catalog }) {
           </Alert>
         )}
         <DataTable
+          minWidth={900}
           caption="Reservas y bloqueos"
           columns={COLUMNS}
           rows={rows}

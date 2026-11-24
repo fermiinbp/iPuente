@@ -271,6 +271,30 @@ describe('Reservas del cliente', () => {
       assert.equal(body.pasadas[0].fecha, '2020-01-10');
     });
 
+    it('una reserva futura cancelada va a pasadas, no a próximas', async () => {
+      // Preparar
+      await bookingModel.upsert('bk-cancelada', {
+        userId: 'u1',
+        companyId: 'c1',
+        roomId: 'r-free',
+        startDate: new Date(2099, 0, 10, 9),
+        endDate: new Date(2099, 0, 10, 11),
+        price: 25,
+        pricePeriod: 'HOUR',
+        totalAmount: 50,
+        status: 'CANCELLED',
+      });
+      // Actuar
+      const { status, body } = await request('GET', '/api/bookings/me');
+      // Comprobar
+      assert.equal(status, 200);
+      assert.equal(body.proximas.length, 0);
+      assert.deepEqual(
+        body.pasadas.map((b) => [b.id, b.estado]),
+        [['bk-cancelada', 'CANCELLED']],
+      );
+    });
+
     it('devuelve listas vacías si el usuario no tiene reservas', async () => {
       const { status, body } = await request('GET', '/api/bookings/me', { token: 'nuevo' });
       assert.equal(status, 200);

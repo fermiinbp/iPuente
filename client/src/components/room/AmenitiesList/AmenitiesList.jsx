@@ -1,7 +1,9 @@
-// Equipamiento de la sala: lista con una marca y el texto.
+// Equipamiento de la sala: lista con una marca y el texto (con tildes: «Climatización», no «Climatizacion»).
+import { AMENITIES } from '@/utils/roomData.js';
 import styles from './AmenitiesList.module.css';
 
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+const label = (item) => AMENITIES.find((a) => a.value === item)?.label ?? capitalize(item);
 
 export default function AmenitiesList({ items }) {
   if (!items?.length) {
@@ -12,7 +14,7 @@ export default function AmenitiesList({ items }) {
       {items.map((item) => (
         <li key={item} className={styles.item}>
           <span className={styles.mark} aria-hidden="true" />
-          {capitalize(item)}
+          {label(item)}
         </li>
       ))}
     </ul>

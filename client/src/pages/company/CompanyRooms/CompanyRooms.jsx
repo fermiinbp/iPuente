@@ -36,6 +36,7 @@ const LISTING = {
   publicada: ROOM_LISTING_STATUS.PUBLISHED,
   sin_precio: ROOM_LISTING_STATUS.NO_PRICE,
   oculta: ROOM_LISTING_STATUS.HIDDEN,
+  zona_comun: ROOM_LISTING_STATUS.COMMON,
 };
 
 const STATUS_OPTIONS = [
@@ -43,6 +44,7 @@ const STATUS_OPTIONS = [
   { value: 'publicada', label: 'Publicadas' },
   { value: 'sin_precio', label: 'Sin precio' },
   { value: 'oculta', label: 'Ocultas' },
+  { value: 'zona_comun', label: 'Zonas comunes' },
 ];
 
 const roomName = (room) => [room.codigo, room.nombre].filter(Boolean).join(' · ') || 'Sala';
@@ -214,7 +216,7 @@ function Content({ buildings }) {
       label: 'Precio/h',
       render: (room) => priceLabel(room.precioHora, { gratis: room.gratis }),
     },
-    { key: 'capacidad', label: 'Capacidad', render: (room) => room.capacidad ?? '—' },
+    { key: 'capacidad', label: 'Capacidad', render: (room) => room.capacidad || '—' },
     {
       key: 'estado',
       label: 'Estado',
@@ -223,6 +225,10 @@ function Content({ buildings }) {
   ];
 
   const actions = (room) => {
+    // Aseos, pasillos, cocina…: no se alquilan, así que no hay datos para el cliente ni visibilidad.
+    if (room.estado === 'zona_comun') {
+      return <span className={styles.muted}>No se alquila</span>;
+    }
     const noPrice = room.estado === 'sin_precio';
     const hintId = `sin-precio-${room.id}`;
     return (
@@ -269,6 +275,7 @@ function Content({ buildings }) {
     const filtered = Boolean(edificio || planta || estado);
     body = (
       <DataTable
+        minWidth={860}
         caption="Salas"
         columns={columns}
         rows={rooms}

@@ -256,8 +256,9 @@ export async function listMyBookings(uid) {
       item: { ...toItem(b), sala: room ? { nombre: room.name, codigo: room.code } : null },
     };
   });
-  // Una pendiente vencida (EXPIRED) ya no es una próxima reserva aunque su hora no haya pasado.
-  const vivas = (i) => i.end > ahora && i.item.estado !== 'EXPIRED';
+  // Una pendiente vencida (EXPIRED) o una cancelada ya no es una próxima reserva aunque su hora no
+  // haya pasado: va a «pasadas».
+  const vivas = (i) => i.end > ahora && !['EXPIRED', 'CANCELLED'].includes(i.item.estado);
   const proximas = items.filter(vivas).sort((a, b) => a.start - b.start);
   const pasadas = items.filter((i) => !vivas(i)).sort((a, b) => b.start - a.start);
   return { proximas: proximas.map((i) => i.item), pasadas: pasadas.map((i) => i.item) };
