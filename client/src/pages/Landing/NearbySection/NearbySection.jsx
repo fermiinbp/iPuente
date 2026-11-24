@@ -10,11 +10,18 @@ import styles from './NearbySection.module.css';
 
 const NearbyMap = lazy(() => import('@/components/building/NearbyMap/NearbyMap.jsx'));
 
+// Texto visible de los tiempos: siempre «a pie» y «en coche»; «—» si ese modo no aplica.
 function tiempos(poi) {
-  const partes = [];
-  if (poi.minPie) partes.push(`${poi.minPie} min a pie`);
-  if (poi.minCoche) partes.push(`${poi.minCoche} min en coche`);
-  return partes.join(' · ');
+  const pie = poi.minPie ? `${poi.minPie} min` : '—';
+  const coche = poi.minCoche ? `${poi.minCoche} min` : '—';
+  return `${pie} a pie · ${coche} en coche`;
+}
+
+// Lo mismo para lectores de pantalla, que no leen bien «—»: dice «no aplica» y ya no se repite el signo.
+function tiemposLectura(poi) {
+  const pie = poi.minPie ? `${poi.minPie} minutos a pie` : 'a pie no aplica';
+  const coche = poi.minCoche ? `${poi.minCoche} minutos en coche` : 'en coche no aplica';
+  return `${pie}, ${coche}`;
 }
 
 // `tone` es el fondo de la sección: 'elevated' (verde, por defecto) o 'crema' (banda clara con el texto en bosque).
@@ -29,7 +36,7 @@ export default function NearbySection({ tone = 'elevated' }) {
 
   const choose = (poi) => {
     setActiveId(poi.id);
-    setAnnouncement(`${poi.nombre}: ${tiempos(poi)}. ${poi.descripcion}`);
+    setAnnouncement(`${poi.nombre}: ${tiemposLectura(poi)}. ${poi.descripcion}`);
   };
   const reset = () => {
     setActiveId(null);
@@ -105,8 +112,14 @@ export default function NearbySection({ tone = 'elevated' }) {
                 <span className={styles.number} aria-hidden="true">
                   {i + 1}
                 </span>
-                <span className={styles.name}>{poi.nombre}</span>
-                <span className={styles.time}>{tiempos(poi)}</span>
+                <span className={styles.name}>
+                  {poi.nombre}
+                  {poi.principal && <span className={styles.badge}> Principal</span>}
+                </span>
+                <span className={styles.time} aria-hidden="true">
+                  {tiempos(poi)}
+                </span>
+                <span className={styles.srOnly}>{tiemposLectura(poi)}</span>
               </button>
             );
           })}
