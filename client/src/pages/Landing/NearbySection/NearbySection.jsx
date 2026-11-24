@@ -5,7 +5,6 @@ import { useNearViewport } from '@/hooks/useNearViewport.js';
 import ErrorBoundary from '@/components/three/ErrorBoundary/ErrorBoundary.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
-import pois from '@/data/poi.json';
 import styles from './NearbySection.module.css';
 
 const NearbyMap = lazy(() => import('@/components/building/NearbyMap/NearbyMap.jsx'));
@@ -24,8 +23,11 @@ function tiemposLectura(poi) {
   return `${pie}, ${coche}`;
 }
 
+// `edificio`: { nombre, latitud, longitud, huella?, altura? } (ver NearbyMap). `pois`: lugares cercanos
+// [{ id, nombre, minPie, minCoche?, descripcion, lat, lng, ruta }]. Sin lugares (o sin coordenadas del
+// edificio) la sección no se muestra.
 // `tone` es el fondo de la sección: 'elevated' (verde, por defecto) o 'crema' (banda clara con el texto en bosque).
-export default function NearbySection({ tone = 'elevated' }) {
+export default function NearbySection({ edificio, pois = [], tone = 'elevated' }) {
   const [activeId, setActiveId] = useState(null); // elegido con clic o Enter: mueve la cámara
   const [hoverId, setHoverId] = useState(null); // ratón o foco: solo resalta
   const [announcement, setAnnouncement] = useState('');
@@ -43,6 +45,10 @@ export default function NearbySection({ tone = 'elevated' }) {
     setAnnouncement('Mapa centrado en el edificio.');
   };
   const onUnavailable = useCallback(() => setMapaFallido(true), []);
+
+  // Los hooks ya se han llamado: con esto, un edificio sin lugares cercanos no enseña la sección.
+  const sinUbicacion = !Number.isFinite(edificio?.latitud) || !Number.isFinite(edificio?.longitud);
+  if (pois.length === 0 || sinUbicacion) return null;
 
   const sinMapa = (
     <p className={styles.note} role="note">
@@ -68,6 +74,7 @@ export default function NearbySection({ tone = 'elevated' }) {
             <Suspense fallback={<p className={styles.note}>Cargando el mapa…</p>}>
               {mapNear ? (
                 <NearbyMap
+                  edificio={edificio}
                   pois={pois}
                   activeId={activeId}
                   hoverId={hoverId}
