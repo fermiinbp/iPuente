@@ -7,10 +7,12 @@ import SearchBar from '@/components/search/SearchBar/SearchBar.jsx';
 import EmptyState from '@/components/ui/EmptyState/EmptyState.jsx';
 import Section from '@/components/ui/Section/Section.jsx';
 import SectionTitle from '@/components/ui/SectionTitle/SectionTitle.jsx';
+import { createProgressStore } from '@/utils/progressStore.js';
+import BuildingBackdrop from './BuildingStamps/BuildingBackdrop/BuildingBackdrop.jsx';
+import BuildingStamps from './BuildingStamps/BuildingStamps.jsx';
 import CompaniesCta from './CompaniesCta/CompaniesCta.jsx';
 import { BUILDING, FEATURED_ROOMS, ROOM_FILTERS } from './data.js';
 import FloorSection from './FloorSection/FloorSection.jsx';
-import HeroStory from './HeroStory.jsx';
 import HowItWorks from './HowItWorks/HowItWorks.jsx';
 import styles from './Landing.module.css';
 import LandingLoader from './LandingLoader/LandingLoader.jsx';
@@ -24,6 +26,8 @@ export default function Landing() {
   // Se calcula una sola vez, antes de que el cargador marque la sesión como vista.
   const [entranceDelay] = useState(heroEntranceDelay);
   const heroRef = useRef(null);
+  // Un único progreso de scroll de la cabecera: lo escribe BuildingStamps y lo leen el edificio, las estampas y el fondo.
+  const [scroll] = useState(createProgressStore);
 
   // Foco de luz que sigue al ratón por el hero. Solo ratón: en táctil queda el resplandor fijo.
   function handleHeroPointerMove(event) {
@@ -60,29 +64,33 @@ export default function Landing() {
         aria-labelledby="hero-titulo"
         style={{ '--entrada-base': `${entranceDelay}ms` }}
       >
+        <BuildingBackdrop store={scroll} />
         <div className={styles.heroInner}>
-          <div className={styles.heroText}>
-            <p className={styles.eyebrow}>Salas de oficina por horas</p>
-            <h1 className={styles.heroTitle} id="hero-titulo">
-              Elige tu sala en el plano y resérvala por horas.
-            </h1>
-            <p className={styles.lead}>
-              iPuente te enseña cada planta del edificio con sus salas libres, su precio y su
-              capacidad. Para equipos y profesionales que necesitan una sala unas horas: eliges las
-              horas y listo.
-            </p>
+          {/* En móvil no existe (display: contents); en escritorio fija texto y buscador junto al edificio. */}
+          <div className={styles.heroLeft}>
+            <div className={styles.heroText}>
+              <p className={styles.eyebrow}>Salas de oficina por horas</p>
+              <h1 className={styles.heroTitle} id="hero-titulo">
+                Elige tu sala en el plano y resérvala por horas.
+              </h1>
+              <p className={styles.lead}>
+                iPuente te enseña cada planta del edificio con sus salas libres, su precio y su
+                capacidad. Para equipos y profesionales que necesitan una sala unas horas: eliges
+                las horas y listo.
+              </p>
+            </div>
+
+            <SearchBar
+              variant="hero"
+              className={styles.search}
+              submitLabel="Buscar salas"
+              onSearch={handleSearch}
+            />
           </div>
 
           <div className={styles.heroBuilding}>
-            <HeroStory buildingId={BUILDING.id} buildingName={BUILDING.name} />
+            <BuildingStamps buildingId={BUILDING.id} buildingName={BUILDING.name} store={scroll} />
           </div>
-
-          <SearchBar
-            variant="hero"
-            className={styles.search}
-            submitLabel="Buscar salas"
-            onSearch={handleSearch}
-          />
         </div>
       </section>
 
