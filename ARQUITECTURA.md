@@ -23,7 +23,7 @@ routes → auth / requireRole → validator → validate → controller → serv
 | `services/` | Reglas de negocio: solapes, precio, propiedad, Stripe, IA | Tocar `req` o `res` |
 | `models/` | Lee y escribe una colección de Firestore | Reglas de negocio |
  
-- **`app.js` y `server.js` van separados** porque la misma app se usa de tres formas: `server.js` la arranca en local, el servicio `server` de Vercel la ejecuta en producción y los tests la levantan en un puerto libre.
+- **`app.js` y `server.js` van separados** porque la misma app se usa de tres formas: `server.js` la arranca en local, `api/index.js` la ejecuta en producción y los tests la levantan en un puerto libre.
 - **Errores:** siempre `{ "error": { "code", "message", "details" } }`. Los códigos (`VALIDATION_ERROR`, `NO_TOKEN`, `FORBIDDEN`, `SLOT_TAKEN`…) están en Swagger.
 El modelo de datos (colecciones de Firestore, campos y relaciones) está en el [Diseño de datos del README](./README.md#diseño-de-datos).
  
@@ -259,7 +259,7 @@ Es la estructura de partida: los archivos están creados pero vacíos, cada uno 
 | Archivo | Para qué sirve |
 | --- | --- |
 | `package.json` | Raíz del monorepo: declara los workspaces `client` y `server` y los scripts globales (`dev`, `build`, `start`, `lint`, `test`, `format`). |
-| `vercel.json` | Configuración de Vercel con servicios: `client` (Vite, raíz `client/`, todo a `index.html` para React Router) y `server` (Express, raíz `server/`, entrypoint `src/app.js`); `/api/*` va al servidor con la ruta completa y el resto al front. |
+| `vercel.json` | Configuración de Vercel: construye `client/`, publica `client/dist`, despliega la API como función (`api/index.js`) y reescribe `/api/*` a ella y el resto a `index.html` (React Router). |
 | `.gitignore` | Lo que nunca se sube a Git: dependencias, builds, `.env`, claves de Firebase, logs y ajustes personales de editores y de Claude Code. |
 | `.editorconfig` | Mismo formato básico en cualquier editor: UTF-8, 2 espacios, saltos de línea LF. |
 | `.prettierrc` | Reglas de Prettier (comillas simples, punto y coma, 100 caracteres) para que los 4 escribamos igual. |
@@ -267,6 +267,7 @@ Es la estructura de partida: los archivos están creados pero vacíos, cada uno 
 | `firebase.json` | Indica a Firebase CLI dónde están las reglas y los índices de Firestore (`npx firebase-tools deploy --only firestore`). Storage se añadirá cuando tenga reglas. |
 | `firestore.rules` | Reglas de seguridad de Firestore: el navegador no lee ni escribe directamente (todo pasa por la API, que usa `firebase-admin`). Si el front necesita leer algo, se abre solo esa lectura. |
 | `firestore.indexes.json` | Índices compuestos de Firestore que necesitan las consultas de reservas y plantas. |
+| `api/index.js` | Única función de Vercel: exporta la app de Express (`server/src/app.js`) para que la API funcione en Vercel sin servidor propio. |
 | `CLAUDE.md` | Instrucciones que Claude Code lee al empezar: qué es el proyecto, qué agente usar y las reglas clave. |
  
 ### Front: `client/`
@@ -480,7 +481,7 @@ Un archivo por colección de Firestore. Es la única capa que importa la base de
 | `server/src/utils/asyncHandler.js` | Envuelve controladores `async` para que sus errores lleguen al `errorHandler`. |
 | `server/src/utils/dates.js` | Utilidades de fechas: validar `AAAA-MM-DD` (fecha real del calendario), `todayString` y `dayRange` (rango de un día en hora local). |
 | `server/src/app.js` | Configura Express sin arrancarlo: CORS, límite de peticiones, webhook de Stripe (body sin parsear), JSON, `/api/health`, documentación Swagger en `/api/docs`, rutas y manejo de errores. Lo usan `server.js`, la función de Vercel y los tests. |
-| `server/src/server.js` | Arranca la API en local con `app.listen`. En producción no se usa: Vercel ejecuta `app.js` como función del servicio `server` (`vercel.json`). |
+| `server/src/server.js` | Arranca la API en local con `app.listen`. En producción no se usa: Vercel ejecuta `app.js` como función (`api/index.js`). |
  
 ### Tests: `server/tests/`
  

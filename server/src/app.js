@@ -1,4 +1,4 @@
-// Configura Express sin arrancarlo: CORS, límite de peticiones, webhook de Stripe (body sin parsear), JSON, /api/health, documentación Swagger en /api/docs, rutas y manejo de errores. Lo usan server.js, el servicio «server» de Vercel (entrypoint en vercel.json) y los tests.
+// Configura Express sin arrancarlo: CORS, límite de peticiones, webhook de Stripe (body sin parsear), JSON, /api/health, documentación Swagger en /api/docs, rutas y manejo de errores. Lo usan server.js, la función de Vercel (api/index.js) y los tests.
 import './config/timezone.js';
 
 import cors from 'cors';
