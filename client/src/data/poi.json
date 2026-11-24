@@ -19,6 +19,7 @@
     "id": "tren",
     "nombre": "Estación de tren",
     "categoria": "transporte",
+    "principal": true,
     "minPie": 16,
     "minCoche": 5,
     "descripcion": "Trenes de cercanías y de alta velocidad. Desde la estación se llega en taxi en cinco minutos o en un paseo largo.",

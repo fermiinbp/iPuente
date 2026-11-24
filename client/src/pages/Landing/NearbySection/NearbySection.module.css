@@ -129,6 +129,24 @@
   flex: 1;
 }
 
+/* «Principal»: texto, no solo color, para el punto más importante (la estación de tren). */
+.badge {
+  margin-left: var(--space-2);
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  border-radius: var(--radio-chip);
+  font-family: var(--font-body);
+  font-size: var(--text-etiqueta);
+  font-style: normal;
+  font-weight: 600;
+  vertical-align: middle;
+  color: var(--bronce-claro);
+}
+
+.light .badge {
+  color: var(--bronce-oscuro);
+}
+
 .time {
   flex: none;
   text-align: right;
