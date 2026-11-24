@@ -1,16 +1,19 @@
 // Formulario de reserva: fecha, horas libres, resumen y botón. No habla con la API: avisa a la página
-// con onSubmit y ella crea la reserva.
+// con onSubmit y ella crea la reserva. Tiene `id` (por defecto «reserva-form»): en móvil la página pone el
+// botón en una barra fija fuera del formulario y lo asocia con `form={id}`; desde 900 px el botón va aquí.
 import AvailabilityCalendar from '@/components/room/AvailabilityCalendar/AvailabilityCalendar.jsx';
 import Alert from '@/components/ui/Alert/Alert.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
 import NumberStepper from '@/components/ui/NumberStepper/NumberStepper.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
+import { attendeesError } from '@/utils/bookingForm.js';
 import { todayString } from '@/utils/dates.js';
 import BookingSummary from '../BookingSummary/BookingSummary.jsx';
 import styles from './BookingForm.module.css';
 
 export default function BookingForm({
+  id = 'reserva-form',
   fecha,
   onDateChange,
   freeHours,
@@ -32,22 +35,15 @@ export default function BookingForm({
     return <Alert type="info">Esta sala no se puede reservar online.</Alert>;
   }
 
-  // Asistentes: opcional, pero si se escribe debe ser 1 o más y no pasar de la capacidad de la sala.
-  const count = attendees === '' ? null : Number(attendees);
-  let attendeesError = '';
-  if (count !== null && !(Number.isInteger(count) && count >= 1)) {
-    attendeesError = 'Indica al menos 1 asistente.';
-  } else if (count !== null && capacity && count > capacity) {
-    attendeesError = `La sala admite como máximo ${capacity} personas.`;
-  }
+  const attendeesProblem = attendeesError(attendees, capacity);
 
   function handleSubmit(event) {
     event.preventDefault();
-    if (selection && !attendeesError && !submitting) onSubmit();
+    if (selection && !attendeesProblem && !submitting) onSubmit();
   }
 
   return (
-    <form className={styles.form} onSubmit={handleSubmit} noValidate>
+    <form id={id} className={styles.form} onSubmit={handleSubmit} noValidate>
       <Input
         label="Fecha"
         type="date"
@@ -87,16 +83,23 @@ export default function BookingForm({
         placeholder={capacity ? `Hasta ${capacity}` : undefined}
         value={attendees}
         onChange={(event) => onAttendeesChange?.(event.target.value)}
-        error={attendeesError}
+        error={attendeesProblem}
       />
 
       <BookingSummary fecha={fecha} selection={selection} pricePerHour={pricePerHour} />
 
       {error && <Alert type="error">{error}</Alert>}
 
-      <Button type="submit" loading={submitting} disabled={!selection || Boolean(attendeesError)}>
-        {loggedIn ? 'Reservar' : 'Inicia sesión para reservar'}
-      </Button>
+      {/* En móvil el botón es el de la barra fija de la página (se asocia a este formulario con `form`). */}
+      <div className={styles.inlineAction}>
+        <Button
+          type="submit"
+          loading={submitting}
+          disabled={!selection || Boolean(attendeesProblem)}
+        >
+          {loggedIn ? 'Reservar' : 'Inicia sesión para reservar'}
+        </Button>
+      </div>
       {!loggedIn && <p className={styles.loginHint}>Necesitas iniciar sesión para reservar</p>}
     </form>
   );
