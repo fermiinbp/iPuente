@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import Button from '@/components/ui/Button/Button.jsx';
+import BridgeCable from '@/components/layout/BridgeCable/BridgeCable.jsx';
 import MobileMenu from '@/components/layout/MobileMenu/MobileMenu.jsx';
 import UserMenu from '@/components/layout/UserMenu/UserMenu.jsx';
 import { ACCOUNT_ITEMS, LOGOUT, displayName } from '@/config/accountMenu.js';
@@ -136,6 +137,8 @@ export default function Header() {
           </button>
         </div>
       </div>
+
+      <BridgeCable />
 
       {open && (
         <MobileMenu

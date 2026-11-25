@@ -1,0 +1,57 @@
+/* Leyenda de la planta abierta: una línea de bronce a la izquierda, el nombre grande y los datos debajo. */
+.note {
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-5);
+  border-left: 2px solid var(--bronce);
+  animation: cambia 320ms var(--ease-out) both;
+}
+
+.name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-sala);
+  line-height: 1;
+  letter-spacing: var(--tracking-titular);
+}
+
+.free {
+  margin: 0;
+  font-size: var(--text-cuerpo);
+  color: var(--crema-suave);
+}
+
+.link {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
+  color: var(--crema);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    color: var(--lima);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note {
+    animation: none;
+  }
+}
+
+@keyframes cambia {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}

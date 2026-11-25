@@ -14,6 +14,9 @@
   max-width: var(--ancho-max);
   margin: 0 auto;
   padding: var(--space-9) var(--gutter);
+  /* Altura de una pantalla: al llegar el contenido el pie no salta (CLS) porque ya está fuera de la vista. */
+  align-content: start;
+  min-height: calc(100svh - var(--alto-cabecera));
 }
 
 /* Fondo vivo: dos manchas que derivan despacio detrás del plano. */
@@ -152,11 +155,13 @@
   margin: 0;
 }
 
+/* Móvil: el plano va primero, encima de la lista. */
 .stage {
   position: relative;
-  flex: 1.35 1 540px;
+  order: -1;
+  flex: 1.35 1 100%;
   min-width: 0;
-  height: clamp(380px, 56vw, 620px);
+  height: clamp(260px, 70vw, 340px);
 }
 
 .canvas {
@@ -168,15 +173,6 @@
   margin: 0;
   font-size: var(--text-interfaz);
   color: var(--crema-suave);
-}
-
-/* En móvil el plano va primero, encima de la lista. */
-@media (max-width: 899px) {
-  .stage {
-    order: -1;
-    flex-basis: 100%;
-    height: clamp(260px, 70vw, 340px);
-  }
 }
 
 @media (hover: hover) {
@@ -204,9 +200,12 @@
   }
 }
 
-/* Escritorio: el plano acompaña a la lista al bajar, en vez de dejar un hueco a su derecha. */
+/* Escritorio: el plano va al lado de la lista y la acompaña al bajar, en vez de dejar un hueco a su derecha. */
 @media (min-width: 900px) {
   .stage {
+    order: 0;
+    flex-basis: 540px;
+    height: clamp(380px, 56vw, 620px);
     position: sticky;
     top: calc(var(--alto-cabecera) + var(--space-4));
   }

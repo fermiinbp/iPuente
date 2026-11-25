@@ -1,0 +1,41 @@
+/* Revelado por líneas: cada palabra sube desde detrás de una máscara (clip-path, que no cambia la línea base). */
+.reveal {
+  position: relative;
+}
+
+.palabra {
+  display: inline-block;
+  /* La máscara deja pasar los trazos que se salen de la caja (descendentes, cursiva) pero corta la palabra
+     mientras está desplazada hacia abajo. */
+  clip-path: inset(-0.1em -0.15em -0.2em -0.15em);
+}
+
+.texto {
+  display: inline-block;
+  transform: translateY(110%);
+  transition: transform 700ms var(--ease-out) calc(var(--linea, 0) * 90ms);
+}
+
+.reveal[data-visible] .texto {
+  transform: none;
+}
+
+/* Texto solo para lectores de pantalla: es el nombre accesible del título. */
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .texto {
+    transform: none;
+    transition: none;
+  }
+}

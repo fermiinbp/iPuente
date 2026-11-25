@@ -11,6 +11,9 @@
   max-width: var(--ancho-max);
   margin: 0 auto;
   padding: var(--space-9) var(--gutter);
+  /* Altura de una pantalla: al llegar el contenido el pie no salta (CLS) porque ya está fuera de la vista. */
+  align-content: start;
+  min-height: calc(100svh - var(--alto-cabecera));
 }
 
 /* Cabecera con fondo vivo: tres manchas de color que derivan despacio sobre el bosque. */
@@ -231,6 +234,7 @@
   border: 1px solid var(--linea);
   border-radius: var(--radio-tarjeta);
   background: var(--bosque-elevado);
+  box-shadow: var(--sombra-1);
 }
 
 .summaryTitle {

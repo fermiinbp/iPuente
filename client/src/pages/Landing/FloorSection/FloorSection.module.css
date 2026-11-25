@@ -185,11 +185,13 @@
   margin-top: var(--space-2);
 }
 
+/* Móvil: el plano va primero, para ver cómo sube la sala elegida. */
 .stage {
   position: relative;
-  flex: 1.35 1 540px;
+  order: -1;
+  flex: 1.35 1 100%;
   min-width: 0;
-  height: clamp(380px, 56vw, 600px);
+  height: clamp(260px, 70vw, 300px);
 }
 
 .canvas {
@@ -248,12 +250,12 @@
   }
 }
 
-/* Bajo 900 px el plano va primero para ver cómo sube la sala elegida. */
-@media (max-width: 899px) {
+/* Desde 900 px el plano va al lado de la lista. */
+@media (min-width: 900px) {
   .stage {
-    order: -1;
-    flex-basis: 100%;
-    height: clamp(260px, 70vw, 300px);
+    order: 0;
+    flex-basis: 540px;
+    height: clamp(380px, 56vw, 600px);
   }
 }
 

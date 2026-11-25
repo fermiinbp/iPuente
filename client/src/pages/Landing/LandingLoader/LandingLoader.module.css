@@ -59,43 +59,26 @@
   font-style: italic;
 }
 
-.counter {
+/* Planta que se dibuja por líneas: cada trazo tiene su retardo y todo es CSS (sin JavaScript por fotograma). */
+.plan {
   position: absolute;
   left: 50%;
   bottom: 56px;
   translate: -50% 0;
   width: min(320px, 70%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
+  height: auto;
+  fill: none;
+  stroke: var(--bronce-oscuro);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   transition: opacity var(--dur-fast) var(--ease-out);
 }
 
-.symbol {
-  width: 64px;
-  height: 64px;
-}
-
-.pct {
-  font-family: var(--font-display);
-  font-size: var(--text-titulo-paso);
-  color: var(--bronce-oscuro);
-  font-variant-numeric: tabular-nums;
-}
-
-.track {
-  width: 100%;
-  height: 1px;
-  background: var(--crema-suave);
-}
-
-.line {
-  height: 1px;
-  width: 100%;
-  background: var(--bronce-oscuro);
-  transform: scaleX(var(--prog, 0));
-  transform-origin: left center;
+.trazo {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: trazar 240ms var(--ease-out) var(--retardo, 0ms) both;
 }
 
 .loader[data-fase='abre'] .top {
@@ -107,12 +90,18 @@
 }
 
 .loader[data-fase='abre'] .band,
-.loader[data-fase='abre'] .counter {
+.loader[data-fase='abre'] .plan {
   opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .loader {
     display: none;
+  }
+}
+
+@keyframes trazar {
+  to {
+    stroke-dashoffset: 0;
   }
 }

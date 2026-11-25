@@ -9,6 +9,7 @@ import Breadcrumbs from '@/components/ui/Breadcrumbs/Breadcrumbs.jsx';
 import Button from '@/components/ui/Button/Button.jsx';
 import ErrorState from '@/components/ui/ErrorState/ErrorState.jsx';
 import Input from '@/components/ui/Input/Input.jsx';
+import Reveal from '@/components/ui/Reveal/Reveal.jsx';
 import Spinner from '@/components/ui/Spinner/Spinner.jsx';
 import StatusBadge from '@/components/ui/StatusBadge/StatusBadge.jsx';
 import { useFetch } from '@/hooks/useFetch.js';
@@ -197,7 +198,7 @@ export default function Floor() {
           <Breadcrumbs
             items={[{ label: building?.nombre ?? 'Edificio', to: backTo }, { label: plan.name }]}
           />
-          <h1 className={styles.title}>{plan.name}</h1>
+          <Reveal as="h1" key={plan.name} className={styles.title} text={plan.name} />
           {siblingFloors.length > 1 && (
             <FloorSelector
               floors={siblingFloors}
@@ -277,6 +278,7 @@ export default function Floor() {
                     selectedId={selectedId}
                     onSelect={setSelectedId}
                     litIds={litIds}
+                    intro
                   />
                 </LazyCanvas>
               </Suspense>

@@ -9,6 +9,7 @@
   border: 1px solid var(--linea);
   border-radius: var(--radio-tarjeta);
   background: var(--bosque-profundo);
+  box-shadow: var(--sombra-1);
 }
 
 .list {
