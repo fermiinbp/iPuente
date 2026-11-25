@@ -86,9 +86,11 @@ test('chooseTier: cada dispositivo recibe su nivel', () => {
   assert.equal(chooseTier({ ...ideal, reducedMotion: true }), 'calm');
   assert.equal(chooseTier({ ...ideal, webgl: false }), 'static');
   assert.equal(chooseTier({ ...ideal, saveData: true }), 'static');
-  assert.equal(chooseTier({ ...ideal, finePointer: false }), 'static');
-  assert.equal(chooseTier({ ...ideal, wide: false }), 'static');
-  assert.equal(chooseTier({ ...ideal, wide: false, reducedMotion: true }), 'static');
+  assert.equal(chooseTier({ ...ideal, finePointer: false }), 'compact');
+  assert.equal(chooseTier({ ...ideal, wide: false }), 'compact');
+  assert.equal(chooseTier({ ...ideal, wide: false, reducedMotion: true }), 'compact');
+  assert.equal(chooseTier({ ...ideal, wide: false, webgl: false }), 'static');
+  assert.equal(chooseTier({ ...ideal, wide: false, saveData: true }), 'static');
 });
 
 test('createProgressStore: avisa solo si cambia y deja darse de baja', () => {

@@ -3,7 +3,8 @@
 // Un solo progreso de scroll (`store`, escrito por useScrollProgress) mueve todo: las estampas (StampLayer), el empuje
 // del giro y la apertura de las plantas (refs que lee el 3D) y la planta activa (el único estado de React, discreto).
 // Niveles (useBuildingTier): 'full' fija el escenario y anima; 'calm' (movimiento reducido) deja el 3D quieto con las
-// estampas ya puestas; 'static' (móvil, ahorro de datos o sin WebGL) no monta el 3D y muestra solo la lista de estampas.
+// estampas ya puestas; 'compact' (móvil y tableta) deja el 3D quieto y pone la rejilla de estampas debajo (encima se
+// taparían); 'static' (ahorro de datos o sin WebGL) no monta el 3D y muestra solo la lista de estampas.
 import { lazy, startTransition, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import BuildingHero from '@/components/building/BuildingHero/BuildingHero.jsx';
@@ -34,8 +35,9 @@ export default function BuildingStamps({ buildingId, buildingName, store }) {
   const openRef = useRef(0);
   const lastAnchors = useRef({});
 
-  // Sin 3D la «pista» es la propia lista: el progreso se mide cuando esta aparece en pantalla.
-  useScrollProgress(tier === 'static' ? listaRef : pistaRef, {
+  // Con la lista (sin 3D o en móvil) la «pista» es la propia lista: el progreso se mide cuando esta aparece en pantalla.
+  const lista = tier === 'static' || tier === 'compact';
+  useScrollProgress(lista ? listaRef : pistaRef, {
     store,
     mode: full ? 'pin' : 'view',
     pinRef: escenaRef,
@@ -102,7 +104,27 @@ export default function BuildingStamps({ buildingId, buildingName, store }) {
 
   return (
     <div className={styles.raiz}>
-      {tier === 'static' ? (
+      {tier === 'compact' ? (
+        <div className={styles.compacto}>
+          <BuildingHero
+            buildingId={buildingId}
+            buildingName={buildingName}
+            floors={FLOORS_HERO}
+            activeFloorId={floorId}
+            onSelectFloor={setFloorId}
+            showInfo={false}
+            showFloorList={false}
+            building3dProps={{ spinKickRef, openRef, keyboardTurn: false }}
+          />
+          <StampLayer
+            ref={listaRef}
+            stamps={HERO_STAMPS}
+            mode="list"
+            store={store}
+            onOpen={openSheet}
+          />
+        </div>
+      ) : tier === 'static' ? (
         <StampLayer
           ref={listaRef}
           stamps={HERO_STAMPS}

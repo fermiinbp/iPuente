@@ -4,6 +4,12 @@
   min-width: 0;
 }
 
+/* Nivel 'compact' (móvil y tableta): el edificio 3D y, debajo, la rejilla de estampas. */
+.compacto {
+  display: grid;
+  gap: var(--space-4);
+}
+
 .pista {
   position: relative;
 }
