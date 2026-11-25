@@ -30,10 +30,12 @@
   right: -30%;
   --paralaje: -0.1;
   border-radius: 62% 38% 55% 45% / 48% 58% 42% 52%;
+  /* `closest-side`: el degradado se apaga antes del borde de la forma. Si llegara al borde con color, el border-radius
+     lo cortaría y se vería el contorno de un círculo en lugar de una mancha difusa. */
   background: radial-gradient(
-    circle at 40% 40%,
+    closest-side,
     color-mix(in srgb, var(--bosque-elevado) 95%, transparent),
-    transparent 70%
+    transparent
   );
 }
 
@@ -43,9 +45,9 @@
   --paralaje: 0.08;
   border-radius: 40% 60% 38% 62% / 56% 40% 60% 44%;
   background: radial-gradient(
-    circle at 50% 50%,
+    closest-side,
     color-mix(in srgb, var(--bronce) 16%, transparent),
-    transparent 68%
+    transparent
   );
 }
 
