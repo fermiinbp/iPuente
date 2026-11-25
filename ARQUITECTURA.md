@@ -158,7 +158,6 @@ ipuente/
 │   │   │   ├── buildings.routes.js
 │   │   │   ├── company.routes.js
 │   │   │   ├── floors.routes.js
-│   │   │   ├── index.js
 │   │   │   ├── payments.routes.js
 │   │   │   ├── rooms.routes.js
 │   │   │   ├── users.routes.js
@@ -215,6 +214,7 @@ ipuente/
 │   │   │   ├── dates.js
 │   │   │   └── httpError.js
 │   │   ├── app.js
+│   │   ├── index.js
 │   │   └── server.js
 │   ├── tests/
 │   │   ├── integration/
@@ -398,7 +398,7 @@ Cada archivo define los endpoints de un recurso y los documenta con un comentari
 | `server/src/routes/users.routes.js` | Rutas del perfil del usuario autenticado. |
 | `server/src/routes/company.routes.js` | Rutas del panel de empresa: alta, edificios, plantas, mapas (detección con IA, guardar, publicar), salas, reservas y bloqueos. Cada empresa solo accede a lo suyo. |
 | `server/src/routes/admin.routes.js` | Rutas del panel de admin: empresas, usuarios, reservas, pagos y reembolsos. |
-| `server/src/routes/index.js` | Une todas las rutas bajo `/api` (excepto el webhook y la documentación, que se montan en `app.js`). |
+| `server/src/index.js` | Une todas las rutas bajo `/api` (excepto el webhook y la documentación, que se montan en `app.js`). |
  
 ### Back: `server/src/validators/`
  

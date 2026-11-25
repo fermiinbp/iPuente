@@ -8,7 +8,7 @@ import { config } from './config/config.js';
 import { swaggerServe, swaggerSetup } from './config/swagger.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
 import { generalLimiter } from './middlewares/rateLimit.js';
-import routes from './routes/index.js';
+import routes from './index.js';
 import webhookRoutes from './routes/webhook.routes.js';
 
 const app = express();
