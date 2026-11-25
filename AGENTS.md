@@ -7,7 +7,7 @@
 | Archivo | Para qué sirve |
 | --- | --- |
 | `package.json` | Raíz del monorepo: declara los workspaces `client` y `server` y los scripts globales (`dev`, `build`, `start`, `lint`, `test`, `format`). |
-| `vercel.json` | Configuración de Vercel: `npm ci --include=dev` (así el build tiene Vite aunque `NODE_ENV=production`), `npm run build`, publica `client/dist`, región `fra1`, la función `api/index.js` (`maxDuration` 60 s; `includeFiles` copia `server/src/routes/` para que swagger-jsdoc lea los `@openapi`) y reescribe `/api/*` a la función y el resto a `index.html` (React Router). |
+| `vercel.json` | Configuración de Vercel: `npm ci --include=dev` (así el build tiene Vite aunque `NODE_ENV=production`), `npm run build`, publica `client/dist`, región `fra1`, la función `api/index.js` (`maxDuration` 60 s; `includeFiles` copia `server/src/routes/` para que swagger-jsdoc lea los `@openapi` y `node_modules/swagger-ui-dist/` para que `/api/docs` sirva el JS y el CSS de Swagger, que se leen del disco y Vercel no detecta solo) y reescribe `/api/*` a la función y el resto a `index.html` (React Router). |
 | `.vercelignore` | Lo que Vercel no sube en el despliegue: archivos de variables de entorno, claves de cuentas de servicio de Firebase, `_to_delete/`, `docs/`, `.claude/`, `.netlify/`, `server/scripts/` y `server/tests/`. No excluye nada del build ni de la función (`client/`, `server/src/`, `api/`, `package*.json`, `vercel.json`). |
 | `.gitignore` | Lo que nunca se sube a Git: dependencias, builds, `.env`, claves de Firebase, logs y ajustes personales de editores y de Claude Code. |
 | `.editorconfig` | Mismo formato básico en cualquier editor: UTF-8, 2 espacios, saltos de línea LF. |
